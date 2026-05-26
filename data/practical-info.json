@@ -1,0 +1,105 @@
+{
+  "sections": [
+    {
+      "slug": "transports",
+      "title": "Transports",
+      "icon": "🚌",
+      "items": [
+        {
+          "title": "Ferries Tahiti ↔ Moorea",
+          "content": "Aremiti, Tauati et Vaearai assurent les liaisons. Voir horaires en temps réel sur la page d'accueil.",
+          "phone": "40 50 57 57",
+          "url": "https://www.horaires-tahiti.com/"
+        },
+        {
+          "title": "Bus Le Truck",
+          "content": "Service de transport en commun sur la côte. Tarif unique 200 XPF.",
+          "phone": "40 56 00 00"
+        },
+        {
+          "title": "Aéroport de Moorea",
+          "content": "Vols quotidiens vers Tahiti via Air Tahiti. Durée 8 minutes.",
+          "phone": "40 86 42 42",
+          "url": "https://www.airtahiti.pf/"
+        }
+      ]
+    },
+    {
+      "slug": "sante",
+      "title": "Santé",
+      "icon": "🏥",
+      "items": [
+        {
+          "title": "Hôpital Afareaitu",
+          "content": "Hôpital principal de Moorea, urgences 24/7.",
+          "phone": "40 55 22 22"
+        },
+        {
+          "title": "Centre médical Maharepa",
+          "content": "Médecine générale, consultations sur rendez-vous.",
+          "phone": "40 56 23 23"
+        },
+        {
+          "title": "Pharmacies",
+          "content": "Pharmacie de Maharepa, Pharmacie de Pao Pao, Pharmacie de Haapiti. Garde de nuit en rotation.",
+          "phone": "—"
+        },
+        {
+          "title": "Ambulance / SAMU",
+          "content": "Numéro d'urgence : 15. Transport sanitaire VSL : RAI TAHITI 89 777 624.",
+          "phone": "15",
+          "url": "https://www.raitahiti.com"
+        }
+      ]
+    },
+    {
+      "slug": "administration",
+      "title": "Administration",
+      "icon": "🏛️",
+      "items": [
+        {
+          "title": "Mairie de Moorea-Maiao",
+          "content": "Démarches d'état civil, urbanisme, services à la population.",
+          "phone": "40 56 10 31"
+        },
+        {
+          "title": "OPT (Poste & télécoms)",
+          "content": "Maharepa, Pao Pao, Haapiti. Horaires : 7h30-15h en semaine.",
+          "phone": "40 56 06 00"
+        },
+        {
+          "title": "CPS Moorea",
+          "content": "Caisse de prévoyance sociale, remboursements et démarches.",
+          "phone": "40 41 68 00"
+        }
+      ]
+    },
+    {
+      "slug": "urgences",
+      "title": "Urgences",
+      "icon": "🚨",
+      "items": [
+        {
+          "title": "SAMU",
+          "content": "Urgence médicale.",
+          "phone": "15"
+        },
+        {
+          "title": "Police / Gendarmerie",
+          "content": "Brigade de gendarmerie de Moorea.",
+          "phone": "17"
+        },
+        {
+          "title": "Pompiers",
+          "content": "Centre de secours de Moorea.",
+          "phone": "18"
+        },
+        {
+          "title": "JRCC Tahiti",
+          "content": "Centre de coordination de sauvetage maritime.",
+          "phone": "16"
+        }
+      ]
+    }
+  ]
+}

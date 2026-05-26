@@ -1,0 +1,52 @@
+{
+  "articles": [
+    {
+      "slug": "ouverture-moorea-hub",
+      "title": "Moorea Hub, le nouveau portail de l'île",
+      "excerpt": "Une plateforme moderne pour centraliser toutes les actualités, événements et infos pratiques de Moorea.",
+      "content": "Bienvenue sur Moorea Hub ! Ce nouveau portail réunit en un seul endroit toute l'information utile pour les habitants et visiteurs de l'île sœur : événements à venir, annonces locales, restaurants, activités, horaires des ferries, météo en temps réel et bien plus encore. Que vous soyez résident permanent, vacancier de passage ou propriétaire d'un commerce, vous pouvez publier gratuitement vos informations. La modération assure une information fiable et de qualité.",
+      "category": "community",
+      "image": "https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=1200&q=80",
+      "author": "Équipe Moorea Hub",
+      "date": "2026-05-20",
+      "featured": true,
+      "tags": ["lancement", "communauté", "information"]
+    },
+    {
+      "slug": "fete-de-l-autonomie",
+      "title": "Fête de l'autonomie : programme à Moorea",
+      "excerpt": "Le 29 juin approche. Découvrez les festivités prévues sur l'île pour célébrer l'autonomie polynésienne.",
+      "content": "Comme chaque année, l'île de Moorea célèbre la fête de l'autonomie le 29 juin avec une riche programmation : défilé traditionnel, danse 'ori tahiti, repas communautaire à la mairie, courses pirogues dans la baie de Cook et concerts en soirée. Les festivités s'étendent du 27 au 30 juin sur plusieurs communes. Programme détaillé disponible auprès de la mairie de Moorea-Maiao.",
+      "category": "culture",
+      "image": "https://images.unsplash.com/photo-1530541930197-ff16ac917b0e?w=1200&q=80",
+      "author": "Mairie de Moorea",
+      "date": "2026-05-15",
+      "featured": true,
+      "tags": ["autonomie", "culture", "fête"]
+    },
+    {
+      "slug": "protection-lagon-baleines",
+      "title": "Saison des baleines : règles de bonne conduite",
+      "excerpt": "De juillet à novembre, les baleines à bosse reviennent. Voici les règles à respecter en mer.",
+      "content": "Chaque année, de juillet à novembre, les baleines à bosse migrent dans les eaux polynésiennes pour mettre bas. Pour protéger ces magnifiques cétacés, la DIREN rappelle les règles : distance minimale de 100m, vitesse réduite, durée d'observation limitée à 30 min, pas plus de 3 bateaux simultanément. Les nageurs doivent rester à 30m minimum. Respecter ces règles, c'est garantir la pérennité de ce trésor naturel.",
+      "category": "environment",
+      "image": "https://images.unsplash.com/photo-1568430462989-44163eb1752f?w=1200&q=80",
+      "author": "DIREN Polynésie",
+      "date": "2026-05-10",
+      "featured": false,
+      "tags": ["environnement", "baleines", "lagon"]
+    },
+    {
+      "slug": "tour-de-moorea-cyclisme",
+      "title": "Tour de Moorea cycliste 2026",
+      "excerpt": "L'édition 2026 du Tour de Moorea aura lieu fin juin. Inscriptions ouvertes.",
+      "content": "L'association cycliste de Moorea organise la 28e édition du Tour de Moorea les 28 et 29 juin 2026. Au programme : contre-la-montre par équipes le samedi, puis course en ligne autour de l'île (60 km) le dimanche. Catégories Open, Vétérans, Femmes, Juniors. Inscriptions auprès de l'association, frais 3 500 F. Départ et arrivée à Vai'are.",
+      "category": "sport",
+      "image": "https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1200&q=80",
+      "author": "ACM Moorea",
+      "date": "2026-05-08",
+      "featured": false,
+      "tags": ["sport", "cyclisme", "tour"]
+    }
+  ]
+}

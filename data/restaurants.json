@@ -1,0 +1,56 @@
+{
+  "restaurants": [
+    {
+      "slug": "chez-tama-hau",
+      "name": "Chez Tama Hau",
+      "type": "Restaurant traditionnel",
+      "description": "Cuisine polynésienne et soirées concerts dans une ambiance familiale.",
+      "location": "Centre commercial Le Petit Village, Haapiti Tiahura",
+      "phone": "87 79 85 08",
+      "phoneAlt": "40 56 55 80",
+      "image": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80",
+      "tags": ["polynésien", "concerts", "famille"],
+      "priceRange": "€€",
+      "rating": 4.6,
+      "specialty": "Poisson cru à la tahitienne, mahi mahi"
+    },
+    {
+      "slug": "roulotte-vaiare",
+      "name": "Les Roulottes de Vai'are",
+      "type": "Roulottes en bord de mer",
+      "description": "Plusieurs roulottes proposant cuisine chinoise, polynésienne, française. Vue sur le quai.",
+      "location": "Quai de Vai'are",
+      "image": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&q=80",
+      "tags": ["roulottes", "vue mer", "pas cher"],
+      "priceRange": "€",
+      "rating": 4.3,
+      "specialty": "Chao men, steak frites, poisson grillé"
+    },
+    {
+      "slug": "snack-mahana",
+      "name": "Snack Mahana",
+      "type": "Snack",
+      "description": "Burgers, salades, poisson cru. Service rapide pour déjeuner.",
+      "location": "Maharepa",
+      "phone": "40 56 12 34",
+      "image": "https://images.unsplash.com/photo-1551782450-a2132b4ba21d?w=800&q=80",
+      "tags": ["snack", "rapide", "burger"],
+      "priceRange": "€",
+      "rating": 4.4,
+      "specialty": "Burgers maison, poisson cru"
+    },
+    {
+      "slug": "le-coco-beach",
+      "name": "Le Coco Beach",
+      "type": "Restaurant les pieds dans l'eau",
+      "description": "Restaurant gastronomique avec vue panoramique sur le lagon de Moorea.",
+      "location": "Hauru Point",
+      "phone": "40 56 78 90",
+      "image": "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80",
+      "tags": ["gastronomique", "vue lagon", "romantique"],
+      "priceRange": "€€€",
+      "rating": 4.8,
+      "specialty": "Mahi mahi vanille, langouste"
+    }
+  ]
+}

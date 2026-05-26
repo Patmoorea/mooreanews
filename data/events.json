@@ -1,0 +1,73 @@
+{
+  "events": [
+    {
+      "slug": "salon-moorea-juin",
+      "title": "Salon de Moorea — édition de juin",
+      "description": "Marché artisanal et de produits du terroir, animation musicale, buvette, parking gratuit.",
+      "date": "2026-06-13",
+      "endDate": "2026-06-15",
+      "time": "09:00",
+      "location": "Débarcadère de Pao Pao",
+      "category": "marché",
+      "image": "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1200&q=80",
+      "organizer": "Mairie de Moorea",
+      "phone": "40 56 50 55",
+      "featured": true,
+      "price": "Entrée libre"
+    },
+    {
+      "slug": "concert-chez-tama-hau",
+      "title": "Soirée Trio Infernal — Chez Tama Hau",
+      "description": "Concert live, cocktail de bienvenue offert. Réservation fortement conseillée.",
+      "date": "2026-06-07",
+      "time": "19:30",
+      "location": "Centre commercial Le Petit Village, Haapiti Tiahura",
+      "category": "concert",
+      "image": "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=1200&q=80",
+      "organizer": "Chez Tama Hau",
+      "phone": "87 79 85 08",
+      "featured": true,
+      "price": "1 000 XPF"
+    },
+    {
+      "slug": "course-pirogue-paopao",
+      "title": "Course de pirogues — Va'a Moorea",
+      "description": "Course de pirogues V6 dans la baie de Pao Pao. Démonstrations Va'a Hoe, restauration sur place.",
+      "date": "2026-06-21",
+      "time": "08:00",
+      "location": "Baie de Pao Pao",
+      "category": "sport",
+      "image": "https://images.unsplash.com/photo-1530549387789-4c1017266635?w=1200&q=80",
+      "organizer": "Comité Va'a Moorea",
+      "featured": false,
+      "price": "Gratuit"
+    },
+    {
+      "slug": "atelier-ukulele-temae",
+      "title": "Atelier ukulélé — Temae",
+      "description": "Apprentissage du ukulélé tahitien pour débutants. Instrument fourni.",
+      "date": "2026-06-12",
+      "time": "17:00",
+      "location": "Centre culturel de Temae",
+      "category": "atelier",
+      "image": "https://images.unsplash.com/photo-1559535332-db9971090158?w=1200&q=80",
+      "organizer": "Centre culturel Moorea",
+      "phone": "87 12 34 56",
+      "featured": false,
+      "price": "2 000 XPF"
+    },
+    {
+      "slug": "marche-nuit-vaiare",
+      "title": "Marché nocturne de Vai'are",
+      "description": "Roulottes, artisanat, animation musicale en bord de mer.",
+      "date": "2026-06-08",
+      "time": "17:30",
+      "location": "Quai de Vai'are",
+      "category": "marché",
+      "image": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1200&q=80",
+      "organizer": "Association des roulottes",
+      "featured": false,
+      "price": "Entrée libre"
+    }
+  ]
+}

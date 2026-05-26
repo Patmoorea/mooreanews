@@ -1,0 +1,48 @@
+{
+  "announcements": [
+    {
+      "id": "ann-001",
+      "title": "Vends scooter Yamaha 125 — Maharepa",
+      "description": "Yamaha 125cc, 2022, bon état, 14 000 km, carnet d'entretien à jour. Casque offert.",
+      "category": "vente",
+      "price": "350 000 XPF",
+      "location": "Maharepa",
+      "phone": "87 12 34 56",
+      "date": "2026-05-22",
+      "image": null
+    },
+    {
+      "id": "ann-002",
+      "title": "Cherche colocataire à Vai'are",
+      "description": "Maison T3, vue lagon, jardin. Chambre meublée libre dès le 1er juillet. 65 000 XPF/mois charges comprises.",
+      "category": "logement",
+      "price": "65 000 XPF/mois",
+      "location": "Vai'are",
+      "phone": "87 23 45 67",
+      "date": "2026-05-20",
+      "image": null
+    },
+    {
+      "id": "ann-003",
+      "title": "Cours de tahitien — Tous niveaux",
+      "description": "Professeur diplômé propose cours particuliers de reo tahiti à domicile ou en visio. Adultes et enfants.",
+      "category": "service",
+      "price": "3 000 XPF/heure",
+      "location": "Moorea",
+      "phone": "87 34 56 78",
+      "date": "2026-05-18",
+      "image": null
+    },
+    {
+      "id": "ann-004",
+      "title": "Donne chiots croisés — Famille recherchée",
+      "description": "4 chiots croisés, mâles et femelles, 2 mois, sevrés. Recherche famille aimante avec jardin.",
+      "category": "animaux",
+      "price": "Gratuit",
+      "location": "Haapiti",
+      "phone": "87 45 67 89",
+      "date": "2026-05-17",
+      "image": null
+    }
+  ]
+}

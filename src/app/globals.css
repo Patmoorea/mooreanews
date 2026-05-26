@@ -1,26 +1,225 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* === Palette polynésienne === */
+  /* Lagon (turquoise/teal du lagon de Moorea) */
+  --color-lagoon-50: #ecfeff;
+  --color-lagoon-100: #cffafe;
+  --color-lagoon-200: #a5f3fc;
+  --color-lagoon-300: #67e8f9;
+  --color-lagoon-400: #22d3ee;
+  --color-lagoon-500: #06b6d4;
+  --color-lagoon-600: #0891b2;
+  --color-lagoon-700: #0e7490;
+  --color-lagoon-800: #155e75;
+  --color-lagoon-900: #164e63;
+  --color-lagoon-950: #083344;
+
+  /* Hibiscus (corail/rose tiare) */
+  --color-hibiscus-50: #fff1f2;
+  --color-hibiscus-100: #ffe4e6;
+  --color-hibiscus-200: #fecdd3;
+  --color-hibiscus-300: #fda4af;
+  --color-hibiscus-400: #fb7185;
+  --color-hibiscus-500: #f43f5e;
+  --color-hibiscus-600: #e11d48;
+  --color-hibiscus-700: #be123c;
+  --color-hibiscus-800: #9f1239;
+  --color-hibiscus-900: #881337;
+
+  /* Soleil / Couchant */
+  --color-sunset-50: #fff7ed;
+  --color-sunset-100: #ffedd5;
+  --color-sunset-200: #fed7aa;
+  --color-sunset-300: #fdba74;
+  --color-sunset-400: #fb923c;
+  --color-sunset-500: #f97316;
+  --color-sunset-600: #ea580c;
+  --color-sunset-700: #c2410c;
+  --color-sunset-800: #9a3412;
+  --color-sunset-900: #7c2d12;
+
+  /* Sable / Tiare (crème) */
+  --color-sand-50: #fefce8;
+  --color-sand-100: #fef9c3;
+  --color-sand-200: #fef08a;
+  --color-sand-300: #fde047;
+  --color-sand-400: #facc15;
+  --color-sand-500: #eab308;
+
+  /* Bleu profond océan */
+  --color-deep-50: #f0f9ff;
+  --color-deep-100: #e0f2fe;
+  --color-deep-200: #bae6fd;
+  --color-deep-300: #7dd3fc;
+  --color-deep-400: #38bdf8;
+  --color-deep-500: #0ea5e9;
+  --color-deep-600: #0284c7;
+  --color-deep-700: #0369a1;
+  --color-deep-800: #075985;
+  --color-deep-900: #0c4a6e;
+  --color-deep-950: #082f49;
+
+  /* Vert tipanier / palmier */
+  --color-palm-50: #f0fdf4;
+  --color-palm-100: #dcfce7;
+  --color-palm-200: #bbf7d0;
+  --color-palm-300: #86efac;
+  --color-palm-400: #4ade80;
+  --color-palm-500: #22c55e;
+  --color-palm-600: #16a34a;
+  --color-palm-700: #15803d;
+  --color-palm-800: #166534;
+  --color-palm-900: #14532d;
+
+  /* Background / Foreground principaux */
+  --color-background: #fefcf8;
+  --color-foreground: #0c4a6e;
+  --color-muted: #6b7280;
+
+  --font-display: var(--font-marcellus);
+  --font-sans: var(--font-inter);
+  --font-script: var(--font-pacifico);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* === Base styles === */
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-marcellus), Georgia, serif;
+  letter-spacing: -0.01em;
+}
+
+/* === Background décoratif global subtle wave === */
+.tropical-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.tropical-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(at 20% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, rgba(249, 115, 22, 0.06) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, rgba(244, 63, 94, 0.04) 0px, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* === Animations === */
+@keyframes wave {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50% { transform: translateY(-8px) translateX(4px); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(2deg); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-wave { animation: wave 6s ease-in-out infinite; }
+.animate-float { animation: float 8s ease-in-out infinite; }
+.animate-fade-up { animation: fade-up 0.7s ease-out both; }
+.animate-pulse-soft { animation: pulse-soft 3s ease-in-out infinite; }
+.animate-marquee { animation: marquee 40s linear infinite; }
+
+.shimmer-text {
+  background: linear-gradient(
+    90deg,
+    var(--color-lagoon-600) 0%,
+    var(--color-hibiscus-500) 50%,
+    var(--color-lagoon-600) 100%
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+
+/* === Glassmorphism cards === */
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 32px rgba(12, 74, 110, 0.08);
+}
+
+.glass-dark {
+  background: rgba(12, 74, 110, 0.85);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* === Tapa pattern subtil === */
+.tapa-pattern {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(12, 74, 110, 0.06) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+/* === Scrollbar polynésienne === */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-sand-50);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--color-lagoon-400), var(--color-lagoon-600));
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--color-lagoon-500), var(--color-lagoon-700));
+}
+
+/* === Focus visible === */
+*:focus-visible {
+  outline: 2px solid var(--color-lagoon-500);
+  outline-offset: 2px;
+  border-radius: 4px;
 }

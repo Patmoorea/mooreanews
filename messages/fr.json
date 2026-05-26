@@ -1,0 +1,136 @@
+{
+  "common": {
+    "loading": "Chargement…",
+    "error": "Une erreur est survenue",
+    "retry": "Réessayer",
+    "readMore": "Lire la suite",
+    "viewAll": "Voir tout",
+    "publish": "Publier",
+    "submit": "Envoyer",
+    "cancel": "Annuler",
+    "search": "Rechercher",
+    "language": "Langue"
+  },
+  "meta": {
+    "title": "Moorea Hub — Le portail de l'île de Moorea",
+    "description": "Toute l'actualité, les événements, annonces et infos pratiques de Moorea en temps réel. Météo, marées, ferries, restaurants et plus."
+  },
+  "nav": {
+    "home": "Accueil",
+    "events": "Événements",
+    "announcements": "Annonces",
+    "restaurants": "Restaurants",
+    "activities": "Activités",
+    "info": "Infos pratiques",
+    "submit": "Publier une info",
+    "contact": "Contact"
+  },
+  "hero": {
+    "badge": "Tout Moorea en un seul endroit",
+    "title": "Ia ora na, bienvenue à Moorea",
+    "subtitle": "Le hub d'information de l'île sœur. Événements, annonces, météo, ferries, marées et plus — actualisés en temps réel.",
+    "ctaSubmit": "Publier une info gratuitement",
+    "ctaExplore": "Découvrir l'île"
+  },
+  "widgets": {
+    "weather": {
+      "title": "Météo Moorea",
+      "humidity": "Humidité",
+      "wind": "Vent",
+      "feels": "Ressenti",
+      "uv": "UV"
+    },
+    "ferries": {
+      "title": "Prochains ferries",
+      "subtitle": "Tahiti ↔ Moorea",
+      "toMoorea": "Vers Moorea",
+      "toTahiti": "Vers Tahiti",
+      "in": "dans",
+      "atDock": "à quai",
+      "noData": "Pas de prochain départ",
+      "source": "Source : horaires-tahiti.com"
+    },
+    "sun": {
+      "title": "Soleil & Lune",
+      "sunrise": "Lever du soleil",
+      "sunset": "Coucher du soleil",
+      "moon": "Lune"
+    },
+    "tides": {
+      "title": "Marées",
+      "high": "Haute",
+      "low": "Basse",
+      "next": "Prochaine"
+    }
+  },
+  "sections": {
+    "news": {
+      "title": "À la une",
+      "subtitle": "Les dernières actualités de Moorea"
+    },
+    "events": {
+      "title": "Événements à venir",
+      "subtitle": "Ce qui se passe sur l'île cette semaine",
+      "upcoming": "À venir",
+      "today": "Aujourd'hui"
+    },
+    "categories": {
+      "title": "Explorer Moorea",
+      "events": "Événements & sorties",
+      "announcements": "Annonces locales",
+      "restaurants": "Où manger",
+      "activities": "Quoi faire",
+      "info": "Infos pratiques"
+    },
+    "submit": {
+      "title": "Une info à partager ?",
+      "subtitle": "Publiez gratuitement votre événement, annonce ou activité. Validation en moins de 24h.",
+      "cta": "Publier maintenant"
+    },
+    "newsletter": {
+      "title": "Restez informé",
+      "subtitle": "Recevez chaque semaine le meilleur de Moorea directement dans votre boîte mail.",
+      "placeholder": "votre@email.pf",
+      "subscribe": "S'abonner",
+      "consent": "En vous inscrivant vous acceptez de recevoir nos emails. Désabonnement en un clic.",
+      "success": "Merci ! Votre inscription est confirmée.",
+      "error": "Une erreur est survenue. Réessayez."
+    }
+  },
+  "footer": {
+    "tagline": "Le portail de l'île sœur, pour les habitants et visiteurs de Moorea.",
+    "navigation": "Navigation",
+    "contact": "Contact",
+    "legal": "Mentions légales",
+    "privacy": "Confidentialité",
+    "rights": "Tous droits réservés"
+  },
+  "submit": {
+    "title": "Publier une information",
+    "subtitle": "Partagez votre événement, annonce ou activité avec toute l'île. C'est gratuit, rapide, et validé en moins de 24h.",
+    "form": {
+      "type": "Type de publication",
+      "typeEvent": "Événement",
+      "typeAnnouncement": "Annonce",
+      "typeRestaurant": "Restaurant / commerce",
+      "typeActivity": "Activité",
+      "title": "Titre",
+      "description": "Description",
+      "date": "Date (si événement)",
+      "location": "Lieu",
+      "category": "Catégorie",
+      "contact": "Vos coordonnées",
+      "name": "Votre nom",
+      "phone": "Téléphone",
+      "email": "Email",
+      "image": "Photo (optionnel)",
+      "imageHint": "JPG ou PNG, max 5 Mo",
+      "consent": "J'accepte que cette information soit publiée sur Moorea Hub après validation.",
+      "submit": "Envoyer pour publication"
+    },
+    "success": {
+      "title": "Merci !",
+      "body": "Votre publication a bien été reçue. Nous la validerons sous 24h et vous recevrez un email de confirmation."
+    }
+  }
+}

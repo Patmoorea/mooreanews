@@ -1,0 +1,136 @@
+{
+  "common": {
+    "loading": "Tāmau…",
+    "error": "Ua fati",
+    "retry": "Tāmata fa'ahou",
+    "readMore": "Tai'o tā'ato'a",
+    "viewAll": "Hi'o tā'ato'a",
+    "publish": "Vauvau",
+    "submit": "Tonohia",
+    "cancel": "Fa'aru'e",
+    "search": "Imi",
+    "language": "Reo"
+  },
+  "meta": {
+    "title": "Moorea Hub — Te uira parau no te fenua Moorea",
+    "description": "Te mau parau āpī, te mau ʻōro'a, te mau parau e te mau parau au no Moorea i te taime mau. Mata'i, tai, ferry, fare tāmā'ara'a e te mau mea ē ato'a."
+  },
+  "nav": {
+    "home": "Hi'opo'a",
+    "events": "Te mau ʻōro'a",
+    "announcements": "Te mau fa'aaraara'a",
+    "restaurants": "Fare tāmā'ara'a",
+    "activities": "'Ohipa hau",
+    "info": "Parau au",
+    "submit": "Vauvau",
+    "contact": "Fa'arava'i"
+  },
+  "hero": {
+    "badge": "Te mau parau ato'a no Moorea i te hō'ē vāhi",
+    "title": "Ia ora na, mānava i Moorea",
+    "subtitle": "Te uira parau no te fenua tuahine. Te mau ʻōro'a, te mau fa'aaraara'a, te mata'i, te ferry, te tai e te mau mea ē ato'a — fa'aāpīhia i te taime mau.",
+    "ctaSubmit": "Vauvau noa",
+    "ctaExplore": "ʻIte i te fenua"
+  },
+  "widgets": {
+    "weather": {
+      "title": "Mata'i Moorea",
+      "humidity": "Pape",
+      "wind": "Mata'i",
+      "feels": "Ahuahu",
+      "uv": "UV"
+    },
+    "ferries": {
+      "title": "Ferry no muri",
+      "subtitle": "Tahiti ↔ Moorea",
+      "toMoorea": "I Moorea",
+      "toTahiti": "I Tahiti",
+      "in": "i roto",
+      "atDock": "i te uahu",
+      "noData": "ʻAore e revara'a",
+      "source": "Tumu : horaires-tahiti.com"
+    },
+    "sun": {
+      "title": "Mahana & Marama",
+      "sunrise": "Hiti'a o te rā",
+      "sunset": "Tōpara'a o te rā",
+      "moon": "Marama"
+    },
+    "tides": {
+      "title": "Tai",
+      "high": "Tai pī",
+      "low": "Tai pae",
+      "next": "Te ʻāpī"
+    }
+  },
+  "sections": {
+    "news": {
+      "title": "Te parau matamua",
+      "subtitle": "Te mau parau āpī no Moorea"
+    },
+    "events": {
+      "title": "ʻŌro'a no muri",
+      "subtitle": "Te tupu nei i te fenua i teie tāpati",
+      "upcoming": "Tā mai",
+      "today": "I teie mahana"
+    },
+    "categories": {
+      "title": "ʻIte i Moorea",
+      "events": "ʻŌro'a e haereraʻa",
+      "announcements": "Fa'aaraara'a no te fenua",
+      "restaurants": "Vāhi tāmā'ara'a",
+      "activities": "Te 'ohipa nei",
+      "info": "Parau au"
+    },
+    "submit": {
+      "title": "E parau tā ōe e fa'a'ite ?",
+      "subtitle": "Vauvau noa i tā ōe ʻōro'a, fa'aaraara'a aore rā 'ohipa. ʻIte i raro a'e i te 24 hora.",
+      "cta": "Vauvau i teie nei"
+    },
+    "newsletter": {
+      "title": "Ia parahi māramarama",
+      "subtitle": "ʻOhi i te ʻā tāpati i te mau parau matamua no Moorea i roto i tā ōe puta rāta.",
+      "placeholder": "tāōe@email.pf",
+      "subscribe": "Hāʻamau",
+      "consent": "I tā ōe pāpa'ira'a tā ōe e farii i tā mātou mau rāta. Hō'ē tāhe noa nō te fa'aore.",
+      "success": "Māuruuru ! Ua hāʻamauhia tā ōe pāpa'ira'a.",
+      "error": "Ua fati. A tāmata fa'ahou."
+    }
+  },
+  "footer": {
+    "tagline": "Te uira parau no te fenua tuahine, no te feiā e te mau ratere o Moorea.",
+    "navigation": "Tere fenua",
+    "contact": "Fa'arava'i",
+    "legal": "Ture",
+    "privacy": "Mo'a",
+    "rights": "Te mau ti'amanara'a ato'a"
+  },
+  "submit": {
+    "title": "Vauvau hō'ē parau",
+    "subtitle": "Tu'u i tā ōe ʻōro'a, fa'aaraara'a aore rā 'ohipa i te fenua tā'ato'a. ʻAore moni, vitiviti, ʻite i raro a'e i te 24 hora.",
+    "form": {
+      "type": "Huru o te vauvaura'a",
+      "typeEvent": "ʻŌro'a",
+      "typeAnnouncement": "Fa'aaraara'a",
+      "typeRestaurant": "Fare tāmā'ara'a / fare ho'o",
+      "typeActivity": "'Ohipa",
+      "title": "Tāpa'o",
+      "description": "Fa'a'ite",
+      "date": "Mahana (mai te peu e ʻōro'a)",
+      "location": "Vāhi",
+      "category": "Tuha'a",
+      "contact": "Tā ōe parau",
+      "name": "Tā ōe iʻoa",
+      "phone": "Niuniu",
+      "email": "Email",
+      "image": "Hoho'a (mai te peu)",
+      "imageHint": "JPG aore rā PNG, 5 Mo i ni'a a'e",
+      "consent": "Tē farii nei vau e tu'uhia teie parau i ni'a i te Moorea Hub i muri a'e te ʻitera'a.",
+      "submit": "Tonohia nō te ʻite"
+    },
+    "success": {
+      "title": "Māuruuru !",
+      "body": "Ua fariihia tā ōe vauvaura'a. E ʻite mātou i raro a'e i te 24 hora e e fa'atae mātou hō'ē email iā ōe."
+    }
+  }
+}

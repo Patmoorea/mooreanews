@@ -1,0 +1,75 @@
+{
+  "activities": [
+    {
+      "slug": "plongee-tiki-diving",
+      "name": "Plongée sous-marine",
+      "provider": "Tiki Diving Moorea",
+      "description": "Découvrez les jardins coralliens et les raies pastenagues. Plongées baptême ou perfectionnement.",
+      "location": "Hauru Point",
+      "phone": "87 70 12 34",
+      "price": "À partir de 9 500 XPF",
+      "duration": "3h",
+      "image": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&q=80",
+      "category": "mer",
+      "rating": 4.9,
+      "tags": ["plongée", "lagon", "récifs"]
+    },
+    {
+      "slug": "nage-baleines",
+      "name": "Nage avec les baleines",
+      "provider": "Moorea Ocean Adventures",
+      "description": "Saison juillet-novembre. Approche éthique des baleines à bosse en respectant les distances réglementaires.",
+      "location": "Sortie en mer depuis Vai'are",
+      "phone": "87 71 23 45",
+      "price": "À partir de 18 000 XPF",
+      "duration": "4h",
+      "image": "https://images.unsplash.com/photo-1568430462989-44163eb1752f?w=800&q=80",
+      "category": "mer",
+      "rating": 4.95,
+      "tags": ["baleines", "saisonnier", "incontournable"],
+      "seasonal": "Juillet à novembre"
+    },
+    {
+      "slug": "randonnee-trois-cocotiers",
+      "name": "Randonnée des Trois Cocotiers",
+      "provider": "Moorea Hike Adventure",
+      "description": "Sentier panoramique avec vue à 360° sur les baies de Cook et d'Opunohu.",
+      "location": "Belvédère",
+      "phone": "87 72 34 56",
+      "price": "5 500 XPF par personne",
+      "duration": "4h",
+      "image": "https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&q=80",
+      "category": "terre",
+      "rating": 4.7,
+      "tags": ["randonnée", "panorama", "nature"]
+    },
+    {
+      "slug": "tour-ile-quad",
+      "name": "Tour de l'île en quad",
+      "provider": "Moorea Quad Tour",
+      "description": "Explorez Moorea hors des sentiers battus : ananas, baie d'Opunohu, marae, point de vue.",
+      "location": "Départ Vai'are",
+      "phone": "87 73 45 67",
+      "price": "12 000 XPF (quad 1 pers.)",
+      "duration": "3h",
+      "image": "https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=800&q=80",
+      "category": "terre",
+      "rating": 4.6,
+      "tags": ["quad", "aventure", "panorama"]
+    },
+    {
+      "slug": "lagoon-tour",
+      "name": "Tour du lagon en bateau",
+      "provider": "Aremiti Tours",
+      "description": "Journée snorkeling : raies, requins pointe noire, jardin de corail, pique-nique sur motu.",
+      "location": "Départ Hauru",
+      "phone": "87 74 56 78",
+      "price": "10 500 XPF",
+      "duration": "Journée",
+      "image": "https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?w=800&q=80",
+      "category": "mer",
+      "rating": 4.8,
+      "tags": ["bateau", "snorkeling", "motu"]
+    }
+  ]
+}
