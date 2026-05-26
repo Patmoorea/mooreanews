@@ -1,172 +1,199 @@
-# Moorea Hub
+# Moorea Hub — Le portail vivant de Moorea
 
-> Le portail de l'île de Moorea : événements, annonces, météo, ferries, restaurants, activités et infos pratiques en temps réel.
+Site d'information centralisé pour l'île de Moorea, en Polynésie française.
 
-Site moderne et multilingue (FR/EN/TY) construit avec Next.js 16, Tailwind v4 et next-intl.
+Conçu pour remplacer l'ancien `mooreanews.com` (abandonné depuis 2022) par une
+plateforme moderne, multilingue, automatisée et pensée pour la communauté.
 
-## Aperçu
+> 🌺 **Ia ora na — Bienvenue sur Moorea.**
 
-- **Homepage** : hero tropical, widgets live (météo, ferries, marées, soleil/lune), articles à la une, événements à venir, callout publication, newsletter.
-- **Pages thématiques** : Événements, Annonces, Restaurants, Activités, Infos pratiques.
-- **Publication** : formulaire de soumission ouvert à tous, modération admin via Telegram + email.
-- **i18n complet** : français (par défaut), anglais, reo Tahiti (langue tahitienne).
-- **Design polynésien** : palette lagon / hibiscus / sable / soleil couchant, animations subtiles, glassmorphism.
+---
 
-## Stack
+## ✨ Fonctionnalités
 
-| Couche       | Techno                                                     |
-| ------------ | ---------------------------------------------------------- |
-| Framework    | Next.js 16 + React 19 + TypeScript (App Router, Turbopack) |
-| Styles       | Tailwind v4 (theme inline) + globals.css                   |
-| i18n         | next-intl (FR/EN/TY)                                       |
-| Icônes       | lucide-react                                               |
-| Validation   | zod                                                        |
-| Emails       | Resend                                                     |
-| Notifs admin | Telegram bot                                               |
-| Hébergement  | Vercel (auto-deploy depuis GitHub)                         |
-| Data         | JSON éditable dans `/data` (phase 1) → Supabase (phase 2)  |
+### Phase 1 — MVP (livrée)
 
-## Démarrer
+- **Design polynésien tropical** : palette lagon/tiare/couchant, typo Marcellus + Inter, motifs tapa, animations douces
+- **Widgets live** mis à jour automatiquement :
+  - Météo Moorea (OpenWeatherMap)
+  - Ferries Tahiti ↔ Moorea (horaires-tahiti.com)
+  - Lever / coucher du soleil + phase de la lune (sunrise-sunset.org)
+  - Marées indicatives (calcul interne)
+- **Bandeau ticker animé** en haut de site
+- **Catégories de contenu** : actualités, événements, annonces, restaurants, activités, infos pratiques
+- **Formulaire de soumission communautaire** avec notification Telegram + email
+- **Inscription newsletter** (Resend)
+- **SEO** : sitemap, robots, Open Graph dynamique, JSON-LD, PWA manifest
+- **Multi-device** : entièrement responsive, mobile-first
+
+### Phase 2 — Communauté (à venir)
+
+- Authentification Supabase (utilisateurs / commerçants / admin)
+- Soumission illimitée avec compte
+- Modération depuis l'interface admin
+- Tags et recherche
+- Upload d'images
+
+### Phase 3 — Automatisation (à venir)
+
+- Aggrégation RSS Tahiti Infos, Polynésie 1ère, Mairie de Moorea
+- Import événements Facebook publics
+- Calendrier centralisé
+- Cron jobs horaires (Vercel Cron)
+
+### Phase 4 — Premium (à venir)
+
+- PWA installable + notifications push
+- Carte interactive avec marqueurs événements / restaurants / activités
+- API publique
+- Espace commerçants premium
+
+---
+
+## 🛠 Stack technique
+
+| Couche             | Techno                       |
+| ------------------ | ---------------------------- |
+| Framework          | Next.js 16 (App Router)      |
+| Langage            | TypeScript                   |
+| UI                 | Tailwind CSS 4               |
+| Icônes             | Lucide React                 |
+| Auth & DB (P2)     | Supabase                     |
+| Emails             | Resend                       |
+| Notifs admin       | Telegram Bot API             |
+| Hébergement        | Vercel                       |
+| Domaine            | mooreanews.com (OVH)         |
+
+---
+
+## 🚀 Démarrer en local
 
 ```bash
+# 1) Cloner et installer
+git clone <repo-url> moorea-hub
+cd moorea-hub
 npm install
+
+# 2) Configurer les variables d'environnement
 cp .env.example .env.local
-# remplir les variables (au minimum NEXT_PUBLIC_SITE_URL)
+# puis remplir au minimum : OPENWEATHERMAP_API_KEY (optionnel)
+
+# 3) Lancer le serveur de dev
 npm run dev
+
+# Ouvrir http://localhost:3000
 ```
 
-Ouvrir http://localhost:3000.
+Aucune variable n'est obligatoire pour démarrer : tous les widgets ont un
+fallback intégré (météo, ferries, soleil/lune, marées).
 
-### Variables d'environnement essentielles
+---
 
-Voir [`.env.example`](./.env.example) pour la liste complète. Les minimums pour démarrer :
+## 🌍 Déployer sur Vercel + OVH
 
-- `OPENWEATHERMAP_API_KEY` — gratuit sur [openweathermap.org](https://openweathermap.org/api). Sans cette clé, le widget météo affiche une valeur par défaut.
-- `RESEND_API_KEY` — gratuit sur [resend.com](https://resend.com). Sans cette clé, les soumissions n'envoient pas d'email.
-- `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` — pour recevoir les notifications de soumission.
+### 1. Pousser sur GitHub
 
-Tous les widgets continuent de fonctionner même sans clés, en mode dégradé.
+```bash
+git remote add origin https://github.com/<vous>/moorea-hub.git
+git push -u origin main
+```
 
-## Architecture
+### 2. Importer sur Vercel
+
+1. Aller sur [vercel.com/new](https://vercel.com/new)
+2. Importer le repo `moorea-hub`
+3. Renseigner les variables d'environnement (cf. `.env.example`)
+4. Déployer
+
+### 3. Connecter le domaine `mooreanews.com`
+
+Sur Vercel :
+
+1. **Settings → Domains → Add**
+2. Ajouter `mooreanews.com` ET `www.mooreanews.com`
+
+Sur OVH (DNS Zone) :
+
+| Type  | Sous-domaine | Cible                     |
+| ----- | ------------ | ------------------------- |
+| A     | @            | `76.76.21.21`             |
+| CNAME | www          | `cname.vercel-dns.com`    |
+
+Délai de propagation DNS : quelques minutes à quelques heures.
+
+---
+
+## 📁 Structure
 
 ```
 moorea-hub/
-├── data/                         # ← Source de vérité éditable (phase 1)
-│   ├── articles.json
-│   ├── events.json
-│   ├── restaurants.json
-│   ├── activities.json
-│   ├── announcements.json
-│   └── practical-info.json
-├── messages/                     # ← Traductions
-│   ├── fr.json
-│   ├── en.json
-│   └── ty.json
-└── src/
-    ├── app/
-    │   ├── [locale]/             # ← Routes localisées
-    │   │   ├── page.tsx          # Homepage
-    │   │   ├── evenements/
-    │   │   ├── annonces/
-    │   │   ├── restaurants/
-    │   │   ├── activites/
-    │   │   ├── infos/
-    │   │   ├── publier/
-    │   │   ├── contact/
-    │   │   ├── legal/
-    │   │   └── confidentialite/
-    │   ├── api/
-    │   │   ├── weather/
-    │   │   ├── ferries/
-    │   │   ├── sun/
-    │   │   ├── submit/
-    │   │   └── newsletter/
-    │   ├── layout.tsx            # Layout root (fonts, metadata)
-    │   ├── globals.css           # Design system + thème
-    │   ├── sitemap.ts
-    │   ├── robots.ts
-    │   └── opengraph-image.tsx
-    ├── components/
-    │   ├── Header.tsx, Footer.tsx, LanguageSwitcher.tsx
-    │   ├── Hero.tsx, LiveWidgets.tsx
-    │   ├── ArticleCard.tsx, EventCard.tsx
-    │   ├── CategoryGrid.tsx, FeaturedNews.tsx, UpcomingEvents.tsx
-    │   ├── SubmitCallout.tsx, SubmitForm.tsx, NewsletterForm.tsx
-    │   └── widgets/
-    │       ├── WeatherWidget.tsx
-    │       ├── FerryWidget.tsx
-    │       ├── SunMoonWidget.tsx
-    │       └── TideWidget.tsx
-    ├── i18n/                     # next-intl
-    ├── lib/
-    │   ├── constants.ts
-    │   ├── content.ts            # Chargeurs JSON typés
-    │   ├── ferries.ts, tides.ts, utils.ts
-    │   └── telegram.ts
-    └── middleware.ts             # next-intl middleware
+├── data/                       # JSON statiques (articles, events, restos…)
+├── src/
+│   ├── app/
+│   │   ├── api/                # Routes API : weather, ferries, sun, tides, newsletter, submit
+│   │   ├── admin/              # Espace admin (Phase 2)
+│   │   ├── actualites/
+│   │   ├── evenements/
+│   │   ├── annonces/
+│   │   ├── restaurants/
+│   │   ├── activites/
+│   │   ├── infos-pratiques/
+│   │   ├── soumettre/
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   ├── sitemap.ts
+│   │   ├── manifest.ts
+│   │   └── opengraph-image.tsx
+│   ├── components/
+│   │   ├── home/               # Sections homepage
+│   │   ├── layout/             # Header, Footer, Banners
+│   │   ├── widgets/            # WeatherCard, FerryCard, SunMoonCard, TidesCard, Ticker
+│   │   ├── ui/                 # Button, Card, Badge, Container
+│   │   ├── NewsletterForm.tsx
+│   │   └── SubmitForm.tsx
+│   └── lib/
+│       ├── constants.ts        # Configuration globale
+│       ├── utils.ts            # Helpers (dates, slug, cn…)
+│       ├── content.ts          # Chargeur JSON
+│       ├── content-types.ts    # Types partagés
+│       ├── weather.ts          # OpenWeatherMap
+│       ├── sun.ts              # Soleil + lune
+│       ├── tides.ts            # Marées (calcul interne)
+│       ├── ferries.ts          # Ferries Tahiti ↔ Moorea
+│       └── telegram.ts         # Notifications Telegram
+└── README.md
 ```
 
-## Modifier le contenu (phase 1)
+---
 
-La phase 1 MVP utilise des fichiers JSON directement éditables sur GitHub.
+## 🌺 Mise à jour du contenu (sans coder)
 
-1. Aller sur [github.com/<your-user>/moorea-hub/tree/main/data](#) (à adapter)
-2. Ouvrir le fichier souhaité (ex. `events.json`)
-3. Cliquer sur l'icône crayon, modifier
-4. "Commit changes" — Vercel redéploie automatiquement en 1-2 min
+Toutes les données sont dans `/data/*.json`. Pour ajouter / modifier un article,
+un événement, un restaurant, etc. :
 
-Pour la phase 2, ce contenu sera migré vers Supabase avec une interface admin web.
+1. Ouvrir le fichier sur GitHub (`data/articles.json` par exemple)
+2. Cliquer sur le crayon ✏️ « Edit »
+3. Modifier le JSON, commit
+4. Vercel redéploie automatiquement (~ 30-60 secondes)
 
-## Déploiement Vercel
+**Aucune connaissance technique requise au-delà de l'édition JSON.**
 
-1. `git init && git add -A && git commit -m "Initial"` (déjà fait par create-next-app)
-2. Créer le repo GitHub : `gh repo create moorea-hub --public --source=. --push`
-3. Sur [vercel.com](https://vercel.com), importer le repo. Build settings : par défaut.
-4. Ajouter les variables d'environnement (cf. `.env.example`)
-5. Connecter le domaine `mooreanews.com` dans Project Settings → Domains.
+---
 
-## Roadmap
+## 📬 Soumissions communautaires
 
-### Phase 1 — MVP (actuelle)
+Le formulaire `/soumettre` envoie chaque publication :
 
-- [x] Site multilingue + design polynésien
-- [x] Widgets live : météo, ferries, soleil/lune, marées
-- [x] Pages : événements, annonces, restaurants, activités, infos pratiques
-- [x] Formulaire de soumission + notifications Telegram + email
-- [x] Newsletter
-- [x] SEO de base
+1. Par **Telegram** instantané à l'admin
+2. Par **email** (via Resend) à l'admin
 
-### Phase 2 — Communauté
+L'admin valide puis ajoute le contenu manuellement dans le JSON correspondant
+(Phase 1). En Phase 2, validation depuis l'admin directement avec Supabase.
 
-- [ ] Auth utilisateurs (Supabase Auth)
-- [ ] Base de données Postgres (Supabase)
-- [ ] Interface admin de modération web
-- [ ] Galerie photos par publication
-- [ ] Compte commerçant avec mise en avant
+---
 
-### Phase 3 — Automatisation
+## 📄 Licence
 
-- [ ] Agrégation RSS (Tahiti Infos, Polynésie 1ère, Mairie de Moorea)
-- [ ] Import auto d'événements depuis Facebook Pages publiques
-- [ ] Calendrier centralisé
-- [ ] Vercel Cron toutes les heures
-- [ ] Filtrage IA anti-spam (OpenAI Moderation API)
+© 2026 Moorea Hub. Tous droits réservés.
 
-### Phase 4 — Premium
-
-- [ ] PWA installable (iOS/Android)
-- [ ] Notifications push web (alertes événements, météo, coupures)
-- [ ] Carte interactive Leaflet avec marqueurs
-- [ ] API publique
-- [ ] Dashboard stats
-
-## Crédits
-
-- Horaires ferries : [horaires-tahiti.com](https://www.horaires-tahiti.com/)
-- Météo : [OpenWeatherMap](https://openweathermap.org/)
-- Soleil/Lune : [sunrise-sunset.org](https://sunrise-sunset.org/)
-- Images : Unsplash (à remplacer par photos locales)
-
-## Licence
-
-Tous droits réservés.
+Fait avec ♥ à Moorea, sous le soleil de Polynésie.

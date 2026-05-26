@@ -1,0 +1,39 @@
+import { Hero } from "@/components/home/Hero";
+import { LiveDashboard } from "@/components/home/LiveDashboard";
+import { CategoriesGrid } from "@/components/home/CategoriesGrid";
+import { FeaturedArticles } from "@/components/home/FeaturedArticles";
+import { UpcomingEvents } from "@/components/home/UpcomingEvents";
+import { CommunityCTA } from "@/components/home/CommunityCTA";
+import { SITE } from "@/lib/constants";
+
+export default function HomePage() {
+  return (
+    <>
+      <Hero />
+      <LiveDashboard />
+      <FeaturedArticles />
+      <UpcomingEvents />
+      <CategoriesGrid />
+      <CommunityCTA />
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: SITE.name,
+            url: SITE.url,
+            description: SITE.description,
+            inLanguage: "fr-PF",
+            potentialAction: {
+              "@type": "SearchAction",
+              target: `${SITE.url}/recherche?q={search_term_string}`,
+              "query-input": "required name=search_term_string",
+            },
+          }),
+        }}
+      />
+    </>
+  );
+}

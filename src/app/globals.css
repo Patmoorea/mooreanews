@@ -1,225 +1,382 @@
 @import "tailwindcss";
 
-@theme inline {
-  /* === Palette polynésienne === */
-  /* Lagon (turquoise/teal du lagon de Moorea) */
-  --color-lagoon-50: #ecfeff;
-  --color-lagoon-100: #cffafe;
-  --color-lagoon-200: #a5f3fc;
-  --color-lagoon-300: #67e8f9;
-  --color-lagoon-400: #22d3ee;
-  --color-lagoon-500: #06b6d4;
-  --color-lagoon-600: #0891b2;
-  --color-lagoon-700: #0e7490;
-  --color-lagoon-800: #155e75;
-  --color-lagoon-900: #164e63;
-  --color-lagoon-950: #083344;
+/*
+ * Moorea Hub — Design System Polynésien
+ * Palette inspirée du lagon, du tiare et du couchant tropical.
+ */
 
-  /* Hibiscus (corail/rose tiare) */
-  --color-hibiscus-50: #fff1f2;
-  --color-hibiscus-100: #ffe4e6;
-  --color-hibiscus-200: #fecdd3;
-  --color-hibiscus-300: #fda4af;
-  --color-hibiscus-400: #fb7185;
-  --color-hibiscus-500: #f43f5e;
-  --color-hibiscus-600: #e11d48;
-  --color-hibiscus-700: #be123c;
-  --color-hibiscus-800: #9f1239;
-  --color-hibiscus-900: #881337;
+@theme {
+  /* Couleurs principales */
+  --color-lagon-50: #ecfeff;
+  --color-lagon-100: #cffafe;
+  --color-lagon-200: #a5f3fc;
+  --color-lagon-300: #67e8f9;
+  --color-lagon-400: #22d3ee;
+  --color-lagon-500: #06b6d4;
+  --color-lagon-600: #0891b2;
+  --color-lagon-700: #0e7490;
+  --color-lagon-800: #155e75;
+  --color-lagon-900: #164e63;
 
-  /* Soleil / Couchant */
-  --color-sunset-50: #fff7ed;
-  --color-sunset-100: #ffedd5;
-  --color-sunset-200: #fed7aa;
-  --color-sunset-300: #fdba74;
-  --color-sunset-400: #fb923c;
-  --color-sunset-500: #f97316;
-  --color-sunset-600: #ea580c;
-  --color-sunset-700: #c2410c;
-  --color-sunset-800: #9a3412;
-  --color-sunset-900: #7c2d12;
+  --color-ocean-50: #f0f9ff;
+  --color-ocean-100: #e0f2fe;
+  --color-ocean-200: #bae6fd;
+  --color-ocean-300: #7dd3fc;
+  --color-ocean-400: #38bdf8;
+  --color-ocean-500: #0ea5e9;
+  --color-ocean-600: #0284c7;
+  --color-ocean-700: #0369a1;
+  --color-ocean-800: #075985;
+  --color-ocean-900: #0c4a6e;
+  --color-ocean-950: #082f49;
 
-  /* Sable / Tiare (crème) */
-  --color-sand-50: #fefce8;
-  --color-sand-100: #fef9c3;
-  --color-sand-200: #fef08a;
-  --color-sand-300: #fde047;
-  --color-sand-400: #facc15;
-  --color-sand-500: #eab308;
+  --color-tiare-50: #fff1f2;
+  --color-tiare-100: #ffe4e6;
+  --color-tiare-200: #fecdd3;
+  --color-tiare-300: #fda4af;
+  --color-tiare-400: #fb7185;
+  --color-tiare-500: #f43f5e;
+  --color-tiare-600: #e11d48;
+  --color-tiare-700: #be123c;
 
-  /* Bleu profond océan */
-  --color-deep-50: #f0f9ff;
-  --color-deep-100: #e0f2fe;
-  --color-deep-200: #bae6fd;
-  --color-deep-300: #7dd3fc;
-  --color-deep-400: #38bdf8;
-  --color-deep-500: #0ea5e9;
-  --color-deep-600: #0284c7;
-  --color-deep-700: #0369a1;
-  --color-deep-800: #075985;
-  --color-deep-900: #0c4a6e;
-  --color-deep-950: #082f49;
+  --color-soleil-50: #fffbeb;
+  --color-soleil-100: #fef3c7;
+  --color-soleil-200: #fde68a;
+  --color-soleil-300: #fcd34d;
+  --color-soleil-400: #fbbf24;
+  --color-soleil-500: #f59e0b;
+  --color-soleil-600: #d97706;
 
-  /* Vert tipanier / palmier */
-  --color-palm-50: #f0fdf4;
-  --color-palm-100: #dcfce7;
-  --color-palm-200: #bbf7d0;
-  --color-palm-300: #86efac;
-  --color-palm-400: #4ade80;
-  --color-palm-500: #22c55e;
-  --color-palm-600: #16a34a;
-  --color-palm-700: #15803d;
-  --color-palm-800: #166534;
-  --color-palm-900: #14532d;
+  --color-tipanier-50: #ecfdf5;
+  --color-tipanier-100: #d1fae5;
+  --color-tipanier-200: #a7f3d0;
+  --color-tipanier-300: #6ee7b7;
+  --color-tipanier-400: #34d399;
+  --color-tipanier-500: #10b981;
+  --color-tipanier-600: #059669;
+  --color-tipanier-700: #047857;
 
-  /* Background / Foreground principaux */
-  --color-background: #fefcf8;
-  --color-foreground: #0c4a6e;
-  --color-muted: #6b7280;
+  --color-sable-50: #fefdf8;
+  --color-sable-100: #fdfaeb;
+  --color-sable-200: #fbf3d0;
+  --color-sable-300: #f7e9a8;
 
-  --font-display: var(--font-marcellus);
-  --font-sans: var(--font-inter);
-  --font-script: var(--font-pacifico);
+  --color-couchant: #fb923c;
+  --color-corail: #fb7185;
+  --color-tiare-jaune: #facc15;
+
+  /* Typographie */
+  --font-display: "Marcellus", "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Ombres tropicales (douces, légèrement chaudes) */
+  --shadow-soft: 0 2px 12px -2px rgb(14 165 233 / 0.08), 0 1px 4px -1px rgb(14 165 233 / 0.06);
+  --shadow-tropical: 0 10px 30px -8px rgb(8 145 178 / 0.18), 0 4px 12px -4px rgb(14 116 144 / 0.12);
+  --shadow-sunset: 0 8px 24px -6px rgb(251 113 133 / 0.22);
 }
 
-/* === Base styles === */
-html {
-  scroll-behavior: smooth;
+:root {
+  --background: var(--color-ocean-50);
+  --foreground: var(--color-ocean-950);
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --border: rgb(14 165 233 / 0.12);
+}
+
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
 }
 
 body {
-  background: var(--color-background);
-  color: var(--color-foreground);
-  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3, h4 {
-  font-family: var(--font-marcellus), Georgia, serif;
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
   letter-spacing: -0.01em;
 }
 
-/* === Background décoratif global subtle wave === */
-.tropical-bg {
-  position: relative;
-  overflow: hidden;
+/* Sélection */
+::selection {
+  background: var(--color-lagon-200);
+  color: var(--color-ocean-900);
 }
 
-.tropical-bg::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image:
-    radial-gradient(at 20% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
-    radial-gradient(at 80% 0%, rgba(249, 115, 22, 0.06) 0px, transparent 50%),
-    radial-gradient(at 0% 50%, rgba(244, 63, 94, 0.04) 0px, transparent 50%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* === Animations === */
-@keyframes wave {
-  0%, 100% { transform: translateY(0px) translateX(0px); }
-  50% { transform: translateY(-8px) translateX(4px); }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-12px) rotate(2deg); }
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
-}
-
-@keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes pulse-soft {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-
-@keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-.animate-wave { animation: wave 6s ease-in-out infinite; }
-.animate-float { animation: float 8s ease-in-out infinite; }
-.animate-fade-up { animation: fade-up 0.7s ease-out both; }
-.animate-pulse-soft { animation: pulse-soft 3s ease-in-out infinite; }
-.animate-marquee { animation: marquee 40s linear infinite; }
-
-.shimmer-text {
-  background: linear-gradient(
-    90deg,
-    var(--color-lagoon-600) 0%,
-    var(--color-hibiscus-500) 50%,
-    var(--color-lagoon-600) 100%
-  );
-  background-size: 200% auto;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: shimmer 4s linear infinite;
-}
-
-/* === Glassmorphism cards === */
-.glass-card {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 8px 32px rgba(12, 74, 110, 0.08);
-}
-
-.glass-dark {
-  background: rgba(12, 74, 110, 0.85);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* === Tapa pattern subtil === */
-.tapa-pattern {
-  background-image:
-    radial-gradient(circle at 1px 1px, rgba(12, 74, 110, 0.06) 1px, transparent 0);
-  background-size: 24px 24px;
-}
-
-/* === Scrollbar polynésienne === */
+/* Scrollbar douce */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
-
 ::-webkit-scrollbar-track {
-  background: var(--color-sand-50);
+  background: var(--color-ocean-50);
 }
-
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--color-lagoon-400), var(--color-lagoon-600));
-  border-radius: 5px;
+  background: var(--color-lagon-300);
+  border-radius: 999px;
+  border: 2px solid var(--color-ocean-50);
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, var(--color-lagoon-500), var(--color-lagoon-700));
+  background: var(--color-lagon-500);
 }
 
-/* === Focus visible === */
+/* ============ ANIMATIONS POLYNÉSIENNES ============ */
+
+@keyframes wave {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(14 165 233 / 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgb(14 165 233 / 0);
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes sunset-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-wave {
+  animation: wave 4s ease-in-out infinite;
+}
+.animate-float {
+  animation: float-slow 6s ease-in-out infinite;
+}
+.animate-pulse-glow {
+  animation: pulse-glow 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* ============ GRADIENTS POLYNÉSIENS ============ */
+
+.bg-gradient-lagon {
+  background: linear-gradient(135deg, #67e8f9 0%, #06b6d4 50%, #0891b2 100%);
+}
+
+.bg-gradient-sunset {
+  background: linear-gradient(135deg, #fda4af 0%, #fb923c 50%, #facc15 100%);
+}
+
+.bg-gradient-ocean {
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 60%, #0c4a6e 100%);
+}
+
+.bg-gradient-tropical {
+  background: linear-gradient(
+    135deg,
+    #67e8f9 0%,
+    #14b8a6 25%,
+    #10b981 50%,
+    #facc15 75%,
+    #fb7185 100%
+  );
+  background-size: 300% 300%;
+  animation: sunset-shift 18s ease infinite;
+}
+
+.bg-gradient-tiare {
+  background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 50%, #fef3c7 100%);
+}
+
+/* ============ MOTIFS POLYNÉSIENS ============ */
+
+/* Motif tapa subtil (vagues + losanges) */
+.bg-tapa {
+  background-color: var(--color-ocean-50);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgb(6 182 212 / 0.06) 2px, transparent 3px),
+    radial-gradient(circle at 70% 60%, rgb(6 182 212 / 0.05) 2px, transparent 3px),
+    radial-gradient(circle at 40% 80%, rgb(14 165 233 / 0.04) 2px, transparent 3px);
+  background-size: 80px 80px, 120px 120px, 100px 100px;
+}
+
+/* Hibiscus pattern background */
+.bg-hibiscus {
+  background-image:
+    radial-gradient(ellipse at 10% 10%, rgb(251 113 133 / 0.08), transparent 30%),
+    radial-gradient(ellipse at 90% 80%, rgb(250 204 21 / 0.06), transparent 30%),
+    radial-gradient(ellipse at 50% 50%, rgb(14 165 233 / 0.04), transparent 50%);
+}
+
+/* Effet "lagon" pour les widgets live */
+.bg-lagon-glass {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(207, 250, 254, 0.7) 100%
+  );
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+/* ============ UTILITAIRES ============ */
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
+}
+
+/* Conteneur fluide responsive */
+.container-fluid {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: 1rem;
+  max-width: 1280px;
+}
+@media (min-width: 640px) {
+  .container-fluid {
+    padding-inline: 1.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .container-fluid {
+    padding-inline: 2rem;
+  }
+}
+
+/* Carte tropicale (réutilisable) */
+.card-tropical {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--border);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+.card-tropical:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-tropical);
+}
+
+/* Bouton tropical principal */
+.btn-tropical {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--color-lagon-500), var(--color-ocean-600));
+  color: white;
+  font-weight: 600;
+  font-size: 0.95rem;
+  box-shadow: var(--shadow-tropical);
+  transition: all 0.2s;
+}
+.btn-tropical:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    var(--shadow-tropical),
+    0 0 0 4px rgb(14 165 233 / 0.15);
+}
+
+/* Bouton secondaire (couchant) */
+.btn-sunset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--color-couchant), var(--color-tiare-400));
+  color: white;
+  font-weight: 600;
+  font-size: 0.95rem;
+  box-shadow: var(--shadow-sunset);
+  transition: all 0.2s;
+}
+.btn-sunset:hover {
+  transform: translateY(-1px);
+}
+
+/* Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Focus visible accessible */
 *:focus-visible {
-  outline: 2px solid var(--color-lagoon-500);
+  outline: 2px solid var(--color-lagon-500);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* Réduction d'animation pour l'accessibilité */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

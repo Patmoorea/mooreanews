@@ -1,45 +1,40 @@
 /**
- * Envoi de notifications Telegram via le bot Moorea Hub.
- * Requiert TELEGRAM_BOT_TOKEN et TELEGRAM_CHAT_ID dans .env.local
+ * Notification Telegram pour les soumissions modérables (annonces, événements, newsletter).
  */
 
-export function escapeHtml(s: string): string {
-  return s
+import { ENV } from "@/lib/constants";
+
+export function escapeHtml(str: string): string {
+  return str
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    .replace(/>/g, "&gt;");
 }
 
-export async function sendTelegramNotification(message: string): Promise<void> {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
-
-  if (!token || !chatId) {
-    console.warn("[telegram] TELEGRAM_BOT_TOKEN ou TELEGRAM_CHAT_ID manquant");
-    return;
+export async function sendTelegramNotification(
+  htmlMessage: string
+): Promise<{ ok: boolean; error?: string }> {
+  if (!ENV.telegramBotToken || !ENV.telegramChatId) {
+    return { ok: false, error: "Telegram non configuré" };
   }
-
   try {
-    const res = await fetch(
-      `https://api.telegram.org/bot${token}/sendMessage`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: message,
-          parse_mode: "HTML",
-          disable_web_page_preview: true,
-        }),
-      }
-    );
+    const url = `https://api.telegram.org/bot${ENV.telegramBotToken}/sendMessage`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: ENV.telegramChatId,
+        text: htmlMessage,
+        parse_mode: "HTML",
+        disable_web_page_preview: true,
+      }),
+    });
     if (!res.ok) {
-      const body = await res.text();
-      console.warn("[telegram] Échec :", res.status, body);
+      const text = await res.text();
+      return { ok: false, error: text };
     }
-  } catch (e) {
-    console.warn("[telegram] Erreur réseau", e);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: (err as Error).message };
   }
 }

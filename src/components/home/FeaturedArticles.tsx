@@ -1,0 +1,95 @@
+import Link from "next/link";
+import { ArrowRight, Calendar, User } from "lucide-react";
+import { Container } from "@/components/ui/Container";
+import { Badge } from "@/components/ui/Badge";
+import { getFeaturedArticles, getArticles } from "@/lib/content";
+import { formatDateShortFR, timeAgo, truncate } from "@/lib/utils";
+
+export function FeaturedArticles() {
+  const featured = getFeaturedArticles().slice(0, 2);
+  const recent = getArticles().slice(0, 4);
+
+  return (
+    <section className="py-16 sm:py-20">
+      <Container>
+        <div className="flex items-end justify-between mb-10">
+          <div>
+            <span className="inline-block px-3 py-1 rounded-full bg-lagon-100 text-lagon-700 text-xs font-semibold uppercase tracking-widest">
+              À la une
+            </span>
+            <h2 className="mt-3 font-display text-3xl sm:text-4xl text-ocean-950">
+              Dernières actualités
+            </h2>
+          </div>
+          <Link
+            href="/actualites"
+            className="hidden sm:inline-flex items-center gap-2 text-sm font-semibold text-ocean-700 hover:text-tiare-600 transition-colors"
+          >
+            Tout voir
+            <ArrowRight size={16} />
+          </Link>
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* À la une (les deux premiers featured) */}
+          {featured.map((a, idx) => (
+            <article
+              key={a.slug}
+              className={`group relative overflow-hidden rounded-3xl bg-white border border-ocean-100 shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] transition-all ${
+                idx === 0 ? "lg:row-span-2" : ""
+              }`}
+            >
+              <div className="aspect-[16/10] bg-gradient-to-br from-lagon-200 via-tipanier-200 to-soleil-200 relative">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                <div className="absolute top-4 left-4">
+                  <Badge variant="tiare">À la une</Badge>
+                </div>
+              </div>
+              <div className="p-6 sm:p-7">
+                <div className="flex items-center gap-3 text-xs text-ocean-500">
+                  <span className="flex items-center gap-1">
+                    <Calendar size={12} />
+                    {formatDateShortFR(a.publishedAt)}
+                  </span>
+                  {a.author && (
+                    <span className="flex items-center gap-1">
+                      <User size={12} />
+                      {a.author}
+                    </span>
+                  )}
+                </div>
+                <h3 className="mt-2 font-display text-2xl text-ocean-900 leading-tight group-hover:text-tiare-600 transition-colors">
+                  {a.title}
+                </h3>
+                <p className="mt-3 text-ocean-700 text-pretty">
+                  {truncate(a.excerpt, 220)}
+                </p>
+              </div>
+            </article>
+          ))}
+
+          {/* Les plus récents */}
+          <div className="grid gap-4 lg:col-start-3 lg:row-start-1 lg:row-span-2 self-start">
+            {recent.slice(featured.length).map((a) => (
+              <article
+                key={a.slug}
+                className="group bg-white border border-ocean-100 rounded-2xl p-5 hover:border-tiare-300 transition-colors"
+              >
+                <div className="flex items-center gap-2 text-xs text-ocean-500 mb-1">
+                  <Badge variant="lagon">{a.category}</Badge>
+                  <span>{timeAgo(a.publishedAt)}</span>
+                </div>
+                <h4 className="font-display text-lg text-ocean-900 group-hover:text-tiare-600 transition-colors">
+                  {a.title}
+                </h4>
+                <p className="mt-1 text-sm text-ocean-600">
+                  {truncate(a.excerpt, 110)}
+                </p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </Container>
+    </section>
+  );
+}

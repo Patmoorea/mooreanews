@@ -1,66 +1,90 @@
 /**
- * Estimation simplifiée des marées pour Moorea / Tahiti.
+ * Marées indicatives Moorea — algorithme simplifié.
  *
- * Polynésie française a un régime de marée semi-diurne très faible
- * (amplitude ~30 cm). Les horaires des marées hautes sont quasi
- * synchronisés sur le passage du soleil au méridien (midi solaire +/- 30 min)
- * et non sur la lune comme dans la plupart des autres régions du monde.
- *
- * Cette particularité est documentée par le SHOM et permet une approximation
- * raisonnable sans clé API. Pour des données précises (navigation, plongée),
- * consulter shom.fr ou marees.fr.
+ * Pour MVP : on calcule des marées indicatives en partant d'une référence
+ * de marée haute connue, avec un cycle approximatif de 12h25 (cycle lunaire semi-diurne).
+ * Pour production : remplacer par une API officielle (SHOM, NOAA WorldTides, etc.).
  */
 
 export type Tide = {
-  type: "high" | "low";
-  date: Date;
-  /** Texte ISO en heure de Tahiti */
-  isoTahiti: string;
+  time: string;
+  type: "haute" | "basse";
+  heightCm: number;
+  minutesUntil: number;
 };
 
-const TIDE_PERIOD_HOURS = 12.42; // période M2 semi-diurne
-const HIGH_TIDE_OFFSET_HOURS = 0; // marée haute ≈ midi solaire à Papeete
+export type TidesData = {
+  date: string;
+  tides: Tide[];
+  source: "computed" | "api";
+  note: string;
+};
 
-/** Crée une Date pour aujourd'hui en heure Tahiti à hh:mm */
-function tahitiDateAt(hours: number, dayOffset: number = 0): Date {
-  const now = new Date();
-  // Construire la date en UTC : Tahiti = UTC-10
-  const utcMillis =
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate() + dayOffset,
-      Math.floor(hours) + 10, // +10 pour passer de heure Tahiti à UTC
-      Math.round((hours - Math.floor(hours)) * 60),
-      0,
-    );
-  return new Date(utcMillis);
+const CYCLE_MINUTES = 12 * 60 + 25; // 12h25
+const HIGH_TIDE_HEIGHT_CM = 38;
+const LOW_TIDE_HEIGHT_CM = 4;
+
+/** Référence : marée haute connue à Papeete (proche de Moorea). */
+const REFERENCE_HIGH = new Date("2025-01-01T03:30:00Z").getTime();
+
+function getPolynesiaNow(): Date {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Pacific/Tahiti",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const parts = fmt.formatToParts(new Date());
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "00";
+  return new Date(
+    `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:00`
+  );
 }
 
-/** Renvoie 4 prochaines marées (haute/basse alternées) */
-export function getNextTides(now: Date = new Date(), count: number = 4): Tide[] {
+function formatHHhMM(date: Date): string {
+  return date
+    .toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Pacific/Tahiti",
+    })
+    .replace(":", "h");
+}
+
+export function getTides(): TidesData {
+  const now = getPolynesiaNow();
+  const dateStr = now.toISOString().slice(0, 10);
+
+  // Trouver la prochaine pleine mer après now
+  const minutesSinceRef = Math.floor(
+    (now.getTime() - REFERENCE_HIGH) / 60000
+  );
+  const offsetWithinCycle = ((minutesSinceRef % CYCLE_MINUTES) + CYCLE_MINUTES) %
+    CYCLE_MINUTES;
+  const minutesToNextHigh = (CYCLE_MINUTES - offsetWithinCycle) % CYCLE_MINUTES;
+
   const tides: Tide[] = [];
-
-  // Marée haute du jour ≈ 12h00 locale (référence Papeete/Moorea)
-  // Marée basse ≈ 12h00 + 6.21h ≈ 18h15
-  // Et idem 12h plus tard.
-  const baseHighHour = 12 + HIGH_TIDE_OFFSET_HOURS;
-
-  for (let day = 0; day < 3 && tides.length < count + 2; day++) {
-    for (let i = 0; i < 4; i++) {
-      const hourOfDay = baseHighHour - 12 + i * (TIDE_PERIOD_HOURS / 2);
-      const type: "high" | "low" = i % 2 === 0 ? "high" : "low";
-      const date = tahitiDateAt(hourOfDay, day);
-      tides.push({
-        type,
-        date,
-        isoTahiti: date.toISOString(),
-      });
-    }
+  // Génère 4 marées (2 hautes, 2 basses) sur les ~25 prochaines heures
+  for (let i = 0; i < 4; i++) {
+    const isHigh = i % 2 === 0;
+    const offsetMin =
+      minutesToNextHigh + (i * CYCLE_MINUTES) / 2;
+    const eventTime = new Date(now.getTime() + offsetMin * 60_000);
+    tides.push({
+      time: formatHHhMM(eventTime),
+      type: isHigh ? "haute" : "basse",
+      heightCm: isHigh ? HIGH_TIDE_HEIGHT_CM : LOW_TIDE_HEIGHT_CM,
+      minutesUntil: Math.round(offsetMin),
+    });
   }
 
-  // Garder uniquement les marées futures
-  const future = tides.filter((t) => t.date.getTime() > now.getTime());
-  future.sort((a, b) => a.date.getTime() - b.date.getTime());
-  return future.slice(0, count);
+  return {
+    date: dateStr,
+    tides,
+    source: "computed",
+    note: "Horaires indicatifs. Vérifiez auprès du SHOM ou de la capitainerie avant toute activité maritime.",
+  };
 }

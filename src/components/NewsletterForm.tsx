@@ -1,84 +1,94 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
-import { Mail, Send, Check } from "lucide-react";
+import { Send, Check, AlertCircle } from "lucide-react";
+
+type Status = "idle" | "loading" | "success" | "error";
 
 export function NewsletterForm() {
-  const t = useTranslations("sections.newsletter");
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
-    "idle"
-  );
+  const [status, setStatus] = useState<Status>("idle");
+  const [message, setMessage] = useState("");
 
-  const onSubmit = async (e: React.FormEvent) => {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!email) return;
+    if (!email || status === "loading") return;
     setStatus("loading");
+    setMessage("");
     try {
       const res = await fetch("/api/newsletter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error("Échec");
       setStatus("success");
+      setMessage(
+        "Inscription confirmée ! Bienvenue à bord du lagon. 🌺"
+      );
       setEmail("");
     } catch {
       setStatus("error");
+      setMessage(
+        "Désolé, nous n'avons pas pu vous inscrire. Réessayez plus tard."
+      );
     }
-  };
+  }
 
   return (
-    <section className="py-16 lg:py-20 bg-gradient-to-br from-lagoon-700 via-deep-800 to-lagoon-900 text-white">
-      <div className="mx-auto max-w-3xl px-4 text-center">
-        <Mail className="h-10 w-10 mx-auto mb-4 text-hibiscus-300" />
-        <h2 className="font-display text-3xl sm:text-4xl mb-3">{t("title")}</h2>
-        <p className="text-white/80 mb-8 max-w-xl mx-auto">{t("subtitle")}</p>
-
-        <form
-          onSubmit={onSubmit}
-          className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+    <form
+      onSubmit={onSubmit}
+      className="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/20"
+    >
+      <label
+        htmlFor="newsletter-email"
+        className="text-xs uppercase tracking-widest text-ocean-200 font-medium block mb-2"
+      >
+        Inscription gratuite
+      </label>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <input
+          id="newsletter-email"
+          type="email"
+          required
+          placeholder="votre@email.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="flex-1 h-12 px-4 rounded-full bg-white text-ocean-950 placeholder:text-ocean-400 focus:outline-none focus:ring-2 focus:ring-lagon-300"
+        />
+        <button
+          type="submit"
+          disabled={status === "loading"}
+          className="h-12 px-6 rounded-full bg-gradient-to-br from-tiare-400 to-tiare-500 text-white font-semibold inline-flex items-center justify-center gap-2 hover:-translate-y-0.5 transition-transform disabled:opacity-60"
         >
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder={t("placeholder")}
-            required
-            disabled={status === "loading" || status === "success"}
-            className="flex-1 rounded-full bg-white/15 backdrop-blur-sm border border-white/30 px-5 py-3 placeholder:text-white/50 text-white focus:bg-white/20 focus:outline-none transition-colors disabled:opacity-50"
-          />
-          <button
-            type="submit"
-            disabled={status === "loading" || status === "success"}
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-hibiscus-500 to-sunset-500 px-6 py-3 font-semibold shadow-xl hover:shadow-2xl disabled:opacity-60 transition-all"
-          >
-            {status === "success" ? (
-              <>
-                <Check className="h-4 w-4" />
-                OK
-              </>
-            ) : (
-              <>
-                {t("subscribe")}
-                <Send className="h-4 w-4" />
-              </>
-            )}
-          </button>
-        </form>
-
-        {status === "success" && (
-          <p className="text-palm-300 text-sm mt-4">{t("success")}</p>
-        )}
-        {status === "error" && (
-          <p className="text-hibiscus-300 text-sm mt-4">{t("error")}</p>
-        )}
-
-        <p className="text-xs text-white/50 mt-6 max-w-md mx-auto">
-          {t("consent")}
-        </p>
+          {status === "loading" ? (
+            "Inscription…"
+          ) : status === "success" ? (
+            <>
+              <Check size={18} />
+              Inscrit !
+            </>
+          ) : (
+            <>
+              <Send size={16} />
+              S&apos;inscrire
+            </>
+          )}
+        </button>
       </div>
-    </section>
+      {message && (
+        <p
+          className={`mt-3 text-sm flex items-center gap-2 ${
+            status === "success" ? "text-tipanier-300" : "text-tiare-200"
+          }`}
+        >
+          {status === "error" ? <AlertCircle size={14} /> : <Check size={14} />}
+          {message}
+        </p>
+      )}
+      <p className="mt-2 text-[11px] text-ocean-200/60">
+        1 email par semaine, désinscription en 1 clic.
+      </p>
+    </form>
   );
 }

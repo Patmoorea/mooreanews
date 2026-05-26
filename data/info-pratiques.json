@@ -1,0 +1,89 @@
+[
+  {
+    "slug": "mairie-moorea",
+    "title": "Mairie de Moorea-Maiao",
+    "description": "Hôtel de ville principal à Afareaitu. Démarches administratives, état civil, urbanisme.",
+    "category": "administration",
+    "address": "Afareaitu, PK 10",
+    "phone": "40 56 10 30",
+    "hours": "Lun-Ven 7h-12h / 13h-15h30",
+    "website": "https://www.mairie-moorea.pf"
+  },
+  {
+    "slug": "hopital-afareaitu",
+    "title": "Hôpital d'Afareaitu",
+    "description": "Établissement hospitalier principal de l'île. Urgences 24h/24, consultations, maternité.",
+    "category": "sante",
+    "address": "PK 10, Afareaitu",
+    "phone": "40 55 22 22",
+    "hours": "Urgences 24h/24"
+  },
+  {
+    "slug": "pompiers",
+    "title": "Pompiers (caserne de Pao Pao)",
+    "description": "Centre de secours et de lutte contre l'incendie.",
+    "category": "urgence",
+    "address": "Pao Pao",
+    "phone": "18 ou 40 56 21 21",
+    "hours": "24h/24"
+  },
+  {
+    "slug": "gendarmerie-paopao",
+    "title": "Gendarmerie de Pao Pao",
+    "description": "Brigade de gendarmerie nationale.",
+    "category": "urgence",
+    "address": "Pao Pao",
+    "phone": "17 ou 40 56 13 44",
+    "hours": "24h/24"
+  },
+  {
+    "slug": "aerodrome-temae",
+    "title": "Aérodrome de Temae",
+    "description": "Vols quotidiens vers Tahiti avec Air Moana et Air Tahiti.",
+    "category": "transport",
+    "address": "Temae",
+    "phone": "40 56 12 26",
+    "website": "https://www.airtahiti.pf"
+  },
+  {
+    "slug": "debarcadere-vaiare",
+    "title": "Débarcadère de Vaiare",
+    "description": "Terminal des ferries Aremiti et Terevau. Parking, restauration, taxis.",
+    "category": "transport",
+    "address": "Vaiare",
+    "phone": "40 50 57 57"
+  },
+  {
+    "slug": "poste-paopao",
+    "title": "Bureau de Poste de Pao Pao",
+    "description": "Bureau principal de l'OPT. Courrier, mandats, banque postale.",
+    "category": "administration",
+    "address": "Centre de Pao Pao",
+    "phone": "40 56 12 22",
+    "hours": "Lun-Ven 8h-15h, Sam 8h-11h"
+  },
+  {
+    "slug": "edt-coupures",
+    "title": "EDT — Coupures d'électricité",
+    "description": "Numéro 24h/24 pour signaler une coupure d'électricité ou un problème réseau.",
+    "category": "urgence",
+    "phone": "40 86 86 00",
+    "website": "https://www.edt.pf"
+  },
+  {
+    "slug": "polynesienne-eaux",
+    "title": "Polynésienne des Eaux",
+    "description": "Distribution d'eau potable. Signalement de fuites ou coupures.",
+    "category": "urgence",
+    "phone": "40 50 60 70",
+    "website": "https://www.polynesienne-des-eaux.pf"
+  },
+  {
+    "slug": "ecole-primaire-paopao",
+    "title": "École primaire publique de Pao Pao",
+    "description": "École publique du district de Pao Pao. Maternelle et élémentaire.",
+    "category": "education",
+    "address": "Pao Pao",
+    "phone": "40 56 21 40"
+  }
+]

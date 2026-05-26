@@ -1,73 +1,84 @@
-{
-  "events": [
-    {
-      "slug": "salon-moorea-juin",
-      "title": "Salon de Moorea — édition de juin",
-      "description": "Marché artisanal et de produits du terroir, animation musicale, buvette, parking gratuit.",
-      "date": "2026-06-13",
-      "endDate": "2026-06-15",
-      "time": "09:00",
-      "location": "Débarcadère de Pao Pao",
-      "category": "marché",
-      "image": "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1200&q=80",
-      "organizer": "Mairie de Moorea",
-      "phone": "40 56 50 55",
-      "featured": true,
-      "price": "Entrée libre"
-    },
-    {
-      "slug": "concert-chez-tama-hau",
-      "title": "Soirée Trio Infernal — Chez Tama Hau",
-      "description": "Concert live, cocktail de bienvenue offert. Réservation fortement conseillée.",
-      "date": "2026-06-07",
-      "time": "19:30",
-      "location": "Centre commercial Le Petit Village, Haapiti Tiahura",
-      "category": "concert",
-      "image": "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=1200&q=80",
-      "organizer": "Chez Tama Hau",
-      "phone": "87 79 85 08",
-      "featured": true,
-      "price": "1 000 XPF"
-    },
-    {
-      "slug": "course-pirogue-paopao",
-      "title": "Course de pirogues — Va'a Moorea",
-      "description": "Course de pirogues V6 dans la baie de Pao Pao. Démonstrations Va'a Hoe, restauration sur place.",
-      "date": "2026-06-21",
-      "time": "08:00",
-      "location": "Baie de Pao Pao",
-      "category": "sport",
-      "image": "https://images.unsplash.com/photo-1530549387789-4c1017266635?w=1200&q=80",
-      "organizer": "Comité Va'a Moorea",
-      "featured": false,
-      "price": "Gratuit"
-    },
-    {
-      "slug": "atelier-ukulele-temae",
-      "title": "Atelier ukulélé — Temae",
-      "description": "Apprentissage du ukulélé tahitien pour débutants. Instrument fourni.",
-      "date": "2026-06-12",
-      "time": "17:00",
-      "location": "Centre culturel de Temae",
-      "category": "atelier",
-      "image": "https://images.unsplash.com/photo-1559535332-db9971090158?w=1200&q=80",
-      "organizer": "Centre culturel Moorea",
-      "phone": "87 12 34 56",
-      "featured": false,
-      "price": "2 000 XPF"
-    },
-    {
-      "slug": "marche-nuit-vaiare",
-      "title": "Marché nocturne de Vai'are",
-      "description": "Roulottes, artisanat, animation musicale en bord de mer.",
-      "date": "2026-06-08",
-      "time": "17:30",
-      "location": "Quai de Vai'are",
-      "category": "marché",
-      "image": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1200&q=80",
-      "organizer": "Association des roulottes",
-      "featured": false,
-      "price": "Entrée libre"
-    }
-  ]
-}
+[
+  {
+    "slug": "marche-artisanal-paopao-juin",
+    "title": "Marché artisanal de Pao Pao",
+    "description": "Marché mensuel des artisans de Moorea : couronnes, paréos, bijoux en nacre, sculpture, peinture. Animation musicale toute la matinée.",
+    "date": "2026-06-07",
+    "time": "08:00",
+    "location": "Débarcadère de Pao Pao",
+    "district": "Paopao",
+    "category": "marche",
+    "organizer": "Association des artisans de Moorea",
+    "price": "Entrée libre",
+    "contact": "40 56 50 55",
+    "image": "/images/events/marche-paopao.jpg"
+  },
+  {
+    "slug": "heiva-i-moorea-2026",
+    "title": "Heiva i Moorea 2026",
+    "description": "La célébration culturelle majeure de l'île : concours de danse, percussions, chants traditionnels, sports ancestraux et compétitions de pirogue.",
+    "date": "2026-07-04",
+    "endDate": "2026-07-19",
+    "location": "Place To'ata, Afareaitu",
+    "district": "Afareaitu",
+    "category": "culture",
+    "organizer": "Comité du Heiva",
+    "price": "Entrée gratuite en journée",
+    "image": "/images/events/heiva.jpg"
+  },
+  {
+    "slug": "concert-jazz-coucher-soleil",
+    "title": "Jazz au coucher de soleil",
+    "description": "Trio de jazz local sur la terrasse face au lagon. Cocktails et restauration sur place.",
+    "date": "2026-06-14",
+    "time": "18:00",
+    "location": "Chez Tama Hau, Tiahura",
+    "district": "Haapiti",
+    "category": "musique",
+    "organizer": "Tama Hau",
+    "price": "1 000 XPF (cocktail inclus)",
+    "contact": "87 79 85 08",
+    "image": "/images/events/jazz-sunset.jpg"
+  },
+  {
+    "slug": "course-pirogue-vaiare-paopao",
+    "title": "Course de pirogues Vaiare – Pao Pao",
+    "description": "Course de va'a ouverte aux clubs polynésiens. 14 km le long du lagon nord.",
+    "date": "2026-06-21",
+    "time": "07:00",
+    "location": "Départ Vaiare",
+    "district": "Paopao",
+    "category": "sport",
+    "organizer": "Fédération de Va'a",
+    "price": "Inscription 2 500 XPF",
+    "image": "/images/events/va-a.jpg"
+  },
+  {
+    "slug": "vide-grenier-maharepa",
+    "title": "Grand vide-grenier de Maharepa",
+    "description": "Vide-grenier saisonnier ouvert à tous. Inscriptions à la mairie annexe avant le 25 mai.",
+    "date": "2026-06-01",
+    "time": "07:00",
+    "location": "Parking de la mairie annexe de Maharepa",
+    "district": "Maharepa",
+    "category": "marche",
+    "organizer": "Mairie de Moorea",
+    "price": "Entrée libre",
+    "contact": "40 56 10 30",
+    "image": "/images/events/vide-grenier.jpg"
+  },
+  {
+    "slug": "atelier-tressage-niau",
+    "title": "Atelier tressage du niau (palme de cocotier)",
+    "description": "Initiation au tressage traditionnel : chapeaux, paniers, éventails. Tous niveaux.",
+    "date": "2026-06-10",
+    "time": "14:00",
+    "location": "Centre culturel de Papetoai",
+    "district": "Papetoai",
+    "category": "culture",
+    "organizer": "Te Pu Atitia",
+    "price": "1 500 XPF (matériel inclus)",
+    "contact": "87 32 14 89",
+    "image": "/images/events/tressage.jpg"
+  }
+]

@@ -1,75 +1,67 @@
-{
-  "activities": [
-    {
-      "slug": "plongee-tiki-diving",
-      "name": "Plongée sous-marine",
-      "provider": "Tiki Diving Moorea",
-      "description": "Découvrez les jardins coralliens et les raies pastenagues. Plongées baptême ou perfectionnement.",
-      "location": "Hauru Point",
-      "phone": "87 70 12 34",
-      "price": "À partir de 9 500 XPF",
-      "duration": "3h",
-      "image": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&q=80",
-      "category": "mer",
-      "rating": 4.9,
-      "tags": ["plongée", "lagon", "récifs"]
-    },
-    {
-      "slug": "nage-baleines",
-      "name": "Nage avec les baleines",
-      "provider": "Moorea Ocean Adventures",
-      "description": "Saison juillet-novembre. Approche éthique des baleines à bosse en respectant les distances réglementaires.",
-      "location": "Sortie en mer depuis Vai'are",
-      "phone": "87 71 23 45",
-      "price": "À partir de 18 000 XPF",
-      "duration": "4h",
-      "image": "https://images.unsplash.com/photo-1568430462989-44163eb1752f?w=800&q=80",
-      "category": "mer",
-      "rating": 4.95,
-      "tags": ["baleines", "saisonnier", "incontournable"],
-      "seasonal": "Juillet à novembre"
-    },
-    {
-      "slug": "randonnee-trois-cocotiers",
-      "name": "Randonnée des Trois Cocotiers",
-      "provider": "Moorea Hike Adventure",
-      "description": "Sentier panoramique avec vue à 360° sur les baies de Cook et d'Opunohu.",
-      "location": "Belvédère",
-      "phone": "87 72 34 56",
-      "price": "5 500 XPF par personne",
-      "duration": "4h",
-      "image": "https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&q=80",
-      "category": "terre",
-      "rating": 4.7,
-      "tags": ["randonnée", "panorama", "nature"]
-    },
-    {
-      "slug": "tour-ile-quad",
-      "name": "Tour de l'île en quad",
-      "provider": "Moorea Quad Tour",
-      "description": "Explorez Moorea hors des sentiers battus : ananas, baie d'Opunohu, marae, point de vue.",
-      "location": "Départ Vai'are",
-      "phone": "87 73 45 67",
-      "price": "12 000 XPF (quad 1 pers.)",
-      "duration": "3h",
-      "image": "https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=800&q=80",
-      "category": "terre",
-      "rating": 4.6,
-      "tags": ["quad", "aventure", "panorama"]
-    },
-    {
-      "slug": "lagoon-tour",
-      "name": "Tour du lagon en bateau",
-      "provider": "Aremiti Tours",
-      "description": "Journée snorkeling : raies, requins pointe noire, jardin de corail, pique-nique sur motu.",
-      "location": "Départ Hauru",
-      "phone": "87 74 56 78",
-      "price": "10 500 XPF",
-      "duration": "Journée",
-      "image": "https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?w=800&q=80",
-      "category": "mer",
-      "rating": 4.8,
-      "tags": ["bateau", "snorkeling", "motu"]
-    }
-  ]
-}
+[
+  {
+    "slug": "plongee-pointe-tortue",
+    "name": "Plongée à la Pointe aux Tortues",
+    "description": "L'un des plus beaux sites de Polynésie. Rencontres avec tortues vertes, raies léopards, requins pointes noires. Tous niveaux.",
+    "category": "plongee",
+    "district": "Temae",
+    "duration": "Demi-journée (2 plongées)",
+    "price": "13 000 XPF / personne",
+    "contact": "87 41 87 41",
+    "website": "https://moorea-fun-dive.com",
+    "image": "/images/activities/plongee.jpg"
+  },
+  {
+    "slug": "rando-trois-cocotiers",
+    "name": "Randonnée des Trois Cocotiers",
+    "description": "Ascension d'1h30 vers le belvédère qui offre la plus belle vue sur les baies de Cook et Pao Pao.",
+    "category": "randonnee",
+    "district": "Paopao",
+    "duration": "3h aller-retour",
+    "price": "Gratuit (guide en option)",
+    "image": "/images/activities/trois-cocotiers.jpg"
+  },
+  {
+    "slug": "sortie-lagon-nage-raies-requins",
+    "name": "Sortie lagon : nage avec raies et requins",
+    "description": "Sortie en pirogue motorisée sur le lagon de Tiahura. Nage avec raies pastenagues et requins pointes noires inoffensifs.",
+    "category": "lagon",
+    "district": "Haapiti",
+    "duration": "Demi-journée",
+    "price": "6 500 XPF / adulte, 3 500 XPF / enfant",
+    "contact": "87 22 44 55",
+    "image": "/images/activities/lagon-tour.jpg"
+  },
+  {
+    "slug": "rencontre-baleines",
+    "name": "Rencontre avec les baleines à bosse",
+    "description": "De juillet à novembre, observation des baleines à bosse qui viennent mettre bas dans nos eaux. Avec guide naturaliste.",
+    "category": "nature",
+    "duration": "3h-4h",
+    "price": "13 000 XPF / personne",
+    "contact": "87 33 22 11",
+    "website": "https://docteurbaleine.pf",
+    "image": "/images/activities/baleines.jpg"
+  },
+  {
+    "slug": "visite-distillerie-ananas",
+    "name": "Distillerie de Moorea (rhum d'ananas)",
+    "description": "Visite gratuite des plantations et de la distillerie, dégustation des liqueurs et rhums locaux. À combiner avec le jus de fruits.",
+    "category": "culture",
+    "district": "Maharepa",
+    "duration": "1h",
+    "price": "Gratuit",
+    "image": "/images/activities/distillerie.jpg"
+  },
+  {
+    "slug": "kayak-baie-opunohu",
+    "name": "Kayak dans la baie d'Opunohu",
+    "description": "Location de kayaks pour explorer en autonomie la magnifique baie d'Opunohu. Conditions calmes idéales pour débutants.",
+    "category": "sport",
+    "district": "Papetoai",
+    "duration": "Demi-journée",
+    "price": "3 500 XPF / kayak",
+    "contact": "87 88 77 66",
+    "image": "/images/activities/kayak.jpg"
+  }
+]

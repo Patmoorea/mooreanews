@@ -1,52 +1,74 @@
-{
-  "articles": [
-    {
-      "slug": "ouverture-moorea-hub",
-      "title": "Moorea Hub, le nouveau portail de l'île",
-      "excerpt": "Une plateforme moderne pour centraliser toutes les actualités, événements et infos pratiques de Moorea.",
-      "content": "Bienvenue sur Moorea Hub ! Ce nouveau portail réunit en un seul endroit toute l'information utile pour les habitants et visiteurs de l'île sœur : événements à venir, annonces locales, restaurants, activités, horaires des ferries, météo en temps réel et bien plus encore. Que vous soyez résident permanent, vacancier de passage ou propriétaire d'un commerce, vous pouvez publier gratuitement vos informations. La modération assure une information fiable et de qualité.",
-      "category": "community",
-      "image": "https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=1200&q=80",
-      "author": "Équipe Moorea Hub",
-      "date": "2026-05-20",
-      "featured": true,
-      "tags": ["lancement", "communauté", "information"]
-    },
-    {
-      "slug": "fete-de-l-autonomie",
-      "title": "Fête de l'autonomie : programme à Moorea",
-      "excerpt": "Le 29 juin approche. Découvrez les festivités prévues sur l'île pour célébrer l'autonomie polynésienne.",
-      "content": "Comme chaque année, l'île de Moorea célèbre la fête de l'autonomie le 29 juin avec une riche programmation : défilé traditionnel, danse 'ori tahiti, repas communautaire à la mairie, courses pirogues dans la baie de Cook et concerts en soirée. Les festivités s'étendent du 27 au 30 juin sur plusieurs communes. Programme détaillé disponible auprès de la mairie de Moorea-Maiao.",
-      "category": "culture",
-      "image": "https://images.unsplash.com/photo-1530541930197-ff16ac917b0e?w=1200&q=80",
-      "author": "Mairie de Moorea",
-      "date": "2026-05-15",
-      "featured": true,
-      "tags": ["autonomie", "culture", "fête"]
-    },
-    {
-      "slug": "protection-lagon-baleines",
-      "title": "Saison des baleines : règles de bonne conduite",
-      "excerpt": "De juillet à novembre, les baleines à bosse reviennent. Voici les règles à respecter en mer.",
-      "content": "Chaque année, de juillet à novembre, les baleines à bosse migrent dans les eaux polynésiennes pour mettre bas. Pour protéger ces magnifiques cétacés, la DIREN rappelle les règles : distance minimale de 100m, vitesse réduite, durée d'observation limitée à 30 min, pas plus de 3 bateaux simultanément. Les nageurs doivent rester à 30m minimum. Respecter ces règles, c'est garantir la pérennité de ce trésor naturel.",
-      "category": "environment",
-      "image": "https://images.unsplash.com/photo-1568430462989-44163eb1752f?w=1200&q=80",
-      "author": "DIREN Polynésie",
-      "date": "2026-05-10",
-      "featured": false,
-      "tags": ["environnement", "baleines", "lagon"]
-    },
-    {
-      "slug": "tour-de-moorea-cyclisme",
-      "title": "Tour de Moorea cycliste 2026",
-      "excerpt": "L'édition 2026 du Tour de Moorea aura lieu fin juin. Inscriptions ouvertes.",
-      "content": "L'association cycliste de Moorea organise la 28e édition du Tour de Moorea les 28 et 29 juin 2026. Au programme : contre-la-montre par équipes le samedi, puis course en ligne autour de l'île (60 km) le dimanche. Catégories Open, Vétérans, Femmes, Juniors. Inscriptions auprès de l'association, frais 3 500 F. Départ et arrivée à Vai'are.",
-      "category": "sport",
-      "image": "https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1200&q=80",
-      "author": "ACM Moorea",
-      "date": "2026-05-08",
-      "featured": false,
-      "tags": ["sport", "cyclisme", "tour"]
-    }
-  ]
-}
+[
+  {
+    "slug": "moorea-marche-paopao-renouveau",
+    "title": "Le marché de Pao Pao fait peau neuve",
+    "excerpt": "Après six mois de travaux, le marché historique de Pao Pao rouvre avec de nouveaux stands, un espace dégustation et une halle agrandie pour accueillir les producteurs locaux.",
+    "body": "Le marché de Pao Pao, cœur battant de Moorea depuis plus de quarante ans, a rouvert ses portes ce week-end après une importante rénovation. Les producteurs locaux disposent désormais de stands modernisés et d'une grande halle couverte pour proposer fruits, légumes, poissons et artisanat. Une nouvelle zone dégustation permet de découvrir les spécialités de l'île sur place. Ouvert tous les jours de 5h à 12h.",
+    "category": "actualites",
+    "publishedAt": "2026-05-20T08:00:00Z",
+    "author": "Rédaction Moorea Hub",
+    "image": "/images/articles/marche-paopao.jpg",
+    "featured": true,
+    "tags": ["marché", "Pao Pao", "producteurs"]
+  },
+  {
+    "slug": "tortues-temae-recensement-2026",
+    "title": "Recensement annuel des tortues vertes à Temae",
+    "excerpt": "L'association Te Mana O Te Moana a recensé un nombre record de pontes sur la plage de Temae cette saison.",
+    "body": "L'association Te Mana O Te Moana publie son rapport annuel sur les tortues vertes (honu) de Moorea. La plage de Temae a enregistré 23 pontes confirmées entre novembre et avril, un record depuis le début du suivi. Cette tendance positive confirme l'efficacité des mesures de protection mises en place ces dernières années. Les habitants sont invités à signaler toute observation au numéro de l'association.",
+    "category": "actualites",
+    "publishedAt": "2026-05-18T14:30:00Z",
+    "author": "Te Mana O Te Moana",
+    "image": "/images/articles/tortues-temae.jpg",
+    "featured": true,
+    "tags": ["tortues", "Temae", "environnement"]
+  },
+  {
+    "slug": "fete-tiare-2026-programme",
+    "title": "Fête du Tiare : le programme complet 2026",
+    "excerpt": "Concours de bouquets, défilés en couronnes, animations dans toute l'île : Moorea s'apprête à célébrer sa fleur emblématique.",
+    "body": "La Fête du Tiare, célébration emblématique de Polynésie, se tiendra du 28 novembre au 4 décembre 2026. À Moorea, plusieurs animations sont prévues : concours de bouquets à la mairie de Maharepa, défilé en couronnes à Pao Pao, ateliers d'art floral et spectacle de danse traditionnelle. Programme complet à venir.",
+    "category": "evenements",
+    "publishedAt": "2026-05-15T10:00:00Z",
+    "author": "Mairie de Moorea",
+    "image": "/images/articles/fete-tiare.jpg",
+    "featured": false,
+    "tags": ["tiare", "fête", "tradition"]
+  },
+  {
+    "slug": "transports-le-truck-nouvelle-ligne",
+    "title": "Nouvelle ligne de truck entre Vaiare et Tiahura",
+    "excerpt": "Une nouvelle navette quotidienne reliera le débarcadère de Vaiare à la pointe de Tiahura à partir du 1er juin.",
+    "body": "Pour faciliter les déplacements sur l'île, une nouvelle ligne de truck sera mise en service le 1er juin. Elle reliera le débarcadère de Vaiare à la pointe de Tiahura, avec un passage toutes les heures de 6h à 18h. Le tarif sera de 250 XPF par trajet. Cette ligne s'ajoute aux lignes existantes et permettra de mieux desservir les hôtels et résidences de Haapiti.",
+    "category": "actualites",
+    "publishedAt": "2026-05-12T09:00:00Z",
+    "author": "Rédaction Moorea Hub",
+    "image": "/images/articles/le-truck.jpg",
+    "featured": false,
+    "tags": ["transport", "truck", "Vaiare"]
+  },
+  {
+    "slug": "nouveau-medecin-maharepa",
+    "title": "Un nouveau médecin généraliste s'installe à Maharepa",
+    "excerpt": "Le Dr. Tepuna ouvre son cabinet le 15 juin dans le centre commercial Le Petit Village.",
+    "body": "Bonne nouvelle pour les habitants de Moorea : un nouveau médecin généraliste s'installera à partir du 15 juin au centre commercial Le Petit Village de Maharepa. Le Dr. Tepuna proposera des consultations sur rendez-vous du lundi au samedi. Il complète l'offre médicale de l'île, particulièrement appréciée dans la zone nord.",
+    "category": "infos-pratiques",
+    "publishedAt": "2026-05-10T16:00:00Z",
+    "author": "Rédaction Moorea Hub",
+    "image": "/images/articles/medecin.jpg",
+    "featured": false,
+    "tags": ["santé", "Maharepa", "médecin"]
+  },
+  {
+    "slug": "lagon-haapiti-zone-protection",
+    "title": "Création d'une zone de protection renforcée à Haapiti",
+    "excerpt": "Une portion du lagon sud-ouest passe en aire marine protégée pour préserver les récifs coralliens.",
+    "body": "Le Pays a validé la création d'une nouvelle zone de protection renforcée dans le lagon sud-ouest de Moorea, au large de Haapiti. La pêche y sera réglementée et le mouillage interdit sur 120 hectares. L'objectif : permettre aux récifs coralliens de se régénérer après les épisodes de blanchissement de 2023 et 2024.",
+    "category": "actualites",
+    "publishedAt": "2026-05-08T11:00:00Z",
+    "author": "Service de la Pêche",
+    "image": "/images/articles/lagon-haapiti.jpg",
+    "featured": false,
+    "tags": ["lagon", "écologie", "Haapiti"]
+  }
+]

@@ -1,56 +1,67 @@
-{
-  "restaurants": [
-    {
-      "slug": "chez-tama-hau",
-      "name": "Chez Tama Hau",
-      "type": "Restaurant traditionnel",
-      "description": "Cuisine polynésienne et soirées concerts dans une ambiance familiale.",
-      "location": "Centre commercial Le Petit Village, Haapiti Tiahura",
-      "phone": "87 79 85 08",
-      "phoneAlt": "40 56 55 80",
-      "image": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80",
-      "tags": ["polynésien", "concerts", "famille"],
-      "priceRange": "€€",
-      "rating": 4.6,
-      "specialty": "Poisson cru à la tahitienne, mahi mahi"
-    },
-    {
-      "slug": "roulotte-vaiare",
-      "name": "Les Roulottes de Vai'are",
-      "type": "Roulottes en bord de mer",
-      "description": "Plusieurs roulottes proposant cuisine chinoise, polynésienne, française. Vue sur le quai.",
-      "location": "Quai de Vai'are",
-      "image": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&q=80",
-      "tags": ["roulottes", "vue mer", "pas cher"],
-      "priceRange": "€",
-      "rating": 4.3,
-      "specialty": "Chao men, steak frites, poisson grillé"
-    },
-    {
-      "slug": "snack-mahana",
-      "name": "Snack Mahana",
-      "type": "Snack",
-      "description": "Burgers, salades, poisson cru. Service rapide pour déjeuner.",
-      "location": "Maharepa",
-      "phone": "40 56 12 34",
-      "image": "https://images.unsplash.com/photo-1551782450-a2132b4ba21d?w=800&q=80",
-      "tags": ["snack", "rapide", "burger"],
-      "priceRange": "€",
-      "rating": 4.4,
-      "specialty": "Burgers maison, poisson cru"
-    },
-    {
-      "slug": "le-coco-beach",
-      "name": "Le Coco Beach",
-      "type": "Restaurant les pieds dans l'eau",
-      "description": "Restaurant gastronomique avec vue panoramique sur le lagon de Moorea.",
-      "location": "Hauru Point",
-      "phone": "40 56 78 90",
-      "image": "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80",
-      "tags": ["gastronomique", "vue lagon", "romantique"],
-      "priceRange": "€€€",
-      "rating": 4.8,
-      "specialty": "Mahi mahi vanille, langouste"
-    }
-  ]
-}
+[
+  {
+    "slug": "chez-tama-hau",
+    "name": "Chez Tama Hau",
+    "description": "Cuisine locale et internationale dans une ambiance chaleureuse, terrasse face au lagon. Concerts réguliers le soir.",
+    "cuisine": ["Polynésienne", "Internationale", "Bar"],
+    "priceLevel": 2,
+    "district": "Haapiti",
+    "address": "Centre commercial Le Petit Village, Tiahura",
+    "phone": "87 79 85 08",
+    "openingHours": "Mar-Dim 11h-22h",
+    "image": "/images/restaurants/tama-hau.jpg",
+    "features": ["Terrasse", "Vue lagon", "Concerts", "Parking gratuit"],
+    "premium": true
+  },
+  {
+    "slug": "le-mahogany",
+    "name": "Le Mahogany",
+    "description": "Restaurant gastronomique sur la plage, spécialités de poisson cru, mahi-mahi et tartare de thon rouge.",
+    "cuisine": ["Gastronomique", "Fruits de mer"],
+    "priceLevel": 3,
+    "district": "Maharepa",
+    "address": "Maharepa, route de ceinture PK 5,5",
+    "phone": "40 56 39 73",
+    "openingHours": "Tous les jours 12h-14h30 / 18h30-22h",
+    "image": "/images/restaurants/mahogany.jpg",
+    "features": ["Plage", "Réservation conseillée", "Climatisé"]
+  },
+  {
+    "slug": "snack-mahana",
+    "name": "Snack Mahana",
+    "description": "Cantine locale incontournable. Poisson cru à la tahitienne, chao men, plat du jour pour 1500 XPF.",
+    "cuisine": ["Polynésienne", "Asiatique"],
+    "priceLevel": 1,
+    "district": "Paopao",
+    "address": "Face au débarcadère de Pao Pao",
+    "phone": "40 56 27 18",
+    "openingHours": "Lun-Sam 6h-15h",
+    "image": "/images/restaurants/mahana.jpg",
+    "features": ["Sur le pouce", "Pas cher", "Locaux"]
+  },
+  {
+    "slug": "moorea-beach-cafe",
+    "name": "Moorea Beach Café",
+    "description": "Café-restaurant les pieds dans le sable. Brunch, salades, pizza au feu de bois, smoothies bowls.",
+    "cuisine": ["Café", "Brunch", "Pizza"],
+    "priceLevel": 2,
+    "district": "Maharepa",
+    "address": "Plage de Temae",
+    "phone": "87 30 21 09",
+    "openingHours": "Tous les jours 7h-21h",
+    "image": "/images/restaurants/beach-cafe.jpg",
+    "features": ["Plage", "Brunch", "Wifi", "Famille"]
+  },
+  {
+    "slug": "roulotte-vaiare",
+    "name": "Roulottes du débarcadère",
+    "description": "Plusieurs roulottes au débarcadère de Vaiare : steak frites, gaufres, poisson grillé. À l'arrivée du ferry.",
+    "cuisine": ["Roulotte", "Sur le pouce"],
+    "priceLevel": 1,
+    "district": "Vaiare",
+    "address": "Débarcadère de Vaiare",
+    "openingHours": "Tous les jours 6h-22h",
+    "image": "/images/restaurants/roulotte.jpg",
+    "features": ["Pratique", "Pas cher", "Près du ferry"]
+  }
+]

@@ -1,48 +1,58 @@
-{
-  "announcements": [
-    {
-      "id": "ann-001",
-      "title": "Vends scooter Yamaha 125 — Maharepa",
-      "description": "Yamaha 125cc, 2022, bon état, 14 000 km, carnet d'entretien à jour. Casque offert.",
-      "category": "vente",
-      "price": "350 000 XPF",
-      "location": "Maharepa",
-      "phone": "87 12 34 56",
-      "date": "2026-05-22",
-      "image": null
-    },
-    {
-      "id": "ann-002",
-      "title": "Cherche colocataire à Vai'are",
-      "description": "Maison T3, vue lagon, jardin. Chambre meublée libre dès le 1er juillet. 65 000 XPF/mois charges comprises.",
-      "category": "logement",
-      "price": "65 000 XPF/mois",
-      "location": "Vai'are",
-      "phone": "87 23 45 67",
-      "date": "2026-05-20",
-      "image": null
-    },
-    {
-      "id": "ann-003",
-      "title": "Cours de tahitien — Tous niveaux",
-      "description": "Professeur diplômé propose cours particuliers de reo tahiti à domicile ou en visio. Adultes et enfants.",
-      "category": "service",
-      "price": "3 000 XPF/heure",
-      "location": "Moorea",
-      "phone": "87 34 56 78",
-      "date": "2026-05-18",
-      "image": null
-    },
-    {
-      "id": "ann-004",
-      "title": "Donne chiots croisés — Famille recherchée",
-      "description": "4 chiots croisés, mâles et femelles, 2 mois, sevrés. Recherche famille aimante avec jardin.",
-      "category": "animaux",
-      "price": "Gratuit",
-      "location": "Haapiti",
-      "phone": "87 45 67 89",
-      "date": "2026-05-17",
-      "image": null
-    }
-  ]
-}
+[
+  {
+    "slug": "vente-pirogue-va-a-v1",
+    "title": "Pirogue va'a V1 en bon état",
+    "body": "Va'a V1 de marque Faafaite, achetée en 2023, peu utilisée. Avec pagaie et housse. Idéale pour débuter.",
+    "type": "vente",
+    "price": "120 000 XPF",
+    "contact": "87 12 34 56",
+    "district": "Vaiare",
+    "publishedAt": "2026-05-22T10:00:00Z"
+  },
+  {
+    "slug": "location-fare-tiahura",
+    "title": "Fare 2 chambres à louer à Tiahura",
+    "body": "Fare meublé de 60 m² avec terrasse, jardin et accès lagon. Disponible à partir du 1er juillet, longue durée.",
+    "type": "location",
+    "price": "180 000 XPF/mois",
+    "contact": "87 98 76 54",
+    "district": "Haapiti",
+    "publishedAt": "2026-05-21T15:30:00Z"
+  },
+  {
+    "slug": "recherche-cuisinier-restaurant",
+    "title": "Restaurant cherche cuisinier expérimenté",
+    "body": "Restaurant de plage cherche cuisinier(ère) avec expérience cuisine locale et internationale. CDI, horaires de jour, repas inclus.",
+    "type": "emploi",
+    "contact": "contact@restaurant-moorea.pf",
+    "district": "Maharepa",
+    "publishedAt": "2026-05-20T09:00:00Z"
+  },
+  {
+    "slug": "service-jardinage",
+    "title": "Service de jardinage et entretien",
+    "body": "Entretien de jardins, taille, désherbage, élagage. Tarifs raisonnables, devis gratuit. Intervention sur toute l'île.",
+    "type": "service",
+    "contact": "87 65 43 21",
+    "district": "Afareaitu",
+    "publishedAt": "2026-05-19T11:00:00Z"
+  },
+  {
+    "slug": "perdu-chien-paopao",
+    "title": "Chien perdu à Pao Pao",
+    "body": "Chien type berger australien, robe noire et blanche, répond au nom de Tamatoa. Perdu près du marché le 18 mai. Récompense.",
+    "type": "perdu-trouve",
+    "contact": "87 22 11 33",
+    "district": "Paopao",
+    "publishedAt": "2026-05-18T18:00:00Z"
+  },
+  {
+    "slug": "achat-velo-electrique",
+    "title": "Recherche vélo électrique d'occasion",
+    "body": "Cherche vélo électrique en bon état, avec batterie récente. Budget jusqu'à 150 000 XPF.",
+    "type": "achat",
+    "contact": "87 44 55 66",
+    "district": "Maharepa",
+    "publishedAt": "2026-05-17T14:00:00Z"
+  }
+]
