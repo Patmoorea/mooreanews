@@ -5,9 +5,13 @@ import { Badge } from "@/components/ui/Badge";
 import { getFeaturedArticles, getArticles } from "@/lib/content";
 import { formatDateShortFR, timeAgo, truncate } from "@/lib/utils";
 
-export function FeaturedArticles() {
-  const featured = getFeaturedArticles().slice(0, 2);
-  const recent = getArticles().slice(0, 4);
+export async function FeaturedArticles() {
+  const [featuredAll, allArticles] = await Promise.all([
+    getFeaturedArticles(),
+    getArticles(),
+  ]);
+  const featured = featuredAll.slice(0, 2);
+  const recent = allArticles.slice(0, 4);
 
   return (
     <section className="py-16 sm:py-20">
@@ -33,9 +37,10 @@ export function FeaturedArticles() {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* À la une (les deux premiers featured) */}
           {featured.map((a, idx) => (
-            <article
+            <Link
+              href={`/actualites/${a.slug}`}
               key={a.slug}
-              className={`group relative overflow-hidden rounded-3xl bg-white border border-ocean-100 shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] transition-all ${
+              className={`group relative overflow-hidden rounded-3xl bg-white border border-ocean-100 shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:-translate-y-1 transition-all block ${
                 idx === 0 ? "lg:row-span-2" : ""
               }`}
             >
@@ -65,15 +70,16 @@ export function FeaturedArticles() {
                   {truncate(a.excerpt, 220)}
                 </p>
               </div>
-            </article>
+            </Link>
           ))}
 
           {/* Les plus récents */}
           <div className="grid gap-4 lg:col-start-3 lg:row-start-1 lg:row-span-2 self-start">
             {recent.slice(featured.length).map((a) => (
-              <article
+              <Link
+                href={`/actualites/${a.slug}`}
                 key={a.slug}
-                className="group bg-white border border-ocean-100 rounded-2xl p-5 hover:border-tiare-300 transition-colors"
+                className="group bg-white border border-ocean-100 rounded-2xl p-5 hover:border-tiare-300 transition-colors block"
               >
                 <div className="flex items-center gap-2 text-xs text-ocean-500 mb-1">
                   <Badge variant="lagon">{a.category}</Badge>
@@ -85,7 +91,7 @@ export function FeaturedArticles() {
                 <p className="mt-1 text-sm text-ocean-600">
                   {truncate(a.excerpt, 110)}
                 </p>
-              </article>
+              </Link>
             ))}
           </div>
         </div>

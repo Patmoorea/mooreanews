@@ -10,8 +10,8 @@ export const metadata: Metadata = {
     "Toute l'actualité de Moorea : événements communaux, environnement, transport, santé, vie locale.",
 };
 
-export default function ActualitesPage() {
-  const articles = getArticles();
+export default async function ActualitesPage() {
+  const articles = await getArticles();
 
   return (
     <>

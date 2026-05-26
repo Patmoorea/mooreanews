@@ -20,8 +20,8 @@ const CATEGORY_VARIANTS = {
   autre: "neutral",
 } as const;
 
-export default function EvenementsPage() {
-  const events = getUpcomingEvents();
+export default async function EvenementsPage() {
+  const events = await getUpcomingEvents();
 
   return (
     <>

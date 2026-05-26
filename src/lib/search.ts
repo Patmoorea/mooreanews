@@ -40,12 +40,24 @@ function score(text: string, query: string): number {
   return s;
 }
 
-export function searchAll(query: string, limit = 30): SearchResult[] {
+export async function searchAll(
+  query: string,
+  limit = 30
+): Promise<SearchResult[]> {
   if (!query.trim()) return [];
+
+  const [articles, events, annonces, restos, activites, infos] = await Promise.all([
+    getArticles(),
+    getEvents(),
+    getAnnouncements(),
+    getRestaurants(),
+    getActivities(),
+    getInfoPratiques(),
+  ]);
 
   const results: SearchResult[] = [];
 
-  for (const a of getArticles()) {
+  for (const a of articles) {
     const corpus = [a.title, a.excerpt, a.body, a.tags?.join(" ") ?? ""].join(
       " "
     );
@@ -62,7 +74,7 @@ export function searchAll(query: string, limit = 30): SearchResult[] {
     }
   }
 
-  for (const e of getEvents()) {
+  for (const e of events) {
     const corpus = [e.title, e.description, e.location, e.organizer ?? ""].join(
       " "
     );
@@ -79,7 +91,7 @@ export function searchAll(query: string, limit = 30): SearchResult[] {
     }
   }
 
-  for (const a of getAnnouncements()) {
+  for (const a of annonces) {
     const corpus = [a.title, a.body, a.district ?? ""].join(" ");
     const s = score(corpus, query);
     if (s > 0) {
@@ -94,7 +106,7 @@ export function searchAll(query: string, limit = 30): SearchResult[] {
     }
   }
 
-  for (const r of getRestaurants()) {
+  for (const r of restos) {
     const corpus = [
       r.name,
       r.description,
@@ -115,7 +127,7 @@ export function searchAll(query: string, limit = 30): SearchResult[] {
     }
   }
 
-  for (const a of getActivities()) {
+  for (const a of activites) {
     const corpus = [a.name, a.description, a.district ?? "", a.category].join(
       " "
     );
@@ -132,7 +144,7 @@ export function searchAll(query: string, limit = 30): SearchResult[] {
     }
   }
 
-  for (const i of getInfoPratiques()) {
+  for (const i of infos) {
     const corpus = [i.title, i.description, i.category, i.phone ?? ""].join(
       " "
     );

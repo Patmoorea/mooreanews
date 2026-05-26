@@ -22,8 +22,8 @@ const TYPE_LABELS = {
   "perdu-trouve": { label: "Perdu/Trouvé", variant: "couchant" as const },
 };
 
-export default function AnnoncesPage() {
-  const items = getAnnouncements();
+export default async function AnnoncesPage() {
+  const items = await getAnnouncements();
 
   return (
     <>

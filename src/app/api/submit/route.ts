@@ -6,6 +6,7 @@ import {
   escapeHtml,
   sendTelegramNotification,
 } from "@/lib/telegram";
+import { getAdminSupabase } from "@/lib/supabase/admin";
 
 const Payload = z.object({
   type: z.string().min(1),
@@ -48,6 +49,33 @@ export async function POST(req: Request) {
   const tasks: Promise<unknown>[] = [
     sendTelegramNotification(telegramMessage),
   ];
+
+  // Persiste en base si Supabase est configuré
+  const supabase = getAdminSupabase();
+  if (supabase) {
+    const normalizedType =
+      (["event", "annonce", "service", "signalement", "suggestion"] as const).find(
+        (t) => t === parsed.type
+      ) ?? "suggestion";
+    tasks.push(
+      Promise.resolve(
+        supabase.from("submissions").insert({
+          type: normalizedType,
+          district: parsed.district || null,
+          title: parsed.title,
+          description: parsed.description,
+          date: parsed.date || null,
+          start_time: parsed.time || null,
+          location: parsed.location || null,
+          user_name: parsed.name,
+          user_email: parsed.contact.includes("@")
+            ? parsed.contact
+            : `${parsed.contact}@unknown`,
+          user_phone: parsed.contact.includes("@") ? null : parsed.contact,
+        })
+      ).then(() => null)
+    );
+  }
 
   if (ENV.resendKey) {
     const resend = new Resend(ENV.resendKey);

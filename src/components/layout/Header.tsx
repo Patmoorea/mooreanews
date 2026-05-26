@@ -6,6 +6,7 @@ import { Menu, X } from "lucide-react";
 import { NAV_ITEMS, SITE } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { SearchBar } from "@/components/layout/SearchBar";
+import { UserMenu } from "@/components/layout/UserMenu";
 import { Logo } from "@/components/ui/Logo";
 
 export function Header() {
@@ -65,6 +66,7 @@ export function Header() {
           {/* Actions desktop */}
           <div className="hidden lg:flex items-center gap-2">
             <SearchBar />
+            <UserMenu />
             <Link
               href="/soumettre"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-br from-tiare-400 to-tiare-500 text-white text-sm font-semibold shadow-[var(--shadow-sunset)] hover:-translate-y-0.5 transition-transform"

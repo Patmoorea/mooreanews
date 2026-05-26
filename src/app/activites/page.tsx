@@ -21,8 +21,8 @@ const CATEGORY_LABELS = {
   famille: "Famille",
 } as const;
 
-export default function ActivitesPage() {
-  const items = getActivities();
+export default async function ActivitesPage() {
+  const items = await getActivities();
 
   return (
     <>

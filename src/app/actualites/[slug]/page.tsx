@@ -14,12 +14,13 @@ type Props = {
 };
 
 export async function generateStaticParams() {
-  return getArticles().map((a) => ({ slug: a.slug }));
+  const articles = await getArticles();
+  return articles.map((a) => ({ slug: a.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const article = getArticleBySlug(slug);
+  const article = await getArticleBySlug(slug);
   if (!article) return { title: "Article introuvable" };
   return {
     title: article.title,
@@ -38,10 +39,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ArticlePage({ params }: Props) {
   const { slug } = await params;
-  const article = getArticleBySlug(slug);
+  const article = await getArticleBySlug(slug);
   if (!article) notFound();
 
-  const all = getArticles();
+  const all = await getArticles();
   const related = all
     .filter((a) => a.slug !== article.slug && a.category === article.category)
     .slice(0, 3);

@@ -29,7 +29,7 @@ const BADGE_VARIANTS = {
 export default async function SearchPage({ searchParams }: Props) {
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
-  const results = query ? searchAll(query) : [];
+  const results = query ? await searchAll(query) : [];
 
   return (
     <>

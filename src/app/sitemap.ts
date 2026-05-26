@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { SITE } from "@/lib/constants";
 import { getArticles } from "@/lib/content";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const baseRoutes = [
     { path: "", priority: 1, freq: "hourly" as const },
@@ -19,7 +19,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/confidentialite", priority: 0.2, freq: "yearly" as const },
   ];
 
-  const articleRoutes = getArticles().map((a) => ({
+  const articles = await getArticles();
+  const articleRoutes = articles.map((a) => ({
     url: `${SITE.url}/actualites/${a.slug}`,
     lastModified: new Date(a.publishedAt),
     changeFrequency: "monthly" as const,

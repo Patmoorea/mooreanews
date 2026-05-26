@@ -11,8 +11,8 @@ export const metadata: Metadata = {
     "Tous les restaurants de Moorea : cuisine locale, gastronomique, brunch, roulottes. Trouvez votre table de l'île.",
 };
 
-export default function RestaurantsPage() {
-  const items = getRestaurants();
+export default async function RestaurantsPage() {
+  const items = await getRestaurants();
 
   return (
     <>

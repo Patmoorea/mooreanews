@@ -14,8 +14,8 @@ const CATEGORY_VARIANTS = {
   autre: "neutral",
 } as const;
 
-export function UpcomingEvents() {
-  const events = getUpcomingEvents(6);
+export async function UpcomingEvents() {
+  const events = await getUpcomingEvents(6);
 
   return (
     <section className="py-16 sm:py-20 bg-gradient-to-br from-tiare-50 via-soleil-50 to-tipanier-50">

@@ -55,8 +55,8 @@ const CATEGORY_META: Record<
   },
 };
 
-export default function InfosPratiquesPage() {
-  const items = getInfoPratiques();
+export default async function InfosPratiquesPage() {
+  const items = await getInfoPratiques();
   const byCategory = new Map<InfoPratique["category"], InfoPratique[]>();
   for (const it of items) {
     const list = byCategory.get(it.category) ?? [];

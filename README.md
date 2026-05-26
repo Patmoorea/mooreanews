@@ -19,20 +19,33 @@ plateforme moderne, multilingue, automatisée et pensée pour la communauté.
   - Ferries Tahiti ↔ Moorea (horaires-tahiti.com)
   - Lever / coucher du soleil + phase de la lune (sunrise-sunset.org)
   - Marées indicatives (calcul interne)
+  - Prévisions 5 jours
 - **Bandeau ticker animé** en haut de site
 - **Catégories de contenu** : actualités, événements, annonces, restaurants, activités, infos pratiques
+- **Pages détail articles** avec partage (Facebook, WhatsApp, email) et JSON-LD
+- **Recherche full-text** globale (header modal + page résultats)
+- **Carte interactive Moorea** (Leaflet + OpenStreetMap) avec filtres
 - **Formulaire de soumission communautaire** avec notification Telegram + email
 - **Inscription newsletter** (Resend)
+- **Pages** : contact, à propos, mentions légales, confidentialité, 404
 - **SEO** : sitemap, robots, Open Graph dynamique, JSON-LD, PWA manifest
 - **Multi-device** : entièrement responsive, mobile-first
 
-### Phase 2 — Communauté (à venir)
+### Phase 2 — Communauté (livrée)
 
-- Authentification Supabase (utilisateurs / commerçants / admin)
-- Soumission illimitée avec compte
-- Modération depuis l'interface admin
-- Tags et recherche
-- Upload d'images
+- **Authentification Supabase** : signup / login / forgot-password / callback
+- **Rôles** : user, editor, admin (table `profiles` + helper `is_admin()`)
+- **Interface admin complète** avec sidebar et 8 sections :
+  - Tableau de bord avec statistiques live
+  - CRUD articles, événements, annonces, restaurants, activités, infos
+  - Modération des soumissions communautaires (approuver → crée l'item)
+  - Liste des inscrits newsletter + export CSV
+- **Middleware** : refresh de session + protection des routes /admin
+- **UserMenu** dans le header (avatar + dropdown ou bouton connexion)
+- **Row Level Security** : public read, admin write, lecture publique limitée aux contenus publiés
+- **Bascule auto contenu** : Supabase si configuré, sinon fallback JSON
+- **Persistance** : soumissions et newsletter inscrites en base
+- **Script de seed** des JSON vers Supabase (`npm run seed`)
 
 ### Phase 3 — Automatisation (à venir)
 
@@ -44,9 +57,9 @@ plateforme moderne, multilingue, automatisée et pensée pour la communauté.
 ### Phase 4 — Premium (à venir)
 
 - PWA installable + notifications push
-- Carte interactive avec marqueurs événements / restaurants / activités
 - API publique
 - Espace commerçants premium
+- Upload d'images (Supabase Storage)
 
 ---
 
@@ -58,7 +71,8 @@ plateforme moderne, multilingue, automatisée et pensée pour la communauté.
 | Langage            | TypeScript                   |
 | UI                 | Tailwind CSS 4               |
 | Icônes             | Lucide React                 |
-| Auth & DB (P2)     | Supabase                     |
+| Auth & DB          | Supabase (Auth + Postgres)   |
+| Cartes             | Leaflet + OpenStreetMap      |
 | Emails             | Resend                       |
 | Notifs admin       | Telegram Bot API             |
 | Hébergement        | Vercel                       |
@@ -85,7 +99,61 @@ npm run dev
 ```
 
 Aucune variable n'est obligatoire pour démarrer : tous les widgets ont un
-fallback intégré (météo, ferries, soleil/lune, marées).
+fallback intégré (météo, ferries, soleil/lune, marées). Le site
+fonctionne aussi sans Supabase grâce au contenu JSON dans `/data`.
+
+---
+
+## 🔐 Activer Supabase (Phase 2)
+
+L'activation de Supabase débloque l'authentification, l'interface
+admin complète, la persistance des soumissions et de la newsletter.
+
+### 1. Créer le projet
+
+1. Aller sur [supabase.com](https://supabase.com) → New Project
+2. Récupérer dans **Settings → API** :
+   - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
+   - anon public key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - service_role key → `SUPABASE_SERVICE_ROLE_KEY` (secret, jamais côté client)
+
+### 2. Initialiser le schéma
+
+Dans le **SQL Editor** de Supabase, coller et exécuter le contenu de
+`supabase/schema.sql`. Cela crée :
+
+- Les tables : `profiles`, `articles`, `events`, `announcements`,
+  `restaurants`, `activities`, `info_pratiques`, `submissions`,
+  `newsletter_subscribers`
+- Le trigger `handle_new_user` pour créer un profil à chaque inscription
+- Les policies RLS (Row Level Security)
+- La fonction helper `is_admin()`
+
+### 3. Importer le contenu initial
+
+```bash
+npm run seed
+```
+
+Ce script importe le contenu JSON de `/data` dans Supabase. Idempotent
+(les tables sont vidées avant l'import).
+
+### 4. Vous promouvoir en admin
+
+Après vous être inscrit via `/auth/signup`, exécutez dans le SQL Editor :
+
+```sql
+update public.profiles set role = 'admin' where email = 'votre@email.com';
+```
+
+Vous pouvez maintenant accéder à `/admin` et gérer tout le contenu.
+
+### 5. Configurer l'email de confirmation Supabase
+
+Dans **Authentication → Email Templates** :
+
+- Personnaliser le template "Confirm signup"
+- Mettre l'URL de redirection sur `https://mooreanews.com/auth/callback`
 
 ---
 

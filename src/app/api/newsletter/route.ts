@@ -6,6 +6,7 @@ import {
   escapeHtml,
   sendTelegramNotification,
 } from "@/lib/telegram";
+import { getAdminSupabase } from "@/lib/supabase/admin";
 
 const Payload = z.object({
   email: z.email(),
@@ -38,6 +39,23 @@ export async function POST(req: Request) {
       `📧 <b>Nouvelle inscription newsletter</b>\n${escapeHtml(email)}`
     ),
   ];
+
+  const supabase = getAdminSupabase();
+  if (supabase) {
+    tasks.push(
+      Promise.resolve(
+        supabase.from("newsletter_subscribers").upsert(
+          {
+            email,
+            confirmed: true,
+            source: "site",
+            confirmed_at: new Date().toISOString(),
+          },
+          { onConflict: "email" }
+        )
+      ).then(() => null)
+    );
+  }
 
   if (ENV.resendKey) {
     const resend = new Resend(ENV.resendKey);
