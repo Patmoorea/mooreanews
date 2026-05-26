@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { Menu, X, Search } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { NAV_ITEMS, SITE } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { SearchBar } from "@/components/layout/SearchBar";
+import { Logo } from "@/components/ui/Logo";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -31,9 +33,10 @@ export function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
             <div className="relative">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-lagon-400 via-tipanier-400 to-soleil-400 flex items-center justify-center text-white font-display text-xl sm:text-2xl shadow-[var(--shadow-tropical)] group-hover:scale-110 transition-transform">
-                M
-              </div>
+              <Logo
+                size={48}
+                className="w-10 h-10 sm:w-12 sm:h-12 shadow-[var(--shadow-tropical)] rounded-full group-hover:scale-110 transition-transform"
+              />
               <div className="absolute inset-0 rounded-full bg-gradient-to-br from-lagon-400 to-soleil-400 blur-md opacity-40 group-hover:opacity-60 transition-opacity -z-10" />
             </div>
             <div className="flex flex-col leading-tight">
@@ -61,6 +64,7 @@ export function Header() {
 
           {/* Actions desktop */}
           <div className="hidden lg:flex items-center gap-2">
+            <SearchBar />
             <Link
               href="/soumettre"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-br from-tiare-400 to-tiare-500 text-white text-sm font-semibold shadow-[var(--shadow-sunset)] hover:-translate-y-0.5 transition-transform"

@@ -3,6 +3,7 @@ import { WeatherCard } from "@/components/widgets/WeatherCard";
 import { FerryCard } from "@/components/widgets/FerryCard";
 import { SunMoonCard } from "@/components/widgets/SunMoonCard";
 import { TidesCard } from "@/components/widgets/TidesCard";
+import { ForecastStrip } from "@/components/widgets/ForecastStrip";
 
 export function LiveDashboard() {
   return (
@@ -29,6 +30,10 @@ export function LiveDashboard() {
           <div className="sm:col-span-2 lg:col-span-1">
             <FerryCard />
           </div>
+        </div>
+
+        <div className="mt-6">
+          <ForecastStrip />
         </div>
       </Container>
     </section>

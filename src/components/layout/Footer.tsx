@@ -4,6 +4,7 @@ import { Container } from "@/components/ui/Container";
 import { NAV_ITEMS, SITE, SOCIAL, USEFUL_LINKS } from "@/lib/constants";
 import { NewsletterForm } from "@/components/NewsletterForm";
 import { FacebookIcon, InstagramIcon } from "@/components/ui/SocialIcons";
+import { Logo } from "@/components/ui/Logo";
 
 export function Footer() {
   return (
@@ -28,16 +29,14 @@ export function Footer() {
 
       {/* Bloc principal */}
       <Container className="py-12 sm:py-16">
-        <div className="grid gap-10 sm:gap-12 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-10 sm:gap-12 sm:grid-cols-2 lg:grid-cols-5">
           {/* Brand */}
           <div>
             <Link
               href="/"
               className="inline-flex items-center gap-3 group"
             >
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-lagon-400 via-tipanier-400 to-soleil-400 flex items-center justify-center text-white font-display text-xl shadow-lg">
-                M
-              </div>
+              <Logo size={40} className="rounded-full shadow-lg" />
               <span className="font-display text-xl text-white">
                 {SITE.name}
               </span>
@@ -92,6 +91,61 @@ export function Footer() {
             </ul>
           </div>
 
+          {/* Le site */}
+          <div>
+            <h3 className="font-display text-lg text-white">Le site</h3>
+            <ul className="mt-4 space-y-2">
+              <li>
+                <Link
+                  href="/a-propos"
+                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
+                >
+                  À propos
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/contact"
+                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
+                >
+                  Nous contacter
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/recherche"
+                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
+                >
+                  Recherche
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/soumettre"
+                  className="text-sm text-tiare-300 hover:text-tiare-200 transition-colors font-medium"
+                >
+                  + Publier une info
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/mentions-legales"
+                  className="text-sm text-ocean-300/70 hover:text-white transition-colors"
+                >
+                  Mentions légales
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/confidentialite"
+                  className="text-sm text-ocean-300/70 hover:text-white transition-colors"
+                >
+                  Confidentialité
+                </Link>
+              </li>
+            </ul>
+          </div>
+
           {/* Liens utiles */}
           <div>
             <h3 className="font-display text-lg text-white">Liens utiles</h3>
@@ -108,14 +162,6 @@ export function Footer() {
                   </a>
                 </li>
               ))}
-              <li>
-                <Link
-                  href="/soumettre"
-                  className="text-sm text-tiare-300 hover:text-tiare-200 transition-colors font-medium"
-                >
-                  + Publier une info
-                </Link>
-              </li>
             </ul>
           </div>
 

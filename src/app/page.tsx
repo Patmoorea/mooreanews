@@ -3,6 +3,7 @@ import { LiveDashboard } from "@/components/home/LiveDashboard";
 import { CategoriesGrid } from "@/components/home/CategoriesGrid";
 import { FeaturedArticles } from "@/components/home/FeaturedArticles";
 import { UpcomingEvents } from "@/components/home/UpcomingEvents";
+import { InteractiveMap } from "@/components/home/InteractiveMap";
 import { CommunityCTA } from "@/components/home/CommunityCTA";
 import { SITE } from "@/lib/constants";
 
@@ -13,6 +14,7 @@ export default function HomePage() {
       <LiveDashboard />
       <FeaturedArticles />
       <UpcomingEvents />
+      <InteractiveMap />
       <CategoriesGrid />
       <CommunityCTA />
 
