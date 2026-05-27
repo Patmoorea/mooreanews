@@ -44,9 +44,8 @@ export function Footer() {
               </span>
             </Link>
             <p className="mt-4 text-sm leading-relaxed text-ocean-200/80">
-              L&apos;info de Moorea et de la Polynésie française.
-              Actualités, événements, services et infos pratiques de
-              notre belle île, en un seul endroit.
+              {SITE.tagline}. Actualités, événements, services et infos
+              pratiques de notre belle île, en un seul endroit.
             </p>
             <p className="mt-2 text-xs italic text-lagon-200/70">
               {SITE.motto}

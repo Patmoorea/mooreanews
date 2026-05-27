@@ -122,7 +122,7 @@ export default async function OGImage() {
               color: "#082F49",
             }}
           >
-            L&apos;info de Moorea et de la Polynésie française
+            {SITE.tagline}
           </div>
           <div
             style={{
@@ -131,7 +131,7 @@ export default async function OGImage() {
               fontStyle: "italic",
             }}
           >
-            Votre source d&apos;information locale et fiable
+            {SITE.motto}
           </div>
         </div>
 

@@ -35,7 +35,7 @@ export function Hero() {
             </div>
 
             <h1 className="mt-6 font-display text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-balance leading-[1.1] text-ocean-950">
-              L&apos;info de Moorea et de la{" "}
+              L&apos;info de Moorea en{" "}
               <span className="bg-gradient-to-r from-lagon-600 via-tipanier-500 to-tiare-500 bg-clip-text text-transparent">
                 Polynésie française
               </span>{" "}
@@ -45,9 +45,7 @@ export function Hero() {
             </h1>
 
             <p className="mt-6 text-lg sm:text-xl text-ocean-700 max-w-2xl mx-auto lg:mx-0 text-pretty">
-              Actualités locales, vie locale & société, tourisme & loisirs,
-              événements & culture, infos pratiques. Météo, ferries et marées
-              en temps réel.
+              {SITE.heroLead}
             </p>
 
             <p className="mt-3 text-sm italic text-tiare-600 flex items-center justify-center lg:justify-start gap-2">

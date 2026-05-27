@@ -5,9 +5,11 @@
 export const SITE = {
   name: "MooreaNews",
   tagline: "L'info de Moorea en Polynésie française",
+  heroLead:
+    "Actualités locales, vie locale & société, tourisme & loisirs, événements & culture, infos pratiques. Météo, ferries et marées en temps réel.",
   motto: "Votre source d'information locale et fiable",
   description:
-    "L'info de Moorea en Polynésie française : actualités locales, vie locale & société, tourisme & loisirs, événements & culture, infos pratiques. Météo, ferries, marées en temps réel.",
+    "L'info de Moorea en Polynésie française : actualités locales, vie locale & société, tourisme & loisirs, événements & culture, infos pratiques. Météo, ferries et marées en temps réel.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://mooreanews.com",
   locale: "fr_PF",
   timezone: "Pacific/Tahiti",

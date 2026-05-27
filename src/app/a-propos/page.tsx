@@ -15,7 +15,7 @@ import { PageHeader } from "@/components/PageHeader";
 export const metadata: Metadata = {
   title: "À propos — MooreaNews",
   description:
-    "MooreaNews, l'info de Moorea et de la Polynésie française : un projet communautaire, gratuit, automatisé pour centraliser toute l'info de l'île.",
+    "MooreaNews, l'info de Moorea en Polynésie française : un projet communautaire, gratuit, automatisé pour centraliser toute l'info de l'île.",
 };
 
 const VALUES: { icon: LucideIcon; title: string; desc: string }[] = [
