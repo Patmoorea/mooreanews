@@ -106,29 +106,32 @@ export function Header() {
         </div>
       </div>
 
-      {/* Bannière 1024×409 : hauteur plafonnée, image entière (pas de rognage object-cover) */}
+      {/*
+        Bannière 1024×409 : hauteur fixe + object-contain (image entière visible).
+        Ne pas utiliser width/height en mode « flux » : Next.js réserve ~40 % de la largeur
+        et rogne malgré max-h.
+      */}
       <div
-        className="relative w-full overflow-hidden bg-ocean-950"
+        className="relative w-full h-[3.25rem] sm:h-14 md:h-[3.75rem] bg-ocean-950"
         aria-label="Navigation avec bannière MooreaNews"
       >
         <Image
           src={SITE.navBanner}
           alt=""
-          width={1024}
-          height={409}
+          fill
           priority
           sizes="100vw"
-          className="w-full h-auto max-h-[4rem] sm:max-h-[4.5rem] md:max-h-[5rem] object-contain object-center mx-auto block select-none pointer-events-none"
+          className="object-contain object-center select-none pointer-events-none"
           aria-hidden
         />
-        {/* Voile léger : la bannière reste visible, le texte reste lisible */}
+        {/* Voile bas uniquement — ne masque pas « MOOREA NEWS » en haut */}
         <div
-          className="absolute inset-0 bg-gradient-to-t from-ocean-950/70 via-ocean-950/25 to-transparent pointer-events-none"
+          className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-ocean-950/55 to-transparent pointer-events-none"
           aria-hidden
         />
 
         <nav
-          className="absolute inset-0 z-10 w-full px-2 sm:px-4 md:px-6 flex items-center justify-center"
+          className="absolute inset-0 z-10 w-full px-1.5 sm:px-4 md:px-6 flex items-center justify-center"
           aria-label="Navigation principale"
         >
           <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 w-full max-w-7xl">
@@ -139,7 +142,7 @@ export function Header() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "px-2 sm:px-2.5 md:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-full transition-all whitespace-nowrap",
+                    "px-1.5 sm:px-2.5 md:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs md:text-sm font-bold rounded-full transition-all whitespace-nowrap",
                     "text-white shadow-[0_1px_4px_rgba(0,0,0,0.45)]",
                     "hover:bg-white/25 hover:shadow-[0_2px_8px_rgba(0,0,0,0.35)]",
                     active
