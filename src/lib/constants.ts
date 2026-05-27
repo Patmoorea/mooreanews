@@ -60,6 +60,7 @@ export const NAV_ITEMS = [
   { href: "/restaurants", label: "Restaurants" },
   { href: "/activites", label: "Activités" },
   { href: "/infos-pratiques", label: "Infos pratiques" },
+  { href: "/partenaires", label: "Partenaires" },
 ] as const;
 
 /** Quartiers / districts de Moorea */
@@ -168,8 +169,25 @@ export const MOOREA_ASSOCIATIONS = [
   },
 ] as const;
 
+/** Partenaire santé / transport — mis en avant sur le site */
+export const RAI_TAHITI = {
+  name: "RAI TAHITI",
+  tagline: "Transport sanitaire VSL — Moorea & Tahiti",
+  siteUrl: "https://raitahiti.com",
+  infoSlug: "rai-tahiti-vsl",
+  infoPath: "/infos-pratiques/rai-tahiti-vsl",
+  phoneMoorea: "89 77 76 24",
+  phoneTahiti: "89 41 02 10",
+  phoneHref: "tel:+68989777624",
+} as const;
+
 /** Liens utiles affichés en footer / page infos pratiques */
 export const USEFUL_LINKS = [
+  {
+    title: "RAI TAHITI — ambulance VSL",
+    href: "https://raitahiti.com",
+    description: "Transport sanitaire Moorea ↔ Tahiti, 7j/7",
+  },
   {
     title: "Mairie de Moorea-Maiao",
     href: "https://www.mairie-moorea.pf",

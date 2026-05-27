@@ -110,6 +110,14 @@ export function Footer() {
               </li>
               <li>
                 <Link
+                  href="/partenaires"
+                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
+                >
+                  Annonceurs & partenaires
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/contact"
                   className="text-sm text-ocean-200/80 hover:text-white transition-colors"
                 >

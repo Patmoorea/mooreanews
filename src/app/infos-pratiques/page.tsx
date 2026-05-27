@@ -16,6 +16,7 @@ import {
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 import { CommunityLinks } from "@/components/CommunityLinks";
+import { RaiTahitiSpotlight } from "@/components/RaiTahitiSpotlight";
 import { ContentCoverImage } from "@/components/ContentCoverImage";
 import { getInfoPratiques } from "@/lib/content";
 import type { InfoPratique } from "@/lib/content-types";
@@ -78,6 +79,8 @@ export default async function InfosPratiquesPage() {
         variant="ocean"
       />
       <Container className="py-12 sm:py-16">
+        <RaiTahitiSpotlight />
+
         {transportItems.length > 0 && (
           <section className="mb-10">
             <h2 className="font-display text-2xl text-ocean-950 flex items-center gap-2">

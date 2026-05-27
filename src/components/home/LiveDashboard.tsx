@@ -5,6 +5,7 @@ import { SunMoonCard } from "@/components/widgets/SunMoonCard";
 import { TidesCard } from "@/components/widgets/TidesCard";
 import { ForecastStrip } from "@/components/widgets/ForecastStrip";
 import { TropicalSection, TROPICAL_EMOJI } from "@/components/decor/TropicalDecor";
+import { RaiTahitiSpotlight } from "@/components/RaiTahitiSpotlight";
 
 export function LiveDashboard() {
   return (
@@ -36,6 +37,10 @@ export function LiveDashboard() {
 
         <div className="mt-6">
           <ForecastStrip />
+        </div>
+
+        <div className="mt-8 max-w-xl">
+          <RaiTahitiSpotlight variant="compact" />
         </div>
       </Container>
     </TropicalSection>

@@ -28,7 +28,7 @@ import {
   dbListActivities,
   dbListInfoPratiques,
 } from "@/lib/supabase/queries";
-import { getMissingInfoPratiquesFromJson } from "@/lib/supabase/sync-info-pratiques";
+import { mergeInfoPratiqueCatalog } from "@/lib/info-catalog";
 
 import type {
   ArticleRow,
@@ -173,14 +173,13 @@ function sortInfoPratiques(items: InfoPratique[]): InfoPratique[] {
   });
 }
 
-/** Supabase + entrées du catalogue JSON encore absentes en base (ex. RAI TAHITI). */
+/** Catalogue JSON toujours fusionné avec Supabase (slugs stables, ex. RAI TAHITI). */
 export async function getInfoPratiques(): Promise<InfoPratique[]> {
   const json = infoData as InfoPratique[];
   const db = await dbListInfoPratiques();
   if (!db) return sortInfoPratiques(json);
   const dbItems = db.map(infoFromRow);
-  const missing = getMissingInfoPratiquesFromJson(dbItems.map((i) => i.title));
-  return sortInfoPratiques([...dbItems, ...missing]);
+  return sortInfoPratiques(mergeInfoPratiqueCatalog(dbItems, json));
 }
 
 export async function getInfoPratiqueBySlug(

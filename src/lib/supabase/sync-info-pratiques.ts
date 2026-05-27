@@ -30,8 +30,10 @@ function infoToRow(i: InfoPratique, displayOrder: number): InfoRowInput {
   };
 }
 
+import { normalizeInfoTitle } from "@/lib/info-catalog";
+
 function normalizeTitle(title: string): string {
-  return title.trim().toLowerCase();
+  return normalizeInfoTitle(title);
 }
 
 export function getMissingInfoPratiquesFromJson(

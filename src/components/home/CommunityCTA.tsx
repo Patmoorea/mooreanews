@@ -66,6 +66,12 @@ export function CommunityCTA() {
                 >
                   Voir les annonces
                 </Link>
+                <Link
+                  href="/partenaires"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/10 backdrop-blur text-white border border-white/30 hover:bg-white/20 transition-colors"
+                >
+                  Partenaires & tarifs
+                </Link>
               </div>
             </div>
           </div>
