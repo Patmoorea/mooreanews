@@ -11,8 +11,12 @@ import { SearchBar } from "@/components/layout/SearchBar";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { Logo } from "@/components/ui/Logo";
 
-/** Hauteur de la bannière image (inchangée) */
-const BANNER_H = "h-14 lg:h-16";
+/** Même hauteur que l’ancien logo/bannière menu (BrandBanner), pas plus haut */
+const BANNER_H = "h-11 lg:h-12 xl:h-[52px]";
+
+/** Pleine largeur écran (évite les marges blanches sur les côtés) */
+const BANNER_FULL_BLEED =
+  "relative w-screen max-w-[100vw] left-1/2 -translate-x-1/2";
 
 function isNavActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -39,7 +43,9 @@ export function Header() {
     >
       {/* ——— Mobile ——— */}
       <div className="md:hidden">
-        <div className={cn("relative w-full overflow-hidden bg-ocean-900", BANNER_H)}>
+        <div
+          className={cn(BANNER_FULL_BLEED, "overflow-hidden bg-ocean-900", BANNER_H)}
+        >
           <Link href="/" className="block w-full h-full" aria-label="MooreaNews — Accueil">
             <Image
               src={SITE.navBanner}
@@ -80,25 +86,27 @@ export function Header() {
 
       {/* ——— Tablette / desktop : bannière 100 % largeur (même hauteur), puis menu ——— */}
       <div className="hidden md:block">
-        <div className={cn("relative w-full overflow-hidden bg-ocean-900", BANNER_H)}>
+        <div
+          className={cn(BANNER_FULL_BLEED, "overflow-hidden bg-ocean-900", BANNER_H)}
+        >
           <Image
             src={SITE.navBanner}
             alt=""
             fill
             priority
             sizes="100vw"
-            className="object-cover object-[center_30%] select-none pointer-events-none"
+            className="object-cover object-[center_28%] select-none pointer-events-none"
             aria-hidden
           />
           <div className="absolute inset-0 bg-gradient-to-r from-ocean-950/30 via-transparent to-ocean-950/40 pointer-events-none" />
 
-          <div className="absolute inset-y-0 right-0 flex items-center gap-2 px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center gap-2 rounded-full bg-white/90 backdrop-blur-sm px-2 py-1 shadow-md border border-white/60">
+          <div className="absolute inset-y-0 right-0 flex items-center px-3 sm:px-5 lg:px-6">
+            <div className="flex items-center gap-1.5 rounded-full bg-white/92 backdrop-blur-sm px-1.5 py-0.5 shadow-md border border-white/60 [&_button]:!py-1">
               <SearchBar />
               <UserMenu />
               <Link
                 href="/soumettre"
-                className="inline-flex items-center gap-2 px-3 lg:px-4 py-1.5 lg:py-2 rounded-full bg-gradient-to-br from-tiare-400 to-tiare-500 text-white text-xs lg:text-sm font-semibold shadow-[var(--shadow-sunset)] hover:-translate-y-0.5 transition-transform whitespace-nowrap"
+                className="inline-flex items-center px-2.5 py-1 rounded-full bg-gradient-to-br from-tiare-400 to-tiare-500 text-white text-xs font-semibold whitespace-nowrap"
               >
                 + Publier
               </Link>
