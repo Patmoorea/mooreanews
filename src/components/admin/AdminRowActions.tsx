@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Pencil, Trash2, Eye, EyeOff } from "lucide-react";
 import { deleteContent, togglePublished } from "@/app/admin/actions";
 
@@ -27,8 +28,11 @@ export function AdminRowActions({
   published,
   itemLabel = "cet élément",
 }: Props) {
+  const router = useRouter();
+
   async function onToggle() {
     await togglePublished(table, id, published);
+    router.refresh();
   }
 
   async function onDelete() {
@@ -36,6 +40,7 @@ export function AdminRowActions({
       return;
     }
     await deleteContent(table, id);
+    router.refresh();
   }
 
   return (

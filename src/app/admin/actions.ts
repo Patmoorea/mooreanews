@@ -196,6 +196,9 @@ export async function deleteContent(table: TableName, id: string) {
   if (error) throw error;
   revalidatePath(adminPathFor(table));
   revalidatePath(publicPathFor(table));
+  if (table === "restaurants") {
+    revalidatePath(`/restaurants/${id}`);
+  }
 }
 
 export async function togglePublished(

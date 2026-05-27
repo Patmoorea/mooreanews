@@ -119,18 +119,11 @@ export async function getAnnouncementBySlug(
 // =====================================================================
 
 export async function getRestaurants(): Promise<Restaurant[]> {
-  const jsonRestaurants = restaurantsData as Restaurant[];
   const db = await dbListRestaurants();
-  if (!db) return jsonRestaurants;
-
-  const fromDb = db.map(restaurantFromRow);
-  const dbNames = new Set(fromDb.map((r) => r.name.trim().toLowerCase()));
-  // Restaurants ajoutés dans /data mais pas encore en base (ex. après seed)
-  const fromJsonOnly = jsonRestaurants.filter(
-    (r) => !dbNames.has(r.name.trim().toLowerCase())
-  );
-
-  return [...fromDb, ...fromJsonOnly];
+  // En prod (Supabase configuré), la base est la seule source : une suppression
+  // admin ne doit pas être annulée par le fallback JSON.
+  if (db) return db.map(restaurantFromRow);
+  return restaurantsData as Restaurant[];
 }
 
 export async function getRestaurantBySlug(
