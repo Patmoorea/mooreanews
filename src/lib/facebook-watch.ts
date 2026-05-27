@@ -9,8 +9,16 @@ import { getAdminSupabase } from "@/lib/supabase/admin";
 import {
   allFacebookWatchUrls,
   FACEBOOK_PAGE_WATCHES,
+  FACEBOOK_WATCH_URLS,
   type FacebookPageWatch,
 } from "@/lib/watch-sources";
+
+function labelForFacebookUrl(url: string): string {
+  return (
+    FACEBOOK_WATCH_URLS.find((w) => w.url === url)?.label ??
+    "Publication Facebook — Moorea"
+  );
+}
 
 type GraphPost = {
   id: string;
@@ -74,22 +82,34 @@ export async function aggregateFacebookWatchUrls(): Promise<AggregationResult> {
 
   for (const url of urls) {
     if (!isFacebookUrl(url)) continue;
+    const fallbackTitle = labelForFacebookUrl(url);
     try {
       const og = await fetchOpenGraph(url);
-      if (!og?.title) continue;
+      const title = og?.title?.trim() || fallbackTitle;
       result.matched += 1;
       rows.push({
         source_id: "facebook-watch",
-        source_name: "Facebook — veille",
+        source_name: og?.title ? "Facebook — veille" : "Facebook — lien surveillé",
         external_id: externalIdFromFacebookUrl(url),
-        url: og.url || url,
-        title: og.title,
-        excerpt: og.description || null,
-        image_url: og.imageUrl ?? null,
+        url: og?.url || url,
+        title,
+        excerpt: og?.description || null,
+        image_url: og?.imageUrl ?? null,
         published_at: new Date().toISOString(),
       });
     } catch (e) {
       result.errors.push(`${url}: ${String(e)}`);
+      result.matched += 1;
+      rows.push({
+        source_id: "facebook-watch",
+        source_name: "Facebook — lien surveillé",
+        external_id: externalIdFromFacebookUrl(url),
+        url,
+        title: fallbackTitle,
+        excerpt: null,
+        image_url: null,
+        published_at: new Date().toISOString(),
+      });
     }
   }
 

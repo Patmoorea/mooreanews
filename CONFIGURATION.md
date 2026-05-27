@@ -89,11 +89,18 @@ Le fichier `data/restaurants.json` sert de référence et de fallback local sans
 
 ## Veille automatique (RSS + Facebook + web)
 
-- **Fréquence** : cron `0 * * * *` (toutes les heures sur Vercel **Pro** ; **Hobby** : 1 exécution/jour max).
-- **RSS** : Tahiti Infos, La 1ère, Présidence, Radio 1, Google Actualités (Moorea).
-- **Facebook** : liens listés dans `src/lib/watch-sources.ts` (commune, groupe, permalinks) + variable `FACEBOOK_WATCH_URLS`.
-- **Limite** : impossible de « sillonner » tout Facebook sans API Meta ; le groupe privé ou restreint ne remonte pas. Pour la **page Commune**, configurez un jeton page (`FACEBOOK_PAGE_ACCESS_TOKEN`) — voir [Meta for Developers](https://developers.facebook.com/).
-- **Manuel** : Admin → Veille externe → formulaire ou « Agréger maintenant ».
+Guide détaillé : **[VEILLE.md](./VEILLE.md)**
+
+Checklist rapide :
+
+1. Table `external_articles` créée dans Supabase (`supabase/schema.sql`).
+2. Vercel : `SUPABASE_SERVICE_ROLE_KEY` + `CRON_SECRET` (Production).
+3. **Admin → Veille externe → Agréger maintenant** (première fois).
+4. Vérifier `/actualites` et l’accueil (bloc « Moorea sur le web & Facebook »).
+
+- **Fréquence** : cron `0 * * * *` — **Pro** = horaire ; **Hobby** = 1×/jour max.
+- **Facebook** : commune + groupe + permalinks déjà dans le code ; jeton Meta optionnel pour la page Commune.
+- **Test cron** : `GET /api/cron/aggregate?secret=VOTRE_CRON_SECRET`
 | Admin / auth | Supabase (URL + anon + service role) |
 
 ## Tests après config

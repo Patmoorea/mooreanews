@@ -6,6 +6,7 @@ import { aggregateWebWatch } from "@/lib/facebook-watch";
 import { fetchRssFeed, type RssItem } from "@/lib/rss-parser";
 import { RSS_SOURCES, type RssSource } from "@/lib/rss-sources";
 import { getAdminSupabase } from "@/lib/supabase/admin";
+import { getPublicSupabase } from "@/lib/supabase/server";
 
 export type AggregationResult = {
   source: string;
@@ -92,13 +93,14 @@ export async function aggregateAll(): Promise<AggregationResult[]> {
  * Récupère les derniers articles externes pour affichage.
  */
 export async function listExternalArticles(limit = 20) {
-  const supabase = getAdminSupabase();
+  const supabase = getPublicSupabase() ?? getAdminSupabase();
   if (!supabase) return null;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("external_articles")
     .select("*")
     .eq("hidden", false)
     .order("published_at", { ascending: false })
     .limit(limit);
+  if (error) return null;
   return data;
 }
