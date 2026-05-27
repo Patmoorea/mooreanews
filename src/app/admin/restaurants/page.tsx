@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getServerSupabase } from "@/lib/supabase/server";
-import { listMissingRestaurantsFromJson } from "@/lib/supabase/sync-restaurants";
+import { getMissingRestaurantsFromCatalog } from "@/lib/supabase/sync-restaurants";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminRowActions } from "@/components/admin/AdminRowActions";
 import { ImportRestaurantsBanner } from "@/components/admin/ImportRestaurantsBanner";
@@ -15,7 +15,9 @@ export default async function AdminRestaurantsPage() {
       .select("*")
       .order("featured", { ascending: false })) ?? { data: [] };
 
-  const missing = await listMissingRestaurantsFromJson();
+  const missing = getMissingRestaurantsFromCatalog(
+    (rows ?? []).map((r) => r.name)
+  );
   const missingNames = missing.map((r) => r.name);
 
   return (

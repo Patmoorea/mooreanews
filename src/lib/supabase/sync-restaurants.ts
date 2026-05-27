@@ -31,17 +31,23 @@ function normalizeName(name: string): string {
   return name.trim().toLowerCase();
 }
 
+/** Compare le catalogue JSON aux noms déjà en base (côté admin). */
+export function getMissingRestaurantsFromCatalog(
+  existingNames: string[]
+): Restaurant[] {
+  const existing = new Set(existingNames.map(normalizeName));
+  return (restaurantsData as Restaurant[]).filter(
+    (r) => !existing.has(normalizeName(r.name))
+  );
+}
+
 export async function listMissingRestaurantsFromJson(): Promise<Restaurant[]> {
   const supabase = getAdminSupabase();
   if (!supabase) return [];
 
   const { data: existing } = await supabase.from("restaurants").select("name");
-  const existingNames = new Set(
-    (existing ?? []).map((r) => normalizeName(r.name))
-  );
-
-  return (restaurantsData as Restaurant[]).filter(
-    (r) => !existingNames.has(normalizeName(r.name))
+  return getMissingRestaurantsFromCatalog(
+    (existing ?? []).map((r) => r.name)
   );
 }
 

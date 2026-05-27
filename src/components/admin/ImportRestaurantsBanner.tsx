@@ -52,8 +52,9 @@ export function ImportRestaurantsBanner({ missingNames }: Props) {
       {missingNames.length > 0 && (
         <>
           <p className="mt-1 text-sm text-ocean-700">
-            {missingNames.join(" · ")} — présents dans le code mais pas encore
-            dans Supabase. Un clic suffit, pas de SQL manuel.
+            <strong>{missingNames.join(" · ")}</strong> — dans le catalogue du
+            site mais absents de la base (supprimés ou jamais importés). Un clic
+            les remet en ligne, sans SQL.
           </p>
           <button
             type="button"
