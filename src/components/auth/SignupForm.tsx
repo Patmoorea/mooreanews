@@ -30,7 +30,7 @@ export function SignupForm() {
         data: { full_name: fullName.trim() },
         emailRedirectTo:
           typeof window !== "undefined"
-            ? `${window.location.origin}/auth/callback`
+            ? `${window.location.origin}/auth/callback?next=/admin`
             : undefined,
       },
     });

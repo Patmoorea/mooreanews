@@ -6,6 +6,18 @@ import { createServerClient } from "@supabase/ssr";
  * Si Supabase n'est pas configuré, le middleware est neutre.
  */
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  // Supabase renvoie parfois vers la Site URL (/?code=…) au lieu de /auth/callback
+  const authCode = request.nextUrl.searchParams.get("code");
+  if (authCode && pathname !== "/auth/callback") {
+    const callback = new URL("/auth/callback", request.url);
+    callback.searchParams.set("code", authCode);
+    const next = request.nextUrl.searchParams.get("next");
+    if (next) callback.searchParams.set("next", next);
+    return NextResponse.redirect(callback);
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -33,8 +45,6 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const pathname = request.nextUrl.pathname;
 
   if (pathname.startsWith("/admin")) {
     if (!user) {

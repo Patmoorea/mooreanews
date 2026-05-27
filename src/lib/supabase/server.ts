@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/lib/supabase/types";
 
-function getSupabaseUrl(): string | undefined {
+export function getSupabaseUrl(): string | undefined {
   return (
     process.env.SUPABASE_URL?.trim() ||
     process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
@@ -11,7 +11,7 @@ function getSupabaseUrl(): string | undefined {
   );
 }
 
-function getSupabaseAnonKey(): string | undefined {
+export function getSupabaseAnonKey(): string | undefined {
   return (
     process.env.SUPABASE_ANON_KEY?.trim() ||
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||

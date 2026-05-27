@@ -37,7 +37,17 @@ Promouvoir votre compte admin :
 update public.profiles set role = 'admin' where email = 'votre@email.com';
 ```
 
-Auth → URL de redirection : `https://mooreanews.com/auth/callback`
+**Supabase → Authentication → URL Configuration**
+
+| Champ | Valeurs |
+|-------|---------|
+| Site URL | `https://www.mooreanews.com` (local : `http://localhost:3000`) |
+| Redirect URLs | `http://localhost:3000/auth/callback` |
+| | `http://localhost:3000/**` |
+| | `https://www.mooreanews.com/auth/callback` |
+| | `https://mooreanews.com/auth/callback` |
+
+Sans ces URLs, le lien « Confirmer l’email » arrive sur `/?code=…` et l’inscription échoue.
 
 ## Tests après config
 

@@ -1,21 +1,56 @@
+import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { getServerSupabase } from "@/lib/supabase/server";
+import type { Database } from "@/lib/supabase/types";
+import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/server";
 
 /**
- * Callback de confirmation d'email Supabase.
- * Échange le code contre une session puis redirige.
+ * Callback de confirmation d'email / magic link Supabase.
+ * Échange le code contre une session (cookies sur la réponse) puis redirige.
  */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const redirectTo = searchParams.get("next") ?? "/admin";
+  const nextParam = searchParams.get("next") ?? "/admin";
 
-  if (code) {
-    const supabase = await getServerSupabase();
-    if (supabase) {
-      await supabase.auth.exchangeCodeForSession(code);
-    }
+  let redirectPath = nextParam;
+  if (!redirectPath.startsWith("/") || redirectPath.startsWith("//")) {
+    redirectPath = "/admin";
   }
 
-  return NextResponse.redirect(`${origin}${redirectTo}`);
+  const supabaseUrl = getSupabaseUrl();
+  const supabaseAnon = getSupabaseAnonKey();
+
+  if (!code) {
+    return NextResponse.redirect(`${origin}/auth/login?error=missing_code`);
+  }
+
+  if (!supabaseUrl || !supabaseAnon) {
+    return NextResponse.redirect(`${origin}/auth/login?error=config`);
+  }
+
+  const redirectTo = new URL(redirectPath, origin);
+  const response = NextResponse.redirect(redirectTo);
+
+  const supabase = createServerClient<Database>(supabaseUrl, supabaseAnon, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        for (const { name, value, options } of cookiesToSet) {
+          response.cookies.set(name, value, options);
+        }
+      },
+    },
+  });
+
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+  if (error) {
+    return NextResponse.redirect(
+      `${origin}/auth/login?error=${encodeURIComponent(error.message)}`
+    );
+  }
+
+  return response;
 }
