@@ -47,6 +47,24 @@ export function Ticker() {
           },
         ];
 
+        if (ferryRes?.ok) {
+          const f = await ferryRes.json();
+          const moorea = f?.fromMoorea?.[0];
+          const tahiti = f?.fromTahiti?.[0];
+          if (moorea) {
+            next.push({
+              icon: <Ship size={14} className="text-lagon-300" />,
+              label: `⛴ Prochain ferry Moorea → Tahiti à ${moorea.time}`,
+            });
+          }
+          if (tahiti) {
+            next.push({
+              icon: <Ship size={14} className="text-lagon-300" />,
+              label: `⛴ Prochain ferry Tahiti → Moorea à ${tahiti.time}`,
+            });
+          }
+        }
+
         if (weatherRes?.ok) {
           const w: WeatherSummary = await weatherRes.json();
           next.push({
@@ -65,24 +83,6 @@ export function Ticker() {
             icon: <Moon size={14} className="text-ocean-200" />,
             label: `Lune ${s.moonPhase}`,
           });
-        }
-
-        if (ferryRes?.ok) {
-          const f = await ferryRes.json();
-          const moorea = f?.fromMoorea?.[0];
-          const tahiti = f?.fromTahiti?.[0];
-          if (moorea) {
-            next.push({
-              icon: <Ship size={14} className="text-lagon-300" />,
-              label: `Prochain ferry Moorea → Tahiti à ${moorea.time}`,
-            });
-          }
-          if (tahiti) {
-            next.push({
-              icon: <Ship size={14} className="text-lagon-300" />,
-              label: `Tahiti → Moorea à ${tahiti.time}`,
-            });
-          }
         }
 
         next.push({
@@ -113,7 +113,7 @@ export function Ticker() {
   return (
     <div
       role="region"
-      aria-label="Informations en temps réel"
+      aria-label="Bandeau défilant — météo, horaires ferries et infos live"
       className="relative overflow-hidden bg-gradient-to-r from-ocean-900 via-ocean-800 to-ocean-900 text-ocean-50 border-b border-ocean-700"
     >
       <div className="flex animate-marquee whitespace-nowrap py-2">
