@@ -28,7 +28,7 @@ export const SITE = {
 export const SOCIAL = {
   facebook: "https://www.facebook.com/JourdanPatrice/",
   instagram: "https://www.instagram.com/mooreanews",
-  whatsapp: "+68987654321",
+  whatsapp: "+689 89 410 211",
 } as const;
 
 /** Coordonnées géographiques de Moorea (centre) */
