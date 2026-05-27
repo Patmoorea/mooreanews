@@ -8,6 +8,7 @@ import {
   Mountain,
   Inbox,
   Mail,
+  Rss,
   ExternalLink,
 } from "lucide-react";
 import { dbGetAdminStats } from "@/lib/supabase/queries";
@@ -136,6 +137,11 @@ export default async function AdminDashboard() {
             href="/admin/submissions"
             label="Voir les soumissions"
             icon={<Inbox size={16} />}
+          />
+          <QuickAction
+            href="/admin/external"
+            label="Veille RSS"
+            icon={<Rss size={16} />}
           />
         </div>
       </section>

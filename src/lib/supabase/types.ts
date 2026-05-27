@@ -151,6 +151,22 @@ export type SubmissionRow = {
   created_at: string;
 };
 
+export type ExternalArticleRow = {
+  id: string;
+  source_id: string;
+  source_name: string;
+  external_id: string;
+  url: string;
+  title: string;
+  excerpt: string | null;
+  image_url: string | null;
+  author: string | null;
+  published_at: string;
+  fetched_at: string;
+  hidden: boolean;
+  promoted: boolean;
+};
+
 export type NewsletterSubscriber = {
   id: string;
   email: string;
@@ -181,6 +197,7 @@ export type Database = {
       info_pratiques: TableDef<InfoRow>;
       submissions: TableDef<SubmissionRow>;
       newsletter_subscribers: TableDef<NewsletterSubscriber>;
+      external_articles: TableDef<ExternalArticleRow>;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

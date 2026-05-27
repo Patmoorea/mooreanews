@@ -204,6 +204,33 @@ create table if not exists public.submissions (
 create index if not exists submissions_status_idx on public.submissions (status, created_at desc);
 
 -- =====================================================================
+-- 9bis) External articles (Phase 3 — agrégation RSS)
+-- =====================================================================
+create table if not exists public.external_articles (
+  id              uuid primary key default gen_random_uuid(),
+  source_id       text not null,
+  source_name     text not null,
+  external_id     text not null,
+  url             text not null,
+  title           text not null,
+  excerpt         text,
+  image_url       text,
+  author          text,
+  published_at    timestamptz not null,
+  fetched_at      timestamptz not null default now(),
+  hidden          boolean not null default false,
+  promoted        boolean not null default false,
+  unique (source_id, external_id)
+);
+
+create index if not exists external_articles_published_idx
+  on public.external_articles (published_at desc);
+create index if not exists external_articles_source_idx
+  on public.external_articles (source_id, published_at desc);
+create index if not exists external_articles_hidden_idx
+  on public.external_articles (hidden);
+
+-- =====================================================================
 -- 9) Newsletter subscribers
 -- =====================================================================
 create table if not exists public.newsletter_subscribers (
@@ -251,6 +278,16 @@ alter table public.activities              enable row level security;
 alter table public.info_pratiques          enable row level security;
 alter table public.submissions             enable row level security;
 alter table public.newsletter_subscribers  enable row level security;
+alter table public.external_articles       enable row level security;
+
+-- External articles : lecture publique (non cachés), écriture admin uniquement
+drop policy if exists "external_public_read" on public.external_articles;
+create policy "external_public_read" on public.external_articles for select
+  using (hidden = false);
+
+drop policy if exists "external_admin_all" on public.external_articles;
+create policy "external_admin_all" on public.external_articles for all
+  using (public.is_admin()) with check (public.is_admin());
 
 -- Helper : est-on admin ou editor ?
 create or replace function public.is_admin()

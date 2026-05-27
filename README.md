@@ -47,12 +47,19 @@ plateforme moderne, multilingue, automatisée et pensée pour la communauté.
 - **Persistance** : soumissions et newsletter inscrites en base
 - **Script de seed** des JSON vers Supabase (`npm run seed`)
 
-### Phase 3 — Automatisation (à venir)
+### Phase 3 — Automatisation (livrée)
 
-- Aggrégation RSS Tahiti Infos, Polynésie 1ère, Mairie de Moorea
-- Import événements Facebook publics
-- Calendrier centralisé
-- Cron jobs horaires (Vercel Cron)
+- **Agrégation RSS automatique** depuis 4 sources : Tahiti Infos,
+  Polynésie La 1ère, Présidence Polynésie, Radio 1 Tahiti
+- **Parser RSS pur** (sans dépendance) : supporte RSS 2.0 et Atom 1.0
+- **Filtrage intelligent** par mots-clés Moorea (lieux, districts, surnoms)
+- **Déduplication** par hash source + GUID externe
+- **Cron Vercel** : exécution horaire automatique via `vercel.json`
+- **Endpoint protégé** par `CRON_SECRET` (Bearer token)
+- **Notification Telegram** quand de nouveaux articles sont agrégés
+- **Section "Veille externe"** sur la page actualités publique
+- **Admin /admin/external** : liste des articles agrégés, lancer
+  l'agrégation manuellement, masquer/afficher individuellement
 
 ### Phase 4 — Premium (à venir)
 

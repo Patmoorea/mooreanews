@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 import { ArticlesFilter } from "@/components/ArticlesFilter";
+import { ExternalArticles } from "@/components/ExternalArticles";
 import { getArticles } from "@/lib/content";
 
 export const metadata: Metadata = {
@@ -24,6 +25,8 @@ export default async function ActualitesPage() {
       <Container className="py-12 sm:py-16">
         <ArticlesFilter articles={articles} />
       </Container>
+
+      <ExternalArticles limit={8} />
     </>
   );
 }
