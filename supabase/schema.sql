@@ -1,5 +1,5 @@
 -- =====================================================================
--- Moorea Hub — schéma Supabase complet (Phase 2)
+-- MooreaNews — schéma Supabase complet (Phase 2)
 -- =====================================================================
 -- À exécuter UNE FOIS sur la base Supabase via SQL Editor.
 -- Idempotent : peut être ré-exécuté sans casser la base.

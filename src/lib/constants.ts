@@ -1,17 +1,20 @@
 /**
- * Constantes globales du site Moorea Hub.
+ * Constantes globales du site MooreaNews.
  */
 
 export const SITE = {
-  name: "Moorea Hub",
-  tagline: "Le portail vivant de Moorea",
+  name: "MooreaNews",
+  tagline: "L'info de Moorea et de la Polynésie française",
+  motto: "Votre source d'information locale et fiable",
   description:
-    "Toute l'actualité, les événements, les annonces et les infos pratiques de Moorea. Météo, ferries, marées en temps réel.",
+    "L'info de Moorea et de la Polynésie française : actualités locales, vie locale & société, tourisme & loisirs, événements & culture, infos pratiques. Météo, ferries, marées en temps réel.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://mooreanews.com",
   locale: "fr_PF",
   timezone: "Pacific/Tahiti",
   email: "contact@mooreanews.com",
-  copyright: "© 2026 Moorea Hub. Tous droits réservés.",
+  copyright: "© 2026 MooreaNews. Tous droits réservés.",
+  logo: "/brand/logo.png",
+  banner: "/brand/banner.png",
 } as const;
 
 export const SOCIAL = {
@@ -110,7 +113,7 @@ export const USEFUL_LINKS = [
 export const ENV = {
   openWeatherMapKey: process.env.OPENWEATHERMAP_API_KEY ?? "",
   resendKey: process.env.RESEND_API_KEY ?? "",
-  resendFrom: process.env.RESEND_FROM ?? "Moorea Hub <hello@mooreanews.com>",
+  resendFrom: process.env.RESEND_FROM ?? "MooreaNews <hello@mooreanews.com>",
   resendAdmin: process.env.RESEND_ADMIN ?? "admin@mooreanews.com",
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN ?? "",
   telegramChatId: process.env.TELEGRAM_CHAT_ID ?? "",

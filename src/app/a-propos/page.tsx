@@ -13,9 +13,9 @@ import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 
 export const metadata: Metadata = {
-  title: "À propos — Moorea Hub",
+  title: "À propos — MooreaNews",
   description:
-    "Moorea Hub est le portail vivant de Moorea : un projet communautaire, gratuit, automatisé pour centraliser toute l'info de l'île.",
+    "MooreaNews, l'info de Moorea et de la Polynésie française : un projet communautaire, gratuit, automatisé pour centraliser toute l'info de l'île.",
 };
 
 const VALUES: { icon: LucideIcon; title: string; desc: string }[] = [
@@ -57,14 +57,14 @@ export default function AProposPage() {
       <PageHeader
         badge="Notre projet"
         title="Une île, un portail, une communauté"
-        description="Moorea Hub remplace l'ancien mooreanews.com par une plateforme moderne, vivante et automatisée pour rassembler toute l'info de l'île au même endroit."
+        description="MooreaNews remplace l'ancien mooreanews.com par une plateforme moderne, vivante et automatisée pour rassembler toute l'info de l'île au même endroit."
         variant="tipanier"
       />
 
       <Container size="narrow" className="py-12 sm:py-16">
         <div className="prose-tropical space-y-6 text-lg text-ocean-800 leading-relaxed">
           <p>
-            <strong>Ia ora na</strong> — bienvenue sur Moorea Hub, le portail
+            <strong>Ia ora na</strong> — bienvenue sur MooreaNews, le portail
             communautaire de notre île.
           </p>
           <p>
@@ -75,7 +75,7 @@ export default function AProposPage() {
             WhatsApp et bouches-à-oreille.
           </p>
           <p>
-            <strong>Moorea Hub renaît cet héritage</strong> avec une plateforme
+            <strong>MooreaNews renaît cet héritage</strong> avec une plateforme
             moderne, multilingue, automatisée et pensée pour l&apos;ère
             mobile. Notre objectif : permettre à chacun, en quelques secondes,
             de connaître la météo, les horaires de ferries, les événements du

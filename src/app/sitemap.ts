@@ -1,6 +1,10 @@
 import type { MetadataRoute } from "next";
 import { SITE } from "@/lib/constants";
-import { getArticles } from "@/lib/content";
+import {
+  getArticles,
+  getEvents,
+  getRestaurants,
+} from "@/lib/content";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
@@ -12,6 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/restaurants", priority: 0.8, freq: "weekly" as const },
     { path: "/activites", priority: 0.8, freq: "weekly" as const },
     { path: "/infos-pratiques", priority: 0.7, freq: "weekly" as const },
+    { path: "/recherche", priority: 0.5, freq: "monthly" as const },
     { path: "/soumettre", priority: 0.7, freq: "monthly" as const },
     { path: "/contact", priority: 0.6, freq: "monthly" as const },
     { path: "/a-propos", priority: 0.5, freq: "monthly" as const },
@@ -19,12 +24,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/confidentialite", priority: 0.2, freq: "yearly" as const },
   ];
 
-  const articles = await getArticles();
+  const [articles, events, restaurants] = await Promise.all([
+    getArticles(),
+    getEvents(),
+    getRestaurants(),
+  ]);
+
   const articleRoutes = articles.map((a) => ({
     url: `${SITE.url}/actualites/${a.slug}`,
     lastModified: new Date(a.publishedAt),
     changeFrequency: "monthly" as const,
     priority: 0.7,
+  }));
+
+  const eventRoutes = events.map((e) => ({
+    url: `${SITE.url}/evenements/${e.slug}`,
+    lastModified: new Date(e.date),
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
+
+  const restaurantRoutes = restaurants.map((r) => ({
+    url: `${SITE.url}/restaurants/${r.slug}`,
+    lastModified: now,
+    changeFrequency: "monthly" as const,
+    priority: 0.6,
   }));
 
   return [
@@ -35,5 +59,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: r.priority,
     })),
     ...articleRoutes,
+    ...eventRoutes,
+    ...restaurantRoutes,
   ];
 }

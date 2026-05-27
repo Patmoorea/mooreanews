@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Calendar, User, Tag, Share2 } from "lucide-react";
+import { ArrowLeft, Calendar, User, Tag } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
-import { FacebookIcon, WhatsAppIcon } from "@/components/ui/SocialIcons";
+import { ShareButtons } from "@/components/ShareButtons";
 import { getArticleBySlug, getArticles } from "@/lib/content";
 import { formatDateFR } from "@/lib/utils";
 import { SITE } from "@/lib/constants";
@@ -119,42 +119,11 @@ export default async function ArticlePage({ params }: Props) {
 
         {/* Partage */}
         <div className="mt-12 pt-8 border-t border-ocean-100">
-          <h2 className="font-display text-xl text-ocean-900 mb-4 flex items-center gap-2">
-            <Share2 size={18} />
-            Partager cet article
-          </h2>
-          <div className="flex flex-wrap gap-3">
-            <a
-              href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                shareUrl
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1877F2] text-white text-sm font-semibold hover:opacity-90"
-            >
-              <FacebookIcon size={16} />
-              Facebook
-            </a>
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent(
-                `${article.title} — ${shareUrl}`
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#25D366] text-white text-sm font-semibold hover:opacity-90"
-            >
-              <WhatsAppIcon size={16} />
-              WhatsApp
-            </a>
-            <a
-              href={`mailto:?subject=${encodeURIComponent(
-                article.title
-              )}&body=${encodeURIComponent(`${article.excerpt}\n\n${shareUrl}`)}`}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-ocean-100 text-ocean-800 text-sm font-semibold hover:bg-ocean-200"
-            >
-              Email
-            </a>
-          </div>
+          <ShareButtons
+            url={shareUrl}
+            title={article.title}
+            description={article.excerpt}
+          />
         </div>
       </Container>
 
@@ -205,7 +174,7 @@ export default async function ArticlePage({ params }: Props) {
             publisher: {
               "@type": "Organization",
               name: SITE.name,
-              logo: { "@type": "ImageObject", url: `${SITE.url}/icon-512.png` },
+              logo: { "@type": "ImageObject", url: `${SITE.url}${SITE.logo}` },
             },
             mainEntityOfPage: {
               "@type": "WebPage",

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { MapPin, Phone, Clock, Star } from "lucide-react";
+import Link from "next/link";
+import { MapPin, Phone, Clock, Star, ArrowRight } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/PageHeader";
@@ -27,8 +28,13 @@ export default async function RestaurantsPage() {
           {items.map((r) => (
             <article
               key={r.slug}
-              className="bg-white rounded-2xl border border-ocean-100 overflow-hidden shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] transition-all flex flex-col sm:flex-row"
+              className="group relative bg-white rounded-2xl border border-ocean-100 overflow-hidden shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:border-tiare-200 hover:-translate-y-0.5 transition-all flex flex-col sm:flex-row"
             >
+              <Link
+                href={`/restaurants/${r.slug}`}
+                className="absolute inset-0 z-10"
+                aria-label={`Voir ${r.name}`}
+              />
               <div className="sm:w-48 aspect-[16/10] sm:aspect-auto bg-gradient-to-br from-tiare-200 via-soleil-200 to-couchant/40 relative flex-shrink-0">
                 {r.premium && (
                   <div className="absolute top-3 left-3">
@@ -38,9 +44,9 @@ export default async function RestaurantsPage() {
                   </div>
                 )}
               </div>
-              <div className="p-5 flex-1">
+              <div className="p-5 flex-1 relative">
                 <div className="flex items-start justify-between gap-2 mb-1">
-                  <h2 className="font-display text-xl text-ocean-900">
+                  <h2 className="font-display text-xl text-ocean-900 group-hover:text-tiare-600 transition-colors">
                     {r.name}
                   </h2>
                   <span className="text-tiare-500 font-semibold whitespace-nowrap">
@@ -93,6 +99,10 @@ export default async function RestaurantsPage() {
                     ))}
                   </div>
                 )}
+                <div className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-tiare-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                  Voir la fiche
+                  <ArrowRight size={12} />
+                </div>
               </div>
             </article>
           ))}

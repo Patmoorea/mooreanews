@@ -5,7 +5,7 @@ import { SignupForm } from "@/components/auth/SignupForm";
 import { isSupabaseConfigured } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Créer un compte — Moorea Hub",
+  title: "Créer un compte — MooreaNews",
   robots: { index: false, follow: false },
 };
 
@@ -16,7 +16,7 @@ export default function SignupPage() {
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8">
             <h1 className="font-display text-3xl sm:text-4xl text-ocean-950">
-              Rejoindre Moorea Hub
+              Rejoindre MooreaNews
             </h1>
             <p className="mt-2 text-ocean-700">
               Créez votre compte pour publier et suivre vos contributions

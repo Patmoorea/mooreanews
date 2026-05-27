@@ -1,5 +1,5 @@
 /**
- * Types de la base Supabase Moorea Hub.
+ * Types de la base Supabase MooreaNews.
  * Réfléchit le schéma défini dans supabase/schema.sql.
  *
  * Pour régénérer automatiquement :

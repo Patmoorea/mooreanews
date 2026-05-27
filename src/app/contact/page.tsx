@@ -7,9 +7,9 @@ import { SITE, SOCIAL } from "@/lib/constants";
 import { FacebookIcon, WhatsAppIcon } from "@/components/ui/SocialIcons";
 
 export const metadata: Metadata = {
-  title: "Contact — Moorea Hub",
+  title: "Contact — MooreaNews",
   description:
-    "Contactez l'équipe de Moorea Hub : signalement, partenariat, suggestion d'amélioration, presse.",
+    "Contactez l'équipe de MooreaNews : signalement, partenariat, suggestion d'amélioration, presse.",
 };
 
 export default function ContactPage() {
@@ -54,7 +54,7 @@ export default function ContactPage() {
               <ContactCard
                 icon={<FacebookIcon size={20} />}
                 title="Facebook"
-                value="Page Moorea Hub"
+                value="Page MooreaNews"
                 href={SOCIAL.facebook}
                 description="Messages et actualités"
                 color="from-ocean-500 to-ocean-700"

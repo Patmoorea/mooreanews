@@ -4,7 +4,7 @@ import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { isSupabaseConfigured } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Mot de passe oublié — Moorea Hub",
+  title: "Mot de passe oublié — MooreaNews",
   robots: { index: false, follow: false },
 };
 

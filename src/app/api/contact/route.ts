@@ -47,7 +47,7 @@ export async function POST(req: Request) {
           from: ENV.resendFrom,
           to: [ENV.resendAdmin],
           replyTo: parsed.email,
-          subject: `[Moorea Hub] Contact : ${parsed.subject || "(sans sujet)"}`,
+          subject: `[MooreaNews] Contact : ${parsed.subject || "(sans sujet)"}`,
           html: buildAdminHtml(parsed),
         })
         .catch(() => null)

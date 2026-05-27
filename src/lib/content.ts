@@ -85,6 +85,13 @@ export async function getUpcomingEvents(limit?: number): Promise<Event[]> {
   return typeof limit === "number" ? items.slice(0, limit) : items;
 }
 
+export async function getEventBySlug(
+  slug: string,
+): Promise<Event | undefined> {
+  const all = await getEvents();
+  return all.find((e) => e.slug === slug);
+}
+
 // =====================================================================
 // Announcements
 // =====================================================================
@@ -108,6 +115,13 @@ export async function getRestaurants(): Promise<Restaurant[]> {
   const db = await dbListRestaurants();
   if (db) return db.map(restaurantFromRow);
   return restaurantsData as Restaurant[];
+}
+
+export async function getRestaurantBySlug(
+  slug: string,
+): Promise<Restaurant | undefined> {
+  const all = await getRestaurants();
+  return all.find((r) => r.slug === slug);
 }
 
 // =====================================================================

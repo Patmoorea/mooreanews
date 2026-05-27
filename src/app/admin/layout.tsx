@@ -2,7 +2,7 @@ import { Container } from "@/components/ui/Container";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 
 export const metadata = {
-  title: { template: "%s — Admin Moorea Hub", default: "Admin Moorea Hub" },
+  title: { template: "%s — Admin MooreaNews", default: "Admin MooreaNews" },
   robots: { index: false, follow: false },
 };
 

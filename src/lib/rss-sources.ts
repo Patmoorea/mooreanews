@@ -1,5 +1,5 @@
 /**
- * Sources RSS surveillées par Moorea Hub.
+ * Sources RSS surveillées par MooreaNews.
  * Configurer ici les flux à agréger ; chaque flux a un identifiant stable,
  * un nom lisible et des règles de filtrage.
  */

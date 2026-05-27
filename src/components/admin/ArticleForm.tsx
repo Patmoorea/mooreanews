@@ -67,7 +67,7 @@ export function ArticleForm({
           name="author"
           label="Auteur"
           defaultValue={initial?.author}
-          placeholder="Ex. Équipe Moorea Hub"
+          placeholder="Ex. Équipe MooreaNews"
         />
       </div>
       <Field

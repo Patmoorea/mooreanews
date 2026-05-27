@@ -64,16 +64,16 @@ export async function POST(req: Request) {
         .send({
           from: ENV.resendFrom,
           to: [email],
-          subject: "Bienvenue sur Moorea Hub ! 🌺",
+          subject: "Bienvenue sur MooreaNews ! 🌺",
           html: `
             <div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;padding:24px">
               <h1 style="color:#0c4a6e;font-family:Marcellus,serif">Ia ora na, ${escapeHtml(email)} !</h1>
-              <p>Merci de votre inscription à la newsletter de <strong>Moorea Hub</strong>.</p>
+              <p>Merci de votre inscription à la newsletter de <strong>MooreaNews</strong>.</p>
               <p>Vous recevrez chaque semaine un récap des actus, événements et bons plans de l'île, directement dans votre boîte mail.</p>
-              <p style="color:#075985">À très vite,<br>L'équipe Moorea Hub</p>
+              <p style="color:#075985">À très vite,<br>L'équipe MooreaNews</p>
             </div>
           `,
-          text: `Merci de votre inscription à Moorea Hub ! Vous recevrez chaque semaine un récap des actus de l'île.`,
+          text: `Merci de votre inscription à MooreaNews ! Vous recevrez chaque semaine un récap des actus de l'île.`,
         })
         .catch(() => null)
     );

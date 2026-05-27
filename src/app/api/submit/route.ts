@@ -84,7 +84,7 @@ export async function POST(req: Request) {
         .send({
           from: ENV.resendFrom,
           to: [ENV.resendAdmin],
-          subject: `[Moorea Hub] Nouvelle soumission : ${parsed.title}`,
+          subject: `[MooreaNews] Nouvelle soumission : ${parsed.title}`,
           html: buildAdminHtml(parsed),
           text: buildAdminText(parsed),
         })
@@ -121,7 +121,7 @@ function buildTelegramMessage(d: SubmitData): string {
 function buildAdminHtml(d: SubmitData): string {
   return `
     <div style="font-family: Inter, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1 style="color:#0c4a6e">📢 Nouvelle soumission Moorea Hub</h1>
+      <h1 style="color:#0c4a6e">📢 Nouvelle soumission MooreaNews</h1>
       <p><strong>Type :</strong> ${escapeHtml(d.type)}</p>
       <p><strong>Titre :</strong> ${escapeHtml(d.title)}</p>
       <p><strong>Description :</strong><br>${escapeHtml(d.description).replace(/\n/g, "<br>")}</p>
@@ -137,7 +137,7 @@ function buildAdminHtml(d: SubmitData): string {
 
 function buildAdminText(d: SubmitData): string {
   return [
-    "Nouvelle soumission Moorea Hub",
+    "Nouvelle soumission MooreaNews",
     "",
     `Type : ${d.type}`,
     `Titre : ${d.title}`,

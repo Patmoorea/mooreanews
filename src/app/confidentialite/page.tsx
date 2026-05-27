@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { SITE } from "@/lib/constants";
 
 export const metadata: Metadata = {
-  title: "Confidentialité — Moorea Hub",
+  title: "Confidentialité — MooreaNews",
   robots: { index: true, follow: false },
 };
 

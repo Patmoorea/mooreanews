@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { SITE } from "@/lib/constants";
 
 export const metadata: Metadata = {
-  title: "Mentions légales — Moorea Hub",
+  title: "Mentions légales — MooreaNews",
   robots: { index: true, follow: false },
 };
 
@@ -23,7 +23,7 @@ export default function MentionsLegalesPage() {
             <p>
               <strong>{SITE.name}</strong>
               <br />
-              Site édité par l&apos;équipe de Moorea Hub.
+              Site édité par l&apos;équipe de MooreaNews.
               <br />
               Email : {SITE.email}
               <br />

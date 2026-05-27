@@ -42,8 +42,12 @@ export function Footer() {
               </span>
             </Link>
             <p className="mt-4 text-sm leading-relaxed text-ocean-200/80">
-              Le portail vivant de Moorea. Actualités, événements, services et
-              infos pratiques de l&apos;île sœur, en un seul endroit.
+              L&apos;info de Moorea et de la Polynésie française.
+              Actualités, événements, services et infos pratiques de
+              notre belle île, en un seul endroit.
+            </p>
+            <p className="mt-2 text-xs italic text-lagon-200/70">
+              {SITE.motto}
             </p>
             <div className="mt-5 flex items-center gap-3">
               <a

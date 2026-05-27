@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Seed Moorea Hub Supabase database from /data/*.json
+ * Seed MooreaNews Supabase database from /data/*.json
  *
  * Usage :
  *   1. Configurer .env.local avec NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY
@@ -74,7 +74,7 @@ async function insert(table, rows) {
   if (error) throw new Error(`Inserting in ${table}: ${error.message}`);
 }
 
-console.log("🌺  Seed Moorea Hub démarré...\n");
+console.log("🌺  Seed MooreaNews démarré...\n");
 
 const TABLES = ["articles", "events", "announcements", "restaurants", "activities", "info_pratiques"];
 for (const t of TABLES) {

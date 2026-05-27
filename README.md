@@ -1,4 +1,4 @@
-# Moorea Hub — Le portail vivant de Moorea
+# MooreaNews — L'info de Moorea et de la Polynésie française
 
 Site d'information centralisé pour l'île de Moorea, en Polynésie française.
 
@@ -269,6 +269,6 @@ L'admin valide puis ajoute le contenu manuellement dans le JSON correspondant
 
 ## 📄 Licence
 
-© 2026 Moorea Hub. Tous droits réservés.
+© 2026 MooreaNews. Tous droits réservés.
 
 Fait avec ♥ à Moorea, sous le soleil de Polynésie.

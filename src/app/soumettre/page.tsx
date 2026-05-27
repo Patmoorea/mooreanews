@@ -7,7 +7,7 @@ import { CheckCircle2, Clock, Eye, Megaphone } from "lucide-react";
 export const metadata: Metadata = {
   title: "Publier une info — Moorea",
   description:
-    "Publiez gratuitement votre événement, annonce, service ou info pratique sur Moorea Hub. Validation sous 24h.",
+    "Publiez gratuitement votre événement, annonce, service ou info pratique sur MooreaNews. Validation sous 24h.",
 };
 
 export default function SoumettrePage() {

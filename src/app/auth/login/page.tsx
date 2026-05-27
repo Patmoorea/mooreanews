@@ -25,7 +25,7 @@ export default async function LoginPage({ searchParams }: Props) {
               Ia ora na !
             </h1>
             <p className="mt-2 text-ocean-700">
-              Connectez-vous à votre espace Moorea Hub
+              Connectez-vous à votre espace MooreaNews
             </p>
           </div>
 

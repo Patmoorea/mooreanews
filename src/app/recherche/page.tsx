@@ -9,7 +9,7 @@ import { searchAll } from "@/lib/search";
 
 export const metadata: Metadata = {
   title: "Recherche",
-  description: "Rechercher dans toute la base de Moorea Hub.",
+  description: "Rechercher dans toute la base de MooreaNews.",
   robots: { index: false, follow: true },
 };
 
