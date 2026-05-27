@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { MOOREA_ASSOCIATIONS, MOOREA_COMMUNITY_LINKS } from "@/lib/constants";
 import { FACEBOOK_WATCH_URLS } from "@/lib/watch-sources";
@@ -41,9 +42,9 @@ export function CommunityLinks() {
       <p className="mt-2 text-sm text-ocean-700 max-w-2xl">
         Liens que vous nous avez transmis (commune, groupe MOOREA Qui sait quoi,
         posts récents). La veille automatique les reprend aussi sur la page{" "}
-        <a href="/actualites" className="text-tiare-600 font-semibold hover:underline">
+        <Link href="/actualites" className="text-tiare-600 font-semibold hover:underline">
           Actualités
-        </a>
+        </Link>
         .
       </p>
       <ul className="mt-4 grid gap-2 sm:grid-cols-2">
