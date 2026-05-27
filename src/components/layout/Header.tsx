@@ -11,18 +11,6 @@ import { UserMenu } from "@/components/layout/UserMenu";
 import { Logo } from "@/components/ui/Logo";
 import { BrandBanner } from "@/components/ui/BrandBanner";
 
-function navLabel(label: string) {
-  if (label === "Infos pratiques") {
-    return (
-      <>
-        <span className="2xl:hidden">Infos</span>
-        <span className="hidden 2xl:inline">Infos pratiques</span>
-      </>
-    );
-  }
-  return label;
-}
-
 function isNavActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
@@ -48,86 +36,94 @@ export function Header() {
           : "bg-white/90 backdrop-blur-sm border-b border-ocean-100/60",
       )}
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-14 sm:h-16 lg:h-[4.25rem] items-center gap-2 sm:gap-3 min-w-0">
-          {/* Bannière — ne recouvre pas le menu (z-0, largeur réduite) */}
+      {/* ——— Mobile / petite tablette : logo + hamburger ——— */}
+      <div className="md:hidden mx-auto max-w-7xl px-4 flex h-14 items-center justify-between gap-3">
+        <Link
+          href="/"
+          className="flex items-center gap-2 flex-shrink-0"
+          aria-label="MooreaNews — Accueil"
+        >
+          <Logo
+            size={40}
+            priority
+            className="h-9 w-9 rounded-full shadow-sm"
+          />
+          <span className="font-display text-lg text-ocean-900">
+            Moorea<span className="text-lagon-600">News</span>
+          </span>
+        </Link>
+        <div className="flex items-center gap-2">
           <Link
-            href="/"
-            className="relative z-0 flex items-center gap-2 sm:gap-3 group flex-shrink-0"
-            aria-label="MooreaNews — Accueil"
+            href="/soumettre"
+            className="px-3 py-1.5 rounded-full bg-gradient-to-br from-tiare-400 to-tiare-500 text-white text-xs font-semibold whitespace-nowrap"
           >
-            <Logo
-              size={40}
-              priority
-              className="h-9 w-9 sm:hidden flex-shrink-0 rounded-full shadow-sm group-hover:scale-105 transition-transform"
-            />
-            <BrandBanner
-              variant="header"
-              priority
-              className="hidden sm:block group-hover:opacity-95 transition-opacity shadow-sm"
-            />
+            + Publier
           </Link>
-
-          {/* Menu — visible dès md, défilement horizontal si besoin */}
-          <nav
-            className={cn(
-              "relative z-20 hidden md:flex flex-1 min-w-0 items-center justify-center gap-0.5",
-              "overflow-x-auto overscroll-x-contain px-1",
-              "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
-            )}
-            aria-label="Navigation principale"
+          <button
+            type="button"
+            onClick={() => setIsOpen((v) => !v)}
+            className="p-2 rounded-lg text-ocean-800 hover:bg-lagon-100"
+            aria-label={isOpen ? "Fermer le menu" : "Ouvrir le menu"}
+            aria-expanded={isOpen}
           >
-            {NAV_ITEMS.map((item) => {
-              const active = isNavActive(pathname, item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  title={item.label}
-                  className={cn(
-                    "flex-shrink-0 px-2 lg:px-2.5 xl:px-3 py-2 text-[12px] lg:text-[13px] xl:text-sm font-medium rounded-full transition-colors whitespace-nowrap",
-                    active
-                      ? "bg-lagon-100 text-ocean-900 ring-1 ring-lagon-300"
-                      : "text-ocean-800 hover:bg-lagon-100 hover:text-ocean-900",
-                  )}
-                >
-                  {navLabel(item.label)}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Actions */}
-          <div className="relative z-20 flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ml-auto md:ml-0">
-            <div className="hidden lg:flex items-center gap-2">
-              <SearchBar />
-              <UserMenu />
-            </div>
-            <Link
-              href="/soumettre"
-              className="hidden sm:inline-flex items-center gap-2 px-3 lg:px-4 py-2 rounded-full bg-gradient-to-br from-tiare-400 to-tiare-500 text-white text-xs lg:text-sm font-semibold shadow-[var(--shadow-sunset)] hover:-translate-y-0.5 transition-transform whitespace-nowrap"
-            >
-              + Publier
-            </Link>
-            <button
-              type="button"
-              onClick={() => setIsOpen((v) => !v)}
-              className="md:hidden p-2 rounded-lg text-ocean-800 hover:bg-lagon-100 transition-colors flex-shrink-0"
-              aria-label={isOpen ? "Fermer le menu" : "Ouvrir le menu"}
-              aria-expanded={isOpen}
-            >
-              {isOpen ? <X size={26} /> : <Menu size={26} />}
-            </button>
-          </div>
+            {isOpen ? <X size={26} /> : <Menu size={26} />}
+          </button>
         </div>
       </div>
 
-      {/* Menu mobile + tablette étroite */}
+      {/* ——— md+ : 2 lignes — logo/actions puis menu complet sur toute la largeur ——— */}
+      <div className="hidden md:block mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-14 lg:h-16 items-center justify-between gap-3 border-b border-ocean-100/70">
+          <Link
+            href="/"
+            className="flex-shrink-0"
+            aria-label="MooreaNews — Accueil"
+          >
+            <BrandBanner
+              variant="header"
+              priority
+              className="group-hover:opacity-95 transition-opacity shadow-sm"
+            />
+          </Link>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <SearchBar />
+            <UserMenu />
+            <Link
+              href="/soumettre"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-br from-tiare-400 to-tiare-500 text-white text-sm font-semibold shadow-[var(--shadow-sunset)] hover:-translate-y-0.5 transition-transform whitespace-nowrap"
+            >
+              + Publier
+            </Link>
+          </div>
+        </div>
+
+        <nav
+          className="flex flex-wrap items-center justify-center gap-x-0.5 gap-y-1 py-2.5"
+          aria-label="Navigation principale"
+        >
+          {NAV_ITEMS.map((item) => {
+            const active = isNavActive(pathname, item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "px-2.5 lg:px-3 py-1.5 text-[13px] lg:text-sm font-medium rounded-full transition-colors whitespace-nowrap",
+                  active
+                    ? "bg-lagon-100 text-ocean-900 ring-1 ring-lagon-300"
+                    : "text-ocean-800 hover:bg-lagon-100 hover:text-ocean-900",
+                )}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* Menu mobile déroulant */}
       {isOpen && (
         <div className="md:hidden relative z-50 border-t border-ocean-100 bg-white shadow-lg">
-          <div className="mx-auto max-w-7xl px-4 pt-3 pb-1 flex justify-center">
-            <BrandBanner variant="header" className="sm:hidden w-[min(100%,280px)] h-11" />
-          </div>
           <nav className="mx-auto max-w-7xl px-4 py-3 flex flex-col gap-1 max-h-[70vh] overflow-y-auto">
             {NAV_ITEMS.map((item) => (
               <Link
@@ -147,13 +143,6 @@ export function Header() {
             <div className="mt-2 pt-2 border-t border-ocean-100 flex flex-col gap-2">
               <SearchBar variant="inline" />
               <UserMenu />
-              <Link
-                href="/soumettre"
-                onClick={() => setIsOpen(false)}
-                className="px-4 py-3 rounded-xl bg-gradient-to-br from-tiare-400 to-tiare-500 text-white font-semibold text-center"
-              >
-                + Publier une info
-              </Link>
             </div>
           </nav>
         </div>
