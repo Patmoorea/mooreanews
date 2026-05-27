@@ -106,13 +106,9 @@ export function Header() {
         </div>
       </div>
 
-      {/*
-        Bannière 1024×409 : hauteur fixe + object-contain (image entière visible).
-        Ne pas utiliser width/height en mode « flux » : Next.js réserve ~40 % de la largeur
-        et rogne malgré max-h.
-      */}
+      {/* Bannière 1024×409 : pleine largeur (cover), menu par-dessus */}
       <div
-        className="relative w-full h-[3.25rem] sm:h-14 md:h-[3.75rem] bg-ocean-950"
+        className="relative w-full h-[5.5rem] sm:h-24 md:h-[6.25rem] overflow-hidden bg-ocean-900"
         aria-label="Navigation avec bannière MooreaNews"
       >
         <Image
@@ -121,17 +117,16 @@ export function Header() {
           fill
           priority
           sizes="100vw"
-          className="object-contain object-center select-none pointer-events-none"
+          className="object-cover object-[center_36%] select-none pointer-events-none"
           aria-hidden
         />
-        {/* Voile bas uniquement — ne masque pas « MOOREA NEWS » en haut */}
         <div
-          className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-ocean-950/55 to-transparent pointer-events-none"
+          className="absolute inset-0 bg-gradient-to-t from-ocean-950/75 via-ocean-950/20 to-ocean-900/10 pointer-events-none"
           aria-hidden
         />
 
         <nav
-          className="absolute inset-0 z-10 w-full px-1.5 sm:px-4 md:px-6 flex items-center justify-center"
+          className="absolute inset-0 z-10 w-full px-2 sm:px-4 md:px-6 flex items-center justify-center"
           aria-label="Navigation principale"
         >
           <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 w-full max-w-7xl">
@@ -142,7 +137,7 @@ export function Header() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "px-1.5 sm:px-2.5 md:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs md:text-sm font-bold rounded-full transition-all whitespace-nowrap",
+                    "px-2 sm:px-2.5 md:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-full transition-all whitespace-nowrap",
                     "text-white shadow-[0_1px_4px_rgba(0,0,0,0.45)]",
                     "hover:bg-white/25 hover:shadow-[0_2px_8px_rgba(0,0,0,0.35)]",
                     active
