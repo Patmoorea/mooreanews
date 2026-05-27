@@ -5,6 +5,7 @@ import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/PageHeader";
 import { RestaurantPriceLevel } from "@/components/RestaurantPriceLevel";
+import { ContentCoverImage } from "@/components/ContentCoverImage";
 import { getRestaurants } from "@/lib/content";
 
 export const metadata: Metadata = {
@@ -36,15 +37,21 @@ export default async function RestaurantsPage() {
                 className="absolute inset-0 z-10"
                 aria-label={`Voir ${r.name}`}
               />
-              <div className="sm:w-48 aspect-[16/10] sm:aspect-auto bg-gradient-to-br from-tiare-200 via-soleil-200 to-couchant/40 relative flex-shrink-0">
+              <ContentCoverImage
+                src={r.image}
+                alt={r.name}
+                category="restaurants"
+                className="sm:w-48 aspect-[16/10] sm:aspect-auto sm:min-h-[140px] flex-shrink-0"
+                sizes="(max-width: 640px) 100vw, 192px"
+              >
                 {r.premium && (
-                  <div className="absolute top-3 left-3">
+                  <div className="absolute top-3 left-3 z-10">
                     <Badge variant="soleil" icon={<Star size={10} />}>
                       Premium
                     </Badge>
                   </div>
                 )}
-              </div>
+              </ContentCoverImage>
               <div className="p-5 flex-1 relative">
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <h2 className="font-display text-xl text-ocean-900 group-hover:text-tiare-600 transition-colors">

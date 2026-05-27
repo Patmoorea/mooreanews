@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { WaveDivider } from "@/components/decor/TropicalDecor";
+import { ContentCoverImage } from "@/components/ContentCoverImage";
+import type { CategorySlug } from "@/lib/constants";
 
 const CATS = [
   {
@@ -17,7 +19,7 @@ const CATS = [
     label: "Actualités",
     description: "Tout ce qui bouge sur l'île",
     icon: Newspaper,
-    emoji: "📰",
+    category: "actualites" as CategorySlug,
     color: "from-lagon-500 to-ocean-700",
   },
   {
@@ -25,7 +27,7 @@ const CATS = [
     label: "Événements",
     description: "Concerts, marchés, fêtes",
     icon: Calendar,
-    emoji: "🎉",
+    category: "evenements" as CategorySlug,
     color: "from-tiare-400 to-tiare-600",
   },
   {
@@ -33,7 +35,7 @@ const CATS = [
     label: "Annonces",
     description: "Vendre, acheter, louer, services",
     icon: Tag,
-    emoji: "📢",
+    category: "annonces" as CategorySlug,
     color: "from-soleil-400 to-couchant",
   },
   {
@@ -41,7 +43,7 @@ const CATS = [
     label: "Restaurants",
     description: "Où manger sur l'île",
     icon: Utensils,
-    emoji: "🍽️",
+    category: "restaurants" as CategorySlug,
     color: "from-orange-400 to-tiare-500",
   },
   {
@@ -49,15 +51,15 @@ const CATS = [
     label: "Activités",
     description: "Plongée, rando, lagon",
     icon: Compass,
-    emoji: "🤿",
+    category: "activites" as CategorySlug,
     color: "from-tipanier-400 to-tipanier-700",
   },
   {
     href: "/infos-pratiques",
     label: "Infos pratiques",
-    description: "Mairie, hôpital, urgences",
+    description: "Mairie, hôpital, urgences, transports",
     icon: Info,
-    emoji: "ℹ️",
+    category: "infos-pratiques" as CategorySlug,
     color: "from-ocean-500 to-ocean-900",
   },
 ] satisfies {
@@ -65,7 +67,7 @@ const CATS = [
   label: string;
   description: string;
   icon: LucideIcon;
-  emoji: string;
+  category: CategorySlug;
   color: string;
 }[];
 
@@ -94,28 +96,27 @@ export function CategoriesGrid() {
               <Link
                 key={cat.href}
                 href={cat.href}
-                className="card-island group p-6 hover:-translate-y-1 hover:shadow-[var(--shadow-tropical)] transition-all"
+                className="card-island group overflow-hidden hover:-translate-y-1 hover:shadow-[var(--shadow-tropical)] transition-all"
               >
-                <div
-                  className={`absolute -right-8 -top-8 w-32 h-32 rounded-full bg-gradient-to-br ${cat.color} opacity-15 group-hover:opacity-25 transition-opacity`}
-                />
-                <span
-                  className="absolute top-4 right-4 text-2xl opacity-60 group-hover:opacity-90 group-hover:scale-110 transition-all"
-                  aria-hidden
+                <ContentCoverImage
+                  alt=""
+                  category={cat.category}
+                  className="aspect-[16/10]"
+                  sizes="(max-width: 640px) 50vw, 33vw"
+                  overlay
                 >
-                  {cat.emoji}
-                </span>
-                <div
-                  className={`relative w-12 h-12 rounded-2xl bg-gradient-to-br ${cat.color} text-white flex items-center justify-center shadow-lg`}
-                >
-                  <Icon size={22} />
+                  <div
+                    className={`absolute bottom-3 left-3 w-10 h-10 rounded-xl bg-gradient-to-br ${cat.color} text-white flex items-center justify-center shadow-lg`}
+                  >
+                    <Icon size={20} />
+                  </div>
+                </ContentCoverImage>
+                <div className="p-4 sm:p-5">
+                  <h3 className="font-display text-lg sm:text-xl text-ocean-900 group-hover:text-tiare-600 transition-colors">
+                    {cat.label}
+                  </h3>
+                  <p className="text-sm text-ocean-600 mt-1">{cat.description}</p>
                 </div>
-                <h3 className="relative mt-4 font-display text-xl text-ocean-900 group-hover:text-tiare-600 transition-colors">
-                  {cat.label}
-                </h3>
-                <p className="relative text-sm text-ocean-600 mt-1">
-                  {cat.description}
-                </p>
               </Link>
             );
           })}

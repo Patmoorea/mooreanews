@@ -100,4 +100,5 @@ export type InfoPratique = {
   phone?: string;
   hours?: string;
   website?: string;
+  image?: string;
 };

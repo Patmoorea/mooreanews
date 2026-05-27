@@ -3,6 +3,7 @@ import { Hero } from "@/components/home/Hero";
 import { LiveDashboard } from "@/components/home/LiveDashboard";
 import { CategoriesGrid } from "@/components/home/CategoriesGrid";
 import { FeaturedArticles } from "@/components/home/FeaturedArticles";
+import { ExternalArticles } from "@/components/ExternalArticles";
 import { UpcomingEvents } from "@/components/home/UpcomingEvents";
 import { InteractiveMap } from "@/components/home/InteractiveMap";
 import { CommunityCTA } from "@/components/home/CommunityCTA";
@@ -18,6 +19,7 @@ export default function HomePage() {
       <Hero />
       <LiveDashboard />
       <FeaturedArticles />
+      <ExternalArticles limit={6} />
       <UpcomingEvents />
       <InteractiveMap />
       <CategoriesGrid />

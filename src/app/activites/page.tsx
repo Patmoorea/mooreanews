@@ -4,6 +4,7 @@ import { MapPin, Clock, Tag, ExternalLink, ArrowRight } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/PageHeader";
+import { ContentCoverImage } from "@/components/ContentCoverImage";
 import { getActivities } from "@/lib/content";
 import { ACTIVITY_CATEGORY_LABELS } from "@/lib/content-labels";
 
@@ -33,7 +34,13 @@ export default async function ActivitesPage() {
               href={`/activites/${a.slug}`}
               className="group block bg-white rounded-2xl border border-ocean-100 overflow-hidden shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:-translate-y-1 transition-all"
             >
-              <div className="aspect-[16/10] bg-gradient-to-br from-tipanier-300 via-lagon-300 to-ocean-400" />
+              <ContentCoverImage
+                src={a.image}
+                alt={a.name}
+                category="activites"
+                className="aspect-[16/10]"
+                sizes="(max-width: 640px) 100vw, 33vw"
+              />
               <div className="p-5">
                 <Badge variant="tipanier">{ACTIVITY_CATEGORY_LABELS[a.category]}</Badge>
                 <h2 className="mt-2 font-display text-lg text-ocean-900 group-hover:text-tiare-600 transition-colors">

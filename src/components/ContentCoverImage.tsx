@@ -9,6 +9,7 @@ type Props = {
   src?: string | null;
   alt: string;
   category?: string;
+  slug?: string;
   className?: string;
   imageClassName?: string;
   priority?: boolean;
@@ -24,6 +25,7 @@ export function ContentCoverImage({
   src,
   alt,
   category,
+  slug,
   className,
   imageClassName,
   priority = false,
@@ -31,8 +33,8 @@ export function ContentCoverImage({
   overlay = true,
   children,
 }: Props) {
-  const primary = resolveCoverImage({ image: src, category });
-  const fallback = resolveCoverImage({ category });
+  const primary = resolveCoverImage({ image: src, category, slug });
+  const fallback = resolveCoverImage({ category, slug });
   const [activeSrc, setActiveSrc] = useState(primary);
 
   return (

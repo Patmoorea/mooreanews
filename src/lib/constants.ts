@@ -117,6 +117,12 @@ export const MOOREA_COMMUNITY_LINKS = [
     href: "https://www.horaires-tahiti.com",
     description: "Aremiti, Terevau : Tahiti ↔ Moorea.",
   },
+  {
+    title: "RAI TAHITI — transport sanitaire (VSL)",
+    href: "https://raitahiti.com",
+    description:
+      "Ambulance conventionnée CPS, Moorea ↔ Tahiti, 7j/7 — 89 77 76 24 (Moorea).",
+  },
 ] as const;
 
 /**

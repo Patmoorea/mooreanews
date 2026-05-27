@@ -11,6 +11,7 @@ import {
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { ShareButtons } from "@/components/ShareButtons";
+import { ContentCoverImage } from "@/components/ContentCoverImage";
 import { getInfoPratiqueBySlug, getInfoPratiques } from "@/lib/content";
 import { INFO_CATEGORY_LABELS } from "@/lib/content-labels";
 import { SITE } from "@/lib/constants";
@@ -43,6 +44,15 @@ export default async function InfoPratiqueDetailPage({ params }: Props) {
 
   return (
     <article>
+      <ContentCoverImage
+        src={item.image}
+        alt={item.title}
+        category={item.category}
+        slug={item.slug}
+        className="relative h-48 sm:h-56"
+        sizes="100vw"
+        priority
+      />
       <section className="relative overflow-hidden bg-gradient-to-b from-ocean-100 via-lagon-50 to-white">
         <Container className="relative py-12 sm:py-16">
           <Link

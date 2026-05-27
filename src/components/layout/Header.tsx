@@ -27,20 +27,22 @@ export function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const bannerNav = !scrolled;
+  const onTop = !scrolled;
 
   return (
     <header
       className={cn(
         "sticky top-0 z-50 transition-shadow duration-300",
-        scrolled && "bg-white/95 backdrop-blur shadow-[var(--shadow-soft)] border-b border-lagon-200/80",
+        scrolled && "shadow-[var(--shadow-soft)]",
       )}
     >
       {/* Barre logo + actions */}
       <div
         className={cn(
-          "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8",
-          bannerNav && "relative z-20 bg-ocean-950/45 backdrop-blur-sm",
+          "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 transition-colors duration-300",
+          onTop
+            ? "relative z-20 bg-ocean-950/50 backdrop-blur-sm"
+            : "bg-white/95 backdrop-blur border-b border-lagon-200/80",
         )}
       >
         <div className="flex h-12 sm:h-14 items-center justify-between gap-3">
@@ -54,27 +56,26 @@ export function Header() {
               priority
               className={cn(
                 "h-9 w-9 sm:h-10 sm:w-10 rounded-full shadow-md group-hover:scale-105 transition-transform ring-2",
-                bannerNav ? "ring-white/40" : "ring-lagon-200",
+                onTop ? "ring-white/40" : "ring-lagon-200",
               )}
             />
             <span
               className={cn(
                 "hidden sm:inline font-display text-lg tracking-tight",
-                bannerNav ? "text-white drop-shadow-md" : "text-ocean-900",
+                onTop ? "text-white drop-shadow-md" : "text-ocean-900",
               )}
             >
-              Moorea<span className={bannerNav ? "text-lagon-300" : "text-lagon-600"}>News</span>
+              Moorea<span className={onTop ? "text-lagon-300" : "text-lagon-600"}>News</span>
             </span>
           </Link>
 
-          <div className="hidden lg:flex items-center gap-2 flex-shrink-0 [&_button]:text-ocean-800">
-            {bannerNav && (
+          <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
+            {onTop ? (
               <div className="[&_button]:!text-white [&_button:hover]:!bg-white/15 [&_svg]:drop-shadow-sm">
                 <SearchBar />
                 <UserMenu />
               </div>
-            )}
-            {!bannerNav && (
+            ) : (
               <>
                 <SearchBar />
                 <UserMenu />
@@ -93,7 +94,7 @@ export function Header() {
             onClick={() => setIsOpen((v) => !v)}
             className={cn(
               "lg:hidden p-2 rounded-lg transition-colors flex-shrink-0",
-              bannerNav
+              onTop
                 ? "text-white hover:bg-white/15"
                 : "text-ocean-800 hover:bg-lagon-100",
             )}
@@ -105,36 +106,24 @@ export function Header() {
         </div>
       </div>
 
-      {/* Menu pleine largeur sur la bannière */}
-      <div
-        className={cn(
-          "relative w-full overflow-hidden",
-          bannerNav ? "h-[4.25rem] sm:h-[4.75rem] lg:h-[5.25rem]" : "hidden lg:block border-t border-lagon-100/80 bg-white/95",
-        )}
-      >
-        {bannerNav && (
-          <>
-            <Image
-              src={SITE.navBanner}
-              alt=""
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover object-[center_62%] sm:object-[center_58%] lg:object-[center_55%]"
-              aria-hidden
-            />
-            <div
-              className="absolute inset-0 bg-gradient-to-t from-ocean-950/90 via-ocean-950/40 to-transparent"
-              aria-hidden
-            />
-          </>
-        )}
+      {/* Menu pleine largeur — bannière toujours visible */}
+      <div className="relative w-full overflow-hidden h-[4.25rem] sm:h-[4.75rem] lg:h-[5.25rem]">
+        <Image
+          src={SITE.navBanner}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-[center_62%] sm:object-[center_58%] lg:object-[center_55%]"
+          aria-hidden
+        />
+        <div
+          className="absolute inset-0 bg-gradient-to-t from-ocean-950/92 via-ocean-950/45 to-ocean-900/25"
+          aria-hidden
+        />
 
         <nav
-          className={cn(
-            "relative z-10 mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 flex items-center justify-center",
-            bannerNav ? "h-full" : "h-11",
-          )}
+          className="relative z-10 mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 h-full flex items-center justify-center"
           aria-label="Navigation principale"
         >
           <div className="flex flex-wrap items-center justify-center gap-0.5 sm:gap-1 max-w-full">
@@ -145,14 +134,8 @@ export function Header() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "px-2 sm:px-2.5 xl:px-3.5 py-1.5 sm:py-2 text-xs sm:text-[13px] xl:text-sm font-semibold rounded-full transition-colors whitespace-nowrap",
-                    bannerNav
-                      ? "text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)] hover:bg-white/20"
-                      : "text-ocean-800 font-medium hover:bg-lagon-100 hover:text-ocean-900",
-                    active &&
-                      (bannerNav
-                        ? "bg-white/25 ring-1 ring-white/50"
-                        : "bg-lagon-100 text-ocean-900"),
+                    "px-2 sm:px-2.5 xl:px-3.5 py-1.5 sm:py-2 text-xs sm:text-[13px] xl:text-sm font-semibold rounded-full transition-colors whitespace-nowrap text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)] hover:bg-white/20",
+                    active && "bg-white/25 ring-1 ring-white/50",
                   )}
                 >
                   {item.label}
@@ -168,7 +151,7 @@ export function Header() {
         <div
           className={cn(
             "lg:hidden border-t",
-            bannerNav
+            onTop
               ? "border-white/20 bg-ocean-950/95 backdrop-blur-md"
               : "border-ocean-100 bg-white/98 backdrop-blur",
           )}
@@ -181,7 +164,7 @@ export function Header() {
                 onClick={() => setIsOpen(false)}
                 className={cn(
                   "px-4 py-3 rounded-xl text-base font-medium transition-colors",
-                  bannerNav
+                  onTop
                     ? "text-white hover:bg-white/10"
                     : "text-ocean-800 hover:bg-lagon-100",
                 )}

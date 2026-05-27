@@ -28,6 +28,7 @@ import {
   dbListActivities,
   dbListInfoPratiques,
 } from "@/lib/supabase/queries";
+import { getMissingInfoPratiquesFromJson } from "@/lib/supabase/sync-info-pratiques";
 
 import type {
   ArticleRow,
@@ -154,10 +155,32 @@ export async function getActivityBySlug(
 // Infos pratiques
 // =====================================================================
 
+const INFO_CATEGORY_ORDER: Record<InfoPratique["category"], number> = {
+  urgence: 0,
+  sante: 1,
+  transport: 2,
+  administration: 3,
+  education: 4,
+  commerce: 5,
+};
+
+function sortInfoPratiques(items: InfoPratique[]): InfoPratique[] {
+  return items.slice().sort((a, b) => {
+    const cat =
+      INFO_CATEGORY_ORDER[a.category] - INFO_CATEGORY_ORDER[b.category];
+    if (cat !== 0) return cat;
+    return a.title.localeCompare(b.title, "fr");
+  });
+}
+
+/** Supabase + entrées du catalogue JSON encore absentes en base (ex. RAI TAHITI). */
 export async function getInfoPratiques(): Promise<InfoPratique[]> {
+  const json = infoData as InfoPratique[];
   const db = await dbListInfoPratiques();
-  if (db) return db.map(infoFromRow);
-  return infoData as InfoPratique[];
+  if (!db) return sortInfoPratiques(json);
+  const dbItems = db.map(infoFromRow);
+  const missing = getMissingInfoPratiquesFromJson(dbItems.map((i) => i.title));
+  return sortInfoPratiques([...dbItems, ...missing]);
 }
 
 export async function getInfoPratiqueBySlug(
@@ -260,8 +283,11 @@ function activityFromRow(r: ActivityRow): Activity {
 }
 
 function infoFromRow(r: InfoRow): InfoPratique {
+  const jsonMatch = (infoData as InfoPratique[]).find(
+    (j) => j.title.trim().toLowerCase() === r.title.trim().toLowerCase(),
+  );
   return {
-    slug: r.id,
+    slug: jsonMatch?.slug ?? r.id,
     title: r.title,
     description: r.description,
     category: r.category as InfoPratique["category"],
@@ -269,5 +295,6 @@ function infoFromRow(r: InfoRow): InfoPratique {
     phone: r.phone ?? undefined,
     hours: r.hours ?? undefined,
     website: r.url ?? undefined,
+    image: jsonMatch?.image,
   };
 }
