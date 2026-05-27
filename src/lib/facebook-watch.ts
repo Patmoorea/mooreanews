@@ -20,6 +20,13 @@ type GraphPost = {
   full_picture?: string;
 };
 
+type MeAccountsPage = {
+  id: string;
+  name?: string;
+  username?: string;
+  access_token?: string;
+};
+
 async function upsertFacebookRows(
   rows: {
     source_id: string;
@@ -116,7 +123,37 @@ async function fetchPagePosts(
   return json.data ?? [];
 }
 
-/** Derniers posts des pages configurées (nécessite FACEBOOK_PAGE_ACCESS_TOKEN). */
+async function fetchMeAccounts(userToken: string): Promise<MeAccountsPage[]> {
+  const apiUrl = new URL(`https://graph.facebook.com/v21.0/me/accounts`);
+  apiUrl.searchParams.set("fields", "id,name,username,access_token");
+  apiUrl.searchParams.set("limit", "200");
+  apiUrl.searchParams.set("access_token", userToken);
+
+  const res = await fetch(apiUrl.toString(), { cache: "no-store" });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Graph API me/accounts: HTTP ${res.status} ${body.slice(0, 120)}`);
+  }
+  const json = (await res.json()) as { data?: MeAccountsPage[] };
+  return json.data ?? [];
+}
+
+function pickTokenForPage(options: {
+  page: FacebookPageWatch;
+  perPageTokenByIdOrUsername: Map<string, string>;
+  fallbackPageToken?: string;
+}): string | null {
+  const key1 = options.page.pageId;
+  const key2 = options.page.pageId.toLowerCase();
+  return (
+    options.perPageTokenByIdOrUsername.get(key1) ??
+    options.perPageTokenByIdOrUsername.get(key2) ??
+    options.fallbackPageToken ??
+    null
+  );
+}
+
+/** Derniers posts des pages configurées (jeton page ou jeton user → /me/accounts). */
 export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> {
   const result: AggregationResult = {
     source: "facebook-pages",
@@ -126,8 +163,9 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
     errors: [],
   };
 
-  const token = process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim();
-  if (!token) return result;
+  const fallbackPageToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim();
+  const userToken = process.env.FACEBOOK_USER_ACCESS_TOKEN?.trim();
+  if (!fallbackPageToken && !userToken) return result;
 
   const supabase = getAdminSupabase();
   if (!supabase) {
@@ -135,11 +173,38 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
     return result;
   }
 
+  const perPageTokenByIdOrUsername = new Map<string, string>();
+  if (userToken) {
+    try {
+      const pages = await fetchMeAccounts(userToken);
+      for (const p of pages) {
+        const t = p.access_token?.trim();
+        if (!t) continue;
+        if (p.id) perPageTokenByIdOrUsername.set(p.id, t);
+        if (p.username) {
+          perPageTokenByIdOrUsername.set(p.username, t);
+          perPageTokenByIdOrUsername.set(p.username.toLowerCase(), t);
+        }
+      }
+    } catch (e) {
+      result.errors.push(String(e));
+    }
+  }
+
   const rows: Parameters<typeof upsertFacebookRows>[0] = [];
 
   for (const page of FACEBOOK_PAGE_WATCHES) {
     try {
-      const posts = await fetchPagePosts(page, token);
+      const tokenForPage = pickTokenForPage({
+        page,
+        perPageTokenByIdOrUsername,
+        fallbackPageToken,
+      });
+      if (!tokenForPage) {
+        result.errors.push(`Token manquant pour ${page.pageId}`);
+        continue;
+      }
+      const posts = await fetchPagePosts(page, tokenForPage);
       result.fetched += posts.length;
       for (const post of posts) {
         const title =
