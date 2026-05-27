@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
-import { NAV_ITEMS, SITE } from "@/lib/constants";
+import { NAV_ITEMS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { SearchBar } from "@/components/layout/SearchBar";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { Logo } from "@/components/ui/Logo";
+import { BrandBanner } from "@/components/ui/BrandBanner";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,37 +27,41 @@ export function Header() {
         "sticky top-0 z-50 transition-all duration-300",
         scrolled
           ? "bg-white/95 backdrop-blur shadow-[var(--shadow-soft)] border-b border-ocean-100"
-          : "bg-white/80 backdrop-blur-sm"
+          : "bg-white/90 backdrop-blur-sm border-b border-ocean-100/60",
       )}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 sm:h-20 items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative">
-              <Logo
-                size={48}
-                className="w-10 h-10 sm:w-12 sm:h-12 shadow-[var(--shadow-tropical)] rounded-full group-hover:scale-110 transition-transform"
-              />
-              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-lagon-400 to-soleil-400 blur-md opacity-40 group-hover:opacity-60 transition-opacity -z-10" />
-            </div>
-            <div className="flex flex-col leading-tight">
-              <span className="font-display text-xl sm:text-2xl text-ocean-900">
-                {SITE.name}
-              </span>
-              <span className="hidden sm:block text-[10px] uppercase tracking-[0.2em] text-lagon-600 font-medium">
-                {SITE.tagline}
-              </span>
-            </div>
+        <div className="flex h-14 sm:h-16 lg:h-[4.25rem] items-center justify-between gap-3 lg:gap-4">
+          {/* Marque : bannière recadrée (desktop/tablette) ou logo seul (mobile) */}
+          <Link
+            href="/"
+            className="flex items-center gap-2 sm:gap-3 group flex-shrink-0 min-w-0"
+            aria-label="MooreaNews — Accueil"
+          >
+            {/* Mobile : logo rond lisible */}
+            <Logo
+              size={40}
+              priority
+              className="h-9 w-9 sm:hidden flex-shrink-0 rounded-full shadow-sm group-hover:scale-105 transition-transform"
+            />
+            {/* sm+ : bannière adaptée au menu */}
+            <BrandBanner
+              variant="header"
+              priority
+              className="hidden sm:block group-hover:opacity-95 transition-opacity shadow-sm"
+            />
           </Link>
 
           {/* Nav desktop */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav
+            className="hidden lg:flex items-center gap-0.5 flex-1 justify-center min-w-0"
+            aria-label="Navigation principale"
+          >
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="px-3.5 py-2 text-sm font-medium text-ocean-800 rounded-full hover:bg-lagon-100 hover:text-ocean-900 transition-colors"
+                className="px-2.5 xl:px-3 py-2 text-[13px] xl:text-sm font-medium text-ocean-800 rounded-full hover:bg-lagon-100 hover:text-ocean-900 transition-colors whitespace-nowrap"
               >
                 {item.label}
               </Link>
@@ -64,12 +69,12 @@ export function Header() {
           </nav>
 
           {/* Actions desktop */}
-          <div className="hidden lg:flex items-center gap-2">
+          <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
             <SearchBar />
             <UserMenu />
             <Link
               href="/soumettre"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-br from-tiare-400 to-tiare-500 text-white text-sm font-semibold shadow-[var(--shadow-sunset)] hover:-translate-y-0.5 transition-transform"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-br from-tiare-400 to-tiare-500 text-white text-sm font-semibold shadow-[var(--shadow-sunset)] hover:-translate-y-0.5 transition-transform whitespace-nowrap"
             >
               + Publier
             </Link>
@@ -79,7 +84,7 @@ export function Header() {
           <button
             type="button"
             onClick={() => setIsOpen((v) => !v)}
-            className="lg:hidden p-2 rounded-lg text-ocean-800 hover:bg-lagon-100 transition-colors"
+            className="lg:hidden p-2 rounded-lg text-ocean-800 hover:bg-lagon-100 transition-colors flex-shrink-0"
             aria-label={isOpen ? "Fermer le menu" : "Ouvrir le menu"}
             aria-expanded={isOpen}
           >
@@ -90,8 +95,11 @@ export function Header() {
 
       {/* Menu mobile */}
       {isOpen && (
-        <div className="lg:hidden border-t border-ocean-100 bg-white/95 backdrop-blur">
-          <nav className="mx-auto max-w-7xl px-4 py-4 flex flex-col gap-1">
+        <div className="lg:hidden border-t border-ocean-100 bg-white/98 backdrop-blur">
+          <div className="mx-auto max-w-7xl px-4 pt-3 pb-1 flex justify-center">
+            <BrandBanner variant="header" className="sm:hidden w-[min(100%,280px)] h-11" />
+          </div>
+          <nav className="mx-auto max-w-7xl px-4 py-3 flex flex-col gap-1">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
