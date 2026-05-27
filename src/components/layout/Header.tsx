@@ -21,7 +21,7 @@ export function Header() {
   const pathname = usePathname();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 48);
+    const onScroll = () => setScrolled(window.scrollY > 32);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -36,16 +36,16 @@ export function Header() {
         scrolled && "shadow-[var(--shadow-soft)]",
       )}
     >
-      {/* Barre logo + actions */}
+      {/* Barre logo + actions (au-dessus de la bannière menu) */}
       <div
         className={cn(
-          "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 transition-colors duration-300",
+          "relative z-20 transition-colors duration-300",
           onTop
-            ? "relative z-20 bg-ocean-950/50 backdrop-blur-sm"
+            ? "bg-ocean-950/40 backdrop-blur-[2px]"
             : "bg-white/95 backdrop-blur border-b border-lagon-200/80",
         )}
       >
-        <div className="flex h-12 sm:h-14 items-center justify-between gap-3">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex h-12 sm:h-14 items-center justify-between gap-3">
           <Link
             href="/"
             className="flex items-center gap-2 group flex-shrink-0"
@@ -56,7 +56,7 @@ export function Header() {
               priority
               className={cn(
                 "h-9 w-9 sm:h-10 sm:w-10 rounded-full shadow-md group-hover:scale-105 transition-transform ring-2",
-                onTop ? "ring-white/40" : "ring-lagon-200",
+                onTop ? "ring-white/50" : "ring-lagon-200",
               )}
             />
             <span
@@ -106,27 +106,31 @@ export function Header() {
         </div>
       </div>
 
-      {/* Menu pleine largeur — bannière toujours visible */}
-      <div className="relative w-full overflow-hidden h-[4.25rem] sm:h-[4.75rem] lg:h-[5.25rem]">
+      {/* Bannière 100 % largeur + menu HTML par-dessus */}
+      <div
+        className="relative w-full overflow-hidden min-h-[4.5rem] sm:min-h-[5.25rem] md:min-h-[5.75rem]"
+        aria-label="Navigation avec bannière MooreaNews"
+      >
         <Image
           src={SITE.navBanner}
           alt=""
           fill
           priority
           sizes="100vw"
-          className="object-cover object-[center_62%] sm:object-[center_58%] lg:object-[center_55%]"
+          className="object-cover object-[center_42%] sm:object-[center_38%] md:object-center select-none pointer-events-none"
           aria-hidden
         />
+        {/* Voile léger : la bannière reste visible, le texte reste lisible */}
         <div
-          className="absolute inset-0 bg-gradient-to-t from-ocean-950/92 via-ocean-950/45 to-ocean-900/25"
+          className="absolute inset-0 bg-gradient-to-t from-ocean-950/80 via-ocean-950/35 to-ocean-900/15"
           aria-hidden
         />
 
         <nav
-          className="relative z-10 mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 h-full flex items-center justify-center"
+          className="relative z-10 w-full px-2 sm:px-4 md:px-6 py-2.5 sm:py-3 min-h-[4.5rem] sm:min-h-[5.25rem] md:min-h-[5.75rem] flex items-center justify-center"
           aria-label="Navigation principale"
         >
-          <div className="flex flex-wrap items-center justify-center gap-0.5 sm:gap-1 max-w-full">
+          <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 w-full max-w-7xl">
             {NAV_ITEMS.map((item) => {
               const active = isNavActive(pathname, item.href);
               return (
@@ -134,8 +138,12 @@ export function Header() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "px-2 sm:px-2.5 xl:px-3.5 py-1.5 sm:py-2 text-xs sm:text-[13px] xl:text-sm font-semibold rounded-full transition-colors whitespace-nowrap text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)] hover:bg-white/20",
-                    active && "bg-white/25 ring-1 ring-white/50",
+                    "px-2.5 sm:px-3 md:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold rounded-full transition-all whitespace-nowrap",
+                    "text-white shadow-[0_1px_4px_rgba(0,0,0,0.45)]",
+                    "hover:bg-white/25 hover:shadow-[0_2px_8px_rgba(0,0,0,0.35)]",
+                    active
+                      ? "bg-white/30 ring-2 ring-white/60 backdrop-blur-sm"
+                      : "bg-black/15 backdrop-blur-[2px]",
                   )}
                 >
                   {item.label}
@@ -146,28 +154,16 @@ export function Header() {
         </nav>
       </div>
 
-      {/* Menu mobile */}
+      {/* Menu mobile (s’ouvre sous la bannière) */}
       {isOpen && (
-        <div
-          className={cn(
-            "lg:hidden border-t",
-            onTop
-              ? "border-white/20 bg-ocean-950/95 backdrop-blur-md"
-              : "border-ocean-100 bg-white/98 backdrop-blur",
-          )}
-        >
+        <div className="lg:hidden border-t border-white/20 bg-ocean-950/95 backdrop-blur-md">
           <nav className="mx-auto max-w-7xl px-4 py-3 flex flex-col gap-1">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsOpen(false)}
-                className={cn(
-                  "px-4 py-3 rounded-xl text-base font-medium transition-colors",
-                  onTop
-                    ? "text-white hover:bg-white/10"
-                    : "text-ocean-800 hover:bg-lagon-100",
-                )}
+                className="px-4 py-3 rounded-xl text-base font-semibold text-white hover:bg-white/15 transition-colors"
               >
                 {item.label}
               </Link>
