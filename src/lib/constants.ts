@@ -2,6 +2,10 @@
  * Constantes globales du site MooreaNews.
  */
 
+/** Email affiché (mailto, footer, contact) — jamais contact@ */
+export const SITE_EMAIL =
+  process.env.NEXT_PUBLIC_SITE_EMAIL?.trim() || "postmaster@mooreanews.com";
+
 export const SITE = {
   name: "MooreaNews",
   tagline: "L'info de Moorea en Polynésie française",
@@ -13,7 +17,7 @@ export const SITE = {
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://mooreanews.com",
   locale: "fr_PF",
   timezone: "Pacific/Tahiti",
-  email: "postmaster@mooreanews.com",
+  email: SITE_EMAIL,
   copyright: "© 2026 MooreaNews. Tous droits réservés.",
   logo: "/brand/logo.png",
   banner: "/brand/banner.png",

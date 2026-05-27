@@ -32,7 +32,7 @@ export function ContactForm() {
     } catch {
       setStatus("error");
       setMessage(
-        "Une erreur est survenue. Réessayez ou envoyez-nous un email directement."
+        "Une erreur est survenue. Réessayez ou écrivez à postmaster@mooreanews.com."
       );
     }
   }

@@ -14,6 +14,9 @@
 | `RESEND_FROM` | `MooreaNews <postmaster@mooreanews.com>` |
 | `RESEND_ADMIN` | `postmaster@mooreanews.com` |
 | `CONTACT_TO_EMAIL` | `postmaster@mooreanews.com` (alias de `RESEND_ADMIN`) |
+| `NEXT_PUBLIC_SITE_EMAIL` | `postmaster@mooreanews.com` — **affiché** sur le site (footer, Contact) |
+
+Si le site affiche encore `contact@mooreanews.com`, le déploiement Vercel est obsolète : **Deployments → dernier commit → Redeploy** (ou définir `NEXT_PUBLIC_SITE_EMAIL=postmaster@mooreanews.com` puis redéployer).
 | `TELEGRAM_BOT_TOKEN` | token @BotFather (optionnel) |
 | `TELEGRAM_CHAT_ID` | id du chat / groupe (optionnel) |
 
