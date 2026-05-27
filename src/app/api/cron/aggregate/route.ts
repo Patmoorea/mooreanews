@@ -11,16 +11,20 @@ import { sendTelegramNotification } from "@/lib/telegram";
 export const dynamic = "force-dynamic";
 
 async function verifyAuth(req: Request): Promise<boolean> {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return true; // pas de secret configuré → ouvert (dev)
+  const secret = process.env.CRON_SECRET?.trim();
 
-  const auth = req.headers.get("authorization");
-  if (auth === `Bearer ${secret}`) return true;
+  if (secret) {
+    const auth = req.headers.get("authorization");
+    if (auth === `Bearer ${secret}`) return true;
+    const url = new URL(req.url);
+    if (url.searchParams.get("secret") === secret) return true;
+    return false;
+  }
 
-  const url = new URL(req.url);
-  if (url.searchParams.get("secret") === secret) return true;
+  // Sans CRON_SECRET : accepter uniquement le cron Vercel (header officiel)
+  if (req.headers.get("x-vercel-cron") === "1") return true;
 
-  return false;
+  return process.env.NODE_ENV !== "production";
 }
 
 export async function GET(req: Request) {

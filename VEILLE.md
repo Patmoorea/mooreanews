@@ -63,6 +63,21 @@ Après chaque collecte : **Redeploy** ou attendre le prochain build si besoin.
 - **Groupe privé / restreint** : souvent pas de titre Open Graph → le lien apparaît quand même avec le libellé configuré (ex. « Commune — publication photo »).
 - **Page Commune** : avec `FACEBOOK_PAGE_ACCESS_TOKEN`, les vrais posts récents remontent mieux.
 
+## Diagnostic rapide
+
+Ouvrir dans le navigateur :
+
+**https://www.mooreanews.com/api/watch/status**
+
+Vous devez voir notamment :
+
+- `"supabaseServiceRole": true`
+- `"facebookLinksConfigured": 6` (ou plus)
+- `"expectedCronSources"` contenant **`facebook-watch`**
+- `"externalArticlesVisible"` > 0 après une collecte
+
+Si `expectedCronSources` **ne contient pas** `facebook-watch` → le site en ligne est une **vieille version** : **Redeploy** sur Vercel (branche `main`).
+
 ## Vérification
 
 1. `/admin/external` → liste « Derniers articles agrégés » non vide  
