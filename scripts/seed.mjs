@@ -152,6 +152,8 @@ await insert(
     phone: r.phone ?? null,
     hours: r.openingHours ?? null,
     price_range: r.priceLevel ? "€".repeat(r.priceLevel) : null,
+    lat: r.lat ?? null,
+    lon: r.lon ?? null,
     cover_url: r.image ?? null,
     url: r.website ?? null,
     published: true,

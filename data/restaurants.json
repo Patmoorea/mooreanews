@@ -42,15 +42,18 @@
   {
     "slug": "snack-moorea-maitai",
     "name": "Snack Moorea Maïtaï",
-    "description": "Snack convivial à Maharepa : cuisine locale et plats du jour, idéal pour manger sur le pouce.",
+    "description": "Snack convivial à Maharepa, à côté du Manava (site Albert Tours). Cuisine locale, plats du jour et ambiance décontractée.",
     "cuisine": ["Polynésienne", "Snack"],
     "priceLevel": 1,
     "district": "Maharepa",
-    "address": "Maharepa, Moorea",
-    "phone": null,
-    "openingHours": null,
+    "address": "Maharepa, à côté du Manava — site Albert Tours",
+    "phone": "87 27 19 19",
+    "website": "https://www.facebook.com/profile.php?id=61555377901751",
+    "openingHours": "Mer-Dim 11h-21h (fermé lun-mar)",
+    "lat": -17.480736435267957,
+    "lon": -149.80411889064598,
     "image": "/images/restaurants/moorea-maitai.jpg",
-    "features": ["Sur le pouce", "Plats du jour"]
+    "features": ["Sur le pouce", "Plats du jour", "Maharepa"]
   },
   {
     "slug": "moorea-beach-cafe",
