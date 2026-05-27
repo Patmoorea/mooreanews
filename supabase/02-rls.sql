@@ -1,12 +1,19 @@
 -- =====================================================================
--- ⚠️ NE PAS UTILISER si la table "profiles" n'existe pas !
--- Dans ce cas, exécutez d'abord 01-tables.sql puis 02-rls.sql
--- =====================================================================
--- Ce fichier sert UNIQUEMENT si les tables existent déjà mais que
--- les policies RLS ont échoué (erreur is_admin does not exist).
+-- ÉTAPE 2 sur 2 — Sécurité (RLS) MooreaNews
+-- À exécuter APRÈS 01-tables.sql (quand la table profiles existe)
 -- =====================================================================
 
--- 1) Créer la fonction manquante
+alter table public.profiles                enable row level security;
+alter table public.articles                enable row level security;
+alter table public.events                  enable row level security;
+alter table public.announcements           enable row level security;
+alter table public.restaurants             enable row level security;
+alter table public.activities              enable row level security;
+alter table public.info_pratiques          enable row level security;
+alter table public.submissions             enable row level security;
+alter table public.newsletter_subscribers  enable row level security;
+alter table public.external_articles       enable row level security;
+
 create or replace function public.is_admin()
 returns boolean language sql security definer set search_path = public as $$
   select exists (
@@ -15,7 +22,6 @@ returns boolean language sql security definer set search_path = public as $$
   );
 $$;
 
--- 2) Policies external_articles
 drop policy if exists "external_public_read" on public.external_articles;
 create policy "external_public_read" on public.external_articles for select
   using (hidden = false);
@@ -24,7 +30,6 @@ drop policy if exists "external_admin_all" on public.external_articles;
 create policy "external_admin_all" on public.external_articles for all
   using (public.is_admin()) with check (public.is_admin());
 
--- 3) Policies profiles
 drop policy if exists "profiles_self_read" on public.profiles;
 create policy "profiles_self_read" on public.profiles for select
   using (auth.uid() = id or public.is_admin());
@@ -33,7 +38,6 @@ drop policy if exists "profiles_self_update" on public.profiles;
 create policy "profiles_self_update" on public.profiles for update
   using (auth.uid() = id or public.is_admin());
 
--- 4) Policies contenu publié + admin
 do $$
 declare t text;
 begin
@@ -49,7 +53,6 @@ begin
   end loop;
 end$$;
 
--- 5) Submissions
 drop policy if exists "submissions_anyone_insert" on public.submissions;
 create policy "submissions_anyone_insert" on public.submissions for insert
   with check (true);
@@ -58,7 +61,6 @@ drop policy if exists "submissions_admin_all" on public.submissions;
 create policy "submissions_admin_all" on public.submissions for all
   using (public.is_admin()) with check (public.is_admin());
 
--- 6) Newsletter
 drop policy if exists "newsletter_anyone_insert" on public.newsletter_subscribers;
 create policy "newsletter_anyone_insert" on public.newsletter_subscribers for insert
   with check (true);
