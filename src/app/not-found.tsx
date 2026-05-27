@@ -11,15 +11,14 @@ export default function NotFound() {
       />
       <div
         aria-hidden
-        className="absolute -top-24 -left-24 w-96 h-96 bg-tiare-300/30 rounded-full blur-3xl animate-float"
+        className="absolute -top-24 -left-24 w-96 h-96 bg-tiare-300/30 rounded-full blur-3xl pointer-events-none"
       />
       <div
         aria-hidden
-        className="absolute -bottom-24 -right-24 w-96 h-96 bg-soleil-300/30 rounded-full blur-3xl animate-float"
-        style={{ animationDelay: "1.5s" }}
+        className="absolute -bottom-24 -right-24 w-96 h-96 bg-soleil-300/30 rounded-full blur-3xl pointer-events-none"
       />
       <Container className="relative text-center py-20">
-        <div className="text-8xl sm:text-9xl mb-6 animate-wave inline-block">
+        <div className="text-8xl sm:text-9xl mb-6 inline-block">
           🌴
         </div>
         <h1 className="font-display text-5xl sm:text-7xl text-ocean-950">

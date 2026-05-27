@@ -1,16 +1,14 @@
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { MessageCircle, Megaphone, Sparkles } from "lucide-react";
-import { PalmLeft, PalmRight, TROPICAL_EMOJI } from "@/components/decor/TropicalDecor";
+import { TROPICAL_EMOJI } from "@/components/decor/TropicalDecor";
 
 export function CommunityCTA() {
   return (
     <section className="py-16 sm:py-20 bg-gradient-to-b from-lagon-50/30 to-transparent">
       <Container>
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-tropical p-1 shadow-[var(--shadow-tropical)]">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-lagon-400 via-tipanier-400 to-tiare-400 p-1 shadow-[var(--shadow-tropical)]">
           <div className="rounded-[1.5rem] bg-gradient-to-br from-ocean-800 via-ocean-900 to-ocean-950 p-8 sm:p-12 lg:p-16 text-white relative overflow-hidden">
-            <PalmLeft className="absolute left-0 bottom-0 w-24 sm:w-32 text-tipanier-400/15 pointer-events-none" />
-            <PalmRight className="absolute right-0 bottom-0 w-28 sm:w-36 text-tipanier-500/10 pointer-events-none animate-sway-delayed" />
             <div
               aria-hidden
               className="absolute -right-20 -top-20 w-72 h-72 rounded-full bg-soleil-300/20 blur-3xl"

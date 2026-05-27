@@ -3,18 +3,11 @@ import Link from "next/link";
 import { ArrowRight, MapPin } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { SITE } from "@/lib/constants";
-import {
-  PalmLeft,
-  PalmRight,
-  WaveDivider,
-  Hibiscus,
-  TROPICAL_EMOJI,
-} from "@/components/decor/TropicalDecor";
+import { WaveDivider, TROPICAL_EMOJI } from "@/components/decor/TropicalDecor";
 
 export function Hero() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-lagon-100/90 via-soleil-50/50 to-sable-100">
-      {/* Ciel & lagon */}
       <div
         aria-hidden
         className="absolute inset-0 bg-palm-pattern opacity-80 pointer-events-none"
@@ -25,23 +18,12 @@ export function Hero() {
       />
       <div
         aria-hidden
-        className="absolute top-10 -right-16 w-80 h-80 bg-soleil-300/40 rounded-full blur-3xl animate-float"
+        className="absolute top-10 -right-16 w-80 h-80 bg-soleil-300/30 rounded-full blur-3xl pointer-events-none"
       />
       <div
         aria-hidden
-        className="absolute -bottom-10 -left-20 w-96 h-96 bg-lagon-300/35 rounded-full blur-3xl animate-float"
-        style={{ animationDelay: "1.2s" }}
+        className="absolute -bottom-10 -left-20 w-96 h-96 bg-lagon-300/25 rounded-full blur-3xl pointer-events-none"
       />
-      <div
-        aria-hidden
-        className="absolute top-1/3 right-1/4 w-48 h-48 bg-tiare-300/20 rounded-full blur-2xl"
-      />
-
-      {/* Cocotiers */}
-      <PalmLeft className="absolute left-0 bottom-12 w-28 sm:w-36 md:w-44 lg:w-52 text-tipanier-700/30 animate-sway pointer-events-none" />
-      <PalmRight className="absolute right-0 bottom-8 w-32 sm:w-40 md:w-48 lg:w-56 text-tipanier-800/25 animate-sway-delayed pointer-events-none" />
-      <Hibiscus className="absolute top-20 right-[18%] w-12 h-12 hidden md:block animate-float" />
-      <Hibiscus className="absolute bottom-32 left-[10%] w-9 h-9 hidden lg:block animate-float opacity-50 [animation-delay:1.5s]" />
 
       <Container className="relative py-16 sm:py-20 lg:py-24">
         <div className="grid lg:grid-cols-[1.2fr_1fr] gap-10 lg:gap-16 items-center">
@@ -102,15 +84,9 @@ export function Hero() {
               aria-hidden
               className="absolute -inset-4 bg-gradient-to-br from-lagon-300/30 via-soleil-200/20 to-tiare-200/30 rounded-[3.5rem] blur-xl"
             />
-            <div className="relative aspect-square rounded-[3rem] bg-gradient-tropical p-1 shadow-[var(--shadow-tropical)] animate-float max-w-md mx-auto lg:mx-0">
+            <div className="relative aspect-square rounded-[3rem] bg-gradient-to-br from-lagon-400 via-tipanier-400 to-tiare-400 p-1 shadow-[var(--shadow-tropical)] max-w-md mx-auto lg:mx-0">
               <div className="w-full h-full rounded-[2.8rem] bg-white/95 backdrop-blur p-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
                 <div className="absolute inset-0 bg-hibiscus opacity-60" />
-                <div className="absolute top-3 right-4 text-2xl opacity-80" aria-hidden>
-                  {TROPICAL_EMOJI.palm}
-                </div>
-                <div className="absolute bottom-4 left-4 text-xl opacity-70" aria-hidden>
-                  {TROPICAL_EMOJI.welcome}
-                </div>
                 <div className="relative">
                   <Image
                     src={SITE.logo}

@@ -60,7 +60,7 @@ export function WeatherCard() {
             </p>
             <h3 className="font-display text-2xl mt-1">Moorea</h3>
           </div>
-          <div className="animate-float">
+          <div>
             {data ? ICON_MAP[data.icon] ?? ICON_MAP["02d"] : (
               <CloudSun size={56} className="text-soleil-200/50" />
             )}

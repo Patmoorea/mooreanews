@@ -4,11 +4,11 @@ import { FerryCard } from "@/components/widgets/FerryCard";
 import { SunMoonCard } from "@/components/widgets/SunMoonCard";
 import { TidesCard } from "@/components/widgets/TidesCard";
 import { ForecastStrip } from "@/components/widgets/ForecastStrip";
-import { TropicalAmbient, TROPICAL_EMOJI } from "@/components/decor/TropicalDecor";
+import { TropicalSection, TROPICAL_EMOJI } from "@/components/decor/TropicalDecor";
 
 export function LiveDashboard() {
   return (
-    <TropicalAmbient className="py-16 sm:py-20" warm>
+    <TropicalSection className="py-16 sm:py-20" warm>
       <Container>
         <div className="text-center max-w-2xl mx-auto mb-12">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/80 backdrop-blur border border-tipanier-200 text-tipanier-800 text-xs font-semibold uppercase tracking-widest shadow-sm">
@@ -38,6 +38,6 @@ export function LiveDashboard() {
           <ForecastStrip />
         </div>
       </Container>
-    </TropicalAmbient>
+    </TropicalSection>
   );
 }

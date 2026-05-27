@@ -1,5 +1,4 @@
 import { Container } from "@/components/ui/Container";
-import { PalmLeft, PalmRight, Hibiscus } from "@/components/decor/TropicalDecor";
 
 type Props = {
   badge?: string;
@@ -42,9 +41,6 @@ export function PageHeader({
         aria-hidden
         className="absolute inset-0 bg-hibiscus opacity-40 pointer-events-none"
       />
-      <PalmLeft className="absolute -left-4 bottom-0 w-20 sm:w-28 text-tipanier-600/20 pointer-events-none hidden sm:block" />
-      <PalmRight className="absolute -right-4 bottom-0 w-24 sm:w-32 text-tipanier-700/15 pointer-events-none hidden sm:block" />
-      <Hibiscus className="absolute top-6 right-[15%] w-10 h-10 opacity-50 hidden md:block" />
 
       <Container className="relative">
         <div className="max-w-3xl">
