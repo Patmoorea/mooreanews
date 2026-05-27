@@ -12,15 +12,21 @@ import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { ShareButtons } from "@/components/ShareButtons";
 import { ContentCoverImage } from "@/components/ContentCoverImage";
-import { getInfoPratiqueBySlug, getInfoPratiques } from "@/lib/content";
+import {
+  getAllInfoPratiqueSlugs,
+  getInfoPratiqueBySlug,
+} from "@/lib/content";
 import { INFO_CATEGORY_LABELS } from "@/lib/content-labels";
 import { SITE } from "@/lib/constants";
 
 type Props = { params: Promise<{ slug: string }> };
 
+/** Slugs absents de generateStaticParams restent accessibles (ex. rai-tahiti-vsl). */
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
-  const items = await getInfoPratiques();
-  return items.map((i) => ({ slug: i.slug }));
+  const slugs = await getAllInfoPratiqueSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

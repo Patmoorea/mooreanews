@@ -28,7 +28,10 @@ import {
   dbListActivities,
   dbListInfoPratiques,
 } from "@/lib/supabase/queries";
-import { mergeInfoPratiqueCatalog } from "@/lib/info-catalog";
+import {
+  mergeInfoPratiqueCatalog,
+  normalizeInfoTitle,
+} from "@/lib/info-catalog";
 
 import type {
   ArticleRow,
@@ -185,8 +188,24 @@ export async function getInfoPratiques(): Promise<InfoPratique[]> {
 export async function getInfoPratiqueBySlug(
   slug: string,
 ): Promise<InfoPratique | undefined> {
+  const jsonItem = (infoData as InfoPratique[]).find((i) => i.slug === slug);
   const all = await getInfoPratiques();
-  return all.find((i) => i.slug === slug);
+  const fromList = all.find((i) => i.slug === slug);
+  if (fromList) return fromList;
+  if (jsonItem) {
+    const byTitle = all.find(
+      (i) => normalizeInfoTitle(i.title) === normalizeInfoTitle(jsonItem.title),
+    );
+    return byTitle ?? jsonItem;
+  }
+  return undefined;
+}
+
+/** Slugs stables pour pré-génération (JSON + base). */
+export async function getAllInfoPratiqueSlugs(): Promise<string[]> {
+  const json = infoData as InfoPratique[];
+  const all = await getInfoPratiques();
+  return [...new Set([...json.map((i) => i.slug), ...all.map((i) => i.slug)])];
 }
 
 // =====================================================================
