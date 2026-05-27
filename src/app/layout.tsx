@@ -90,7 +90,7 @@ export default function RootLayout({
       lang="fr"
       className={`${inter.variable} ${marcellus.variable} antialiased`}
     >
-      <body className="min-h-screen flex flex-col bg-ocean-50 text-ocean-950">
+      <body className="min-h-screen flex flex-col bg-island-sky bg-palm-pattern text-ocean-950">
         <InfoBanner />
         <Header />
         <Ticker />

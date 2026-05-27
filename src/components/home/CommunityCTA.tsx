@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { MessageCircle, Megaphone, Sparkles } from "lucide-react";
+import { PalmLeft, PalmRight, TROPICAL_EMOJI } from "@/components/decor/TropicalDecor";
 
 export function CommunityCTA() {
   return (
-    <section className="py-16 sm:py-20">
+    <section className="py-16 sm:py-20 bg-gradient-to-b from-lagon-50/30 to-transparent">
       <Container>
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-tropical p-1">
-          <div className="rounded-[1.5rem] bg-gradient-to-br from-ocean-900 to-ocean-950 p-8 sm:p-12 lg:p-16 text-white relative overflow-hidden">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-tropical p-1 shadow-[var(--shadow-tropical)]">
+          <div className="rounded-[1.5rem] bg-gradient-to-br from-ocean-800 via-ocean-900 to-ocean-950 p-8 sm:p-12 lg:p-16 text-white relative overflow-hidden">
+            <PalmLeft className="absolute left-0 bottom-0 w-24 sm:w-32 text-tipanier-400/15 pointer-events-none" />
+            <PalmRight className="absolute right-0 bottom-0 w-28 sm:w-36 text-tipanier-500/10 pointer-events-none animate-sway-delayed" />
             <div
               aria-hidden
               className="absolute -right-20 -top-20 w-72 h-72 rounded-full bg-soleil-300/20 blur-3xl"
@@ -20,7 +23,7 @@ export function CommunityCTA() {
             <div className="relative max-w-3xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur text-xs font-semibold uppercase tracking-widest border border-white/20">
                 <Sparkles size={14} className="text-soleil-300" />
-                Participer
+                {TROPICAL_EMOJI.welcome} Participer
               </div>
               <h2 className="mt-5 font-display text-3xl sm:text-4xl lg:text-5xl text-balance">
                 Vous avez une info ?{" "}

@@ -22,11 +22,12 @@ export async function UpcomingEvents() {
       <Container>
         <div className="flex items-end justify-between mb-10">
           <div>
-            <span className="inline-block px-3 py-1 rounded-full bg-tiare-100 text-tiare-700 text-xs font-semibold uppercase tracking-widest">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-tiare-100 text-tiare-700 text-xs font-semibold uppercase tracking-widest border border-tiare-200/60">
+              <span aria-hidden>🎉</span>
               Agenda
             </span>
             <h2 className="mt-3 font-display text-3xl sm:text-4xl text-ocean-950">
-              Prochains événements à Moorea
+              Prochains événements à Moorea 🌺
             </h2>
           </div>
           <Link

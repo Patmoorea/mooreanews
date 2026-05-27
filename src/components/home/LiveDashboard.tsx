@@ -4,18 +4,20 @@ import { FerryCard } from "@/components/widgets/FerryCard";
 import { SunMoonCard } from "@/components/widgets/SunMoonCard";
 import { TidesCard } from "@/components/widgets/TidesCard";
 import { ForecastStrip } from "@/components/widgets/ForecastStrip";
+import { TropicalAmbient, TROPICAL_EMOJI } from "@/components/decor/TropicalDecor";
 
 export function LiveDashboard() {
   return (
-    <section className="relative py-16 sm:py-20">
+    <TropicalAmbient className="py-16 sm:py-20" warm>
       <Container>
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-tipanier-100 text-tipanier-700 text-xs font-semibold uppercase tracking-widest">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/80 backdrop-blur border border-tipanier-200 text-tipanier-800 text-xs font-semibold uppercase tracking-widest shadow-sm">
             <span className="w-2 h-2 rounded-full bg-tipanier-500 animate-pulse-glow" />
+            <span aria-hidden>{TROPICAL_EMOJI.wave}</span>
             Données en direct
           </span>
           <h2 className="mt-4 font-display text-3xl sm:text-4xl text-ocean-950">
-            Moorea en temps réel
+            Moorea en temps réel {TROPICAL_EMOJI.sun}
           </h2>
           <p className="mt-3 text-ocean-700">
             Météo, ferries, marées, lever/coucher du soleil et phase de la
@@ -36,6 +38,6 @@ export function LiveDashboard() {
           <ForecastStrip />
         </div>
       </Container>
-    </section>
+    </TropicalAmbient>
   );
 }

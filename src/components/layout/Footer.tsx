@@ -5,17 +5,19 @@ import { NAV_ITEMS, SITE, SOCIAL, USEFUL_LINKS } from "@/lib/constants";
 import { NewsletterForm } from "@/components/NewsletterForm";
 import { FacebookIcon, InstagramIcon } from "@/components/ui/SocialIcons";
 import { Logo } from "@/components/ui/Logo";
+import { WaveDivider } from "@/components/decor/TropicalDecor";
 
 export function Footer() {
   return (
-    <footer className="mt-20 bg-gradient-to-b from-ocean-900 to-ocean-950 text-ocean-100">
+    <footer className="relative mt-20 bg-gradient-to-b from-ocean-800 via-ocean-900 to-ocean-950 text-ocean-100">
+      <WaveDivider className="absolute top-0 left-0 right-0 -translate-y-full text-lagon-100" flip />
       {/* Bloc newsletter */}
       <div className="border-b border-ocean-800/60">
         <Container className="py-12 sm:py-16">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
             <div>
               <h2 className="font-display text-3xl sm:text-4xl text-white leading-tight">
-                Restez connecté à Moorea
+                Restez connecté à Moorea 🌴
               </h2>
               <p className="mt-3 text-ocean-200/90 max-w-md">
                 Recevez une fois par semaine les actus, événements et bons plans

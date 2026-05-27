@@ -26,8 +26,8 @@ export function Header() {
       className={cn(
         "sticky top-0 z-50 transition-all duration-300",
         scrolled
-          ? "bg-white/95 backdrop-blur shadow-[var(--shadow-soft)] border-b border-ocean-100"
-          : "bg-white/90 backdrop-blur-sm border-b border-ocean-100/60",
+          ? "bg-white/95 backdrop-blur shadow-[var(--shadow-soft)] border-b border-lagon-200/80"
+          : "bg-gradient-to-r from-white/95 via-lagon-50/90 to-soleil-50/80 backdrop-blur-sm border-b border-lagon-200/50",
       )}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

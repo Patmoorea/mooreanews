@@ -90,6 +90,21 @@ body {
   color: var(--foreground);
 }
 
+/* Fond global : ciel lagon → sable (ambiance île) */
+.bg-island-sky {
+  background-color: var(--color-ocean-50);
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgb(103 232 249 / 0.35), transparent 55%),
+    radial-gradient(ellipse 80% 50% at 100% 0%, rgb(250 204 21 / 0.12), transparent 45%),
+    radial-gradient(ellipse 60% 40% at 0% 100%, rgb(16 185 129 / 0.08), transparent 50%),
+    linear-gradient(180deg, #ecfeff 0%, #f0f9ff 35%, #fefdf8 100%);
+}
+
+/* Motif feuilles de palmier très léger */
+.bg-palm-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 8c-4 8-8 14-8 22 0 6 4 10 8 10s8-4 8-10c0-8-4-14-8-22z' fill='%2310b981' fill-opacity='0.03'/%3E%3C/svg%3E");
+}
+
 body {
   font-family: var(--font-sans);
   font-feature-settings: "ss01", "cv11";
@@ -188,6 +203,26 @@ h3,
   }
 }
 
+@keyframes sway {
+  0%,
+  100% {
+    transform: rotate(-1deg);
+  }
+  50% {
+    transform: rotate(2deg);
+  }
+}
+
+@keyframes sway-delayed {
+  0%,
+  100% {
+    transform: scaleX(-1) rotate(-2deg);
+  }
+  50% {
+    transform: scaleX(-1) rotate(1deg);
+  }
+}
+
 .animate-wave {
   animation: wave 4s ease-in-out infinite;
 }
@@ -202,6 +237,14 @@ h3,
 }
 .animate-marquee:hover {
   animation-play-state: paused;
+}
+.animate-sway {
+  animation: sway 8s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+.animate-sway-delayed {
+  animation: sway-delayed 9s ease-in-out infinite;
+  transform-origin: bottom center;
 }
 
 /* ============ GRADIENTS POLYNÉSIENS ============ */
@@ -308,6 +351,31 @@ h3,
 .card-tropical:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-tropical);
+}
+
+/* Carte avec bordure dégradé coucher de soleil */
+.card-island {
+  background: white;
+  border-radius: 1.25rem;
+  border: 1px solid rgb(6 182 212 / 0.15);
+  box-shadow: var(--shadow-soft);
+  position: relative;
+  overflow: hidden;
+}
+.card-island::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--color-lagon-400),
+    var(--color-tipanier-400),
+    var(--color-soleil-400),
+    var(--color-tiare-400)
+  );
 }
 
 /* Bouton tropical principal */
