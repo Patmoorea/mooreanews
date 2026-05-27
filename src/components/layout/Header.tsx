@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { NAV_ITEMS } from "@/lib/constants";
@@ -10,9 +11,26 @@ import { UserMenu } from "@/components/layout/UserMenu";
 import { Logo } from "@/components/ui/Logo";
 import { BrandBanner } from "@/components/ui/BrandBanner";
 
+function navLabel(label: string) {
+  if (label === "Infos pratiques") {
+    return (
+      <>
+        <span className="2xl:hidden">Infos</span>
+        <span className="hidden 2xl:inline">Infos pratiques</span>
+      </>
+    );
+  }
+  return label;
+}
+
+function isNavActive(pathname: string, href: string) {
+  return href === "/" ? pathname === "/" : pathname.startsWith(href);
+}
+
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 16);
@@ -31,20 +49,18 @@ export function Header() {
       )}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-14 sm:h-16 lg:h-[4.25rem] items-center justify-between gap-3 lg:gap-4">
-          {/* Marque : bannière recadrée (desktop/tablette) ou logo seul (mobile) */}
+        <div className="flex h-14 sm:h-16 lg:h-[4.25rem] items-center gap-2 sm:gap-3 min-w-0">
+          {/* Bannière — ne recouvre pas le menu (z-0, largeur réduite) */}
           <Link
             href="/"
-            className="flex items-center gap-2 sm:gap-3 group flex-shrink-0 min-w-0"
+            className="relative z-0 flex items-center gap-2 sm:gap-3 group flex-shrink-0"
             aria-label="MooreaNews — Accueil"
           >
-            {/* Mobile : logo rond lisible */}
             <Logo
               size={40}
               priority
               className="h-9 w-9 sm:hidden flex-shrink-0 rounded-full shadow-sm group-hover:scale-105 transition-transform"
             />
-            {/* sm+ : bannière adaptée au menu */}
             <BrandBanner
               variant="header"
               priority
@@ -52,71 +68,93 @@ export function Header() {
             />
           </Link>
 
-          {/* Nav desktop */}
+          {/* Menu — visible dès md, défilement horizontal si besoin */}
           <nav
-            className="hidden lg:flex items-center gap-0.5 flex-1 justify-center min-w-0"
+            className={cn(
+              "relative z-20 hidden md:flex flex-1 min-w-0 items-center justify-center gap-0.5",
+              "overflow-x-auto overscroll-x-contain px-1",
+              "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+            )}
             aria-label="Navigation principale"
           >
-            {NAV_ITEMS.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="px-2.5 xl:px-3 py-2 text-[13px] xl:text-sm font-medium text-ocean-800 rounded-full hover:bg-lagon-100 hover:text-ocean-900 transition-colors whitespace-nowrap"
-              >
-                {item.label}
-              </Link>
-            ))}
+            {NAV_ITEMS.map((item) => {
+              const active = isNavActive(pathname, item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  title={item.label}
+                  className={cn(
+                    "flex-shrink-0 px-2 lg:px-2.5 xl:px-3 py-2 text-[12px] lg:text-[13px] xl:text-sm font-medium rounded-full transition-colors whitespace-nowrap",
+                    active
+                      ? "bg-lagon-100 text-ocean-900 ring-1 ring-lagon-300"
+                      : "text-ocean-800 hover:bg-lagon-100 hover:text-ocean-900",
+                  )}
+                >
+                  {navLabel(item.label)}
+                </Link>
+              );
+            })}
           </nav>
 
-          {/* Actions desktop */}
-          <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
-            <SearchBar />
-            <UserMenu />
+          {/* Actions */}
+          <div className="relative z-20 flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ml-auto md:ml-0">
+            <div className="hidden lg:flex items-center gap-2">
+              <SearchBar />
+              <UserMenu />
+            </div>
             <Link
               href="/soumettre"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-br from-tiare-400 to-tiare-500 text-white text-sm font-semibold shadow-[var(--shadow-sunset)] hover:-translate-y-0.5 transition-transform whitespace-nowrap"
+              className="hidden sm:inline-flex items-center gap-2 px-3 lg:px-4 py-2 rounded-full bg-gradient-to-br from-tiare-400 to-tiare-500 text-white text-xs lg:text-sm font-semibold shadow-[var(--shadow-sunset)] hover:-translate-y-0.5 transition-transform whitespace-nowrap"
             >
               + Publier
             </Link>
+            <button
+              type="button"
+              onClick={() => setIsOpen((v) => !v)}
+              className="md:hidden p-2 rounded-lg text-ocean-800 hover:bg-lagon-100 transition-colors flex-shrink-0"
+              aria-label={isOpen ? "Fermer le menu" : "Ouvrir le menu"}
+              aria-expanded={isOpen}
+            >
+              {isOpen ? <X size={26} /> : <Menu size={26} />}
+            </button>
           </div>
-
-          {/* Bouton mobile */}
-          <button
-            type="button"
-            onClick={() => setIsOpen((v) => !v)}
-            className="lg:hidden p-2 rounded-lg text-ocean-800 hover:bg-lagon-100 transition-colors flex-shrink-0"
-            aria-label={isOpen ? "Fermer le menu" : "Ouvrir le menu"}
-            aria-expanded={isOpen}
-          >
-            {isOpen ? <X size={26} /> : <Menu size={26} />}
-          </button>
         </div>
       </div>
 
-      {/* Menu mobile */}
+      {/* Menu mobile + tablette étroite */}
       {isOpen && (
-        <div className="lg:hidden border-t border-ocean-100 bg-white/98 backdrop-blur">
+        <div className="md:hidden relative z-50 border-t border-ocean-100 bg-white shadow-lg">
           <div className="mx-auto max-w-7xl px-4 pt-3 pb-1 flex justify-center">
             <BrandBanner variant="header" className="sm:hidden w-[min(100%,280px)] h-11" />
           </div>
-          <nav className="mx-auto max-w-7xl px-4 py-3 flex flex-col gap-1">
+          <nav className="mx-auto max-w-7xl px-4 py-3 flex flex-col gap-1 max-h-[70vh] overflow-y-auto">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsOpen(false)}
-                className="px-4 py-3 rounded-xl text-base font-medium text-ocean-800 hover:bg-lagon-100 transition-colors"
+                className={cn(
+                  "px-4 py-3 rounded-xl text-base font-medium transition-colors",
+                  isNavActive(pathname, item.href)
+                    ? "bg-lagon-100 text-ocean-900"
+                    : "text-ocean-800 hover:bg-lagon-100",
+                )}
               >
                 {item.label}
               </Link>
             ))}
-            <Link
-              href="/soumettre"
-              onClick={() => setIsOpen(false)}
-              className="mt-2 px-4 py-3 rounded-xl bg-gradient-to-br from-tiare-400 to-tiare-500 text-white font-semibold text-center"
-            >
-              + Publier une info
-            </Link>
+            <div className="mt-2 pt-2 border-t border-ocean-100 flex flex-col gap-2">
+              <SearchBar variant="inline" />
+              <UserMenu />
+              <Link
+                href="/soumettre"
+                onClick={() => setIsOpen(false)}
+                className="px-4 py-3 rounded-xl bg-gradient-to-br from-tiare-400 to-tiare-500 text-white font-semibold text-center"
+              >
+                + Publier une info
+              </Link>
+            </div>
           </nav>
         </div>
       )}
