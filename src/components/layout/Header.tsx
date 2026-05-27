@@ -106,28 +106,29 @@ export function Header() {
         </div>
       </div>
 
-      {/* Bannière 100 % largeur + menu HTML par-dessus */}
+      {/* Bannière 1024×409 : hauteur plafonnée, image entière (pas de rognage object-cover) */}
       <div
-        className="relative w-full overflow-hidden min-h-[4.5rem] sm:min-h-[5.25rem] md:min-h-[5.75rem]"
+        className="relative w-full overflow-hidden bg-ocean-950"
         aria-label="Navigation avec bannière MooreaNews"
       >
         <Image
           src={SITE.navBanner}
           alt=""
-          fill
+          width={1024}
+          height={409}
           priority
           sizes="100vw"
-          className="object-cover object-[center_42%] sm:object-[center_38%] md:object-center select-none pointer-events-none"
+          className="w-full h-auto max-h-[4rem] sm:max-h-[4.5rem] md:max-h-[5rem] object-contain object-center mx-auto block select-none pointer-events-none"
           aria-hidden
         />
         {/* Voile léger : la bannière reste visible, le texte reste lisible */}
         <div
-          className="absolute inset-0 bg-gradient-to-t from-ocean-950/80 via-ocean-950/35 to-ocean-900/15"
+          className="absolute inset-0 bg-gradient-to-t from-ocean-950/70 via-ocean-950/25 to-transparent pointer-events-none"
           aria-hidden
         />
 
         <nav
-          className="relative z-10 w-full px-2 sm:px-4 md:px-6 py-2.5 sm:py-3 min-h-[4.5rem] sm:min-h-[5.25rem] md:min-h-[5.75rem] flex items-center justify-center"
+          className="absolute inset-0 z-10 w-full px-2 sm:px-4 md:px-6 flex items-center justify-center"
           aria-label="Navigation principale"
         >
           <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 w-full max-w-7xl">
@@ -138,7 +139,7 @@ export function Header() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "px-2.5 sm:px-3 md:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold rounded-full transition-all whitespace-nowrap",
+                    "px-2 sm:px-2.5 md:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-full transition-all whitespace-nowrap",
                     "text-white shadow-[0_1px_4px_rgba(0,0,0,0.45)]",
                     "hover:bg-white/25 hover:shadow-[0_2px_8px_rgba(0,0,0,0.35)]",
                     active
