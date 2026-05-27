@@ -11,8 +11,9 @@
 | `NEXT_PUBLIC_SITE_URL` | `https://www.mooreanews.com` |
 | `OPENWEATHERMAP_API_KEY` | clé [openweathermap.org](https://openweathermap.org/api) |
 | `RESEND_API_KEY` | clé Resend |
-| `RESEND_FROM` | `MooreaNews <hello@mooreanews.com>` |
-| `RESEND_ADMIN` | votre email qui reçoit les messages |
+| `RESEND_FROM` | `MooreaNews <postmaster@mooreanews.com>` |
+| `RESEND_ADMIN` | `postmaster@mooreanews.com` |
+| `CONTACT_TO_EMAIL` | `postmaster@mooreanews.com` (alias de `RESEND_ADMIN`) |
 | `TELEGRAM_BOT_TOKEN` | token @BotFather (optionnel) |
 | `TELEGRAM_CHAT_ID` | id du chat / groupe (optionnel) |
 

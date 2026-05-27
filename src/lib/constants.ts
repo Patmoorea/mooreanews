@@ -13,7 +13,7 @@ export const SITE = {
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://mooreanews.com",
   locale: "fr_PF",
   timezone: "Pacific/Tahiti",
-  email: "contact@mooreanews.com",
+  email: "postmaster@mooreanews.com",
   copyright: "© 2026 MooreaNews. Tous droits réservés.",
   logo: "/brand/logo.png",
   banner: "/brand/banner.png",
@@ -198,11 +198,12 @@ export const ENV = {
     process.env.OPENWEATHER_API_KEY ??
     "",
   resendKey: process.env.RESEND_API_KEY ?? "",
-  resendFrom: process.env.RESEND_FROM ?? "MooreaNews <hello@mooreanews.com>",
+  resendFrom:
+    process.env.RESEND_FROM ?? "MooreaNews <postmaster@mooreanews.com>",
   resendAdmin:
     process.env.RESEND_ADMIN ??
     process.env.CONTACT_TO_EMAIL ??
-    "admin@mooreanews.com",
+    "postmaster@mooreanews.com",
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN ?? "",
   telegramChatId: process.env.TELEGRAM_CHAT_ID ?? "",
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
