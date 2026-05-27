@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Users } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 import { ArticlesFilter } from "@/components/ArticlesFilter";
@@ -23,6 +25,26 @@ export default async function ActualitesPage() {
         variant="lagon"
       />
       <Container className="py-12 sm:py-16">
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-2xl bg-lagon-50 border border-lagon-200 text-sm text-ocean-800">
+          <Users size={20} className="text-lagon-600 shrink-0" aria-hidden />
+          <p>
+            Associations de l&apos;île (Te Mana O Te Moana, PGEM, Tāhei&apos;Autī…), groupes
+            Facebook et veille :{" "}
+            <Link
+              href="/associations"
+              className="font-semibold text-tiare-600 hover:underline"
+            >
+              page Associations
+            </Link>
+            {" · "}
+            <Link
+              href="/infos-pratiques#communaute"
+              className="font-semibold text-tiare-600 hover:underline"
+            >
+              Infos pratiques — Communauté
+            </Link>
+          </p>
+        </div>
         <ArticlesFilter articles={articles} />
       </Container>
 

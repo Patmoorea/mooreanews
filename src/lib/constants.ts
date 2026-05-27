@@ -73,6 +73,7 @@ export const NAV_ITEMS = [
   { href: "/restaurants", label: "Restaurants" },
   { href: "/activites", label: "Activités" },
   { href: "/infos-pratiques", label: "Infos pratiques" },
+  { href: "/associations", label: "Associations" },
   { href: "/partenaires", label: "Partenaires" },
 ] as const;
 

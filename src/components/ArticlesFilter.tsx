@@ -79,6 +79,7 @@ export function ArticlesFilter({ articles }: Props) {
                 src={a.image}
                 alt={a.title}
                 category={a.category}
+                slug={a.slug}
                 className="aspect-[16/10]"
               >
                 {a.featured && (

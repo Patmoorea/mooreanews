@@ -115,6 +115,7 @@ export default async function ArticlePage({ params }: Props) {
           src={article.image}
           alt={article.title}
           category={article.category}
+          slug={article.slug}
           className="aspect-[16/8] -mt-4 sm:-mt-8 rounded-3xl shadow-[var(--shadow-tropical)]"
           sizes="(max-width: 1200px) 100vw, 1200px"
           priority
@@ -160,6 +161,7 @@ export default async function ArticlePage({ params }: Props) {
                     src={a.image}
                     alt={a.title}
                     category={a.category}
+                    slug={a.slug}
                     className="aspect-[16/10]"
                   />
                   <div className="p-5">

@@ -5,7 +5,10 @@ import { FACEBOOK_WATCH_URLS } from "@/lib/watch-sources";
 
 export function CommunityLinks() {
   return (
-    <section className="mt-12 bg-gradient-to-br from-ocean-50 to-lagon-50 rounded-3xl border border-ocean-100 p-6 sm:p-8">
+    <section
+      id="communaute"
+      className="mt-12 bg-gradient-to-br from-ocean-50 to-lagon-50 rounded-3xl border border-ocean-100 p-6 sm:p-8 scroll-mt-24"
+    >
       <h2 className="font-display text-2xl text-ocean-950">
         Communauté & réseaux
       </h2>
@@ -69,11 +72,23 @@ export function CommunityLinks() {
       {MOOREA_ASSOCIATIONS.length > 0 && (
         <>
           <h3 className="mt-10 font-display text-xl text-ocean-950">
-            Associations & collectifs
+            <Link
+              href="/associations"
+              className="hover:text-tiare-600 transition-colors"
+            >
+              Associations & collectifs
+            </Link>
           </h3>
           <p className="mt-2 text-sm text-ocean-700 max-w-2xl">
             Culture, lagon, jeunesse, environnement : acteurs locaux à suivre ou
-            contacter.
+            contacter.{" "}
+            <Link
+              href="/associations"
+              className="text-tiare-600 font-semibold hover:underline"
+            >
+              Voir toute la liste
+            </Link>
+            .
           </p>
           <ul className="mt-6 grid gap-3 sm:grid-cols-2">
             {MOOREA_ASSOCIATIONS.map((link) => (

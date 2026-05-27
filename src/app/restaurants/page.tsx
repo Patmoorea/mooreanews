@@ -41,6 +41,7 @@ export default async function RestaurantsPage() {
                 src={r.image}
                 alt={r.name}
                 category="restaurants"
+                slug={r.slug}
                 className="sm:w-48 aspect-[16/10] sm:aspect-auto sm:min-h-[140px] flex-shrink-0"
                 sizes="(max-width: 640px) 100vw, 192px"
               >

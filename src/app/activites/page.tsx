@@ -38,6 +38,7 @@ export default async function ActivitesPage() {
                 src={a.image}
                 alt={a.name}
                 category="activites"
+                slug={a.slug}
                 className="aspect-[16/10]"
                 sizes="(max-width: 640px) 100vw, 33vw"
               />

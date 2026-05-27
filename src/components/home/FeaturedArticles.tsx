@@ -50,6 +50,7 @@ export async function FeaturedArticles() {
                 src={a.image}
                 alt={a.title}
                 category={a.category}
+                slug={a.slug}
                 className="aspect-[16/10]"
                 priority={idx === 0}
                 sizes="(max-width: 1024px) 100vw, 66vw"
