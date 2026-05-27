@@ -106,22 +106,27 @@ export function Header() {
         </div>
       </div>
 
-      {/* Bannière 1024×409 — bande plus haute, titre « MOOREA NEWS » visible */}
+      {/*
+        Bannière 1024×409 — hauteur = moitié du ratio pleine largeur :
+        calc(100vw × 409 ÷ 2048) ≈ 20 vw (ex. 78 px @ 390 px, plafond 76–88 px).
+        Image en largeur 100 %, zone rognée sur le haut (plus de bandeau au milieu).
+      */}
       <div
-        className="relative w-full h-28 sm:h-32 md:h-36 lg:h-[9.5rem] overflow-hidden bg-ocean-900"
+        className="relative w-full h-[min(calc(100vw*409/2048),4.75rem)] sm:h-[min(calc(100vw*409/2048),5.5rem)] overflow-hidden bg-ocean-900"
         aria-label="Navigation avec bannière MooreaNews"
       >
         <Image
           src={SITE.navBanner}
           alt=""
-          fill
+          width={1024}
+          height={409}
           priority
           sizes="100vw"
-          className="object-cover object-[center_28%] select-none pointer-events-none"
+          className="absolute top-0 left-0 w-full h-auto max-w-none select-none pointer-events-none"
           aria-hidden
         />
         <div
-          className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-ocean-950/45 to-transparent pointer-events-none"
+          className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-ocean-950/40 to-transparent pointer-events-none"
           aria-hidden
         />
 
