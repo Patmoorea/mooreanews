@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { importMissingRestaurantsFromJson } from "@/lib/supabase/sync-restaurants";
 import { slugify } from "@/lib/utils";
 
 type TableName =
@@ -288,4 +289,13 @@ export async function rejectSubmission(id: string, formData: FormData) {
     })
     .eq("id", id);
   revalidatePath("/admin/submissions");
+}
+
+/** Importe les restaurants du JSON qui ne sont pas encore en base (admin, 1 clic). */
+export async function importRestaurantsFromCatalog() {
+  await requireAdmin();
+  const result = await importMissingRestaurantsFromJson();
+  revalidatePath("/admin/restaurants");
+  revalidatePath("/restaurants");
+  return result;
 }

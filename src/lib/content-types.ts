@@ -59,6 +59,8 @@ export type Restaurant = {
   website?: string;
   openingHours?: string;
   image?: string;
+  lat?: number;
+  lon?: number;
   features?: string[];
   premium?: boolean;
 };

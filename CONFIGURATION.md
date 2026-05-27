@@ -52,6 +52,16 @@ update public.profiles set role = 'admin' where email = 'votre@email.com';
 
 Sans ces URLs, le lien « Confirmer l’email » arrive sur `/?code=…` et l’inscription échoue.
 
+## Restaurants (admin)
+
+| Action | Comment |
+|--------|---------|
+| **Ajouter un restaurant** | Admin → Restaurants → **Nouveau restaurant** → enregistrer (va directement dans Supabase, visible sur le site) |
+| **Modifier / supprimer** | Admin → Restaurants → icônes sur la ligne |
+| **Catalogue pré-rempli** (Maïtaï, Mo'z Pizza…) | Admin → Restaurants → bannière **Importer dans Supabase** (1 clic, pas de SQL) |
+
+Le fichier `data/restaurants.json` sert de catalogue de référence pour le seed et l’import admin — **pas** de SQL manuel à chaque ajout.
+
 ## Bandeau d’alerte (optionnel)
 
 | Variable | Exemple |
