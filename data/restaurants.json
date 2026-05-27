@@ -56,6 +56,20 @@
     "features": ["Sur le pouce", "Plats du jour", "Maharepa"]
   },
   {
+    "slug": "moz-pizza-moorea",
+    "name": "Mo'z Pizza",
+    "description": "Pizzeria à Papetoai (Pizza Moorea) : pizzas, poissons, grillades, burgers, salades, tapas, gaufres et pâtisseries. Livraison possible.",
+    "cuisine": ["Pizza", "Grillades", "Burgers", "Poisson"],
+    "priceLevel": 2,
+    "district": "Papetoai",
+    "address": "Papetoai PK 22, Moorea",
+    "phone": "89 42 30 00",
+    "website": "https://www.facebook.com/PIZZAMOOREA/",
+    "openingHours": "7j/7 — Lun-Jeu 17h30-21h ; Ven 11h-21h30 ; Sam-Dim 11h-14h & 17h30-21h (livraison 89 53 08 40)",
+    "image": "/images/restaurants/moz-pizza.jpg",
+    "features": ["Pizza", "Livraison", "Ouvert 7j/7", "Papetoai"]
+  },
+  {
     "slug": "moorea-beach-cafe",
     "name": "Moorea Beach Café",
     "description": "Café-restaurant les pieds dans le sable. Brunch, salades, pizza au feu de bois, smoothies bowls.",
