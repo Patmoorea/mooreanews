@@ -2,9 +2,18 @@
  * Constantes globales du site MooreaNews.
  */
 
+const DEFAULT_SITE_EMAIL = "postmaster@mooreanews.com";
+
 /** Email affiché (mailto, footer, contact) — jamais contact@ */
-export const SITE_EMAIL =
-  process.env.NEXT_PUBLIC_SITE_EMAIL?.trim() || "postmaster@mooreanews.com";
+export const SITE_EMAIL = (() => {
+  const raw =
+    process.env.NEXT_PUBLIC_SITE_EMAIL?.trim() || DEFAULT_SITE_EMAIL;
+  // Typo fréquente dans NEXT_PUBLIC_SITE_EMAIL sur Vercel
+  if (raw.toLowerCase() === "postmater@mooreanews.com") {
+    return DEFAULT_SITE_EMAIL;
+  }
+  return raw;
+})();
 
 export const SITE = {
   name: "MooreaNews",
