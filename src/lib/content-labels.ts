@@ -30,3 +30,22 @@ export const INFO_CATEGORY_LABELS: Record<InfoPratique["category"], string> = {
   urgence: "Urgences",
   education: "Éducation",
 };
+
+/** Niveau de prix 1–4 (indicatif, pas une devise — en Polynésie : XPF sur place). */
+export const RESTAURANT_PRICE_LABELS: Record<1 | 2 | 3 | 4, string> = {
+  1: "Économique",
+  2: "Modéré",
+  3: "Standing",
+  4: "Gastronomique",
+};
+
+export function getRestaurantPriceLevelDisplay(level: 1 | 2 | 3 | 4) {
+  return {
+    filled: level,
+    label: RESTAURANT_PRICE_LABELS[level],
+    ariaLabel: `Niveau de prix : ${RESTAURANT_PRICE_LABELS[level]} (${level} sur 4)`,
+    title: `${RESTAURANT_PRICE_LABELS[level]} — échelle indicative (tarifs en franc CFP / XPF sur place)`,
+    /** Pour JSON-LD (convention internationale, pas l’euro). */
+    schemaPriceRange: "$".repeat(level),
+  };
+}

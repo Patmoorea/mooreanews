@@ -238,8 +238,10 @@ function restaurantFromRow(r: RestaurantRow): Restaurant {
 
 function priceLevelFromRange(range: string | null): 1 | 2 | 3 | 4 {
   if (!range) return 2;
-  const dollars = (range.match(/€|\$/g) ?? []).length;
-  return Math.min(4, Math.max(1, dollars || 2)) as 1 | 2 | 3 | 4;
+  const n = Number.parseInt(range, 10);
+  if (n >= 1 && n <= 4) return n as 1 | 2 | 3 | 4;
+  const symbols = (range.match(/€|\$/g) ?? []).length;
+  return Math.min(4, Math.max(1, symbols || 2)) as 1 | 2 | 3 | 4;
 }
 
 function activityFromRow(r: ActivityRow): Activity {

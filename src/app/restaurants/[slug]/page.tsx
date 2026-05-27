@@ -13,6 +13,8 @@ import {
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { ShareButtons } from "@/components/ShareButtons";
+import { RestaurantPriceLevel } from "@/components/RestaurantPriceLevel";
+import { getRestaurantPriceLevelDisplay } from "@/lib/content-labels";
 import { getRestaurantBySlug, getRestaurants } from "@/lib/content";
 import { SITE } from "@/lib/constants";
 
@@ -92,12 +94,11 @@ export default async function RestaurantDetailPage({ params }: Props) {
           </h1>
 
           <div className="mt-3 flex items-center gap-3 text-ocean-600">
-            <span className="text-tiare-500 font-semibold text-lg">
-              {"€".repeat(restaurant.priceLevel)}
-              <span className="text-ocean-300">
-                {"€".repeat(4 - restaurant.priceLevel)}
-              </span>
-            </span>
+            <RestaurantPriceLevel
+              level={restaurant.priceLevel}
+              variant="full"
+              className="text-lg"
+            />
             <span className="text-ocean-400">·</span>
             <span className="flex items-center gap-1.5">
               <Utensils size={14} className="text-tiare-500" />
@@ -223,9 +224,10 @@ export default async function RestaurantDetailPage({ params }: Props) {
                     <h3 className="font-display text-lg text-ocean-900 group-hover:text-tiare-600 transition-colors">
                       {r.name}
                     </h3>
-                    <span className="text-tiare-500 font-semibold whitespace-nowrap text-sm">
-                      {"€".repeat(r.priceLevel)}
-                    </span>
+                    <RestaurantPriceLevel
+                      level={r.priceLevel}
+                      className="text-sm"
+                    />
                   </div>
                   <p className="text-sm text-ocean-600 line-clamp-2">
                     {r.description}
@@ -250,7 +252,8 @@ export default async function RestaurantDetailPage({ params }: Props) {
             name: restaurant.name,
             description: restaurant.description,
             servesCuisine: restaurant.cuisine,
-            priceRange: "€".repeat(restaurant.priceLevel),
+            priceRange: getRestaurantPriceLevelDisplay(restaurant.priceLevel)
+              .schemaPriceRange,
             telephone: restaurant.phone,
             url: restaurant.website ?? shareUrl,
             address: {

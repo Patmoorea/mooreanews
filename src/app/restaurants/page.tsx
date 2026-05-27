@@ -4,6 +4,7 @@ import { MapPin, Phone, Clock, Star, ArrowRight } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/PageHeader";
+import { RestaurantPriceLevel } from "@/components/RestaurantPriceLevel";
 import { getRestaurants } from "@/lib/content";
 
 export const metadata: Metadata = {
@@ -49,9 +50,7 @@ export default async function RestaurantsPage() {
                   <h2 className="font-display text-xl text-ocean-900 group-hover:text-tiare-600 transition-colors">
                     {r.name}
                   </h2>
-                  <span className="text-tiare-500 font-semibold whitespace-nowrap">
-                    {"€".repeat(r.priceLevel)}
-                  </span>
+                  <RestaurantPriceLevel level={r.priceLevel} />
                 </div>
                 <p className="text-sm text-ocean-700">{r.description}</p>
 

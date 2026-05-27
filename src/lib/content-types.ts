@@ -52,7 +52,7 @@ export type Restaurant = {
   name: string;
   description: string;
   cuisine: string[];
-  priceLevel: 1 | 2 | 3 | 4; // 1=€, 4=€€€€
+  priceLevel: 1 | 2 | 3 | 4; // 1=économique … 4=gastronomique (échelle indicative)
   district: string;
   address: string;
   phone?: string;

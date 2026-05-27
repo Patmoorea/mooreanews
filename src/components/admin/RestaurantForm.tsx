@@ -49,9 +49,9 @@ export function RestaurantForm({
         <Field name="phone" label="Téléphone" defaultValue={initial?.phone} />
         <Field
           name="price_range"
-          label="Fourchette prix"
+          label="Niveau de prix (1–4)"
           defaultValue={initial?.price_range}
-          placeholder="Ex. 1500–2500 XPF"
+          placeholder="1 = économique … 4 = gastronomique"
         />
       </div>
       <Field
