@@ -70,6 +70,13 @@ export const RSS_SOURCES: RssSource[] = [
     homepage: "https://www.radio1.pf",
     keywords: MOOREA_KEYWORDS,
   },
+  {
+    id: "google-news-moorea",
+    name: "Google Actualités (Moorea)",
+    url: "https://news.google.com/rss/search?q=Moorea+Maiao+Polyn%C3%A9sie&hl=fr&gl=PF&ceid=PF:fr",
+    homepage: "https://news.google.com",
+    acceptAll: true,
+  },
 ];
 
 export function getSourceById(id: string): RssSource | undefined {

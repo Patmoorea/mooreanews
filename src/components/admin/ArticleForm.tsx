@@ -79,9 +79,9 @@ export function ArticleForm({
       />
       <Field
         name="cover_url"
-        label="URL de l'image (optionnel)"
+        label="URL de l'image de couverture (vide = image auto)"
         defaultValue={initial?.cover_url}
-        placeholder="https://…"
+        placeholder="https://exemple.com/photo.jpg"
       />
       <div className="grid sm:grid-cols-2 gap-5 pt-2">
         <Checkbox

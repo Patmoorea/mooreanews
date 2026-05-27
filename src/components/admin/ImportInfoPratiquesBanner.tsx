@@ -3,34 +3,34 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Download, Check, AlertCircle } from "lucide-react";
-import { importRestaurantsFromCatalog } from "@/app/admin/actions";
+import { importInfoPratiquesFromJson } from "@/app/admin/actions";
 
 type Props = {
-  missingNames: string[];
+  missingTitles: string[];
 };
 
-export function ImportRestaurantsBanner({ missingNames }: Props) {
+export function ImportInfoPratiquesBanner({ missingTitles }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState(false);
 
-  if (missingNames.length === 0 && !message) return null;
+  if (missingTitles.length === 0 && !message) return null;
 
   async function onImport() {
     setLoading(true);
     setMessage(null);
     setError(false);
     try {
-      const result = await importRestaurantsFromCatalog();
+      const result = await importInfoPratiquesFromJson();
       if (result.error) {
         setError(true);
         setMessage(result.error);
       } else if (result.imported.length === 0) {
-        setMessage("Tous les restaurants du catalogue sont déjà en base.");
+        setMessage("Toutes les infos pratiques du fichier sont déjà en base.");
       } else {
         setMessage(
-          `${result.imported.length} restaurant(s) importé(s) : ${result.imported.join(", ")}`
+          `${result.imported.length} entrée(s) importée(s) : ${result.imported.join(", ")}`,
         );
         router.refresh();
       }
@@ -45,16 +45,16 @@ export function ImportRestaurantsBanner({ missingNames }: Props) {
   return (
     <div className="mb-6 rounded-2xl border border-lagon-200 bg-lagon-50 p-5">
       <p className="font-semibold text-ocean-900">
-        {missingNames.length > 0
-          ? `${missingNames.length} restaurant(s) du catalogue à importer en base`
+        {missingTitles.length > 0
+          ? `${missingTitles.length} entrée(s) à importer en base`
           : "Import terminé"}
       </p>
-      {missingNames.length > 0 && (
+      {missingTitles.length > 0 && (
         <>
           <p className="mt-1 text-sm text-ocean-700">
-            <strong>{missingNames.join(" · ")}</strong> — nouveautés du
-            catalogue à ajouter en base. Les autres fiches du JSON (ex. Mahogany)
-            ne sont pas proposées ici : une suppression admin reste définitive.
+            <strong>{missingTitles.join(" · ")}</strong> — présentes dans le
+            fichier de référence mais absentes de Supabase. Un clic les remet en
+            ligne, sans SQL.
           </p>
           <button
             type="button"
@@ -86,3 +86,4 @@ export function ImportRestaurantsBanner({ missingNames }: Props) {
     </div>
   );
 }
+

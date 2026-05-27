@@ -20,7 +20,8 @@ export async function ExternalArticles({ limit = 8 }: { limit?: number }) {
               Moorea dans la presse
             </h2>
             <p className="mt-1 text-sm text-ocean-600">
-              Articles mentionnant Moorea agrégés depuis les médias locaux.
+              Presse locale, Google Actualités et publications Facebook repérées
+              automatiquement.
             </p>
           </div>
         </div>

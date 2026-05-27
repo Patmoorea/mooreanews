@@ -48,10 +48,21 @@
   {
     "slug": "debarcadere-vaiare",
     "title": "Débarcadère de Vaiare",
-    "description": "Terminal des ferries Aremiti et Terevau. Parking, restauration, taxis.",
+    "description": "Terminal des ferries Aremiti, Terevau et Vaeara'i. Horaires en ligne, parking, restauration, taxis.",
     "category": "transport",
     "address": "Vaiare",
-    "phone": "40 50 57 57"
+    "phone": "40 50 57 57",
+    "website": "https://www.horaires-tahiti.com"
+  },
+  {
+    "slug": "rai-tahiti-vsl",
+    "title": "RAI TAHITI — Transport sanitaire (VSL)",
+    "description": "Transport médical VSL conventionné CPS entre Moorea et Tahiti. Disponible 7j/7, base à Pihaena (Moorea).",
+    "category": "transport",
+    "address": "PK 14,5 côté montagne, Pihaena",
+    "phone": "89 77 76 24",
+    "hours": "7j/7 — Moorea : 89 77 76 24 · Tahiti : 89 41 02 10",
+    "website": "https://raitahiti.com"
   },
   {
     "slug": "poste-paopao",

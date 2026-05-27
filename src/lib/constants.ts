@@ -17,6 +17,8 @@ export const SITE = {
   copyright: "© 2026 MooreaNews. Tous droits réservés.",
   logo: "/brand/logo.png",
   banner: "/brand/banner.png",
+  /** Fond du menu principal (pleine largeur) */
+  navBanner: "/brand/nav-banner.png",
 } as const;
 
 export const SOCIAL = {
@@ -87,6 +89,78 @@ export function getInfoBannerConfig() {
     variant: validVariant as "info" | "warning" | "alert",
   };
 }
+
+/**
+ * Groupes et pages utiles (Facebook, annuaires…).
+ * La veille cron sonde aussi ces pages (Open Graph + API Meta optionnelle).
+ */
+export const MOOREA_COMMUNITY_LINKS = [
+  {
+    title: "Commune de Moorea-Maiao (Facebook)",
+    href: "https://www.facebook.com/CommuneMooreaMaiao",
+    description: "Actualités officielles de la commune.",
+  },
+  {
+    title: "Groupe Facebook communautaire",
+    href: "https://www.facebook.com/groups/461940821326616/",
+    description:
+      "Fil d’actus et entraide locale — repéré par la veille MooreaNews.",
+  },
+  {
+    title: "Moorea.life — annuaire & événements",
+    href: "https://moorea.life/",
+    description:
+      "Agenda, commerces et événements (souvent synchronisés depuis Facebook).",
+  },
+  {
+    title: "Horaires Tahiti — ferries",
+    href: "https://www.horaires-tahiti.com",
+    description: "Aremiti, Terevau : Tahiti ↔ Moorea.",
+  },
+] as const;
+
+/**
+ * Associations & collectifs qui œuvrent pour Moorea.
+ * (Affiché sur Infos pratiques)
+ */
+export const MOOREA_ASSOCIATIONS = [
+  {
+    title: "Fédération Tāhei’Autī ia Mo’orea",
+    href: "https://taheiautiiamoorea.org/",
+    description:
+      "Fédération de collectifs (culture, environnement, pêche, sport) pour la protection de Moorea-Maiao.",
+  },
+  {
+    title: "Puna Reo Piha’e’ina",
+    href: "https://www.punareo.pf/",
+    description:
+      "Culture et reo mā’ohi à Pihaena : accompagnement des jeunes, ateliers et transmission (Moorea).",
+  },
+  {
+    title: "Te mana o te moana",
+    href: "https://www.temanaotemoana.org/",
+    description:
+      "Protection du milieu marin et des tortues — actions à Moorea depuis 2004 (éducation, soins, recherche).",
+  },
+  {
+    title: "Association PGEM Moorea",
+    href: "https://pgem.org/",
+    description:
+      "Application du plan de gestion du lagon : zones protégées, signalétique, brigade nautique.",
+  },
+  {
+    title: "Moorea Biodiversité",
+    href: "https://www.anavai.org/association/74",
+    description:
+      "Forêts et vallée d’Opunohu : lutte contre les espèces invasives, sensibilisation scolaire, bénévolat.",
+  },
+  {
+    title: "Association des habitants de Temae",
+    href: "https://taheiautiiamoorea.org/",
+    description:
+      "Collectif citoyen pour la préservation de la plage et du site de Temae (membre de Tāhei’Autī).",
+  },
+] as const;
 
 /** Liens utiles affichés en footer / page infos pratiques */
 export const USEFUL_LINKS = [

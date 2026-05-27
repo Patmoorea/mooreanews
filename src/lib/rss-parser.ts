@@ -69,13 +69,16 @@ function findFirstImage(xml: string): string | undefined {
   return undefined;
 }
 
-export async function fetchRssFeed(url: string): Promise<RssItem[]> {
+export async function fetchRssFeed(
+  url: string,
+  options?: { fresh?: boolean }
+): Promise<RssItem[]> {
   const res = await fetch(url, {
     headers: {
       "User-Agent": "MooreaHub/1.0 (+https://mooreanews.com)",
       Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml",
     },
-    next: { revalidate: 600 },
+    ...(options?.fresh ? { cache: "no-store" as const } : { next: { revalidate: 600 } }),
   });
   if (!res.ok) throw new Error(`RSS ${url}: HTTP ${res.status}`);
   const xml = await res.text();

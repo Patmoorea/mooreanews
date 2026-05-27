@@ -31,14 +31,30 @@ function normalizeName(name: string): string {
   return name.trim().toLowerCase();
 }
 
+/**
+ * Nouveautés du catalogue proposées à l’import 1 clic.
+ * Le reste du JSON sert de référence / fallback local — une suppression admin
+ * ne doit pas réafficher Mahogany, Beach Café, etc.
+ */
+export const RESTAURANT_CATALOG_IMPORT_SLUGS = new Set([
+  "snack-moorea-maitai",
+  "moz-pizza-moorea",
+]);
+
+function isImportCandidate(r: Restaurant): boolean {
+  return RESTAURANT_CATALOG_IMPORT_SLUGS.has(r.slug);
+}
+
 /** Compare le catalogue JSON aux noms déjà en base (côté admin). */
 export function getMissingRestaurantsFromCatalog(
-  existingNames: string[]
+  existingNames: string[],
+  options?: { importCandidatesOnly?: boolean }
 ): Restaurant[] {
   const existing = new Set(existingNames.map(normalizeName));
-  return (restaurantsData as Restaurant[]).filter(
-    (r) => !existing.has(normalizeName(r.name))
-  );
+  return (restaurantsData as Restaurant[]).filter((r) => {
+    if (options?.importCandidatesOnly && !isImportCandidate(r)) return false;
+    return !existing.has(normalizeName(r.name));
+  });
 }
 
 export async function listMissingRestaurantsFromJson(): Promise<Restaurant[]> {
@@ -47,7 +63,8 @@ export async function listMissingRestaurantsFromJson(): Promise<Restaurant[]> {
 
   const { data: existing } = await supabase.from("restaurants").select("name");
   return getMissingRestaurantsFromCatalog(
-    (existing ?? []).map((r) => r.name)
+    (existing ?? []).map((r) => r.name),
+    { importCandidatesOnly: true }
   );
 }
 

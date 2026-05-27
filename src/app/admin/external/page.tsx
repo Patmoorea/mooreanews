@@ -2,10 +2,15 @@ import { ExternalLink, RefreshCw } from "lucide-react";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { RSS_SOURCES } from "@/lib/rss-sources";
+import {
+  FACEBOOK_PAGE_WATCHES,
+  FACEBOOK_WATCH_URLS,
+} from "@/lib/watch-sources";
+import { AddFacebookLinkForm } from "@/components/admin/AddFacebookLinkForm";
 import { runAggregation, toggleExternalArticle } from "@/app/admin/external-actions";
 import { timeAgo } from "@/lib/utils";
 
-export const metadata = { title: "Veille RSS" };
+export const metadata = { title: "Veille externe" };
 
 export default async function AdminExternalPage() {
   const supabase = await getServerSupabase();
@@ -20,7 +25,7 @@ export default async function AdminExternalPage() {
     <div>
       <AdminPageHeader
         title="Veille externe"
-        description="Articles mentionnant Moorea agrégés depuis les médias locaux."
+        description="RSS, Google Actualités et liens Facebook — collecte automatique toutes les heures."
       />
 
       <section className="mb-6 bg-white rounded-3xl border border-ocean-100 p-5">
@@ -30,7 +35,8 @@ export default async function AdminExternalPage() {
               Sources surveillées ({RSS_SOURCES.length})
             </h2>
             <p className="text-xs text-ocean-500 mt-1">
-              Agrégation automatique toutes les heures via Vercel Cron.
+              Cron Vercel : toutes les heures (plan Pro). Hobby : au plus 1×/jour —
+              utilisez « Agréger maintenant » entre-temps.
             </p>
           </div>
           <form action={runAggregation}>
@@ -66,6 +72,45 @@ export default async function AdminExternalPage() {
             </li>
           ))}
         </ul>
+
+        <div className="mt-6 border-t border-ocean-100 pt-4">
+          <h3 className="text-sm font-semibold text-ocean-900">
+            Facebook surveillé ({FACEBOOK_WATCH_URLS.length} liens)
+          </h3>
+          <p className="text-xs text-ocean-500 mt-1 mb-2">
+            Open Graph à chaque passage du cron. Ajoutez des permalinks via{" "}
+            <code className="text-[10px] bg-ocean-100 px-1 rounded">
+              FACEBOOK_WATCH_URLS
+            </code>{" "}
+            (Vercel) ou le formulaire ci-dessous.
+          </p>
+          <ul className="space-y-1.5 text-xs text-ocean-700">
+            {FACEBOOK_WATCH_URLS.map((w) => (
+              <li key={w.url} className="truncate">
+                <a
+                  href={w.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-tiare-600"
+                >
+                  {w.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+          {FACEBOOK_PAGE_WATCHES.length > 0 && (
+            <p className="text-xs text-ocean-600 mt-3">
+              Pages API Meta (si{" "}
+              <code className="bg-ocean-100 px-1 rounded text-[10px]">
+                FACEBOOK_PAGE_ACCESS_TOKEN
+              </code>
+              ) :{" "}
+              {FACEBOOK_PAGE_WATCHES.map((p) => p.name).join(", ")}
+            </p>
+          )}
+        </div>
+
+        <AddFacebookLinkForm />
       </section>
 
       <h2 className="font-display text-xl text-ocean-900 mb-3">

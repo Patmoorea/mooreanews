@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Siren } from "lucide-react";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { getMissingInfoPratiquesFromJson } from "@/lib/supabase/sync-info-pratiques";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminRowActions } from "@/components/admin/AdminRowActions";
+import { ImportInfoPratiquesBanner } from "@/components/admin/ImportInfoPratiquesBanner";
 
 export const metadata = { title: "Infos pratiques" };
 
@@ -14,6 +16,9 @@ export default async function AdminInfoPage() {
       .select("*")
       .order("display_order")) ?? { data: [] };
 
+  const missing = getMissingInfoPratiquesFromJson((rows ?? []).map((r) => r.title));
+  const missingTitles = missing.map((i) => i.title);
+
   return (
     <div>
       <AdminPageHeader
@@ -22,6 +27,7 @@ export default async function AdminInfoPage() {
         newHref="/admin/info/new"
         newLabel="Nouvelle info"
       />
+      <ImportInfoPratiquesBanner missingTitles={missingTitles} />
       <div className="bg-white rounded-2xl border border-ocean-100 overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-ocean-50 text-xs uppercase text-ocean-600">

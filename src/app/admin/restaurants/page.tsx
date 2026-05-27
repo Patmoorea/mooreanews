@@ -16,7 +16,8 @@ export default async function AdminRestaurantsPage() {
       .order("featured", { ascending: false })) ?? { data: [] };
 
   const missing = getMissingRestaurantsFromCatalog(
-    (rows ?? []).map((r) => r.name)
+    (rows ?? []).map((r) => r.name),
+    { importCandidatesOnly: true }
   );
   const missingNames = missing.map((r) => r.name);
 

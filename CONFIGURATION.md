@@ -58,9 +58,9 @@ Sans ces URLs, le lien « Confirmer l’email » arrive sur `/?code=…` et l’
 |--------|---------|
 | **Ajouter un restaurant** | Admin → Restaurants → **Nouveau restaurant** → enregistrer (va directement dans Supabase, visible sur le site) |
 | **Modifier / supprimer** | Admin → Restaurants → icônes sur la ligne |
-| **Catalogue pré-rempli** (Maïtaï, Mo'z Pizza…) | Admin → Restaurants → bannière **Importer dans Supabase** (1 clic, pas de SQL) |
+| **Catalogue pré-rempli** (Maïtaï, Mo'z Pizza uniquement) | Admin → Restaurants → bannière **Importer dans Supabase** (1 clic, pas de SQL) |
 
-Le fichier `data/restaurants.json` sert de catalogue de référence pour le seed et l’import admin — **pas** de SQL manuel à chaque ajout.
+Le fichier `data/restaurants.json` sert de référence et de fallback local sans Supabase. **Une suppression en base ne réaffiche pas** les autres fiches du JSON (Mahogany, etc.) : seules les nouveautés listées dans `RESTAURANT_CATALOG_IMPORT_SLUGS` proposent l’import.
 
 ## Bandeau d’alerte (optionnel)
 
@@ -79,7 +79,17 @@ Le fichier `data/restaurants.json` sert de catalogue de référence pour le seed
 | Contact (`/api/contact`) | `RESEND_*` |
 | Soumettre (`/api/submit`) | `RESEND_*`, `TELEGRAM_*` (opt.), Supabase |
 | Newsletter (`/api/newsletter`) | `RESEND_*`, Supabase |
-| Cron RSS (`/api/cron/aggregate`) | `CRON_SECRET`, Supabase service role |
+| Cron veille (`/api/cron/aggregate`) | `CRON_SECRET`, Supabase service role |
+| Facebook pages (posts récents) | `FACEBOOK_PAGE_ACCESS_TOKEN` (optionnel) |
+| Permalinks Facebook supplémentaires | `FACEBOOK_WATCH_URLS` (URLs séparées par des virgules) |
+
+## Veille automatique (RSS + Facebook + web)
+
+- **Fréquence** : cron `0 * * * *` (toutes les heures sur Vercel **Pro** ; **Hobby** : 1 exécution/jour max).
+- **RSS** : Tahiti Infos, La 1ère, Présidence, Radio 1, Google Actualités (Moorea).
+- **Facebook** : liens listés dans `src/lib/watch-sources.ts` (commune, groupe, permalinks) + variable `FACEBOOK_WATCH_URLS`.
+- **Limite** : impossible de « sillonner » tout Facebook sans API Meta ; le groupe privé ou restreint ne remonte pas. Pour la **page Commune**, configurez un jeton page (`FACEBOOK_PAGE_ACCESS_TOKEN`) — voir [Meta for Developers](https://developers.facebook.com/).
+- **Manuel** : Admin → Veille externe → formulaire ou « Agréger maintenant ».
 | Admin / auth | Supabase (URL + anon + service role) |
 
 ## Tests après config

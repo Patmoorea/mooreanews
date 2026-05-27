@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { importMissingRestaurantsFromJson } from "@/lib/supabase/sync-restaurants";
+import { importMissingInfoPratiquesFromJson } from "@/lib/supabase/sync-info-pratiques";
 import { slugify } from "@/lib/utils";
 
 type TableName =
@@ -297,5 +298,14 @@ export async function importRestaurantsFromCatalog() {
   const result = await importMissingRestaurantsFromJson();
   revalidatePath("/admin/restaurants");
   revalidatePath("/restaurants");
+  return result;
+}
+
+/** Importe les infos pratiques du JSON qui ne sont pas encore en base (admin, 1 clic). */
+export async function importInfoPratiquesFromJson() {
+  await requireAdmin();
+  const result = await importMissingInfoPratiquesFromJson();
+  revalidatePath("/admin/info");
+  revalidatePath("/infos-pratiques");
   return result;
 }

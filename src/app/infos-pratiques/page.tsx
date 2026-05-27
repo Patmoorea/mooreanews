@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
+import { CommunityLinks } from "@/components/CommunityLinks";
 import { getInfoPratiques } from "@/lib/content";
 import { INFO_CATEGORY_LABELS } from "@/lib/content-labels";
 import type { InfoPratique } from "@/lib/content-types";
@@ -151,6 +152,7 @@ export default async function InfosPratiquesPage() {
             );
           })}
         </div>
+        <CommunityLinks />
       </Container>
     </>
   );

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Calendar, User } from "lucide-react";
+import { ContentCoverImage } from "@/components/ContentCoverImage";
 import { Badge } from "@/components/ui/Badge";
 import type { Article } from "@/lib/content-types";
 import { formatDateShortFR, truncate } from "@/lib/utils";
@@ -74,13 +75,18 @@ export function ArticlesFilter({ articles }: Props) {
               href={`/actualites/${a.slug}`}
               className="group bg-white rounded-2xl border border-ocean-100 overflow-hidden shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:-translate-y-1 transition-all block"
             >
-              <div className="aspect-[16/10] bg-gradient-to-br from-lagon-200 via-tipanier-200 to-soleil-200 relative">
+              <ContentCoverImage
+                src={a.image}
+                alt={a.title}
+                category={a.category}
+                className="aspect-[16/10]"
+              >
                 {a.featured && (
-                  <div className="absolute top-3 left-3">
+                  <div className="absolute top-3 left-3 z-10">
                     <Badge variant="tiare">À la une</Badge>
                   </div>
                 )}
-              </div>
+              </ContentCoverImage>
               <div className="p-5">
                 <div className="flex items-center gap-2 text-xs text-ocean-500 mb-2">
                   <Badge variant="lagon">{a.category}</Badge>

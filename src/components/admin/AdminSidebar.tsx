@@ -26,7 +26,7 @@ const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/activities", label: "Activités", icon: Mountain },
   { href: "/admin/info", label: "Infos pratiques", icon: Phone },
   { href: "/admin/submissions", label: "Soumissions", icon: Inbox },
-  { href: "/admin/external", label: "Veille RSS", icon: Rss },
+  { href: "/admin/external", label: "Veille externe", icon: Rss },
   { href: "/admin/newsletter", label: "Newsletter", icon: Mail },
 ];
 

@@ -1,0 +1,82 @@
+import infoData from "@/../data/info-pratiques.json";
+import type { InfoPratique } from "@/lib/content-types";
+import { getAdminSupabase } from "@/lib/supabase/admin";
+
+type InfoRowInput = {
+  title: string;
+  description: string;
+  category: string;
+  display_order: number;
+  address: string | null;
+  phone: string | null;
+  hours: string | null;
+  url: string | null;
+  published: boolean;
+  emergency: boolean;
+};
+
+function infoToRow(i: InfoPratique, displayOrder: number): InfoRowInput {
+  return {
+    title: i.title,
+    description: i.description,
+    category: i.category,
+    display_order: displayOrder,
+    address: i.address ?? null,
+    phone: i.phone ?? null,
+    hours: i.hours ?? null,
+    url: i.website ?? null,
+    published: true,
+    emergency: false,
+  };
+}
+
+function normalizeTitle(title: string): string {
+  return title.trim().toLowerCase();
+}
+
+export function getMissingInfoPratiquesFromJson(
+  existingTitles: string[],
+): InfoPratique[] {
+  const existing = new Set(existingTitles.map(normalizeTitle));
+  return (infoData as InfoPratique[]).filter(
+    (i) => !existing.has(normalizeTitle(i.title)),
+  );
+}
+
+export async function listMissingInfoPratiquesFromJson(): Promise<InfoPratique[]> {
+  const supabase = getAdminSupabase();
+  if (!supabase) return [];
+  const { data: existing } = await supabase.from("info_pratiques").select("title");
+  return getMissingInfoPratiquesFromJson((existing ?? []).map((r) => r.title));
+}
+
+export async function importMissingInfoPratiquesFromJson(): Promise<{
+  imported: string[];
+  skipped: number;
+  error?: string;
+}> {
+  const supabase = getAdminSupabase();
+  if (!supabase) {
+    return { imported: [], skipped: 0, error: "Supabase non configuré" };
+  }
+
+  const missing = await listMissingInfoPratiquesFromJson();
+  const imported: string[] = [];
+
+  // ordre stable : on garde l’ordre du fichier JSON
+  const all = infoData as InfoPratique[];
+  const orderByTitle = new Map(all.map((it, idx) => [it.title, idx]));
+
+  for (const i of missing) {
+    const displayOrder = orderByTitle.get(i.title) ?? 0;
+    const { error } = await supabase.from("info_pratiques").insert(infoToRow(i, displayOrder));
+    if (error) {
+      return { imported, skipped: 0, error: `${i.title}: ${error.message}` };
+    }
+    imported.push(i.title);
+  }
+
+  const jsonCount = (infoData as InfoPratique[]).length;
+  return { imported, skipped: jsonCount - missing.length };
+}
+

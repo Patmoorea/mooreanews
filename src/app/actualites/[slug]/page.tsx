@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, User, Tag } from "lucide-react";
+import { ContentCoverImage } from "@/components/ContentCoverImage";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
+import { resolveCoverImage } from "@/lib/cover-image";
 import { ShareButtons } from "@/components/ShareButtons";
 import { getArticleBySlug, getArticles } from "@/lib/content";
 import { formatDateFR } from "@/lib/utils";
@@ -33,6 +35,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       publishedTime: article.publishedAt,
       authors: article.author ? [article.author] : undefined,
       tags: article.tags,
+      images: [
+        {
+          url: resolveCoverImage({
+            image: article.image,
+            category: article.category,
+          }),
+        },
+      ],
     },
   };
 }
@@ -100,11 +110,16 @@ export default async function ArticlePage({ params }: Props) {
         </Container>
       </section>
 
-      {/* Image (placeholder gradient) */}
       <Container>
-        <div className="aspect-[16/8] -mt-4 sm:-mt-8 rounded-3xl bg-gradient-to-br from-lagon-300 via-tipanier-300 to-soleil-300 shadow-[var(--shadow-tropical)] relative overflow-hidden">
-          <div className="absolute inset-0 bg-hibiscus" />
-        </div>
+        <ContentCoverImage
+          src={article.image}
+          alt={article.title}
+          category={article.category}
+          className="aspect-[16/8] -mt-4 sm:-mt-8 rounded-3xl shadow-[var(--shadow-tropical)]"
+          sizes="(max-width: 1200px) 100vw, 1200px"
+          priority
+          overlay={false}
+        />
       </Container>
 
       {/* Corps de l'article */}
@@ -141,7 +156,12 @@ export default async function ArticlePage({ params }: Props) {
                   href={`/actualites/${a.slug}`}
                   className="group bg-white rounded-2xl border border-ocean-100 overflow-hidden hover:border-tiare-300 hover:shadow-[var(--shadow-tropical)] hover:-translate-y-1 transition-all"
                 >
-                  <div className="aspect-[16/10] bg-gradient-to-br from-lagon-200 via-tipanier-200 to-soleil-200" />
+                  <ContentCoverImage
+                    src={a.image}
+                    alt={a.title}
+                    category={a.category}
+                    className="aspect-[16/10]"
+                  />
                   <div className="p-5">
                     <Badge variant="lagon">{a.category}</Badge>
                     <h3 className="mt-2 font-display text-lg text-ocean-900 group-hover:text-tiare-600 transition-colors">

@@ -1,8 +1,8 @@
 /**
- * Aggregator RSS — récupère les flux configurés, filtre par mots-clés
- * Moorea et insère dans la table external_articles.
+ * Veille Moorea — flux RSS + liens Facebook / pages Meta (voir facebook-watch.ts).
  */
 
+import { aggregateWebWatch } from "@/lib/facebook-watch";
 import { fetchRssFeed, type RssItem } from "@/lib/rss-parser";
 import { RSS_SOURCES, type RssSource } from "@/lib/rss-sources";
 import { getAdminSupabase } from "@/lib/supabase/admin";
@@ -40,7 +40,7 @@ async function aggregateOne(source: RssSource): Promise<AggregationResult> {
 
   let items: RssItem[];
   try {
-    items = await fetchRssFeed(source.url);
+    items = await fetchRssFeed(source.url, { fresh: true });
   } catch (e) {
     result.errors.push(String(e));
     return result;
@@ -83,7 +83,9 @@ async function aggregateOne(source: RssSource): Promise<AggregationResult> {
 }
 
 export async function aggregateAll(): Promise<AggregationResult[]> {
-  return Promise.all(RSS_SOURCES.map(aggregateOne));
+  const rss = await Promise.all(RSS_SOURCES.map(aggregateOne));
+  const web = await aggregateWebWatch();
+  return [...rss, ...web];
 }
 
 /**

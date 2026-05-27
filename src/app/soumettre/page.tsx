@@ -62,6 +62,23 @@ export default function SoumettrePage() {
                 le contact. Ça augmente les chances que les gens viennent !
               </p>
             </div>
+
+            <div className="rounded-2xl bg-ocean-50 border border-ocean-100 p-5 text-sm">
+              <p className="font-semibold text-ocean-900">
+                Vous êtes un professionnel ?
+              </p>
+              <p className="mt-1 text-ocean-700">
+                Les annonces et événements passent ici gratuitement. Pour une
+                bannière ou une mise en avant restaurant, écrivez-nous via la{" "}
+                <a
+                  href="/contact"
+                  className="text-tiare-600 font-semibold hover:underline"
+                >
+                  page Contact
+                </a>
+                .
+              </p>
+            </div>
           </aside>
 
           <div>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Calendar, User } from "lucide-react";
+import { ContentCoverImage } from "@/components/ContentCoverImage";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { getFeaturedArticles, getArticles } from "@/lib/content";
@@ -45,12 +46,18 @@ export async function FeaturedArticles() {
                 idx === 0 ? "lg:row-span-2" : ""
               }`}
             >
-              <div className="aspect-[16/10] bg-gradient-to-br from-lagon-200 via-tipanier-200 to-soleil-200 relative">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                <div className="absolute top-4 left-4">
+              <ContentCoverImage
+                src={a.image}
+                alt={a.title}
+                category={a.category}
+                className="aspect-[16/10]"
+                priority={idx === 0}
+                sizes="(max-width: 1024px) 100vw, 66vw"
+              >
+                <div className="absolute top-4 left-4 z-10">
                   <Badge variant="tiare">À la une</Badge>
                 </div>
-              </div>
+              </ContentCoverImage>
               <div className="p-6 sm:p-7">
                 <div className="flex items-center gap-3 text-xs text-ocean-500">
                   <span className="flex items-center gap-1">
