@@ -6,11 +6,12 @@ import { Send, Check, AlertCircle } from "lucide-react";
 type Status = "idle" | "loading" | "success" | "error";
 
 const TYPES = [
-  { value: "evenement", label: "Événement (concert, marché, fête…)" },
+  // Valeurs alignées sur la contrainte Supabase submissions.type
+  { value: "event", label: "Événement (concert, marché, fête…)" },
   { value: "annonce", label: "Annonce (vente, location, emploi…)" },
   { value: "service", label: "Service / commerce" },
-  { value: "info", label: "Info pratique / brève" },
-  { value: "autre", label: "Autre" },
+  { value: "signalement", label: "Signalement (problème, danger, incident…)" },
+  { value: "suggestion", label: "Info pratique / autre suggestion" },
 ] as const;
 
 const DISTRICTS = [
@@ -44,7 +45,10 @@ export function SubmitForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Erreur");
+      const json = (await res.json().catch(() => null)) as
+        | { ok: boolean; warnings?: string[] }
+        | null;
+      if (!res.ok || !json?.ok) throw new Error("Erreur");
       setStatus("success");
       setMessage(
         "Merci ! Votre publication a bien été envoyée. Validation sous 24h."

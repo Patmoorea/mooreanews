@@ -30,6 +30,46 @@ export function MooreaMap() {
   const [filter, setFilter] = useState<CategoryFilter>("all");
   const [ready, setReady] = useState(false);
 
+  async function renderMarkers(cat: CategoryFilter) {
+    const map = mapRef.current;
+    if (!map) return;
+    const L = (await import("leaflet")).default;
+
+    // Nettoyer les marqueurs existants
+    for (const m of markersRef.current) m.remove();
+    markersRef.current = [];
+
+    const filtered = MAP_MARKERS.filter(
+      (m) => cat === "all" || m.category === cat
+    );
+
+    for (const m of filtered) {
+      const color = CATEGORY_COLORS[m.category];
+      const icon = L.divIcon({
+        className: "moorea-marker",
+        html: `<div style="
+          background:${color};
+          width:28px;height:28px;border-radius:999px;
+          border:3px solid white;
+          box-shadow:0 4px 12px rgba(0,0,0,0.2);
+          display:flex;align-items:center;justify-content:center;
+          color:white;font-size:14px;font-weight:600;
+        ">${markerEmoji(m.category)}</div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+      });
+      const marker = L.marker([m.lat, m.lon], { icon }).addTo(map);
+      marker.bindPopup(
+        `<div style="font-family:Inter,sans-serif;min-width:180px">
+          <strong style="color:${color}">${m.name}</strong>
+          ${m.description ? `<p style="margin:4px 0 0;font-size:13px;color:#075985">${m.description}</p>` : ""}
+          ${m.href ? `<a href="${m.href}" style="display:inline-block;margin-top:6px;color:#0e7490;font-size:12px;font-weight:600">En savoir plus →</a>` : ""}
+        </div>`
+      );
+      markersRef.current.push(marker);
+    }
+  }
+
   useEffect(() => {
     let cancelled = false;
 
@@ -74,46 +114,6 @@ export function MooreaMap() {
     if (ready) renderMarkers(filter);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, ready]);
-
-  async function renderMarkers(cat: CategoryFilter) {
-    const map = mapRef.current;
-    if (!map) return;
-    const L = (await import("leaflet")).default;
-
-    // Nettoyer les marqueurs existants
-    for (const m of markersRef.current) m.remove();
-    markersRef.current = [];
-
-    const filtered = MAP_MARKERS.filter(
-      (m) => cat === "all" || m.category === cat
-    );
-
-    for (const m of filtered) {
-      const color = CATEGORY_COLORS[m.category];
-      const icon = L.divIcon({
-        className: "moorea-marker",
-        html: `<div style="
-          background:${color};
-          width:28px;height:28px;border-radius:999px;
-          border:3px solid white;
-          box-shadow:0 4px 12px rgba(0,0,0,0.2);
-          display:flex;align-items:center;justify-content:center;
-          color:white;font-size:14px;font-weight:600;
-        ">${markerEmoji(m.category)}</div>`,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
-      });
-      const marker = L.marker([m.lat, m.lon], { icon }).addTo(map);
-      marker.bindPopup(
-        `<div style="font-family:Inter,sans-serif;min-width:180px">
-          <strong style="color:${color}">${m.name}</strong>
-          ${m.description ? `<p style="margin:4px 0 0;font-size:13px;color:#075985">${m.description}</p>` : ""}
-          ${m.href ? `<a href="${m.href}" style="display:inline-block;margin-top:6px;color:#0e7490;font-size:12px;font-weight:600">En savoir plus →</a>` : ""}
-        </div>`
-      );
-      markersRef.current.push(marker);
-    }
-  }
 
   return (
     <div className="bg-white rounded-3xl border border-ocean-100 overflow-hidden shadow-[var(--shadow-tropical)]">

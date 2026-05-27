@@ -1,4 +1,4 @@
-# MooreaNews — L'info de Moorea et de la Polynésie française
+# MooreaNews — L'info de Moorea en Polynésie française
 
 Site d'information centralisé pour l'île de Moorea, en Polynésie française.
 
@@ -97,7 +97,7 @@ npm install
 
 # 2) Configurer les variables d'environnement
 cp .env.example .env.local
-# puis remplir au minimum : OPENWEATHERMAP_API_KEY (optionnel)
+# puis remplir au minimum : NEXT_PUBLIC_SITE_URL (recommandé)
 
 # 3) Lancer le serveur de dev
 npm run dev
@@ -108,6 +108,8 @@ npm run dev
 Aucune variable n'est obligatoire pour démarrer : tous les widgets ont un
 fallback intégré (météo, ferries, soleil/lune, marées). Le site
 fonctionne aussi sans Supabase grâce au contenu JSON dans `/data`.
+
+Pour une checklist production (Vercel + Supabase), voir `CONFIGURATION.md`.
 
 ---
 
@@ -126,8 +128,12 @@ admin complète, la persistance des soumissions et de la newsletter.
 
 ### 2. Initialiser le schéma
 
-Dans le **SQL Editor** de Supabase, coller et exécuter le contenu de
-`supabase/schema.sql`. Cela crée :
+Dans le **SQL Editor** de Supabase, vous avez deux options :
+
+1) **Tout-en-un (recommandé)** : exécuter `supabase/schema.sql`  
+2) **En 2 étapes** : exécuter `supabase/01-tables.sql` puis `supabase/02-rls.sql`
+
+Cela crée :
 
 - Les tables : `profiles`, `articles`, `events`, `announcements`,
   `restaurants`, `activities`, `info_pratiques`, `submissions`,

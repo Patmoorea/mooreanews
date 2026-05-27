@@ -82,7 +82,7 @@ export async function searchAll(
     if (s > 0) {
       results.push({
         type: "event",
-        href: `/evenements`,
+        href: `/evenements/${e.slug}`,
         title: e.title,
         excerpt: `${e.date}${e.time ? " · " + e.time : ""} — ${e.location}`,
         badge: "Événement",
@@ -97,7 +97,7 @@ export async function searchAll(
     if (s > 0) {
       results.push({
         type: "annonce",
-        href: `/annonces`,
+        href: `/annonces/${a.slug}`,
         title: a.title,
         excerpt: a.body,
         badge: "Annonce",
@@ -118,7 +118,7 @@ export async function searchAll(
     if (s > 0) {
       results.push({
         type: "restaurant",
-        href: `/restaurants`,
+        href: `/restaurants/${r.slug}`,
         title: r.name,
         excerpt: `${r.cuisine.join(", ")} · ${r.district}`,
         badge: "Restaurant",
@@ -135,7 +135,7 @@ export async function searchAll(
     if (s > 0) {
       results.push({
         type: "activite",
-        href: `/activites`,
+        href: `/activites/${a.slug}`,
         title: a.name,
         excerpt: a.description,
         badge: "Activité",
@@ -152,7 +152,7 @@ export async function searchAll(
     if (s > 0) {
       results.push({
         type: "info",
-        href: `/infos-pratiques`,
+        href: `/infos-pratiques/${i.slug}`,
         title: i.title,
         excerpt: i.description,
         badge: "Info pratique",

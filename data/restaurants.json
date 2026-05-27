@@ -40,6 +40,19 @@
     "features": ["Sur le pouce", "Pas cher", "Locaux"]
   },
   {
+    "slug": "snack-moorea-maitai",
+    "name": "Snack Moorea Maïtaï",
+    "description": "Snack convivial à Maharepa : cuisine locale et plats du jour, idéal pour manger sur le pouce.",
+    "cuisine": ["Polynésienne", "Snack"],
+    "priceLevel": 1,
+    "district": "Maharepa",
+    "address": "Maharepa, Moorea",
+    "phone": null,
+    "openingHours": null,
+    "image": "/images/restaurants/moorea-maitai.jpg",
+    "features": ["Sur le pouce", "Plats du jour"]
+  },
+  {
     "slug": "moorea-beach-cafe",
     "name": "Moorea Beach Café",
     "description": "Café-restaurant les pieds dans le sable. Brunch, salades, pizza au feu de bois, smoothies bowls.",

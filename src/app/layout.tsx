@@ -3,7 +3,7 @@ import { Inter, Marcellus } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { InfoBanner } from "@/components/layout/InfoBanner";
+import { InfoBannerSlot } from "@/components/layout/InfoBannerSlot";
 import { Ticker } from "@/components/widgets/Ticker";
 import { SITE } from "@/lib/constants";
 
@@ -45,9 +45,6 @@ export const metadata: Metadata = {
   authors: [{ name: SITE.name }],
   creator: SITE.name,
   publisher: SITE.name,
-  alternates: {
-    canonical: "/",
-  },
   openGraph: {
     type: "website",
     locale: SITE.locale,
@@ -91,7 +88,7 @@ export default function RootLayout({
       className={`${inter.variable} ${marcellus.variable} antialiased`}
     >
       <body className="min-h-screen flex flex-col bg-island-sky bg-palm-pattern text-ocean-950">
-        <InfoBanner />
+        <InfoBannerSlot />
         <Header />
         <Ticker />
         <main className="flex-1">{children}</main>

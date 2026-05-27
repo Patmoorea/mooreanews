@@ -1,25 +1,18 @@
 import type { Metadata } from "next";
-import { MapPin, Clock, Tag, ExternalLink } from "lucide-react";
+import Link from "next/link";
+import { MapPin, Clock, Tag, ExternalLink, ArrowRight } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/PageHeader";
 import { getActivities } from "@/lib/content";
+import { ACTIVITY_CATEGORY_LABELS } from "@/lib/content-labels";
 
 export const metadata: Metadata = {
   title: "Activités à Moorea",
   description:
     "Plongée, randonnée, lagon, baleines, kayak, culture : toutes les activités à faire sur Moorea.",
+  alternates: { canonical: "/activites" },
 };
-
-const CATEGORY_LABELS = {
-  plongee: "Plongée",
-  randonnee: "Randonnée",
-  lagon: "Lagon",
-  culture: "Culture",
-  nature: "Nature",
-  sport: "Sport",
-  famille: "Famille",
-} as const;
 
 export default async function ActivitesPage() {
   const items = await getActivities();
@@ -35,14 +28,15 @@ export default async function ActivitesPage() {
       <Container className="py-12 sm:py-16">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((a) => (
-            <article
+            <Link
               key={a.slug}
-              className="bg-white rounded-2xl border border-ocean-100 overflow-hidden shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:-translate-y-1 transition-all"
+              href={`/activites/${a.slug}`}
+              className="group block bg-white rounded-2xl border border-ocean-100 overflow-hidden shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:-translate-y-1 transition-all"
             >
               <div className="aspect-[16/10] bg-gradient-to-br from-tipanier-300 via-lagon-300 to-ocean-400" />
               <div className="p-5">
-                <Badge variant="tipanier">{CATEGORY_LABELS[a.category]}</Badge>
-                <h2 className="mt-2 font-display text-lg text-ocean-900">
+                <Badge variant="tipanier">{ACTIVITY_CATEGORY_LABELS[a.category]}</Badge>
+                <h2 className="mt-2 font-display text-lg text-ocean-900 group-hover:text-tiare-600 transition-colors">
                   {a.name}
                 </h2>
                 <p className="mt-2 text-sm text-ocean-700">{a.description}</p>
@@ -77,8 +71,12 @@ export default async function ActivitesPage() {
                     </a>
                   )}
                 </div>
+                <ArrowRight
+                  size={18}
+                  className="mt-4 text-ocean-300 group-hover:text-tiare-500 group-hover:translate-x-1 transition-all"
+                />
               </div>
-            </article>
+            </Link>
           ))}
         </div>
       </Container>

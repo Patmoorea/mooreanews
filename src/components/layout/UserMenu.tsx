@@ -24,15 +24,10 @@ export function UserMenu() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!isSupabaseEnabled()) {
-      setReady(true);
-      return;
-    }
+    if (!isSupabaseEnabled()) return;
+
     const supabase = getBrowserSupabase();
-    if (!supabase) {
-      setReady(true);
-      return;
-    }
+    if (!supabase) return;
 
     async function loadUser() {
       const {

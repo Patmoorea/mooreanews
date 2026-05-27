@@ -45,64 +45,98 @@ export async function POST(req: Request) {
     );
   }
 
+  const normalizedType = normalizeSubmissionType(parsed.type);
+  const warnings: string[] = [];
+  let delivered = false;
+
   const telegramMessage = buildTelegramMessage(parsed);
-  const tasks: Promise<unknown>[] = [
-    sendTelegramNotification(telegramMessage),
-  ];
+  const telegram = await sendTelegramNotification(telegramMessage);
+  if (telegram.ok) delivered = true;
+  else warnings.push(telegram.error ?? "Telegram: échec d'envoi");
 
   // Persiste en base si Supabase est configuré
   const supabase = getAdminSupabase();
   if (supabase) {
-    const normalizedType =
-      (["event", "annonce", "service", "signalement", "suggestion"] as const).find(
-        (t) => t === parsed.type
-      ) ?? "suggestion";
-    tasks.push(
-      Promise.resolve(
-        supabase.from("submissions").insert({
-          type: normalizedType,
-          district: parsed.district || null,
-          title: parsed.title,
-          description: parsed.description,
-          date: parsed.date || null,
-          start_time: parsed.time || null,
-          location: parsed.location || null,
-          user_name: parsed.name,
-          user_email: parsed.contact.includes("@")
-            ? parsed.contact
-            : `${parsed.contact}@unknown`,
-          user_phone: parsed.contact.includes("@") ? null : parsed.contact,
-        })
-      ).then(() => null)
-    );
+    const { error } = await supabase.from("submissions").insert({
+      type: normalizedType,
+      district: parsed.district || null,
+      title: parsed.title,
+      description: parsed.description,
+      date: parsed.date || null,
+      start_time: parsed.time || null,
+      location: parsed.location || null,
+      user_name: parsed.name,
+      user_email: parsed.contact.includes("@")
+        ? parsed.contact
+        : `${parsed.contact}@unknown`,
+      user_phone: parsed.contact.includes("@") ? null : parsed.contact,
+    });
+    if (error) warnings.push(`Supabase: ${error.message}`);
   }
 
   if (ENV.resendKey) {
     const resend = new Resend(ENV.resendKey);
-    tasks.push(
-      resend.emails
-        .send({
-          from: ENV.resendFrom,
-          to: [ENV.resendAdmin],
-          subject: `[MooreaNews] Nouvelle soumission : ${parsed.title}`,
-          html: buildAdminHtml(parsed),
-          text: buildAdminText(parsed),
-        })
-        .catch(() => null)
+    const result = await resend.emails
+      .send({
+        from: ENV.resendFrom,
+        to: [ENV.resendAdmin],
+        subject: `[MooreaNews] Nouvelle soumission : ${parsed.title}`,
+        html: buildAdminHtml(parsed),
+        text: buildAdminText(parsed),
+      })
+      .then(() => ({ ok: true as const }))
+      .catch((err) => ({ ok: false as const, error: String(err) }));
+
+    if (result.ok) delivered = true;
+    else warnings.push(result.error ?? "Resend: échec d'envoi");
+  } else {
+    warnings.push("Resend non configuré");
+  }
+
+  if (!delivered && !supabase) {
+    return NextResponse.json(
+      { ok: false, error: "not_configured", warnings },
+      { status: 503, headers: CORS_HEADERS }
     );
   }
 
-  await Promise.all(tasks);
+  return NextResponse.json({ ok: true, warnings }, { status: 200, headers: CORS_HEADERS });
+}
 
-  return NextResponse.json(
-    { ok: true },
-    { status: 200, headers: CORS_HEADERS }
+function normalizeSubmissionType(
+  input: string
+): "event" | "annonce" | "service" | "signalement" | "suggestion" {
+  // Compatibilité : anciennes valeurs côté UI
+  const legacyMap: Record<string, string | undefined> = {
+    evenement: "event",
+    info: "suggestion",
+    autre: "suggestion",
+  };
+
+  const mapped = legacyMap[input] ?? input;
+
+  return (
+    (["event", "annonce", "service", "signalement", "suggestion"] as const).find(
+      (t) => t === mapped
+    ) ?? "suggestion"
   );
 }
 
 function buildTelegramMessage(d: SubmitData): string {
+  const labelByType: Record<
+    ReturnType<typeof normalizeSubmissionType>,
+    string
+  > = {
+    event: "Événement",
+    annonce: "Annonce",
+    service: "Service",
+    signalement: "Signalement",
+    suggestion: "Suggestion / info",
+  };
+
+  const typeLabel = labelByType[normalizeSubmissionType(d.type)];
   const lines = [
-    `<b>📢 Nouvelle soumission — ${escapeHtml(d.type)}</b>`,
+    `<b>📢 Nouvelle soumission — ${escapeHtml(typeLabel)}</b>`,
     "",
     `<b>${escapeHtml(d.title)}</b>`,
     escapeHtml(d.description),

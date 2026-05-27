@@ -21,7 +21,10 @@ export function NewsletterForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      if (!res.ok) throw new Error("Échec");
+      const json = (await res.json().catch(() => null)) as
+        | { ok: boolean; warnings?: string[] }
+        | null;
+      if (!res.ok || !json?.ok) throw new Error("Échec");
       setStatus("success");
       setMessage(
         "Inscription confirmée ! Bienvenue à bord du lagon. 🌺"

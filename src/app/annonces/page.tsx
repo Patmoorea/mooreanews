@@ -5,21 +5,14 @@ import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/PageHeader";
 import { getAnnouncements } from "@/lib/content";
+import { ANNOUNCEMENT_TYPE_LABELS } from "@/lib/content-labels";
 import { timeAgo } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Annonces — Moorea",
   description:
     "Petites annonces de Moorea : vente, achat, location, emploi, services, perdu/trouvé.",
-};
-
-const TYPE_LABELS = {
-  vente: { label: "À vendre", variant: "tipanier" as const },
-  achat: { label: "Recherche", variant: "lagon" as const },
-  location: { label: "Location", variant: "ocean" as const },
-  emploi: { label: "Emploi", variant: "tiare" as const },
-  service: { label: "Service", variant: "soleil" as const },
-  "perdu-trouve": { label: "Perdu/Trouvé", variant: "couchant" as const },
+  alternates: { canonical: "/annonces" },
 };
 
 export default async function AnnoncesPage() {
@@ -45,11 +38,12 @@ export default async function AnnoncesPage() {
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((a) => {
-            const t = TYPE_LABELS[a.type];
+            const t = ANNOUNCEMENT_TYPE_LABELS[a.type];
             return (
-              <article
+              <Link
                 key={a.slug}
-                className="bg-white rounded-2xl border border-ocean-100 p-5 shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:-translate-y-1 transition-all"
+                href={`/annonces/${a.slug}`}
+                className="group block bg-white rounded-2xl border border-ocean-100 p-5 shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:-translate-y-1 transition-all"
               >
                 <div className="flex items-start justify-between mb-2">
                   <Badge variant={t.variant}>{t.label}</Badge>
@@ -59,10 +53,10 @@ export default async function AnnoncesPage() {
                     </span>
                   )}
                 </div>
-                <h2 className="font-display text-lg text-ocean-900">
+                <h2 className="font-display text-lg text-ocean-900 group-hover:text-tiare-600 transition-colors">
                   {a.title}
                 </h2>
-                <p className="mt-2 text-sm text-ocean-700">{a.body}</p>
+                <p className="mt-2 text-sm text-ocean-700 line-clamp-3">{a.body}</p>
                 <div className="mt-4 pt-4 border-t border-ocean-100 space-y-1.5 text-xs text-ocean-600">
                   {a.district && (
                     <p className="flex items-center gap-1.5">
@@ -88,7 +82,7 @@ export default async function AnnoncesPage() {
                     {timeAgo(a.publishedAt)}
                   </p>
                 </div>
-              </article>
+              </Link>
             );
           })}
         </div>

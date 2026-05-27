@@ -4,10 +4,10 @@
 
 export const SITE = {
   name: "MooreaNews",
-  tagline: "L'info de Moorea et de la Polynésie française",
+  tagline: "L'info de Moorea en Polynésie française",
   motto: "Votre source d'information locale et fiable",
   description:
-    "L'info de Moorea et de la Polynésie française : actualités locales, vie locale & société, tourisme & loisirs, événements & culture, infos pratiques. Météo, ferries, marées en temps réel.",
+    "L'info de Moorea en Polynésie française : actualités locales, vie locale & société, tourisme & loisirs, événements & culture, infos pratiques. Météo, ferries, marées en temps réel.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://mooreanews.com",
   locale: "fr_PF",
   timezone: "Pacific/Tahiti",
@@ -18,7 +18,7 @@ export const SITE = {
 } as const;
 
 export const SOCIAL = {
-  facebook: "https://www.facebook.com/MooreaNews",
+  facebook: "https://www.facebook.com/JourdanPatrice/",
   instagram: "https://www.instagram.com/mooreanews",
   whatsapp: "+68987654321",
 } as const;
@@ -72,13 +72,19 @@ export const MOOREA_DISTRICTS = [
   "Vaiare",
 ] as const;
 
-/** Bandeau d'info en haut de site (modifiable) */
-export const INFO_BANNER = {
-  enabled: false,
-  message: "",
-  href: "",
-  variant: "info" as "info" | "warning" | "alert",
-} as const;
+/** Bandeau d'info en haut de site (configurable via env sur Vercel) */
+export function getInfoBannerConfig() {
+  const variant = process.env.INFO_BANNER_VARIANT;
+  const validVariant =
+    variant === "warning" || variant === "alert" ? variant : "info";
+
+  return {
+    enabled: process.env.INFO_BANNER_ENABLED === "true",
+    message: process.env.INFO_BANNER_MESSAGE ?? "",
+    href: process.env.INFO_BANNER_HREF ?? "",
+    variant: validVariant as "info" | "warning" | "alert",
+  };
+}
 
 /** Liens utiles affichés en footer / page infos pratiques */
 export const USEFUL_LINKS = [

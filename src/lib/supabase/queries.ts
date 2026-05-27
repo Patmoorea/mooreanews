@@ -106,18 +106,21 @@ export async function dbGetAdminStats(): Promise<{
   announcements: number;
   restaurants: number;
   activities: number;
+  infoPratiques: number;
   pendingSubmissions: number;
   newsletterSubscribers: number;
 } | null> {
   const supabase = await getServerSupabase();
   if (!supabase) return null;
 
-  const [articles, events, anns, restos, acts, subs, news] = await Promise.all([
+  const [articles, events, anns, restos, acts, infos, subs, news] =
+    await Promise.all([
     supabase.from("articles").select("id", { count: "exact", head: true }),
     supabase.from("events").select("id", { count: "exact", head: true }),
     supabase.from("announcements").select("id", { count: "exact", head: true }),
     supabase.from("restaurants").select("id", { count: "exact", head: true }),
     supabase.from("activities").select("id", { count: "exact", head: true }),
+    supabase.from("info_pratiques").select("id", { count: "exact", head: true }),
     supabase
       .from("submissions")
       .select("id", { count: "exact", head: true })
@@ -134,6 +137,7 @@ export async function dbGetAdminStats(): Promise<{
     announcements: anns.count ?? 0,
     restaurants: restos.count ?? 0,
     activities: acts.count ?? 0,
+    infoPratiques: infos.count ?? 0,
     pendingSubmissions: subs.count ?? 0,
     newsletterSubscribers: news.count ?? 0,
   };

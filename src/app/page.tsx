@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Hero } from "@/components/home/Hero";
 import { LiveDashboard } from "@/components/home/LiveDashboard";
 import { CategoriesGrid } from "@/components/home/CategoriesGrid";
@@ -6,6 +7,10 @@ import { UpcomingEvents } from "@/components/home/UpcomingEvents";
 import { InteractiveMap } from "@/components/home/InteractiveMap";
 import { CommunityCTA } from "@/components/home/CommunityCTA";
 import { SITE } from "@/lib/constants";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default function HomePage() {
   return (

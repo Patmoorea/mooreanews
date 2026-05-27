@@ -22,7 +22,10 @@ export function ContactForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Erreur");
+      const json = (await res.json().catch(() => null)) as
+        | { ok: boolean; warnings?: string[] }
+        | null;
+      if (!res.ok || !json?.ok) throw new Error("Erreur");
       setStatus("success");
       setMessage("Merci ! Votre message a bien été envoyé. Nous répondons sous 24h.");
       form.reset();

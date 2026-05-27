@@ -251,6 +251,9 @@ export async function approveSubmission(id: string, formData: FormData) {
       author: sub.user_name,
       published: true,
     });
+  } else if (sub.type === "signalement" || sub.type === "suggestion") {
+    // Pas de table cible automatique : la modération sert surtout à tracer
+    // la demande et à traiter manuellement si besoin.
   }
 
   const adminNotes = formData.get("admin_notes");

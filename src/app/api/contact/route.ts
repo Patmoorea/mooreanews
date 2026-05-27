@@ -35,31 +35,40 @@ export async function POST(req: Request) {
     );
   }
 
-  const tasks: Promise<unknown>[] = [
-    sendTelegramNotification(buildTelegramMessage(parsed)),
-  ];
+  const warnings: string[] = [];
+  let delivered = false;
+
+  const telegram = await sendTelegramNotification(buildTelegramMessage(parsed));
+  if (telegram.ok) delivered = true;
+  else warnings.push(telegram.error ?? "Telegram: échec d'envoi");
 
   if (ENV.resendKey) {
     const resend = new Resend(ENV.resendKey);
-    tasks.push(
-      resend.emails
-        .send({
-          from: ENV.resendFrom,
-          to: [ENV.resendAdmin],
-          replyTo: parsed.email,
-          subject: `[MooreaNews] Contact : ${parsed.subject || "(sans sujet)"}`,
-          html: buildAdminHtml(parsed),
-        })
-        .catch(() => null)
+    const result = await resend.emails
+      .send({
+        from: ENV.resendFrom,
+        to: [ENV.resendAdmin],
+        replyTo: parsed.email,
+        subject: `[MooreaNews] Contact : ${parsed.subject || "(sans sujet)"}`,
+        html: buildAdminHtml(parsed),
+      })
+      .then(() => ({ ok: true as const }))
+      .catch((err) => ({ ok: false as const, error: String(err) }));
+
+    if (result.ok) delivered = true;
+    else warnings.push(result.error ?? "Resend: échec d'envoi");
+  } else {
+    warnings.push("Resend non configuré");
+  }
+
+  if (!delivered) {
+    return NextResponse.json(
+      { ok: false, error: "not_delivered", warnings },
+      { status: 503, headers: CORS_HEADERS }
     );
   }
 
-  await Promise.all(tasks);
-
-  return NextResponse.json(
-    { ok: true },
-    { status: 200, headers: CORS_HEADERS }
-  );
+  return NextResponse.json({ ok: true, warnings }, { status: 200, headers: CORS_HEADERS });
 }
 
 function buildTelegramMessage(d: Data): string {

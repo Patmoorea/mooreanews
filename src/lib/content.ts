@@ -107,6 +107,13 @@ export async function getAnnouncements(): Promise<Announcement[]> {
     );
 }
 
+export async function getAnnouncementBySlug(
+  slug: string,
+): Promise<Announcement | undefined> {
+  const all = await getAnnouncements();
+  return all.find((a) => a.slug === slug);
+}
+
 // =====================================================================
 // Restaurants
 // =====================================================================
@@ -134,6 +141,13 @@ export async function getActivities(): Promise<Activity[]> {
   return activitiesData as Activity[];
 }
 
+export async function getActivityBySlug(
+  slug: string,
+): Promise<Activity | undefined> {
+  const all = await getActivities();
+  return all.find((a) => a.slug === slug);
+}
+
 // =====================================================================
 // Infos pratiques
 // =====================================================================
@@ -142,6 +156,13 @@ export async function getInfoPratiques(): Promise<InfoPratique[]> {
   const db = await dbListInfoPratiques();
   if (db) return db.map(infoFromRow);
   return infoData as InfoPratique[];
+}
+
+export async function getInfoPratiqueBySlug(
+  slug: string,
+): Promise<InfoPratique | undefined> {
+  const all = await getInfoPratiques();
+  return all.find((i) => i.slug === slug);
 }
 
 // =====================================================================

@@ -34,55 +34,61 @@ export async function POST(req: Request) {
     );
   }
 
-  const tasks: Promise<unknown>[] = [
-    sendTelegramNotification(
-      `📧 <b>Nouvelle inscription newsletter</b>\n${escapeHtml(email)}`
-    ),
-  ];
+  const warnings: string[] = [];
+  let delivered = false;
+
+  const telegram = await sendTelegramNotification(
+    `📧 <b>Nouvelle inscription newsletter</b>\n${escapeHtml(email)}`
+  );
+  if (telegram.ok) delivered = true;
+  else warnings.push(telegram.error ?? "Telegram: échec d'envoi");
 
   const supabase = getAdminSupabase();
   if (supabase) {
-    tasks.push(
-      Promise.resolve(
-        supabase.from("newsletter_subscribers").upsert(
-          {
-            email,
-            confirmed: true,
-            source: "site",
-            confirmed_at: new Date().toISOString(),
-          },
-          { onConflict: "email" }
-        )
-      ).then(() => null)
+    const { error } = await supabase.from("newsletter_subscribers").upsert(
+      {
+        email,
+        confirmed: true,
+        source: "site",
+        confirmed_at: new Date().toISOString(),
+      },
+      { onConflict: "email" }
     );
+    if (error) warnings.push(`Supabase: ${error.message}`);
   }
 
   if (ENV.resendKey) {
     const resend = new Resend(ENV.resendKey);
-    tasks.push(
-      resend.emails
-        .send({
-          from: ENV.resendFrom,
-          to: [email],
-          subject: "Bienvenue sur MooreaNews ! 🌺",
-          html: `
-            <div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;padding:24px">
-              <h1 style="color:#0c4a6e;font-family:Marcellus,serif">Ia ora na, ${escapeHtml(email)} !</h1>
-              <p>Merci de votre inscription à la newsletter de <strong>MooreaNews</strong>.</p>
-              <p>Vous recevrez chaque semaine un récap des actus, événements et bons plans de l'île, directement dans votre boîte mail.</p>
-              <p style="color:#075985">À très vite,<br>L'équipe MooreaNews</p>
-            </div>
-          `,
-          text: `Merci de votre inscription à MooreaNews ! Vous recevrez chaque semaine un récap des actus de l'île.`,
-        })
-        .catch(() => null)
+    const result = await resend.emails
+      .send({
+        from: ENV.resendFrom,
+        to: [email],
+        subject: "Bienvenue sur MooreaNews ! 🌺",
+        html: `
+          <div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;padding:24px">
+            <h1 style="color:#0c4a6e;font-family:Marcellus,serif">Ia ora na, ${escapeHtml(email)} !</h1>
+            <p>Merci de votre inscription à la newsletter de <strong>MooreaNews</strong>.</p>
+            <p>Vous recevrez chaque semaine un récap des actus, événements et bons plans de l'île, directement dans votre boîte mail.</p>
+            <p style="color:#075985">À très vite,<br>L'équipe MooreaNews</p>
+          </div>
+        `,
+        text: `Merci de votre inscription à MooreaNews ! Vous recevrez chaque semaine un récap des actus de l'île.`,
+      })
+      .then(() => ({ ok: true as const }))
+      .catch((err) => ({ ok: false as const, error: String(err) }));
+
+    if (result.ok) delivered = true;
+    else warnings.push(result.error ?? "Resend: échec d'envoi");
+  } else {
+    warnings.push("Resend non configuré");
+  }
+
+  if (!delivered && !supabase) {
+    return NextResponse.json(
+      { ok: false, error: "not_configured", warnings },
+      { status: 503, headers: CORS_HEADERS }
     );
   }
 
-  await Promise.all(tasks);
-
-  return NextResponse.json(
-    { ok: true },
-    { status: 200, headers: CORS_HEADERS }
-  );
+  return NextResponse.json({ ok: true, warnings }, { status: 200, headers: CORS_HEADERS });
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import {
   Heart,
   Bus,
@@ -15,12 +16,14 @@ import {
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 import { getInfoPratiques } from "@/lib/content";
+import { INFO_CATEGORY_LABELS } from "@/lib/content-labels";
 import type { InfoPratique } from "@/lib/content-types";
 
 export const metadata: Metadata = {
   title: "Infos pratiques — Moorea",
   description:
     "Tous les numéros et adresses utiles : mairie, hôpital, pompiers, gendarmerie, écoles, transports, EDT, eau.",
+  alternates: { canonical: "/infos-pratiques" },
 };
 
 const CATEGORY_META: Record<
@@ -93,10 +96,14 @@ export default async function InfosPratiquesPage() {
                 </header>
                 <ul className="divide-y divide-ocean-100">
                   {list.map((info) => (
-                    <li key={info.slug} className="p-5">
-                      <h3 className="font-semibold text-ocean-900">
-                        {info.title}
-                      </h3>
+                    <li key={info.slug}>
+                      <Link
+                        href={`/infos-pratiques/${info.slug}`}
+                        className="block p-5 hover:bg-ocean-50/60 transition-colors"
+                      >
+                        <h3 className="font-semibold text-ocean-900 hover:text-tiare-600">
+                          {info.title}
+                        </h3>
                       <p className="text-sm text-ocean-700 mt-0.5">
                         {info.description}
                       </p>
@@ -136,6 +143,7 @@ export default async function InfosPratiquesPage() {
                           </a>
                         )}
                       </div>
+                      </Link>
                     </li>
                   ))}
                 </ul>
