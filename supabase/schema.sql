@@ -280,6 +280,15 @@ alter table public.submissions             enable row level security;
 alter table public.newsletter_subscribers  enable row level security;
 alter table public.external_articles       enable row level security;
 
+-- Helper : est-on admin ou editor ? (DOIT être créé AVANT les policies RLS)
+create or replace function public.is_admin()
+returns boolean language sql security definer set search_path = public as $$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role in ('admin','editor')
+  );
+$$;
+
 -- External articles : lecture publique (non cachés), écriture admin uniquement
 drop policy if exists "external_public_read" on public.external_articles;
 create policy "external_public_read" on public.external_articles for select
@@ -288,15 +297,6 @@ create policy "external_public_read" on public.external_articles for select
 drop policy if exists "external_admin_all" on public.external_articles;
 create policy "external_admin_all" on public.external_articles for all
   using (public.is_admin()) with check (public.is_admin());
-
--- Helper : est-on admin ou editor ?
-create or replace function public.is_admin()
-returns boolean language sql security definer set search_path = public as $$
-  select exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role in ('admin','editor')
-  );
-$$;
 
 -- Profiles
 drop policy if exists "profiles_self_read" on public.profiles;
