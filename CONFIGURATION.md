@@ -2,15 +2,19 @@
 
 À faire sur **Vercel → Settings → Environment Variables** (cocher Production + Preview + Development).
 
+**Important :** après toute modification de variable, aller dans **Deployments → … → Redeploy**. Sinon l’admin affiche encore « Supabase non configuré » et les stats restent vides.
+
 ## Minimum (formulaires + météo)
 
 | Variable | Exemple |
 |----------|---------|
-| `NEXT_PUBLIC_SITE_URL` | `https://mooreanews.com` |
+| `NEXT_PUBLIC_SITE_URL` | `https://www.mooreanews.com` |
 | `OPENWEATHERMAP_API_KEY` | clé [openweathermap.org](https://openweathermap.org/api) |
 | `RESEND_API_KEY` | clé Resend |
 | `RESEND_FROM` | `MooreaNews <hello@mooreanews.com>` |
 | `RESEND_ADMIN` | votre email qui reçoit les messages |
+
+Alias acceptés (si déjà créés sous un autre nom) : `OPENWEATHER_API_KEY` → météo ; `CONTACT_TO_EMAIL` → email admin contact.
 | `TELEGRAM_BOT_TOKEN` | token @BotFather |
 | `TELEGRAM_CHAT_ID` | id du chat / groupe |
 

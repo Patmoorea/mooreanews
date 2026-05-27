@@ -8,7 +8,9 @@ import type { Database } from "@/lib/supabase/types";
  * NE JAMAIS exposer côté client.
  */
 export function getAdminSupabase(): SupabaseClient<Database> | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url =
+    process.env.SUPABASE_URL?.trim() ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) return null;
 

@@ -111,10 +111,16 @@ export const USEFUL_LINKS = [
 
 /** Configuration API externes (chargées via env) */
 export const ENV = {
-  openWeatherMapKey: process.env.OPENWEATHERMAP_API_KEY ?? "",
+  openWeatherMapKey:
+    process.env.OPENWEATHERMAP_API_KEY ??
+    process.env.OPENWEATHER_API_KEY ??
+    "",
   resendKey: process.env.RESEND_API_KEY ?? "",
   resendFrom: process.env.RESEND_FROM ?? "MooreaNews <hello@mooreanews.com>",
-  resendAdmin: process.env.RESEND_ADMIN ?? "admin@mooreanews.com",
+  resendAdmin:
+    process.env.RESEND_ADMIN ??
+    process.env.CONTACT_TO_EMAIL ??
+    "admin@mooreanews.com",
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN ?? "",
   telegramChatId: process.env.TELEGRAM_CHAT_ID ?? "",
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",

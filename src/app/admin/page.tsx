@@ -211,9 +211,18 @@ function SupabaseSetupNotice() {
         Supabase n&apos;est pas encore configuré
       </p>
       <p className="mt-1 text-sm text-tiare-700">
-        Les statistiques et les actions CRUD seront disponibles une fois que
-        les variables d&apos;environnement seront définies. Voir le fichier{" "}
-        <code className="bg-white px-1.5 py-0.5 rounded">.env.example</code>.
+        Sur Vercel, ajoutez{" "}
+        <code className="bg-white px-1.5 py-0.5 rounded">
+          NEXT_PUBLIC_SUPABASE_URL
+        </code>{" "}
+        et{" "}
+        <code className="bg-white px-1.5 py-0.5 rounded">
+          NEXT_PUBLIC_SUPABASE_ANON_KEY
+        </code>{" "}
+        (Production + Preview), puis lancez un{" "}
+        <strong>Redeploy</strong> : les changements de variables ne s&apos;appliquent
+        pas aux déploiements déjà en ligne. Voir{" "}
+        <code className="bg-white px-1.5 py-0.5 rounded">CONFIGURATION.md</code>.
       </p>
     </div>
   );

@@ -1,6 +1,23 @@
 import { cookies } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/lib/supabase/types";
+
+function getSupabaseUrl(): string | undefined {
+  return (
+    process.env.SUPABASE_URL?.trim() ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
+    undefined
+  );
+}
+
+function getSupabaseAnonKey(): string | undefined {
+  return (
+    process.env.SUPABASE_ANON_KEY?.trim() ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
+    undefined
+  );
+}
 
 /**
  * Client Supabase pour les Server Components / Route Handlers.
@@ -8,8 +25,8 @@ import type { Database } from "@/lib/supabase/types";
  * Renvoie null si Supabase n'est pas configuré (fallback JSON).
  */
 export async function getServerSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = getSupabaseUrl();
+  const anon = getSupabaseAnonKey();
   if (!url || !anon) return null;
 
   const cookieStore = await cookies();
@@ -34,8 +51,19 @@ export async function getServerSupabase() {
 }
 
 export function isSupabaseConfigured(): boolean {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
+  return Boolean(getSupabaseUrl() && getSupabaseAnonKey());
+}
+
+/**
+ * Client anon sans cookies — lectures publiques (RLS published = true).
+ * Utilisable en SSG : generateStaticParams, sitemap, pré-rendu des pages.
+ */
+export function getPublicSupabase() {
+  const url = getSupabaseUrl();
+  const anon = getSupabaseAnonKey();
+  if (!url || !anon) return null;
+
+  return createClient<Database>(url, anon, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 }

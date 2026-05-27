@@ -4,7 +4,10 @@
  * Renvoient null si Supabase n'est pas configuré (le caller doit fallback).
  */
 
-import { getServerSupabase } from "@/lib/supabase/server";
+import {
+  getPublicSupabase,
+  getServerSupabase,
+} from "@/lib/supabase/server";
 import type {
   ArticleRow,
   EventRow,
@@ -15,7 +18,7 @@ import type {
 } from "@/lib/supabase/types";
 
 export async function dbListArticles(): Promise<ArticleRow[] | null> {
-  const supabase = await getServerSupabase();
+  const supabase = getPublicSupabase();
   if (!supabase) return null;
   const { data } = await supabase
     .from("articles")
@@ -28,7 +31,7 @@ export async function dbListArticles(): Promise<ArticleRow[] | null> {
 export async function dbGetArticleBySlug(
   slug: string
 ): Promise<ArticleRow | null> {
-  const supabase = await getServerSupabase();
+  const supabase = getPublicSupabase();
   if (!supabase) return null;
   const { data } = await supabase
     .from("articles")
@@ -40,7 +43,7 @@ export async function dbGetArticleBySlug(
 }
 
 export async function dbListEvents(): Promise<EventRow[] | null> {
-  const supabase = await getServerSupabase();
+  const supabase = getPublicSupabase();
   if (!supabase) return null;
   const { data } = await supabase
     .from("events")
@@ -51,7 +54,7 @@ export async function dbListEvents(): Promise<EventRow[] | null> {
 }
 
 export async function dbListAnnouncements(): Promise<AnnouncementRow[] | null> {
-  const supabase = await getServerSupabase();
+  const supabase = getPublicSupabase();
   if (!supabase) return null;
   const { data } = await supabase
     .from("announcements")
@@ -62,7 +65,7 @@ export async function dbListAnnouncements(): Promise<AnnouncementRow[] | null> {
 }
 
 export async function dbListRestaurants(): Promise<RestaurantRow[] | null> {
-  const supabase = await getServerSupabase();
+  const supabase = getPublicSupabase();
   if (!supabase) return null;
   const { data } = await supabase
     .from("restaurants")
@@ -73,7 +76,7 @@ export async function dbListRestaurants(): Promise<RestaurantRow[] | null> {
 }
 
 export async function dbListActivities(): Promise<ActivityRow[] | null> {
-  const supabase = await getServerSupabase();
+  const supabase = getPublicSupabase();
   if (!supabase) return null;
   const { data } = await supabase
     .from("activities")
@@ -84,7 +87,7 @@ export async function dbListActivities(): Promise<ActivityRow[] | null> {
 }
 
 export async function dbListInfoPratiques(): Promise<InfoRow[] | null> {
-  const supabase = await getServerSupabase();
+  const supabase = getPublicSupabase();
   if (!supabase) return null;
   const { data } = await supabase
     .from("info_pratiques")
