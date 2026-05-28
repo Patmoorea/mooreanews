@@ -58,6 +58,8 @@ export const RAI_TAHITI_INFO: InfoPratique =
       "Transport médical VSL conventionné CPS entre Moorea et Tahiti. Disponible 7j/7, base à Pihaena (Moorea).",
     category: "transport",
     address: "PK 14,5 côté montagne, Pihaena",
+    lat: -17.5185,
+    lon: -149.772,
     phone: "89 77 76 24",
     hours: "7j/7 — Moorea : 89 77 76 24 · Tahiti : 89 41 02 10",
     website: "https://raitahiti.com",

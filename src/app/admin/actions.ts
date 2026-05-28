@@ -159,6 +159,8 @@ function parseFormPayload(
         hours: get("hours") || null,
         emergency: getBool("emergency"),
         url: get("url") || null,
+        lat: getNum("lat"),
+        lon: getNum("lon"),
         published: getBool("published"),
         display_order: Number(get("display_order") || "0"),
       };

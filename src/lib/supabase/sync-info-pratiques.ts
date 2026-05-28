@@ -11,6 +11,8 @@ type InfoRowInput = {
   phone: string | null;
   hours: string | null;
   url: string | null;
+  lat: number | null;
+  lon: number | null;
   published: boolean;
   emergency: boolean;
 };
@@ -25,6 +27,8 @@ function infoToRow(i: InfoPratique, displayOrder: number): InfoRowInput {
     phone: i.phone ?? null,
     hours: i.hours ?? null,
     url: i.website ?? null,
+    lat: i.lat ?? null,
+    lon: i.lon ?? null,
     published: true,
     emergency: false,
   };

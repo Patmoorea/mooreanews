@@ -150,6 +150,8 @@ create table if not exists public.info_pratiques (
   hours           text,
   emergency       boolean not null default false,
   url             text,
+  lat             double precision,
+  lon             double precision,
   published       boolean not null default true,
   display_order   int not null default 0,
   created_at      timestamptz not null default now(),

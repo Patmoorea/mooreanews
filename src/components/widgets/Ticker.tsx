@@ -91,7 +91,7 @@ export function Ticker() {
         });
         next.push({
           icon: <Cloud size={14} className="text-ocean-200" />,
-          label: "Mises à jour automatiques toutes les heures",
+          label: "Veille web & Facebook : mise à jour chaque soir (~18h)",
         });
 
         if (!cancelled) setItems(next);

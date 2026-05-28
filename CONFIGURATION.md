@@ -105,9 +105,11 @@ Checklist rapide :
 3. **Admin → Veille externe → Agréger maintenant** (première fois).
 4. Vérifier `/actualites` et l’accueil (bloc « Moorea sur le web & Facebook »).
 
-- **Fréquence** : cron `0 * * * *` — **Pro** = horaire ; **Hobby** = 1×/jour max.
+- **Fréquence** : cron `0 4 * * *` (UTC) = **18h00 Tahiti**, **1×/jour** — adapté au plan Hobby.
 - **Facebook** : commune + groupe + permalinks déjà dans le code ; jeton Meta optionnel pour la page Commune.
-- **Test cron** : `GET /api/cron/aggregate?secret=VOTRE_CRON_SECRET`
+- **Test cron** : `GET /api/cron/aggregate?secret=VOTRE_CRON_SECRET` ou `npm run veille` en local
+- **Plusieurs fois / jour (Hobby)** : [VEILLE-LOCALE.md](./VEILLE-LOCALE.md) — script Mac ou cron-job.org
+- **Sites web Moorea** : `WEB_WATCH_URLS` sur Vercel (URLs séparées par des virgules)
 | Admin / auth | Supabase (URL + anon + service role) |
 
 ## Tests après config

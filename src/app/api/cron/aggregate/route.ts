@@ -3,7 +3,7 @@ import { aggregateAll } from "@/lib/aggregator";
 import { sendTelegramNotification } from "@/lib/telegram";
 
 /**
- * Endpoint d'agrégation RSS, appelé par Vercel Cron toutes les heures.
+ * Endpoint d'agrégation RSS + Facebook, appelé par Vercel Cron (1×/jour, 18h Tahiti).
  * Protection :
  * - Vercel Cron envoie un header Authorization: Bearer ${CRON_SECRET}
  * - Sur un appel manuel, le secret peut être passé via ?secret=...

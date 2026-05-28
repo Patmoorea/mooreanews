@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Map as LeafletMap, Marker as LeafletMarker } from "leaflet";
-import { MAP_MARKERS, MOOREA_CENTER, type MapMarker } from "@/lib/map-locations";
+import { MOOREA_CENTER, type MapMarker } from "@/lib/map-locations";
 
 type CategoryFilter = "all" | MapMarker["category"];
 
@@ -23,7 +23,11 @@ const CATEGORY_COLORS: Record<MapMarker["category"], string> = {
   info: "#f43f5e",
 };
 
-export function MooreaMap() {
+type Props = {
+  markers: MapMarker[];
+};
+
+export function MooreaMap({ markers }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const markersRef = useRef<LeafletMarker[]>([]);
@@ -39,8 +43,8 @@ export function MooreaMap() {
     for (const m of markersRef.current) m.remove();
     markersRef.current = [];
 
-    const filtered = MAP_MARKERS.filter(
-      (m) => cat === "all" || m.category === cat
+    const filtered = markers.filter(
+      (m) => cat === "all" || m.category === cat,
     );
 
     for (const m of filtered) {
@@ -113,7 +117,7 @@ export function MooreaMap() {
   useEffect(() => {
     if (ready) renderMarkers(filter);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter, ready]);
+  }, [filter, ready, markers]);
 
   return (
     <div className="bg-white rounded-3xl border border-ocean-100 overflow-hidden shadow-[var(--shadow-tropical)]">

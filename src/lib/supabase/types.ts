@@ -124,6 +124,8 @@ export type InfoRow = {
   hours: string | null;
   emergency: boolean;
   url: string | null;
+  lat: number | null;
+  lon: number | null;
   published: boolean;
   display_order: number;
   created_at: string;

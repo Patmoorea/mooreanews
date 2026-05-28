@@ -83,6 +83,8 @@ export type Activity = {
   contact?: string;
   website?: string;
   image?: string;
+  lat?: number;
+  lon?: number;
 };
 
 export type InfoPratique = {
@@ -101,4 +103,6 @@ export type InfoPratique = {
   hours?: string;
   website?: string;
   image?: string;
+  lat?: number;
+  lon?: number;
 };

@@ -25,7 +25,7 @@ export default async function AdminExternalPage() {
     <div>
       <AdminPageHeader
         title="Veille externe"
-        description="RSS, Google Actualités et liens Facebook — collecte automatique toutes les heures."
+        description="RSS, Google Actualités et liens Facebook — collecte automatique chaque soir (~18h, Tahiti)."
       />
 
       <section className="mb-6 bg-white rounded-3xl border border-ocean-100 p-5">
@@ -35,8 +35,8 @@ export default async function AdminExternalPage() {
               Sources surveillées ({RSS_SOURCES.length})
             </h2>
             <p className="text-xs text-ocean-500 mt-1">
-              Cron Vercel : toutes les heures (plan Pro). Hobby : au plus 1×/jour —
-              utilisez « Agréger maintenant » entre-temps.
+              Cron Vercel : 1×/jour à 18h (Tahiti). Bouton « Agréger maintenant »
+              pour forcer une collecte immédiate.
             </p>
           </div>
           <form action={runAggregation}>

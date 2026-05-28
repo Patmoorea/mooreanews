@@ -61,3 +61,36 @@ export function allFacebookWatchUrls(): string[] {
   const extra = extraFacebookWatchUrlsFromEnv();
   return [...new Set([...fromConfig, ...extra])];
 }
+
+/** Pages / sites Moorea à sonder (Open Graph à chaque collecte). */
+export const WEB_WATCH_URLS: { url: string; label: string }[] = [
+  {
+    url: "https://www.mairie-moorea.pf/",
+    label: "Mairie de Moorea-Maiao",
+  },
+  {
+    url: "https://moorea.life/",
+    label: "Moorea.life — agenda & annuaire",
+  },
+  {
+    url: "https://www.tahiti-infos.com/",
+    label: "Tahiti Infos (accueil)",
+  },
+  {
+    url: "https://la1ere.francetvinfo.fr/polynesie/",
+    label: "Polynésie la 1ère",
+  },
+];
+
+export function extraWebWatchUrlsFromEnv(): string[] {
+  const raw = process.env.WEB_WATCH_URLS ?? "";
+  return raw
+    .split(/[\n,]/)
+    .map((u) => u.trim())
+    .filter((u) => u.startsWith("http"));
+}
+
+export function allWebWatchUrls(): string[] {
+  const extra = extraWebWatchUrlsFromEnv();
+  return [...new Set([...WEB_WATCH_URLS.map((w) => w.url), ...extra])];
+}

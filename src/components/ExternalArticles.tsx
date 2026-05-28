@@ -22,9 +22,9 @@ export async function ExternalArticles({ limit = 8 }: { limit?: number }) {
               Moorea sur le web & Facebook
             </h2>
             <p className="mt-1 text-sm text-ocean-600 max-w-2xl">
-              Presse locale, Google Actualités, page de la commune et groupe
-              Facebook — collecte automatique toutes les heures (si le cron
-              Vercel est configuré).
+              Presse locale, Google Actualités, page de la commune et liens
+              Facebook configurés — mise à jour automatique chaque soir (~18h,
+              heure de Tahiti) via le cron Vercel.
             </p>
           </div>
         </div>

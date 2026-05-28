@@ -17,7 +17,8 @@ export type MapMarker = {
  * Marqueurs notables de Moorea (sélection MVP).
  * Coordonnées approximatives mais cohérentes.
  */
-export const MAP_MARKERS: MapMarker[] = [
+/** Points fixes (ferries, plages…) — complétés par l’admin (restaurants, activités, infos). */
+export const STATIC_MAP_MARKERS: MapMarker[] = [
   // Débarcadères / transports
   {
     id: "vaiare-ferry",
@@ -159,3 +160,6 @@ export const MAP_MARKERS: MapMarker[] = [
 ];
 
 export const MOOREA_CENTER: [number, number] = [-17.5388, -149.8295];
+
+/** @deprecated Utiliser buildMapMarkers() — conservé pour imports existants */
+export const MAP_MARKERS = STATIC_MAP_MARKERS;

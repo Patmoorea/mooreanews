@@ -54,7 +54,7 @@ plateforme moderne, multilingue, automatisée et pensée pour la communauté.
 - **Parser RSS pur** (sans dépendance) : supporte RSS 2.0 et Atom 1.0
 - **Filtrage intelligent** par mots-clés Moorea (lieux, districts, surnoms)
 - **Déduplication** par hash source + GUID externe
-- **Cron Vercel** : veille RSS + Facebook toutes les heures (`0 * * * *`) — plan **Hobby** limité à **1×/jour** par Vercel ; plan **Pro** = horaire réel
+- **Cron Vercel** : veille RSS + Facebook **1×/jour à 18h (Tahiti)** (`0 4 * * *` UTC) — compatible plan **Hobby**
 - **Endpoint protégé** par `CRON_SECRET` (Bearer token)
 - **Notification Telegram** quand de nouveaux articles sont agrégés
 - **Section "Veille externe"** sur la page actualités publique

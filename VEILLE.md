@@ -4,9 +4,9 @@
 
 | Source | Fréquence | Où ça s’affiche |
 |--------|-----------|-----------------|
-| RSS (Tahiti Infos, La 1ère, Présidence, Radio 1, Google News Moorea) | Cron horaire | Accueil + `/actualites` |
-| Liens Facebook configurés (commune, groupe, permalinks) | Cron horaire | Idem |
-| Page Facebook Commune (API Meta, si jeton) | Cron horaire | Idem |
+| RSS (Tahiti Infos, La 1ère, Présidence, Radio 1, Google News Moorea) | Cron **1×/jour ~18h** (Tahiti) | Accueil + bloc « Moorea sur le web » |
+| Liens Facebook configurés (commune, groupe, permalinks) | Idem | Idem |
+| Page Facebook Commune (API Meta, si jeton) | Idem | Idem |
 
 **Liens Facebook déjà dans le code** (`src/lib/watch-sources.ts`) :
 
@@ -51,9 +51,9 @@ https://www.mooreanews.com/api/cron/aggregate?secret=VOTRE_CRON_SECRET
 ```
 Réponse JSON : `totalInserted`, `errors`, `bySource`.
 
-**Option C — Vercel Cron**  
-Déjà dans `vercel.json` : `0 * * * *` (toutes les heures).  
-⚠️ Plan **Hobby** : **1 exécution cron par jour maximum**. Pour une vraie veille horaire → plan **Pro**.
+**Option C — Vercel Cron (automatique chaque soir)**  
+Dans `vercel.json` : `0 4 * * *` (**04:00 UTC** = **18:00 heure de Tahiti**).  
+Compatible plan **Hobby** (1 cron / jour). Aucune action manuelle si `CRON_SECRET` + `SUPABASE_SERVICE_ROLE_KEY` sont sur Vercel.
 
 Après chaque collecte : **Redeploy** ou attendre le prochain build si besoin.
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { listExternalArticles } from "@/lib/aggregator";
 import { RSS_SOURCES } from "@/lib/rss-sources";
-import { FACEBOOK_WATCH_URLS } from "@/lib/watch-sources";
+import { FACEBOOK_WATCH_URLS, WEB_WATCH_URLS } from "@/lib/watch-sources";
 
 export const dynamic = "force-dynamic";
 
@@ -35,12 +35,25 @@ export async function GET() {
     config: env,
     rssSources: RSS_SOURCES.length,
     facebookLinksConfigured: FACEBOOK_WATCH_URLS.length,
+    webPagesConfigured: WEB_WATCH_URLS.length,
     externalArticlesVisible: count,
     sampleTitles: articles?.map((a) => a.title) ?? [],
     expectedCronSources: [
       ...RSS_SOURCES.map((s) => s.id),
       "facebook-watch",
       "facebook-pages",
+      "web-watch",
     ],
+    refreshSchedule: {
+      veilleRssFacebook:
+        "Vercel cron 0 4 * * * UTC = 18h00 heure de Tahiti, 1×/jour (Hobby OK)",
+      weather: "10 min (API /api/weather)",
+      ferries: "30 min (/api/ferries)",
+      tides: "1 h (/api/tides)",
+      forecast: "1 h (/api/forecast)",
+      sunMoon: "6 h (/api/sun)",
+      alerts: "30 s (/api/alerts)",
+      tickerClient: "5 min (rafraîchissement navigateur)",
+    },
   });
 }

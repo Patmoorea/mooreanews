@@ -58,6 +58,31 @@ export function InfoForm({
         <Field name="phone" label="Téléphone" defaultValue={initial?.phone} />
         <Field name="hours" label="Horaires" defaultValue={initial?.hours} />
       </div>
+      <div className="rounded-2xl border border-lagon-200 bg-lagon-50/60 p-4 space-y-4">
+        <p className="text-sm font-semibold text-ocean-900">
+          Carte interactive
+        </p>
+        <p className="text-xs text-ocean-600">
+          Copiez latitude / longitude depuis Google Maps (clic droit sur le lieu)
+          pour afficher ce point sur la carte de l&apos;accueil.
+        </p>
+        <div className="grid sm:grid-cols-2 gap-5">
+          <Field
+            name="lat"
+            label="Latitude"
+            type="number"
+            defaultValue={initial?.lat?.toString()}
+            placeholder="-17.5185"
+          />
+          <Field
+            name="lon"
+            label="Longitude"
+            type="number"
+            defaultValue={initial?.lon?.toString()}
+            placeholder="-149.772"
+          />
+        </div>
+      </div>
       <Field name="url" label="Site web" defaultValue={initial?.url} />
       <div className="grid sm:grid-cols-2 gap-5 pt-2">
         <Checkbox

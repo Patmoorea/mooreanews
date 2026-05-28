@@ -258,8 +258,10 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
 }
 
 export async function aggregateWebWatch(): Promise<AggregationResult[]> {
+  const { aggregateWebPagesWatch } = await import("@/lib/web-watch");
   return Promise.all([
     aggregateFacebookWatchUrls(),
     aggregateFacebookPagesGraph(),
+    aggregateWebPagesWatch(),
   ]);
 }

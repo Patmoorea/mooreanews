@@ -291,6 +291,8 @@ function restaurantFromRow(r: RestaurantRow): Restaurant {
     openingHours: r.hours ?? undefined,
     image: r.cover_url ?? undefined,
     premium: r.featured,
+    lat: r.lat ?? undefined,
+    lon: r.lon ?? undefined,
   };
 }
 
@@ -314,6 +316,8 @@ function activityFromRow(r: ActivityRow): Activity {
     contact: r.phone ?? undefined,
     website: r.url ?? undefined,
     image: r.cover_url ?? undefined,
+    lat: r.lat ?? undefined,
+    lon: r.lon ?? undefined,
   };
 }
 
@@ -331,5 +335,7 @@ function infoFromRow(r: InfoRow): InfoPratique {
     hours: r.hours ?? undefined,
     website: r.url ?? undefined,
     image: jsonMatch?.image,
+    lat: r.lat ?? jsonMatch?.lat,
+    lon: r.lon ?? jsonMatch?.lon,
   };
 }

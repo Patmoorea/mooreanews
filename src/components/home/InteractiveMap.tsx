@@ -1,24 +1,16 @@
-"use client";
-
-import dynamic from "next/dynamic";
 import { Container } from "@/components/ui/Container";
+import { buildMapMarkers } from "@/lib/build-map-markers";
+import { InteractiveMapClient } from "@/components/home/InteractiveMapClient";
 
-const MooreaMap = dynamic(
-  () => import("@/components/widgets/MooreaMap").then((m) => m.MooreaMap),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="bg-white rounded-3xl border border-ocean-100 h-[480px] flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-4xl mb-3 animate-wave inline-block">🗺️</div>
-          <p className="text-ocean-600">Chargement de la carte…</p>
-        </div>
-      </div>
-    ),
-  }
-);
+export async function InteractiveMap() {
+  const markers = await buildMapMarkers();
+  const fromAdmin = markers.filter(
+    (m) =>
+      m.id.startsWith("restaurant-") ||
+      m.id.startsWith("activity-") ||
+      m.id.startsWith("info-"),
+  ).length;
 
-export function InteractiveMap() {
   return (
     <section className="py-16 sm:py-20">
       <Container>
@@ -30,12 +22,25 @@ export function InteractiveMap() {
             La carte interactive de Moorea
           </h2>
           <p className="mt-3 text-ocean-700">
-            Restaurants, activités, plages, transports, infos pratiques —
-            filtrez et explorez l&apos;île d&apos;un coup d&apos;œil.
+            Ce que vous renseignez dans l&apos;admin (latitude / longitude)
+            apparaît ici : restaurants, activités et infos pratiques.
           </p>
+          {fromAdmin > 0 ? (
+            <p className="mt-2 text-sm text-lagon-700 font-medium">
+              {fromAdmin} lieu{fromAdmin > 1 ? "x" : ""} depuis l&apos;admin
+              {markers.length > fromAdmin
+                ? ` + ${markers.length - fromAdmin} repères fixes (ferries, plages…)`
+                : ""}
+            </p>
+          ) : (
+            <p className="mt-2 text-sm text-ocean-600">
+              Admin → Restaurants, Activités ou Infos pratiques : remplissez
+              « Latitude » et « Longitude » (Google Maps).
+            </p>
+          )}
         </div>
 
-        <MooreaMap />
+        <InteractiveMapClient markers={markers} />
       </Container>
     </section>
   );
