@@ -65,7 +65,16 @@ try {
 
 console.log(JSON.stringify(json, null, 2));
 
-if (!res.ok || !json.ok) {
+if (json?.error === "unauthorized") {
+  console.error(
+    "\n→ CRON_SECRET incorrect dans .env.local.\n" +
+      "  Copiez la MÊME valeur que sur Vercel (Settings → CRON_SECRET).\n" +
+      "  Test navigateur : https://www.mooreanews.com/api/cron/aggregate?secret=VOTRE_SECRET\n",
+  );
+  process.exit(1);
+}
+
+if (!res.ok || (json.ok === false && !json.totalInserted)) {
   process.exit(1);
 }
 

@@ -38,8 +38,14 @@ export const FACEBOOK_WATCH_URLS: { url: string; label: string }[] = [
   },
 ];
 
-/** Pages Facebook suivies via Graph API si FACEBOOK_PAGE_ACCESS_TOKEN est défini. */
+/** Pages Facebook suivies via Graph API (jeton page ou user → /me/accounts). */
 export const FACEBOOK_PAGE_WATCHES: FacebookPageWatch[] = [
+  {
+    id: "moorea-news",
+    pageId: "MooreaNews",
+    name: "MooreaNews",
+    homepage: "https://www.facebook.com/MooreaNews",
+  },
   {
     id: "commune-moorea",
     pageId: "CommuneMooreaMaiao",

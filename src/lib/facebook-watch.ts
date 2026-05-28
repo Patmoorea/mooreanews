@@ -6,6 +6,7 @@ import type { AggregationResult } from "@/lib/aggregator";
 import { externalIdFromFacebookUrl, isFacebookUrl } from "@/lib/facebook-url";
 import { fetchOpenGraph } from "@/lib/open-graph";
 import { getAdminSupabase } from "@/lib/supabase/admin";
+import { importFacebookPagePostsAsArticles } from "@/lib/facebook-article-import";
 import {
   allFacebookWatchUrls,
   FACEBOOK_PAGE_WATCHES,
@@ -212,6 +213,10 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
   }
 
   const rows: Parameters<typeof upsertFacebookRows>[0] = [];
+  const articleImports: {
+    posts: Parameters<typeof importFacebookPagePostsAsArticles>[0];
+    config: Parameters<typeof importFacebookPagePostsAsArticles>[1];
+  }[] = [];
 
   for (const page of FACEBOOK_PAGE_WATCHES) {
     try {
@@ -226,6 +231,19 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
       }
       const posts = await fetchPagePosts(page, tokenForPage);
       result.fetched += posts.length;
+      if (page.id === "moorea-news" || page.id === "commune-moorea") {
+        articleImports.push({
+          posts,
+          config: {
+            pageKey: page.id === "moorea-news" ? "mooreanews" : "commune",
+            pageName: page.name,
+            homepage: page.homepage,
+            authorLabel: `${page.name} (Facebook)`,
+            tag:
+              page.id === "moorea-news" ? "moorea-news-fb" : "commune-moorea",
+          },
+        });
+      }
       for (const post of posts) {
         const title =
           post.message?.split("\n")[0]?.trim().slice(0, 200) ||
@@ -252,6 +270,20 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
     result.inserted = await upsertFacebookRows(rows);
   } catch (e) {
     result.errors.push(String(e));
+  }
+
+  for (const batch of articleImports) {
+    const imported = await importFacebookPagePostsAsArticles(
+      batch.posts,
+      batch.config,
+    );
+    result.articlesCreated =
+      (result.articlesCreated ?? 0) + imported.created;
+    result.articlesSkipped =
+      (result.articlesSkipped ?? 0) + imported.skipped;
+    for (const err of imported.errors) {
+      result.errors.push(err);
+    }
   }
 
   return result;

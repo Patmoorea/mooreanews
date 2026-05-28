@@ -14,6 +14,8 @@ export type AggregationResult = {
   matched: number;
   inserted: number;
   errors: string[];
+  articlesCreated?: number;
+  articlesSkipped?: number;
 };
 
 function normalize(s: string): string {

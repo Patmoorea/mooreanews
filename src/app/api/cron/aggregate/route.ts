@@ -53,11 +53,22 @@ export async function GET(req: Request) {
     );
   }
 
+  const articlesCreated = results.reduce(
+    (s, r) => s + (r.articlesCreated ?? 0),
+    0,
+  );
+  const articlesSkipped = results.reduce(
+    (s, r) => s + (r.articlesSkipped ?? 0),
+    0,
+  );
+
   return NextResponse.json({
     ok: errors.length === 0,
     durationMs: duration,
     totalFetched,
     totalInserted,
+    articlesCreated,
+    articlesSkipped,
     errors,
     bySource: results,
   });

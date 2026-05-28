@@ -92,6 +92,8 @@ Le fichier `data/restaurants.json` sert de référence et de fallback local sans
 | Newsletter (`/api/newsletter`) | `RESEND_*`, Supabase |
 | Cron veille (`/api/cron/aggregate`) | `CRON_SECRET`, Supabase service role |
 | Facebook pages (posts récents) | `FACEBOOK_PAGE_ACCESS_TOKEN` (optionnel) |
+| Importer posts Commune en **articles** MooreaNews | `FACEBOOK_IMPORT_AS_ARTICLES=true` (nécessite le jeton page) |
+| Publier directement (sinon brouillon) | `FACEBOOK_ARTICLES_PUBLISHED=false` pour modération avant mise en ligne |
 | Permalinks Facebook supplémentaires | `FACEBOOK_WATCH_URLS` (URLs séparées par des virgules) |
 
 ## Veille automatique (RSS + Facebook + web)

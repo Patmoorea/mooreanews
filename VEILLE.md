@@ -62,6 +62,7 @@ Après chaque collecte : **Redeploy** ou attendre le prochain build si besoin.
 - On ne peut pas « scanner tout Facebook » : Meta bloque sans API.
 - **Groupe privé / restreint** : souvent pas de titre Open Graph → le lien apparaît quand même avec le libellé configuré (ex. « Commune — publication photo »).
 - **Page Commune** : avec `FACEBOOK_PAGE_ACCESS_TOKEN`, les vrais posts récents remontent mieux.
+- **Articles automatiques** (texte + image si dispo) : `FACEBOOK_IMPORT_AS_ARTICLES=true` sur Vercel — crée des fiches dans **Actualités** (slug `commune-fb-…`), avec lien vers le post Facebook. Sans jeton Meta, seuls les **liens** du bloc veille sont possibles.
 
 ## Diagnostic rapide
 
