@@ -28,7 +28,7 @@ const DISTRICTS = [
   "Toute l'île",
 ];
 
-const POSTER_TYPES = new Set(["event", "annonce"]);
+const POSTER_TYPES = new Set(["event", "annonce", "service"]);
 
 export function SubmitForm() {
   const [status, setStatus] = useState<Status>("idle");
@@ -119,7 +119,7 @@ export function SubmitForm() {
         label={
           POSTER_TYPES.has(pubType)
             ? "Votre affiche (photo du flyer)"
-            : "Photo (si vous en avez une)"
+            : "Photo (optionnelle)"
         }
         help="Touchez pour choisir la photo depuis le téléphone. Max 5 Mo."
         required={POSTER_TYPES.has(pubType)}

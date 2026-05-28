@@ -125,6 +125,7 @@ function parseFormPayload(
         lat: getNum("lat"),
         lon: getNum("lon"),
         url: get("url") || null,
+        cover_url: get("cover_url") || null,
         published: getBool("published"),
         featured: getBool("featured"),
       };
@@ -141,6 +142,7 @@ function parseFormPayload(
         lat: getNum("lat"),
         lon: getNum("lon"),
         url: get("url") || null,
+        cover_url: get("cover_url") || null,
         published: getBool("published"),
         featured: getBool("featured"),
       };
@@ -246,30 +248,40 @@ export async function approveSubmission(id: string, formData: FormData) {
       : null;
 
   if (sub.type === "event") {
-    await supabase.from("events").insert({
-      title: sub.title,
-      description: sub.description,
-      category: "communaute",
-      date: sub.date || new Date().toISOString().slice(0, 10),
-      start_time: sub.start_time,
-      location: sub.location || "Moorea",
-      district: sub.district,
-      organizer: sub.user_name,
-      contact: sub.user_email,
-      cover_url: coverUrl,
-      published: true,
-    });
+    const { data: created } = await supabase
+      .from("events")
+      .insert({
+        title: sub.title,
+        description: sub.description,
+        category: "communaute",
+        date: sub.date || new Date().toISOString().slice(0, 10),
+        start_time: sub.start_time,
+        location: sub.location || "Moorea",
+        district: sub.district,
+        organizer: sub.user_name,
+        contact: sub.user_email,
+        cover_url: coverUrl,
+        published: true,
+      })
+      .select("id")
+      .single();
+    if (created?.id) revalidatePath(`/evenements/${created.id}`);
   } else if (sub.type === "annonce" || sub.type === "service") {
-    await supabase.from("announcements").insert({
-      title: sub.title,
-      body: sub.description,
-      category: sub.type === "service" ? "services" : "general",
-      district: sub.district,
-      contact: sub.user_email,
-      author: sub.user_name,
-      cover_url: coverUrl,
-      published: true,
-    });
+    const { data: created } = await supabase
+      .from("announcements")
+      .insert({
+        title: sub.title,
+        body: sub.description,
+        category: sub.type === "service" ? "services" : "general",
+        district: sub.district,
+        contact: sub.user_email,
+        author: sub.user_name,
+        cover_url: coverUrl,
+        published: true,
+      })
+      .select("id")
+      .single();
+    if (created?.id) revalidatePath(`/annonces/${created.id}`);
   } else if (sub.type === "signalement" || sub.type === "suggestion") {
     // Pas de table cible automatique : la modération sert surtout à tracer
     // la demande et à traiter manuellement si besoin.

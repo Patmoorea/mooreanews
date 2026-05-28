@@ -5,7 +5,7 @@ import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/PageHeader";
 import { RestaurantPriceLevel } from "@/components/RestaurantPriceLevel";
-import { ContentCoverImage } from "@/components/ContentCoverImage";
+import { PublicationCover } from "@/components/PublicationCover";
 import { getRestaurants } from "@/lib/content";
 
 export const metadata: Metadata = {
@@ -37,14 +37,15 @@ export default async function RestaurantsPage() {
                 className="absolute inset-0 z-10"
                 aria-label={`Voir ${r.name}`}
               />
-              <ContentCoverImage
-                src={r.image}
-                alt={r.name}
-                category="restaurants"
-                slug={r.slug}
-                className="sm:w-48 aspect-[16/10] sm:aspect-auto sm:min-h-[140px] flex-shrink-0"
-                sizes="(max-width: 640px) 100vw, 192px"
-              >
+              <div className="relative sm:w-48 flex-shrink-0">
+                <PublicationCover
+                  src={r.image}
+                  alt={r.name}
+                  category="restaurants"
+                  slug={r.slug}
+                  className="w-full aspect-[16/10] sm:aspect-auto sm:min-h-[140px]"
+                  sizes="(max-width: 640px) 100vw, 192px"
+                />
                 {r.premium && (
                   <div className="absolute top-3 left-3 z-10">
                     <Badge variant="soleil" icon={<Star size={10} />}>
@@ -52,7 +53,7 @@ export default async function RestaurantsPage() {
                     </Badge>
                   </div>
                 )}
-              </ContentCoverImage>
+              </div>
               <div className="p-5 flex-1 relative">
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <h2 className="font-display text-xl text-ocean-900 group-hover:text-tiare-600 transition-colors">

@@ -6,6 +6,7 @@ import {
   Checkbox,
   FormActions,
 } from "@/components/admin/AdminFormFields";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import type { RestaurantRow } from "@/lib/supabase/types";
 
 export function RestaurantForm({
@@ -20,6 +21,11 @@ export function RestaurantForm({
       action={action}
       className="bg-white rounded-3xl border border-ocean-100 p-6 sm:p-8 space-y-5"
     >
+      <ImageUploadField
+        name="cover_url"
+        defaultValue={initial?.cover_url}
+        label="Photo du restaurant / affiche"
+      />
       <Field name="name" label="Nom" required defaultValue={initial?.name} />
       <TextArea
         name="description"

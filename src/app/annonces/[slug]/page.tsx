@@ -11,6 +11,10 @@ import { SITE } from "@/lib/constants";
 import { timeAgo } from "@/lib/utils";
 import { PosterImage, hasPoster } from "@/components/PosterImage";
 
+function ogImageUrl(item: { image?: string }) {
+  return hasPoster(item.image) ? item.image!.trim() : undefined;
+}
+
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateStaticParams() {
@@ -26,7 +30,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: item.title,
     description: item.body.slice(0, 160),
     alternates: { canonical: `/annonces/${item.slug}` },
-    openGraph: { title: item.title, description: item.body.slice(0, 160) },
+    openGraph: {
+      title: item.title,
+      description: item.body.slice(0, 160),
+      ...(ogImageUrl(item)
+        ? { images: [{ url: ogImageUrl(item)!, alt: item.title }] }
+        : {}),
+    },
   };
 }
 

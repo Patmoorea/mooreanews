@@ -26,6 +26,12 @@ export function ArticleForm({
       action={action}
       className="bg-white rounded-3xl border border-ocean-100 p-6 sm:p-8 space-y-5"
     >
+      <ImageUploadField
+        name="cover_url"
+        defaultValue={initial?.cover_url}
+        label="Photo / affiche"
+        help="Image principale de l’article (affiche, photo d’illustration…)."
+      />
       <Field
         name="title"
         label="Titre"
@@ -77,12 +83,6 @@ export function ArticleForm({
         defaultValue={initial?.tags?.join(", ")}
         placeholder="moorea, environnement, vie locale"
         help="Séparés par des virgules"
-      />
-      <ImageUploadField
-        name="cover_url"
-        defaultValue={initial?.cover_url}
-        label="Image de couverture / affiche"
-        help="Téléversez l’affiche (max 5 Mo) ou collez un lien. Laissez vide pour une image automatique."
       />
       <div className="grid sm:grid-cols-2 gap-5 pt-2">
         <Checkbox

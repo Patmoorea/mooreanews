@@ -5,6 +5,7 @@ import { CategoriesGrid } from "@/components/home/CategoriesGrid";
 import { FeaturedArticles } from "@/components/home/FeaturedArticles";
 import { ExternalArticles } from "@/components/ExternalArticles";
 import { UpcomingEvents } from "@/components/home/UpcomingEvents";
+import { RecentAnnouncements } from "@/components/home/RecentAnnouncements";
 import { InteractiveMap } from "@/components/home/InteractiveMap";
 import { CommunityCTA } from "@/components/home/CommunityCTA";
 import { SITE } from "@/lib/constants";
@@ -21,6 +22,7 @@ export default function HomePage() {
       <FeaturedArticles />
       <ExternalArticles limit={6} />
       <UpcomingEvents />
+      <RecentAnnouncements />
       <InteractiveMap />
       <CategoriesGrid />
       <CommunityCTA />

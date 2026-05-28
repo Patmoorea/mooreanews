@@ -15,6 +15,7 @@ import { ShareButtons } from "@/components/ShareButtons";
 import { getActivities, getActivityBySlug } from "@/lib/content";
 import { ACTIVITY_CATEGORY_LABELS } from "@/lib/content-labels";
 import { SITE } from "@/lib/constants";
+import { PosterImage, hasPoster } from "@/components/PosterImage";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -65,13 +66,19 @@ export default async function ActiviteDetailPage({ params }: Props) {
           <p className="mt-4 text-xl text-ocean-700 max-w-2xl text-pretty">
             {item.description}
           </p>
+          {hasPoster(item.image) ? (
+            <PosterImage
+              src={item.image!}
+              alt={`Photo — ${item.name}`}
+              className="mt-8 w-full max-w-lg aspect-[4/3]"
+            />
+          ) : null}
         </Container>
       </section>
 
       <Container className="py-12 sm:py-16">
         <div className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-4">
-            <div className="aspect-[16/9] rounded-3xl bg-gradient-to-br from-tipanier-300 via-lagon-300 to-ocean-400" />
             <div className="rounded-2xl border border-ocean-100 bg-white p-6 space-y-3 text-ocean-800">
               {item.district && (
                 <p className="flex items-center gap-2">

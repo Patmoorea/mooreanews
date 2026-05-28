@@ -4,7 +4,7 @@ import { MapPin, Clock, Tag, ExternalLink, ArrowRight } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/PageHeader";
-import { ContentCoverImage } from "@/components/ContentCoverImage";
+import { PublicationCover } from "@/components/PublicationCover";
 import { getActivities } from "@/lib/content";
 import { ACTIVITY_CATEGORY_LABELS } from "@/lib/content-labels";
 
@@ -34,7 +34,7 @@ export default async function ActivitesPage() {
               href={`/activites/${a.slug}`}
               className="group block bg-white rounded-2xl border border-ocean-100 overflow-hidden shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:-translate-y-1 transition-all"
             >
-              <ContentCoverImage
+              <PublicationCover
                 src={a.image}
                 alt={a.name}
                 category="activites"

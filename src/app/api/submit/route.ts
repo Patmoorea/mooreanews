@@ -55,14 +55,17 @@ export async function POST(req: Request) {
 
   const normalizedType = normalizeSubmissionType(parsed.type);
   if (
-    (normalizedType === "event" || normalizedType === "annonce") &&
+    (normalizedType === "event" ||
+      normalizedType === "annonce" ||
+      normalizedType === "service") &&
     !parsed.cover_url
   ) {
     return NextResponse.json(
       {
         ok: false,
         error: "missing_poster",
-        detail: "Ajoutez une affiche (photo) pour les événements et annonces.",
+        detail:
+          "Ajoutez une affiche (photo) pour les événements, annonces et services.",
       },
       { status: 400, headers: CORS_HEADERS },
     );
