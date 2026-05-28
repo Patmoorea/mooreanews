@@ -149,7 +149,11 @@ async function fetchPagePosts(
   page: FacebookPageWatch,
   token: string
 ): Promise<GraphPost[]> {
-  const graphPageId = await resolveGraphPageId(page, token);
+  const graphPageId = /^\d+$/.test(page.pageId)
+    ? page.pageId
+    : page.id === "moorea-news"
+      ? "me"
+      : await resolveGraphPageId(page, token);
   const fields = "id,message,permalink_url,created_time,full_picture";
   const apiUrl = new URL(
     `https://graph.facebook.com/v21.0/${graphPageId}/posts`
@@ -161,7 +165,9 @@ async function fetchPagePosts(
   const res = await fetch(apiUrl.toString(), { cache: "no-store" });
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`Graph API ${page.pageId}: HTTP ${res.status} ${body.slice(0, 120)}`);
+    throw new Error(
+      `Graph API ${page.name} (${graphPageId}): HTTP ${res.status} ${body.slice(0, 120)}`
+    );
   }
   const json = (await res.json()) as { data?: GraphPost[] };
   return json.data ?? [];
