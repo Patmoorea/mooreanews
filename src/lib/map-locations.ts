@@ -139,6 +139,15 @@ export const MAP_MARKERS: MapMarker[] = [
     href: "/infos-pratiques",
   },
   {
+    id: "rai-tahiti-pihaena",
+    name: "RAI TAHITI — VSL",
+    category: "info",
+    lat: -17.5185,
+    lon: -149.772,
+    description: "Transport sanitaire — base Pihaena (PK 14,5) · 89 77 76 24",
+    href: "/infos-pratiques/rai-tahiti-vsl",
+  },
+  {
     id: "marche-paopao",
     name: "Marché de Pao Pao",
     category: "info",
