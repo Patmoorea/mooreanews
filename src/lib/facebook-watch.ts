@@ -123,13 +123,36 @@ export async function aggregateFacebookWatchUrls(): Promise<AggregationResult> {
   return result;
 }
 
+async function resolveGraphPageId(
+  page: FacebookPageWatch,
+  token: string
+): Promise<string> {
+  if (/^\d+$/.test(page.pageId)) return page.pageId;
+
+  const meUrl = new URL("https://graph.facebook.com/v21.0/me");
+  meUrl.searchParams.set("fields", "id,username");
+  meUrl.searchParams.set("access_token", token);
+
+  const meRes = await fetch(meUrl.toString(), { cache: "no-store" });
+  if (!meRes.ok) return page.pageId;
+
+  const me = (await meRes.json()) as { id?: string; username?: string };
+  const username = me.username?.toLowerCase();
+  const wanted = page.pageId.toLowerCase();
+  if (me.id && (username === wanted || page.id === "moorea-news")) {
+    return me.id;
+  }
+  return page.pageId;
+}
+
 async function fetchPagePosts(
   page: FacebookPageWatch,
   token: string
 ): Promise<GraphPost[]> {
+  const graphPageId = await resolveGraphPageId(page, token);
   const fields = "id,message,permalink_url,created_time,full_picture";
   const apiUrl = new URL(
-    `https://graph.facebook.com/v21.0/${page.pageId}/posts`
+    `https://graph.facebook.com/v21.0/${graphPageId}/posts`
   );
   apiUrl.searchParams.set("fields", fields);
   apiUrl.searchParams.set("limit", "15");
