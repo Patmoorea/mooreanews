@@ -5,7 +5,7 @@ import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/PageHeader";
 import { getUpcomingEvents } from "@/lib/content";
-import { EventPoster, hasEventPoster } from "@/components/EventPoster";
+import { PosterImage, hasPoster } from "@/components/PosterImage";
 
 export const metadata: Metadata = {
   title: "Agenda des événements à Moorea",
@@ -20,6 +20,7 @@ const CATEGORY_VARIANTS = {
   fete: "couchant",
   culture: "ocean",
   autre: "neutral",
+  communaute: "ocean",
 } as const;
 
 export default async function EvenementsPage() {
@@ -49,7 +50,7 @@ export default async function EvenementsPage() {
               const weekday = dateObj.toLocaleDateString("fr-FR", {
                 weekday: "long",
               });
-              const poster = hasEventPoster(e.image);
+              const poster = hasPoster(e.image);
               return (
                 <li key={e.slug}>
                   <Link
@@ -57,7 +58,7 @@ export default async function EvenementsPage() {
                     className="group flex gap-4 sm:gap-6 bg-white rounded-2xl border border-ocean-100 p-5 sm:p-6 shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:border-tiare-200 hover:-translate-y-0.5 transition-all"
                   >
                     {poster ? (
-                      <EventPoster
+                      <PosterImage
                         src={e.image!}
                         alt={`Affiche — ${e.title}`}
                         className="flex-shrink-0 w-24 sm:w-32 aspect-[3/4]"

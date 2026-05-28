@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { getAnnouncements } from "@/lib/content";
 import { ANNOUNCEMENT_TYPE_LABELS } from "@/lib/content-labels";
 import { timeAgo } from "@/lib/utils";
+import { PosterImage, hasPoster } from "@/components/PosterImage";
 
 export const metadata: Metadata = {
   title: "Annonces — Moorea",
@@ -43,8 +44,16 @@ export default async function AnnoncesPage() {
               <Link
                 key={a.slug}
                 href={`/annonces/${a.slug}`}
-                className="group block bg-white rounded-2xl border border-ocean-100 p-5 shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:-translate-y-1 transition-all"
+                className="group block bg-white rounded-2xl border border-ocean-100 overflow-hidden shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:-translate-y-1 transition-all"
               >
+                {hasPoster(a.image) ? (
+                  <PosterImage
+                    src={a.image!}
+                    alt={`Affiche — ${a.title}`}
+                    className="w-full aspect-[3/4] max-h-52 rounded-none border-0 border-b border-ocean-100"
+                  />
+                ) : null}
+                <div className="p-5">
                 <div className="flex items-start justify-between mb-2">
                   <Badge variant={t.variant}>{t.label}</Badge>
                   {a.price && (
@@ -81,6 +90,7 @@ export default async function AnnoncesPage() {
                     <Calendar size={12} />
                     {timeAgo(a.publishedAt)}
                   </p>
+                </div>
                 </div>
               </Link>
             );

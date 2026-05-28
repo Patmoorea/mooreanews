@@ -16,7 +16,7 @@ export default function SoumettrePage() {
       <PageHeader
         badge="Publier"
         title="Partagez votre info"
-        description="Événement, annonce, service, info utile : publiez gratuitement en 2 minutes. Notre équipe valide les contenus sous 24h pour assurer leur qualité."
+        description="Envoyez votre affiche (photo du flyer). L’équipe la met en ligne sous 24 h après vérification."
         variant="tiare"
       />
 
@@ -31,7 +31,7 @@ export default function SoumettrePage() {
                 num="1"
                 icon={<Megaphone size={18} />}
                 title="Vous publiez"
-                text="Remplissez le formulaire et joignez votre affiche (photo du flyer). C’est le format le plus courant à Moorea."
+                text="Choisissez la photo de votre affiche en premier, puis le titre. C’est tout ce qu’il faut dans la plupart des cas."
               />
               <Step
                 num="2"

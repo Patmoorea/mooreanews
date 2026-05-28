@@ -6,6 +6,7 @@ import {
   Checkbox,
   FormActions,
 } from "@/components/admin/AdminFormFields";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import type { AnnouncementRow } from "@/lib/supabase/types";
 
 const CATEGORIES = ["immobilier", "emploi", "services", "vente", "echange", "general"];
@@ -22,6 +23,12 @@ export function AnnouncementForm({
       action={action}
       className="bg-white rounded-3xl border border-ocean-100 p-6 sm:p-8 space-y-5"
     >
+      <ImageUploadField
+        name="cover_url"
+        defaultValue={initial?.cover_url}
+        label="Affiche / photo de l’annonce"
+        help="La plupart des annonces à Moorea sont une affiche — ajoutez-la ici."
+      />
       <Field name="title" label="Titre" required defaultValue={initial?.title} />
       <TextArea
         name="body"

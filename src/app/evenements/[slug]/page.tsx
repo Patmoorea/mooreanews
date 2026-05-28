@@ -18,7 +18,7 @@ import { ShareButtons } from "@/components/ShareButtons";
 import { getEventBySlug, getEvents, getUpcomingEvents } from "@/lib/content";
 import { formatDateFR } from "@/lib/utils";
 import { SITE } from "@/lib/constants";
-import { EventPoster, hasEventPoster } from "@/components/EventPoster";
+import { PosterImage, hasPoster } from "@/components/PosterImage";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const event = await getEventBySlug(slug);
   if (!event) return { title: "Événement introuvable" };
-  const ogImage = hasEventPoster(event.image) ? event.image!.trim() : undefined;
+  const ogImage = hasPoster(event.image) ? event.image!.trim() : undefined;
   return {
     title: event.title,
     description: event.description,
@@ -147,12 +147,10 @@ export default async function EventDetailPage({ params }: Props) {
             {event.title}
           </h1>
 
-          {hasEventPoster(event.image) ? (
-            <EventPoster
+          {hasPoster(event.image) ? (
+            <PosterImage
               src={event.image!}
               alt={`Affiche — ${event.title}`}
-              priority
-              sizes="(max-width: 768px) 100vw, 480px"
               className="mt-8 w-full max-w-md aspect-[3/4] mx-auto sm:mx-0"
             />
           ) : null}

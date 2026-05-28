@@ -109,6 +109,7 @@ function parseFormPayload(
         price: get("price") || null,
         contact: get("contact") || null,
         author: get("author") || null,
+        cover_url: get("cover_url") || null,
         published: getBool("published"),
       };
     case "restaurants":
@@ -171,6 +172,9 @@ export async function createContent(table: TableName, formData: FormData) {
   if (error) throw error;
   revalidatePath(adminPathFor(table));
   revalidatePath(publicPathFor(table));
+  if (table === "events" || table === "announcements") {
+    revalidatePath("/", "layout");
+  }
   redirect(adminPathFor(table));
 }
 
@@ -190,6 +194,8 @@ export async function updateContent(
   if (error) throw error;
   revalidatePath(adminPathFor(table));
   revalidatePath(publicPathFor(table));
+  if (table === "events") revalidatePath(`/evenements/${id}`);
+  if (table === "announcements") revalidatePath(`/annonces/${id}`);
   redirect(adminPathFor(table));
 }
 
@@ -283,6 +289,7 @@ export async function approveSubmission(id: string, formData: FormData) {
   revalidatePath("/admin/submissions");
   revalidatePath("/evenements");
   revalidatePath("/annonces");
+  revalidatePath("/", "layout");
 }
 
 export async function rejectSubmission(id: string, formData: FormData) {

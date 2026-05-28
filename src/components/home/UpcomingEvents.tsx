@@ -3,7 +3,7 @@ import { ArrowRight, MapPin, Calendar, Tag } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { getUpcomingEvents } from "@/lib/content";
-import { EventPoster, hasEventPoster } from "@/components/EventPoster";
+import { PosterImage, hasPoster } from "@/components/PosterImage";
 
 const CATEGORY_VARIANTS = {
   musique: "tiare",
@@ -46,7 +46,7 @@ export async function UpcomingEvents() {
             const month = dateObj.toLocaleDateString("fr-FR", {
               month: "short",
             });
-            const poster = hasEventPoster(e.image);
+            const poster = hasPoster(e.image);
             return (
               <Link
                 key={e.slug}
@@ -54,11 +54,10 @@ export async function UpcomingEvents() {
                 className="group block bg-white rounded-2xl border border-ocean-100 overflow-hidden shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:-translate-y-1 transition-all"
               >
                 {poster ? (
-                  <EventPoster
+                  <PosterImage
                     src={e.image!}
                     alt={`Affiche — ${e.title}`}
                     className="w-full aspect-[3/4] max-h-56 rounded-none border-0 border-b border-ocean-100"
-                    sizes="(max-width: 640px) 90vw, 320px"
                   />
                 ) : null}
                 <div className={poster ? "p-5" : "flex"}>

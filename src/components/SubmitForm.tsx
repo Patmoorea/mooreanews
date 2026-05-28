@@ -2,17 +2,16 @@
 
 import { useState } from "react";
 import { Send, Check, AlertCircle } from "lucide-react";
-import { ImageUploadField } from "@/components/admin/ImageUploadField";
+import { PosterUploadField } from "@/components/PosterUploadField";
 
 type Status = "idle" | "loading" | "success" | "error";
 
 const TYPES = [
-  // Valeurs alignées sur la contrainte Supabase submissions.type
   { value: "event", label: "Événement (concert, marché, fête…)" },
   { value: "annonce", label: "Annonce (vente, location, emploi…)" },
   { value: "service", label: "Service / commerce" },
-  { value: "signalement", label: "Signalement (problème, danger, incident…)" },
-  { value: "suggestion", label: "Info pratique / autre suggestion" },
+  { value: "signalement", label: "Signalement" },
+  { value: "suggestion", label: "Autre info" },
 ] as const;
 
 const DISTRICTS = [
@@ -34,7 +33,7 @@ const POSTER_TYPES = new Set(["event", "annonce"]);
 export function SubmitForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
-  const [pubType, setPubType] = useState("");
+  const [pubType, setPubType] = useState("event");
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -45,11 +44,10 @@ export function SubmitForm() {
       string
     >;
 
-    if (POSTER_TYPES.has(data.type) && !data.cover_url?.trim()) {
+    const cover = data.cover_url?.trim() ?? "";
+    if (POSTER_TYPES.has(data.type) && !cover) {
       setStatus("error");
-      setMessage(
-        "Ajoutez votre affiche (photo) : la plupart des annonces et événements en ont une.",
-      );
+      setMessage("Ajoutez d’abord votre affiche (bouton « choisir l’affiche »).");
       return;
     }
 
@@ -59,21 +57,37 @@ export function SubmitForm() {
       const res = await fetch("/api/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, cover_url: cover }),
       });
-      const json = (await res.json().catch(() => null)) as
-        | { ok: boolean; warnings?: string[] }
-        | null;
-      if (!res.ok || !json?.ok) throw new Error("Erreur");
+      const json = (await res.json().catch(() => null)) as {
+        ok?: boolean;
+        error?: string;
+        detail?: string;
+        warnings?: string[];
+      } | null;
+
+      if (!res.ok || !json?.ok) {
+        const detail =
+          json?.detail ??
+          (json?.error === "invalid_payload"
+            ? "Vérifiez les champs du formulaire."
+            : json?.error === "not_configured"
+              ? "Service temporairement indisponible — écrivez-nous via Contact."
+              : "Envoi impossible pour le moment.");
+        throw new Error(detail);
+      }
       setStatus("success");
       setMessage(
-        "Merci ! Votre publication a bien été envoyée. Validation sous 24h."
+        "Merci ! Affiche reçue. Publication après validation (sous 24 h).",
       );
       form.reset();
-    } catch {
+      setPubType("event");
+    } catch (err) {
       setStatus("error");
       setMessage(
-        "Une erreur est survenue. Réessayez ou contactez-nous par email."
+        err instanceof Error
+          ? err.message
+          : "Erreur réseau. Réessayez ou contactez-nous.",
       );
     }
   }
@@ -83,37 +97,33 @@ export function SubmitForm() {
       onSubmit={onSubmit}
       className="space-y-5 bg-white rounded-3xl p-6 sm:p-8 border border-ocean-100 shadow-[var(--shadow-soft)]"
     >
-      <div className="grid sm:grid-cols-2 gap-5">
-        <Field label="Type de publication" required>
-          <select
-            name="type"
-            required
-            className="form-input"
-            defaultValue=""
-            onChange={(e) => setPubType(e.target.value)}
-          >
-            <option value="" disabled>
-              Sélectionner…
+      <Field label="Type" required>
+        <select
+          name="type"
+          required
+          className="form-input"
+          value={pubType}
+          onChange={(e) => setPubType(e.target.value)}
+        >
+          {TYPES.map((t) => (
+            <option key={t.value} value={t.value}>
+              {t.label}
             </option>
-            {TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </Field>
+          ))}
+        </select>
+      </Field>
 
-        <Field label="District">
-          <select name="district" className="form-input" defaultValue="">
-            <option value="">— Choisir —</option>
-            {DISTRICTS.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
-        </Field>
-      </div>
+      <PosterUploadField
+        name="cover_url"
+        uploadEndpoint="/api/submit/upload"
+        label={
+          POSTER_TYPES.has(pubType)
+            ? "Votre affiche (photo du flyer)"
+            : "Photo (si vous en avez une)"
+        }
+        help="Touchez pour choisir la photo depuis le téléphone. Max 5 Mo."
+        required={POSTER_TYPES.has(pubType)}
+      />
 
       <Field label="Titre" required>
         <input
@@ -121,73 +131,62 @@ export function SubmitForm() {
           required
           maxLength={120}
           className="form-input"
-          placeholder="Ex: Concert au coucher de soleil"
+          placeholder="Ex. Dépistage cancer de la peau"
         />
       </Field>
 
-      <ImageUploadField
-        name="cover_url"
+      <Field
         label={
           POSTER_TYPES.has(pubType)
-            ? "Affiche / photo (obligatoire pour événement et annonce)"
-            : "Affiche / photo (recommandé)"
+            ? "Texte complémentaire (optionnel si tout est sur l’affiche)"
+            : "Description"
         }
-        uploadEndpoint="/api/submit/upload"
-        help="Photo de l’affiche, flyer ou capture Facebook. JPEG, PNG, WebP ou GIF — max 5 Mo."
-      />
-
-      <Field label="Description" required>
+        required={!POSTER_TYPES.has(pubType)}
+      >
         <textarea
           name="description"
-          required
-          rows={5}
+          required={!POSTER_TYPES.has(pubType)}
+          rows={4}
           maxLength={1500}
           className="form-input"
-          placeholder="Complétez si besoin : date, heure, lieu, prix, contact… (souvent déjà sur l’affiche)"
+          placeholder="Date, heure, lieu, contact…"
         />
       </Field>
 
       <div className="grid sm:grid-cols-2 gap-5">
-        <Field label="Date (si événement)">
-          <input
-            name="date"
-            type="date"
-            className="form-input"
-          />
+        <Field label="Date">
+          <input name="date" type="date" className="form-input" />
         </Field>
         <Field label="Heure">
-          <input
-            name="time"
-            type="time"
-            className="form-input"
-          />
+          <input name="time" type="time" className="form-input" />
         </Field>
       </div>
 
-      <Field label="Lieu / adresse">
+      <Field label="Lieu">
         <input
           name="location"
           className="form-input"
-          placeholder="Ex: Débarcadère de Pao Pao"
+          placeholder="Ex. Hôpital de Moorea"
         />
+      </Field>
+
+      <Field label="District">
+        <select name="district" className="form-input" defaultValue="">
+          <option value="">— Choisir —</option>
+          {DISTRICTS.map((d) => (
+            <option key={d} value={d}>
+              {d}
+            </option>
+          ))}
+        </select>
       </Field>
 
       <div className="grid sm:grid-cols-2 gap-5">
         <Field label="Votre nom" required>
-          <input
-            name="name"
-            required
-            className="form-input"
-            placeholder="Prénom Nom"
-          />
+          <input name="name" required className="form-input" />
         </Field>
-        <Field label="Téléphone / Email" required>
-          <input
-            name="contact"
-            required
-            className="form-input"
-            placeholder="87 12 34 56 ou vous@email.com"
-          />
+        <Field label="Téléphone ou email" required>
+          <input name="contact" required className="form-input" />
         </Field>
       </div>
 
@@ -196,12 +195,11 @@ export function SubmitForm() {
           type="checkbox"
           name="consent"
           required
-          className="mt-1 w-4 h-4 rounded border-ocean-300 text-tiare-500 focus:ring-tiare-400"
+          className="mt-1 w-4 h-4 rounded border-ocean-300 text-tiare-500"
         />
         <span>
-          J&apos;accepte que ma publication soit relue par l&apos;équipe avant
-          mise en ligne et que mon nom et mes coordonnées soient affichés sur
-          le site.
+          J&apos;accepte la relecture avant publication et l&apos;affichage de
+          mes coordonnées.
         </span>
       </label>
 
@@ -214,27 +212,27 @@ export function SubmitForm() {
           "Envoi…"
         ) : status === "success" ? (
           <>
-            <Check size={18} />
-            Publication envoyée
+            <Check size={18} /> Envoyé
           </>
         ) : (
           <>
-            <Send size={18} />
-            Envoyer ma publication
+            <Send size={18} /> Envoyer l&apos;affiche
           </>
         )}
       </button>
 
-      {message && (
+      {message ? (
         <p
-          className={`text-sm flex items-center gap-2 ${
-            status === "success" ? "text-tipanier-700" : "text-tiare-700"
+          className={`text-sm flex items-center gap-2 rounded-lg p-3 ${
+            status === "success"
+              ? "text-tipanier-800 bg-tipanier-50"
+              : "text-tiare-800 bg-tiare-50"
           }`}
         >
-          {status === "error" ? <AlertCircle size={14} /> : <Check size={14} />}
+          {status === "error" ? <AlertCircle size={16} /> : <Check size={16} />}
           {message}
         </p>
-      )}
+      ) : null}
 
       <style jsx>{`
         :global(.form-input) {
@@ -245,7 +243,6 @@ export function SubmitForm() {
           border-radius: 0.75rem;
           color: #0c4a6e;
           font-size: 0.95rem;
-          transition: border-color 0.2s;
         }
         :global(.form-input:focus) {
           outline: none;

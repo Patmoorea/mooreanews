@@ -9,6 +9,7 @@ import { getAnnouncementBySlug, getAnnouncements } from "@/lib/content";
 import { ANNOUNCEMENT_TYPE_LABELS } from "@/lib/content-labels";
 import { SITE } from "@/lib/constants";
 import { timeAgo } from "@/lib/utils";
+import { PosterImage, hasPoster } from "@/components/PosterImage";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -60,6 +61,13 @@ export default async function AnnonceDetailPage({ params }: Props) {
           <h1 className="font-display text-4xl sm:text-5xl text-ocean-950 text-balance">
             {item.title}
           </h1>
+          {hasPoster(item.image) ? (
+            <PosterImage
+              src={item.image!}
+              alt={`Affiche — ${item.title}`}
+              className="mt-6 w-full max-w-md aspect-[3/4]"
+            />
+          ) : null}
           <p className="mt-4 text-sm text-ocean-600 flex items-center gap-2">
             <Calendar size={14} />
             Publiée {timeAgo(item.publishedAt)}

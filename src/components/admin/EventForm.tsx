@@ -32,6 +32,12 @@ export function EventForm({
       action={action}
       className="bg-white rounded-3xl border border-ocean-100 p-6 sm:p-8 space-y-5"
     >
+      <ImageUploadField
+        name="cover_url"
+        defaultValue={initial?.cover_url}
+        label="Affiche — à mettre en premier"
+        help="Choisissez la photo du flyer. Elle s’affiche sur l’agenda dès que l’événement est publié."
+      />
       <Field
         name="title"
         label="Titre de l'événement"
@@ -122,12 +128,6 @@ export function EventForm({
           defaultValue={initial?.url}
         />
       </div>
-      <ImageUploadField
-        name="cover_url"
-        defaultValue={initial?.cover_url}
-        label="Affiche de l’événement"
-        help="Ex. affiche ICPF — JPEG/PNG jusqu’à 5 Mo."
-      />
       <Checkbox
         name="published"
         label="Publié"

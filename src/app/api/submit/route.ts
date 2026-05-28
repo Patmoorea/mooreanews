@@ -12,13 +12,20 @@ const Payload = z.object({
   type: z.string().min(1),
   district: z.string().optional().default(""),
   title: z.string().min(2).max(160),
-  description: z.string().min(5).max(2000),
   date: z.string().optional().default(""),
   time: z.string().optional().default(""),
   location: z.string().optional().default(""),
   name: z.string().min(2).max(100),
   contact: z.string().min(3).max(120),
-  cover_url: z.string().url().optional().or(z.literal("")),
+  cover_url: z
+    .string()
+    .optional()
+    .default("")
+    .transform((s) => s.trim())
+    .refine((s) => !s || /^https?:\/\//i.test(s), {
+      message: "cover_url doit être une URL https",
+    }),
+  description: z.string().max(2000).optional().default(""),
   consent: z.union([z.literal("on"), z.boolean()]).optional(),
 });
 
@@ -47,10 +54,29 @@ export async function POST(req: Request) {
   }
 
   const normalizedType = normalizeSubmissionType(parsed.type);
+  if (
+    (normalizedType === "event" || normalizedType === "annonce") &&
+    !parsed.cover_url
+  ) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "missing_poster",
+        detail: "Ajoutez une affiche (photo) pour les événements et annonces.",
+      },
+      { status: 400, headers: CORS_HEADERS },
+    );
+  }
+
+  const submission = {
+    ...parsed,
+    description: parsed.description.trim() || "Voir l’affiche jointe.",
+  };
+
   const warnings: string[] = [];
   let delivered = false;
 
-  const telegramMessage = buildTelegramMessage(parsed);
+  const telegramMessage = buildTelegramMessage(submission);
   const telegram = await sendTelegramNotification(telegramMessage);
   if (telegram.ok) delivered = true;
   else warnings.push(telegram.error ?? "Telegram: échec d'envoi");
@@ -58,21 +84,21 @@ export async function POST(req: Request) {
   // Persiste en base si Supabase est configuré
   const supabase = getAdminSupabase();
   if (supabase) {
-    const coverUrl = parsed.cover_url?.trim() || null;
+    const coverUrl = submission.cover_url || null;
     const { error } = await supabase.from("submissions").insert({
       type: normalizedType,
       district: parsed.district || null,
-      title: parsed.title,
-      description: parsed.description,
-      date: parsed.date || null,
-      start_time: parsed.time || null,
-      location: parsed.location || null,
+      title: submission.title,
+      description: submission.description,
+      date: submission.date || null,
+      start_time: submission.time || null,
+      location: submission.location || null,
       cover_url: coverUrl,
-      user_name: parsed.name,
-      user_email: parsed.contact.includes("@")
-        ? parsed.contact
-        : `${parsed.contact}@unknown`,
-      user_phone: parsed.contact.includes("@") ? null : parsed.contact,
+      user_name: submission.name,
+      user_email: submission.contact.includes("@")
+        ? submission.contact
+        : `${submission.contact}@unknown`,
+      user_phone: submission.contact.includes("@") ? null : submission.contact,
     });
     if (error) warnings.push(`Supabase: ${error.message}`);
   }
@@ -83,9 +109,9 @@ export async function POST(req: Request) {
       .send({
         from: ENV.resendFrom,
         to: [ENV.resendAdmin],
-        subject: `[MooreaNews] Nouvelle soumission : ${parsed.title}`,
-        html: buildAdminHtml(parsed),
-        text: buildAdminText(parsed),
+        subject: `[MooreaNews] Nouvelle soumission : ${submission.title}`,
+        html: buildAdminHtml(submission),
+        text: buildAdminText(submission),
       })
       .then(() => ({ ok: true as const }))
       .catch((err) => ({ ok: false as const, error: String(err) }));
