@@ -30,7 +30,7 @@ export function ArticleForm({
         name="cover_url"
         defaultValue={initial?.cover_url}
         label="Photo / affiche"
-        help="Image principale de l’article (affiche, photo d’illustration…)."
+        help="Obligatoire pour l’accueil : sans photo, un fond neutre s’affiche (pas d’image générique)."
       />
       <Field
         name="title"

@@ -1,4 +1,4 @@
-import { ContentCoverImage } from "@/components/ContentCoverImage";
+import { CoverPlaceholder } from "@/components/CoverPlaceholder";
 import { PosterImage, hasPoster } from "@/components/PosterImage";
 import type { CategorySlug } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -12,14 +12,11 @@ type Props = {
   sizes?: string;
 };
 
-/** Affiche réelle si présente, sinon image de secours par catégorie. */
+/** Vraie photo uniquement ; sinon fond neutre (jamais de stock photo hors sujet). */
 export function PublicationCover({
   src,
   alt,
-  category,
-  slug,
   className,
-  sizes,
 }: Props) {
   if (hasPoster(src)) {
     return (
@@ -28,13 +25,10 @@ export function PublicationCover({
   }
 
   return (
-    <ContentCoverImage
-      src={src}
+    <CoverPlaceholder
       alt={alt}
-      category={category}
-      slug={slug}
       className={className}
-      sizes={sizes}
+      label="Ajoutez une photo en admin"
     />
   );
 }

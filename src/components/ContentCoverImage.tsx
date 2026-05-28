@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { CoverPlaceholder } from "@/components/CoverPlaceholder";
 import { resolveCoverImage } from "@/lib/cover-image";
 import { cn } from "@/lib/utils";
 
@@ -15,11 +16,12 @@ type Props = {
   priority?: boolean;
   sizes?: string;
   overlay?: boolean;
+  placeholderLabel?: string;
   children?: React.ReactNode;
 };
 
 /**
- * Affiche la couverture d’une publication (URL admin, JSON ou image par défaut).
+ * Affiche la couverture seulement si une vraie image existe (admin / upload).
  */
 export function ContentCoverImage({
   src,
@@ -31,29 +33,34 @@ export function ContentCoverImage({
   priority = false,
   sizes = "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
   overlay = true,
+  placeholderLabel = "Photo à venir",
   children,
 }: Props) {
-  const primary = resolveCoverImage({ image: src, category, slug });
-  const fallback = resolveCoverImage({ category, slug });
-  const [activeSrc, setActiveSrc] = useState(primary);
+  const resolved = resolveCoverImage({ image: src, category, slug });
+  const [failed, setFailed] = useState(false);
+
+  if (!resolved || failed) {
+    return (
+      <CoverPlaceholder
+        alt={alt}
+        className={className}
+        label={placeholderLabel}
+      />
+    );
+  }
 
   return (
     <div
-      className={cn(
-        "relative overflow-hidden bg-gradient-to-br from-lagon-200 via-tipanier-200 to-soleil-200",
-        className
-      )}
+      className={cn("relative overflow-hidden bg-ocean-100", className)}
     >
       <Image
-        src={activeSrc}
+        src={resolved}
         alt={alt}
         fill
         priority={priority}
         sizes={sizes}
         className={cn("object-cover", imageClassName)}
-        onError={() => {
-          if (activeSrc !== fallback) setActiveSrc(fallback);
-        }}
+        onError={() => setFailed(true)}
       />
       {overlay && (
         <div

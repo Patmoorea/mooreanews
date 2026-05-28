@@ -24,6 +24,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const article = await getArticleBySlug(slug);
   if (!article) return { title: "Article introuvable" };
+  const cover = resolveCoverImage({
+    image: article.image,
+    category: article.category,
+    slug: article.slug,
+  });
   return {
     title: article.title,
     description: article.excerpt,
@@ -35,14 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       publishedTime: article.publishedAt,
       authors: article.author ? [article.author] : undefined,
       tags: article.tags,
-      images: [
-        {
-          url: resolveCoverImage({
-            image: article.image,
-            category: article.category,
-          }),
-        },
-      ],
+      ...(cover ? { images: [{ url: cover, alt: article.title }] } : {}),
     },
   };
 }
