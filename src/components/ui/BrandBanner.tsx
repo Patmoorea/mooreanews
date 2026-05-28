@@ -26,7 +26,7 @@ export function BrandBanner({
       className={cn(
         "relative overflow-hidden flex-shrink-0 rounded-lg ring-1 ring-ocean-100/80 bg-white",
         isHeader
-          ? "h-9 w-[120px] sm:h-11 sm:w-[168px] md:h-11 md:w-[200px] lg:h-12 lg:w-[220px] xl:h-[52px] xl:w-[260px]"
+          ? "h-9 w-[128px] sm:h-11 sm:w-[200px] md:h-12 md:w-[240px] lg:h-[52px] lg:w-[280px]"
           : "h-12 w-[220px] sm:h-14 sm:w-[280px]",
         className,
       )}
@@ -38,7 +38,7 @@ export function BrandBanner({
         priority={priority}
         sizes={
           isHeader
-            ? "(max-width: 640px) 120px, (max-width: 1024px) 200px, 260px"
+            ? "(max-width: 640px) 128px, (max-width: 1024px) 200px, 280px"
             : "(max-width: 640px) 220px, 280px"
         }
         className={cn(

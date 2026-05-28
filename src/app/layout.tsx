@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Marcellus } from "next/font/google";
 import "./globals.css";
-import { SiteChrome } from "@/components/layout/SiteChrome";
+import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { InfoBannerSlot } from "@/components/layout/InfoBannerSlot";
+import { Ticker } from "@/components/widgets/Ticker";
 import { SITE } from "@/lib/constants";
 
 const inter = Inter({
@@ -88,7 +89,8 @@ export default function RootLayout({
     >
       <body className="min-h-screen flex flex-col bg-island-sky bg-palm-pattern text-ocean-950">
         <InfoBannerSlot />
-        <SiteChrome />
+        <Header />
+        <Ticker />
         <main className="flex-1">{children}</main>
         <Footer />
       </body>

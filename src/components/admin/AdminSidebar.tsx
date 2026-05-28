@@ -26,7 +26,7 @@ const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/activities", label: "Activités", icon: Mountain },
   { href: "/admin/info", label: "Infos pratiques", icon: Phone },
   { href: "/admin/submissions", label: "Soumissions", icon: Inbox },
-  { href: "/admin/external", label: "Veille externe", icon: Rss },
+  { href: "/admin/external", label: "Veille RSS", icon: Rss },
   { href: "/admin/newsletter", label: "Newsletter", icon: Mail },
 ];
 
@@ -41,7 +41,7 @@ export function AdminSidebar() {
         <ArrowLeft size={14} />
         Retour au site
       </Link>
-      <nav className="bg-white rounded-2xl border border-ocean-100 p-2 lg:sticky lg:top-[calc(var(--site-chrome-h,11.75rem)+0.75rem)] lg:max-h-[calc(100vh-var(--site-chrome-h,11.75rem)-2rem)] lg:overflow-y-auto">
+      <nav className="bg-white rounded-2xl border border-ocean-100 p-2 sticky top-24">
         {NAV.map((item) => {
           const active =
             pathname === item.href ||
