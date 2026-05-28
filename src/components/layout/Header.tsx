@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { NAV_ITEMS } from "@/lib/constants";
@@ -8,11 +9,15 @@ import { cn } from "@/lib/utils";
 import { SearchBar } from "@/components/layout/SearchBar";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { Logo } from "@/components/ui/Logo";
-import { BrandBanner } from "@/components/ui/BrandBanner";
+
+function isNavActive(pathname: string, href: string) {
+  return href === "/" ? pathname === "/" : pathname.startsWith(href);
+}
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 16);
@@ -30,93 +35,96 @@ export function Header() {
           : "bg-white/90 backdrop-blur-sm border-b border-ocean-100/60",
       )}
     >
+      {/* Ligne logo + actions (sans bannière image) */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-14 sm:h-16 lg:h-[4.25rem] items-center justify-between gap-3 lg:gap-4">
-          {/* Marque : bannière recadrée (desktop/tablette) ou logo seul (mobile) */}
+        <div className="flex h-14 items-center justify-between gap-3">
           <Link
             href="/"
-            className="flex items-center gap-2 sm:gap-3 group flex-shrink-0 min-w-0"
+            className="flex items-center gap-2.5 group flex-shrink-0"
             aria-label="MooreaNews — Accueil"
           >
-            {/* Mobile : logo rond lisible */}
             <Logo
               size={40}
               priority
-              className="h-9 w-9 sm:hidden flex-shrink-0 rounded-full shadow-sm group-hover:scale-105 transition-transform"
+              className="h-9 w-9 sm:h-10 sm:w-10 rounded-full shadow-sm group-hover:scale-105 transition-transform ring-2 ring-lagon-200"
             />
-            {/* sm+ : bannière adaptée au menu */}
-            <BrandBanner
-              variant="header"
-              priority
-              className="hidden sm:block group-hover:opacity-95 transition-opacity shadow-sm"
-            />
+            <span className="font-display text-lg sm:text-xl text-ocean-900">
+              Moorea<span className="text-lagon-600">News</span>
+            </span>
           </Link>
 
-          {/* Nav desktop */}
-          <nav
-            className="hidden lg:flex items-center gap-0.5 flex-1 justify-center min-w-0"
-            aria-label="Navigation principale"
-          >
-            {NAV_ITEMS.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="px-2.5 xl:px-3 py-2 text-[13px] xl:text-sm font-medium text-ocean-800 rounded-full hover:bg-lagon-100 hover:text-ocean-900 transition-colors whitespace-nowrap"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-
-          {/* Actions desktop */}
-          <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
-            <SearchBar />
-            <UserMenu />
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="hidden md:flex items-center gap-2 relative z-[100]">
+              <SearchBar />
+              <UserMenu />
+            </div>
             <Link
               href="/soumettre"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-br from-tiare-400 to-tiare-500 text-white text-sm font-semibold shadow-[var(--shadow-sunset)] hover:-translate-y-0.5 transition-transform whitespace-nowrap"
+              className="hidden sm:inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-gradient-to-br from-tiare-400 to-tiare-500 text-white text-xs sm:text-sm font-semibold shadow-[var(--shadow-sunset)] hover:-translate-y-0.5 transition-transform whitespace-nowrap"
             >
               + Publier
             </Link>
+            <button
+              type="button"
+              onClick={() => setIsOpen((v) => !v)}
+              className="md:hidden p-2 rounded-lg text-ocean-800 hover:bg-lagon-100"
+              aria-label={isOpen ? "Fermer le menu" : "Ouvrir le menu"}
+              aria-expanded={isOpen}
+            >
+              {isOpen ? <X size={26} /> : <Menu size={26} />}
+            </button>
           </div>
-
-          {/* Bouton mobile */}
-          <button
-            type="button"
-            onClick={() => setIsOpen((v) => !v)}
-            className="lg:hidden p-2 rounded-lg text-ocean-800 hover:bg-lagon-100 transition-colors flex-shrink-0"
-            aria-label={isOpen ? "Fermer le menu" : "Ouvrir le menu"}
-            aria-expanded={isOpen}
-          >
-            {isOpen ? <X size={26} /> : <Menu size={26} />}
-          </button>
         </div>
       </div>
 
-      {/* Menu mobile */}
+      {/* Menu complet — 2e ligne (tablette + desktop) */}
+      <nav
+        className="hidden md:block border-t border-ocean-100/80"
+        aria-label="Navigation principale"
+      >
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-center gap-x-0.5 gap-y-1 py-2.5">
+          {NAV_ITEMS.map((item) => {
+            const active = isNavActive(pathname, item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "px-2.5 lg:px-3 py-1.5 text-[13px] lg:text-sm font-medium rounded-full transition-colors whitespace-nowrap",
+                  active
+                    ? "bg-lagon-100 text-ocean-900 ring-1 ring-lagon-300"
+                    : "text-ocean-800 hover:bg-lagon-100 hover:text-ocean-900",
+                )}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+
       {isOpen && (
-        <div className="lg:hidden border-t border-ocean-100 bg-white/98 backdrop-blur">
-          <div className="mx-auto max-w-7xl px-4 pt-3 pb-1 flex justify-center">
-            <BrandBanner variant="header" className="sm:hidden w-[min(100%,280px)] h-11" />
-          </div>
-          <nav className="mx-auto max-w-7xl px-4 py-3 flex flex-col gap-1">
+        <div className="md:hidden relative z-[100] border-t border-ocean-100 bg-white shadow-lg">
+          <nav className="mx-auto max-w-7xl px-4 py-3 flex flex-col gap-1 max-h-[70vh] overflow-y-auto">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsOpen(false)}
-                className="px-4 py-3 rounded-xl text-base font-medium text-ocean-800 hover:bg-lagon-100 transition-colors"
+                className={cn(
+                  "px-4 py-3 rounded-xl text-base font-medium transition-colors",
+                  isNavActive(pathname, item.href)
+                    ? "bg-lagon-100 text-ocean-900"
+                    : "text-ocean-800 hover:bg-lagon-100",
+                )}
               >
                 {item.label}
               </Link>
             ))}
-            <Link
-              href="/soumettre"
-              onClick={() => setIsOpen(false)}
-              className="mt-2 px-4 py-3 rounded-xl bg-gradient-to-br from-tiare-400 to-tiare-500 text-white font-semibold text-center"
-            >
-              + Publier une info
-            </Link>
+            <div className="mt-2 pt-2 border-t border-ocean-100 flex flex-col gap-2">
+              <SearchBar variant="inline" />
+              <UserMenu />
+            </div>
           </nav>
         </div>
       )}
