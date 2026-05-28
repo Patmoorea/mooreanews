@@ -12,7 +12,10 @@ export async function RecentAnnouncements() {
   if (items.length === 0) return null;
 
   return (
-    <section className="py-16 sm:py-20 bg-gradient-to-br from-soleil-50 via-white to-lagon-50">
+    <section
+      id="annonces"
+      className="py-12 sm:py-16 bg-gradient-to-br from-soleil-50 via-white to-lagon-50 scroll-mt-36 md:scroll-mt-44"
+    >
       <Container>
         <div className="flex items-end justify-between mb-10">
           <div>

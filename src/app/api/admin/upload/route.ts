@@ -50,7 +50,9 @@ export async function POST(req: Request) {
         ? 413
         : result.error === "invalid_type"
           ? 400
-          : 500;
+          : result.error === "bucket_missing"
+            ? 503
+            : 500;
     return NextResponse.json(
       { ok: false, error: result.error, detail: result.detail },
       { status },

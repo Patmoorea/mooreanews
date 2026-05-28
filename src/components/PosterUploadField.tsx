@@ -51,11 +51,13 @@ export function PosterUploadField({
       if (!res.ok || !json?.ok || !json.url) {
         const msg =
           json?.detail ??
-          (json?.error === "storage_not_configured"
-            ? "Stockage images non configuré sur le serveur (Supabase Storage + clé service)."
-            : json?.error === "file_too_large"
-              ? "Fichier trop lourd (max 5 Mo)."
-              : "Échec de l’envoi de l’image. Réessayez ou collez une URL ci-dessous.");
+          (json?.error === "bucket_missing"
+            ? "Stockage Supabase : bucket « media » introuvable. Réessayez dans 1 min (création auto) ou exécutez supabase/storage-media.sql dans Supabase → SQL Editor."
+            : json?.error === "storage_not_configured"
+              ? "Stockage images non configuré sur le serveur (SUPABASE_SERVICE_ROLE_KEY manquante sur Vercel)."
+              : json?.error === "file_too_large"
+                ? "Fichier trop lourd (max 5 Mo)."
+                : "Échec de l’envoi de l’image. Réessayez ou collez une URL ci-dessous.");
         throw new Error(msg);
       }
       setUrl(json.url);

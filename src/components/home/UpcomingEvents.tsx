@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, MapPin, Calendar, Tag } from "lucide-react";
+import { ArrowRight, MapPin, Tag } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { getUpcomingEvents } from "@/lib/content";
@@ -18,7 +18,10 @@ export async function UpcomingEvents() {
   const events = await getUpcomingEvents(6);
 
   return (
-    <section className="py-16 sm:py-20 bg-gradient-to-br from-tiare-50 via-soleil-50 to-tipanier-50">
+    <section
+      id="agenda"
+      className="py-12 sm:py-16 bg-gradient-to-br from-tiare-50 via-soleil-50 to-tipanier-50 scroll-mt-36 md:scroll-mt-44"
+    >
       <Container>
         <div className="flex items-end justify-between mb-10">
           <div>
@@ -51,44 +54,34 @@ export async function UpcomingEvents() {
               <Link
                 key={e.slug}
                 href={`/evenements/${e.slug}`}
-                className="group block bg-white rounded-2xl border border-ocean-100 overflow-hidden shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:-translate-y-1 transition-all"
+                className="group flex bg-white rounded-2xl border border-ocean-100 overflow-hidden shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:-translate-y-1 transition-all"
               >
-                {poster ? (
-                  <PosterImage
-                    src={e.image!}
-                    alt={`Affiche — ${e.title}`}
-                    className="w-full aspect-[3/4] max-h-56 rounded-none border-0 border-b border-ocean-100"
-                  />
-                ) : null}
-                <div className={poster ? "p-5" : "flex"}>
-                  {!poster ? (
-                    <div className="w-20 sm:w-24 bg-gradient-to-br from-tiare-400 to-tiare-600 text-white flex flex-col items-center justify-center py-4">
-                      <span className="font-display text-3xl leading-none">
-                        {day}
-                      </span>
-                      <span className="text-xs uppercase tracking-widest mt-1">
-                        {month}
-                      </span>
-                      {e.time && (
-                        <span className="text-[10px] mt-2 opacity-90">
-                          {e.time}
-                        </span>
-                      )}
-                    </div>
+                <div className="w-20 sm:w-24 shrink-0 bg-gradient-to-br from-tiare-400 to-tiare-600 text-white flex flex-col items-center justify-center py-4">
+                  <span className="font-display text-3xl leading-none">
+                    {day}
+                  </span>
+                  <span className="text-xs uppercase tracking-widest mt-1">
+                    {month}
+                  </span>
+                  {e.time ? (
+                    <span className="text-[10px] mt-2 opacity-90">{e.time}</span>
                   ) : null}
-                  <div className={poster ? "" : "flex-1 p-5"}>
+                </div>
+                <div className="flex-1 min-w-0 flex flex-col">
+                  {poster ? (
+                    <PosterImage
+                      src={e.image!}
+                      alt={`Affiche — ${e.title}`}
+                      className="w-full aspect-[3/4] max-h-44 rounded-none border-0 border-b border-ocean-100"
+                    />
+                  ) : null}
+                  <div className="p-5 flex-1">
                     <Badge variant={CATEGORY_VARIANTS[e.category]}>
                       {e.category}
                     </Badge>
                     <h3 className="mt-2 font-display text-lg text-ocean-900 leading-tight group-hover:text-tiare-600 transition-colors">
                       {e.title}
                     </h3>
-                    {poster && (
-                      <p className="mt-1 text-xs text-ocean-500">
-                        {day} {month}
-                        {e.time ? ` · ${e.time}` : ""}
-                      </p>
-                    )}
                     <p className="mt-2 text-sm text-ocean-600 line-clamp-2">
                       {e.description}
                     </p>
@@ -97,12 +90,12 @@ export async function UpcomingEvents() {
                         <MapPin size={12} />
                         {e.location}
                       </span>
-                      {e.price && (
+                      {e.price ? (
                         <span className="flex items-center gap-1">
                           <Tag size={12} />
                           {e.price}
                         </span>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 </div>

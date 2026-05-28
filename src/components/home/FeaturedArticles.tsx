@@ -15,7 +15,10 @@ export async function FeaturedArticles() {
   const recent = allArticles.slice(0, 4);
 
   return (
-    <section className="py-16 sm:py-20">
+    <section
+      id="infos-locales"
+      className="py-12 sm:py-16 scroll-mt-36 md:scroll-mt-44"
+    >
       <Container>
         <div className="flex items-end justify-between mb-10">
           <div>

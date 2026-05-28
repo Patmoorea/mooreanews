@@ -40,13 +40,16 @@ export function TropicalSection({
   children,
   className,
   warm = false,
+  id,
 }: {
   children: React.ReactNode;
   className?: string;
   warm?: boolean;
+  id?: string;
 }) {
   return (
     <div
+      id={id}
       className={cn(
         "relative",
         warm

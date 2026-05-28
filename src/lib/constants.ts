@@ -19,7 +19,7 @@ export const SITE = {
   name: "MooreaNews",
   tagline: "L'info de Moorea en Polynésie française",
   heroLead:
-    "Actualités locales, vie locale & société, tourisme & loisirs, événements & culture, infos pratiques. Météo, ferries et marées en temps réel.",
+    "Actualités, événements et annonces de Moorea en premier — météo, ferries et marées accessibles en un clic.",
   motto: "Votre source d'information locale et fiable",
   description:
     "L'info de Moorea en Polynésie française : actualités locales, vie locale & société, tourisme & loisirs, événements & culture, infos pratiques. Météo, ferries et marées en temps réel.",
@@ -70,6 +70,7 @@ export const NAV_ITEMS = [
   { href: "/actualites", label: "Actualités" },
   { href: "/evenements", label: "Événements" },
   { href: "/annonces", label: "Annonces" },
+  { href: "/alertes", label: "Alertes" },
   { href: "/restaurants", label: "Restaurants" },
   { href: "/activites", label: "Activités" },
   { href: "/infos-pratiques", label: "Infos pratiques" },

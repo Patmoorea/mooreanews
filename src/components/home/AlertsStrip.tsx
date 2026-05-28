@@ -22,7 +22,7 @@ export async function AlertsStrip() {
   if (items.length === 0) return null;
 
   return (
-    <section className="py-10 sm:py-12">
+    <section id="alertes-accueil" className="py-8 sm:py-10 scroll-mt-36 md:scroll-mt-44">
       <Container>
         <div className="flex items-end justify-between gap-4 mb-6">
           <div>

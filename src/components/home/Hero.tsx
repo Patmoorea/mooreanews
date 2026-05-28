@@ -1,152 +1,211 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, MapPin } from "lucide-react";
+import {
+  Newspaper,
+  Megaphone,
+  Calendar,
+  Siren,
+  CloudSun,
+  Ship,
+  ArrowRight,
+  Plus,
+  type LucideIcon,
+} from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { SITE } from "@/lib/constants";
 import { WaveDivider, TROPICAL_EMOJI } from "@/components/decor/TropicalDecor";
+import { HeroWeatherPill } from "@/components/home/HeroWeatherPill";
+import { cn } from "@/lib/utils";
+
+const UTILITIES: {
+  href: string;
+  label: string;
+  sub: string;
+  icon: LucideIcon;
+  accent: string;
+}[] = [
+  {
+    href: "/actualites",
+    label: "Actualités",
+    sub: "Dernières infos",
+    icon: Newspaper,
+    accent: "from-lagon-400/30 to-lagon-600/20",
+  },
+  {
+    href: "/annonces",
+    label: "Annonces",
+    sub: "Petites annonces",
+    icon: Megaphone,
+    accent: "from-soleil-400/30 to-soleil-600/20",
+  },
+  {
+    href: "/evenements",
+    label: "Agenda",
+    sub: "Événements",
+    icon: Calendar,
+    accent: "from-tiare-400/30 to-tiare-600/20",
+  },
+  {
+    href: "/alertes",
+    label: "Alertes",
+    sub: "Temps réel",
+    icon: Siren,
+    accent: "from-couchant/40 to-tiare-600/25",
+  },
+  {
+    href: "/#en-direct",
+    label: "Météo",
+    sub: "Vent · houle",
+    icon: CloudSun,
+    accent: "from-ocean-400/30 to-lagon-500/20",
+  },
+  {
+    href: "/#en-direct",
+    label: "Ferry",
+    sub: "Prochains départs",
+    icon: Ship,
+    accent: "from-lagon-300/25 to-ocean-600/25",
+  },
+];
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-lagon-100/90 via-soleil-50/50 to-sable-100">
-      <div
+    <section className="relative flex flex-col justify-center overflow-hidden">
+      {/* Fond immersif */}
+      <Image
+        src={SITE.navBanner}
+        alt=""
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover object-center scale-105"
         aria-hidden
-        className="absolute inset-0 bg-palm-pattern opacity-80 pointer-events-none"
       />
       <div
         aria-hidden
-        className="absolute inset-0 bg-tapa opacity-40 pointer-events-none"
+        className="absolute inset-0 bg-gradient-to-b from-[#083B66]/85 via-[#083B66]/55 to-[#083B66]/92"
       />
       <div
         aria-hidden
-        className="absolute top-10 -right-16 w-80 h-80 bg-soleil-300/30 rounded-full blur-3xl pointer-events-none"
+        className="absolute inset-0 bg-gradient-to-tr from-lagon-500/15 via-transparent to-soleil-400/10"
       />
       <div
         aria-hidden
-        className="absolute -bottom-10 -left-20 w-96 h-96 bg-lagon-300/25 rounded-full blur-3xl pointer-events-none"
+        className="absolute top-0 right-0 w-[min(100%,520px)] h-full opacity-20 bg-[radial-gradient(circle_at_70%_30%,#00C2D7_0%,transparent_55%)]"
       />
 
-      <Container className="relative py-16 sm:py-20 lg:py-24">
-        <div className="grid lg:grid-cols-[1.2fr_1fr] gap-10 lg:gap-16 items-center">
-          <div className="text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 backdrop-blur border border-lagon-200/80 text-xs uppercase tracking-widest text-ocean-700 font-medium shadow-sm">
-              <span aria-hidden>{TROPICAL_EMOJI.welcome}</span>
-              Ia ora na — bienvenue sur MooreaNews
-              <span aria-hidden>{TROPICAL_EMOJI.palm}</span>
+      <Container className="relative z-10 py-10 sm:py-14 lg:py-16">
+        <div className="max-w-6xl mx-auto lg:grid lg:grid-cols-[1fr_auto] lg:gap-10 lg:items-center">
+          {/* Carte glass principale */}
+          <div className="rounded-3xl border border-white/20 bg-white/10 backdrop-blur-xl shadow-[0_24px_80px_-20px_rgba(8,59,102,0.65)] p-6 sm:p-10">
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 sm:gap-3">
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white text-[11px] sm:text-xs uppercase tracking-widest font-semibold">
+                <span aria-hidden>{TROPICAL_EMOJI.welcome}</span>
+                Ia ora na
+              </span>
+              <HeroWeatherPill />
             </div>
 
-            <h1 className="mt-6 font-display text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-balance leading-[1.1] text-ocean-950">
-              L&apos;info de Moorea en{" "}
-              <span className="bg-gradient-to-r from-lagon-600 via-tipanier-500 to-tiare-500 bg-clip-text text-transparent">
-                Polynésie française
-              </span>{" "}
-              <span aria-hidden className="inline-block not-italic">
-                {TROPICAL_EMOJI.island}
+            <h1 className="mt-5 font-display text-3xl sm:text-4xl lg:text-5xl text-center lg:text-left text-balance leading-[1.08] text-white drop-shadow-sm">
+              <span className="block text-white/90 text-lg sm:text-xl font-sans font-medium tracking-wide mb-2">
+                {SITE.name}
+              </span>
+              Toute l&apos;actualité de Moorea{" "}
+              <span className="bg-gradient-to-r from-[#00C2D7] via-lagon-300 to-soleil-300 bg-clip-text text-transparent">
+                en temps réel
               </span>
             </h1>
 
-            <p className="mt-6 text-lg sm:text-xl text-ocean-700 max-w-2xl mx-auto lg:mx-0 text-pretty">
+            <p className="mt-5 text-base sm:text-lg text-white/85 text-center lg:text-left max-w-2xl mx-auto lg:mx-0 text-pretty">
               {SITE.heroLead}
             </p>
 
-            <p className="mt-3 text-sm italic text-tiare-600 flex items-center justify-center lg:justify-start gap-2">
-              <span aria-hidden>{TROPICAL_EMOJI.shell}</span>
-              {SITE.motto}
-            </p>
+            {/* Boutons utilitaires */}
+            <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+              {UTILITIES.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className={cn(
+                      "group relative flex flex-col justify-between min-h-[5.5rem] sm:min-h-[6.25rem] p-4 rounded-2xl",
+                      "border border-white/25 bg-white/12 backdrop-blur-md",
+                      "hover:bg-white/22 hover:border-white/40 hover:-translate-y-0.5",
+                      "transition-all duration-200 shadow-lg",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C2D7] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+                    )}
+                  >
+                    <div
+                      aria-hidden
+                      className={cn(
+                        "absolute inset-0 rounded-2xl bg-gradient-to-br opacity-60",
+                        item.accent,
+                      )}
+                    />
+                    <div className="relative flex items-start justify-between gap-2">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-white">
+                        <Icon size={22} strokeWidth={2} />
+                      </span>
+                      <ArrowRight
+                        size={16}
+                        className="text-white/50 group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0 mt-1"
+                      />
+                    </div>
+                    <div className="relative mt-3">
+                      <span className="block font-semibold text-white text-sm sm:text-base leading-tight">
+                        {item.label}
+                      </span>
+                      <span className="block text-[11px] sm:text-xs text-white/70 mt-0.5">
+                        {item.sub}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
 
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
+            {/* Actions principales */}
+            <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3">
               <Link
-                href="/actualites"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-gradient-to-br from-lagon-500 to-ocean-700 text-white font-semibold shadow-[var(--shadow-tropical)] hover:-translate-y-0.5 transition-transform"
+                href="#infos-locales"
+                className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-gradient-to-br from-[#00C2D7] to-lagon-600 text-white font-semibold text-base shadow-[var(--shadow-tropical)] hover:-translate-y-0.5 transition-transform"
               >
-                Découvrir les actus
-                <ArrowRight size={18} />
+                Lire l&apos;info de l&apos;île
+                <ArrowRight size={20} />
               </Link>
               <Link
                 href="/soumettre"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-white text-ocean-800 font-semibold border-2 border-ocean-200 hover:border-tiare-400 hover:text-tiare-600 transition-colors shadow-sm"
+                className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-white/15 backdrop-blur-md border border-white/30 text-white font-semibold text-base hover:bg-white/25 transition-colors"
               >
-                <MapPin size={18} />
+                <Plus size={20} />
                 Publier une info
               </Link>
             </div>
 
-            <div className="mt-10 grid grid-cols-3 gap-2 sm:gap-4 max-w-md mx-auto lg:mx-0">
-              <Stat emoji={TROPICAL_EMOJI.palm} number="100%" label="Local" />
-              <Stat emoji={TROPICAL_EMOJI.wave} number="Live" label="Temps réel" />
-              <Stat emoji={TROPICAL_EMOJI.sun} number="Gratuit" label="Pour tous" />
-            </div>
           </div>
 
-          <div className="relative">
-            <div
-              aria-hidden
-              className="absolute -inset-4 bg-gradient-to-br from-lagon-300/30 via-soleil-200/20 to-tiare-200/30 rounded-[3.5rem] blur-xl"
-            />
-            <div className="relative aspect-square rounded-[3rem] bg-gradient-to-br from-lagon-400 via-tipanier-400 to-tiare-400 p-1 shadow-[var(--shadow-tropical)] max-w-md mx-auto lg:mx-0">
-              <div className="w-full h-full rounded-[2.8rem] bg-white/95 backdrop-blur p-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
-                <div className="absolute inset-0 bg-hibiscus opacity-60" />
-                <div className="relative">
-                  <Image
-                    src={SITE.logo}
-                    alt={SITE.name}
-                    width={180}
-                    height={180}
-                    priority
-                    className="mx-auto mb-3 drop-shadow-md"
-                  />
-                  <h2 className="font-display text-2xl text-ocean-900">
-                    Moorea
-                  </h2>
-                  <p className="mt-1 text-xs text-ocean-600">
-                    17°32′ S · 149°50′ O
-                  </p>
-                  <div className="mt-5 grid grid-cols-2 gap-2 text-xs max-w-xs mx-auto">
-                    {["Maharepa", "Paopao", "Haapiti", "Afareaitu"].map(
-                      (d) => (
-                        <span
-                          key={d}
-                          className="px-2.5 py-1 rounded-full bg-lagon-100/90 text-ocean-700 font-medium border border-lagon-200/50"
-                        >
-                          {d}
-                        </span>
-                      ),
-                    )}
-                  </div>
-                  <p className="mt-4 font-display italic text-sm text-tiare-600">
-                    E Māuruuru ia &apos;u {TROPICAL_EMOJI.welcome}
-                  </p>
-                </div>
-              </div>
+          <div className="hidden lg:flex items-center justify-center">
+            <div className="rounded-3xl border border-white/20 bg-white/10 backdrop-blur-lg p-6 shadow-xl shrink-0">
+              <Image
+                src={SITE.logo}
+                alt={SITE.name}
+                width={120}
+                height={120}
+                className="drop-shadow-lg"
+              />
+              <p className="mt-3 text-center font-display text-lg text-white/90">
+                Moorea
+              </p>
+              <p className="text-center text-[10px] text-white/60 tracking-wide">
+                17°32′ S · 149°50′ O
+              </p>
             </div>
           </div>
         </div>
       </Container>
 
-      <WaveDivider className="text-lagon-200 relative -mb-px" />
+      <WaveDivider className="text-lagon-200/80 relative -mb-px z-10" />
     </section>
-  );
-}
-
-function Stat({
-  emoji,
-  number,
-  label,
-}: {
-  emoji: string;
-  number: string;
-  label: string;
-}) {
-  return (
-    <div className="text-center sm:text-left rounded-2xl bg-white/70 backdrop-blur border border-lagon-100/80 px-3 py-3 shadow-sm">
-      <div className="text-lg mb-0.5" aria-hidden>
-        {emoji}
-      </div>
-      <div className="font-display text-xl sm:text-2xl text-ocean-900">
-        {number}
-      </div>
-      <div className="text-[10px] sm:text-xs uppercase tracking-wider text-ocean-600">
-        {label}
-      </div>
-    </div>
   );
 }

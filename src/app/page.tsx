@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Hero } from "@/components/home/Hero";
 import { AlertsStrip } from "@/components/home/AlertsStrip";
+import { HomeSectionNav } from "@/components/home/HomeSectionNav";
+import { HomeLocalIntro } from "@/components/home/HomeLocalIntro";
 import { LiveDashboard } from "@/components/home/LiveDashboard";
 import { CategoriesGrid } from "@/components/home/CategoriesGrid";
 import { FeaturedArticles } from "@/components/home/FeaturedArticles";
@@ -20,11 +22,13 @@ export default function HomePage() {
     <>
       <Hero />
       <AlertsStrip />
-      <LiveDashboard />
+      <HomeSectionNav />
+      <HomeLocalIntro />
       <FeaturedArticles />
-      <ExternalArticles limit={6} />
       <UpcomingEvents />
       <RecentAnnouncements />
+      <ExternalArticles limit={6} />
+      <LiveDashboard />
       <InteractiveMap />
       <CategoriesGrid />
       <CommunityCTA />

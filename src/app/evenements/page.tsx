@@ -57,25 +57,24 @@ export default async function EvenementsPage() {
                     href={`/evenements/${e.slug}`}
                     className="group flex gap-4 sm:gap-6 bg-white rounded-2xl border border-ocean-100 p-5 sm:p-6 shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:border-tiare-200 hover:-translate-y-0.5 transition-all"
                   >
+                    <div className="flex-shrink-0 w-20 sm:w-28 bg-gradient-to-br from-tiare-400 to-tiare-600 text-white rounded-2xl flex flex-col items-center justify-center py-4">
+                      <span className="text-xs uppercase tracking-widest">
+                        {weekday.slice(0, 3)}
+                      </span>
+                      <span className="font-display text-4xl sm:text-5xl leading-none mt-1">
+                        {day}
+                      </span>
+                      <span className="text-xs uppercase tracking-widest mt-1">
+                        {month}
+                      </span>
+                    </div>
                     {poster ? (
                       <PosterImage
                         src={e.image!}
                         alt={`Affiche — ${e.title}`}
                         className="flex-shrink-0 w-24 sm:w-32 aspect-[3/4]"
                       />
-                    ) : (
-                      <div className="flex-shrink-0 w-20 sm:w-28 bg-gradient-to-br from-tiare-400 to-tiare-600 text-white rounded-2xl flex flex-col items-center justify-center py-4">
-                        <span className="text-xs uppercase tracking-widest">
-                          {weekday.slice(0, 3)}
-                        </span>
-                        <span className="font-display text-4xl sm:text-5xl leading-none mt-1">
-                          {day}
-                        </span>
-                        <span className="text-xs uppercase tracking-widest mt-1">
-                          {month}
-                        </span>
-                      </div>
-                    )}
+                    ) : null}
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
                         <Badge variant={CATEGORY_VARIANTS[e.category]}>

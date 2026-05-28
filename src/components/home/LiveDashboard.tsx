@@ -9,20 +9,24 @@ import { RaiTahitiSpotlight } from "@/components/RaiTahitiSpotlight";
 
 export function LiveDashboard() {
   return (
-    <TropicalSection className="py-16 sm:py-20" warm>
+    <TropicalSection
+      id="en-direct"
+      className="py-12 sm:py-16 scroll-mt-36 md:scroll-mt-44"
+      warm
+    >
       <Container>
-        <div className="text-center max-w-2xl mx-auto mb-12">
+        <div className="text-center max-w-2xl mx-auto mb-10">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/80 backdrop-blur border border-tipanier-200 text-tipanier-800 text-xs font-semibold uppercase tracking-widest shadow-sm">
             <span className="w-2 h-2 rounded-full bg-tipanier-500 animate-pulse-glow" />
             <span aria-hidden>{TROPICAL_EMOJI.wave}</span>
-            Données en direct
+            Outils du quotidien
           </span>
-          <h2 className="mt-4 font-display text-3xl sm:text-4xl text-ocean-950">
-            Moorea en temps réel {TROPICAL_EMOJI.sun}
+          <h2 className="mt-4 font-display text-2xl sm:text-3xl text-ocean-950">
+            Météo, ferries & marées {TROPICAL_EMOJI.sun}
           </h2>
-          <p className="mt-3 text-ocean-700">
-            Météo, ferries, marées, lever/coucher du soleil et phase de la
-            lune — mis à jour automatiquement.
+          <p className="mt-3 text-ocean-700 text-sm sm:text-base">
+            Données en direct — après l&apos;actualité et l&apos;agenda de
+            l&apos;île.
           </p>
         </div>
 
@@ -39,7 +43,7 @@ export function LiveDashboard() {
           <ForecastStrip />
         </div>
 
-        <div className="mt-8 max-w-xl">
+        <div className="mt-8 max-w-2xl mx-auto">
           <RaiTahitiSpotlight variant="compact" />
         </div>
       </Container>
