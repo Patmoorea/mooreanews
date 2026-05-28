@@ -42,7 +42,7 @@ export const FACEBOOK_WATCH_URLS: { url: string; label: string }[] = [
 export const FACEBOOK_PAGE_WATCHES: FacebookPageWatch[] = [
   {
     id: "moorea-news",
-    pageId: "MooreaNews",
+    pageId: "350029589936",
     name: "MooreaNews",
     homepage: "https://www.facebook.com/MooreaNews",
   },
