@@ -147,14 +147,6 @@ export default async function EventDetailPage({ params }: Props) {
             {event.title}
           </h1>
 
-          {hasPoster(event.image) ? (
-            <PosterImage
-              src={event.image!}
-              alt={`Affiche — ${event.title}`}
-              className="mt-8 w-full max-w-md aspect-[3/4] mx-auto sm:mx-0"
-            />
-          ) : null}
-
           <div className="mt-6 grid sm:grid-cols-[auto_1fr] gap-4 sm:gap-8 items-start max-w-3xl">
             <div className="bg-gradient-to-br from-tiare-400 to-tiare-600 text-white rounded-2xl px-6 py-4 text-center shadow-[var(--shadow-tropical)]">
               <div className="text-xs uppercase tracking-widest">
@@ -197,6 +189,14 @@ export default async function EventDetailPage({ params }: Props) {
 
       {/* Corps */}
       <Container size="narrow" className="py-10 sm:py-14">
+        {hasPoster(event.image) ? (
+          <PosterImage
+            src={event.image!}
+            alt={`Affiche — ${event.title}`}
+            className="mb-10 w-full max-w-xl mx-auto aspect-[3/4] min-h-[280px]"
+          />
+        ) : null}
+
         <div className="prose-tropical">
           {event.description.split("\n\n").map((para, i) => (
             <p key={i} className="text-lg leading-relaxed text-ocean-900 mb-6">

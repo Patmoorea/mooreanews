@@ -179,6 +179,33 @@ export type NewsletterSubscriber = {
   unsubscribed_at: string | null;
 };
 
+export type AlertType =
+  | "coupure_eau"
+  | "coupure_edt"
+  | "route"
+  | "houle"
+  | "ferry"
+  | "meteo"
+  | "autre";
+
+export type AlertSeverity = "info" | "warning" | "alert";
+
+export type AlertRow = {
+  id: string;
+  type: AlertType;
+  severity: AlertSeverity;
+  title: string;
+  details: string | null;
+  district: string | null;
+  source_url: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
+  active: boolean;
+  urgent: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 type TableDef<TRow> = {
   Row: TRow;
   Insert: Partial<TRow>;
@@ -199,6 +226,7 @@ export type Database = {
       submissions: TableDef<SubmissionRow>;
       newsletter_subscribers: TableDef<NewsletterSubscriber>;
       external_articles: TableDef<ExternalArticleRow>;
+      alerts: TableDef<AlertRow>;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

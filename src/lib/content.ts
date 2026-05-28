@@ -41,6 +41,7 @@ import type {
   ActivityRow,
   InfoRow,
 } from "@/lib/supabase/types";
+import { normalizeTitleKey } from "@/lib/cover-image";
 
 // =====================================================================
 // Articles
@@ -227,17 +228,20 @@ function articleFromRow(r: ArticleRow): Article {
   };
 }
 
-/** Affiches locales quand cover_url n’est pas encore renseigné en admin. */
+const ICPF_AFFICHE = "/images/events/depistage-cancer-peau-icpf-2026.jpg";
+
+/** Affiches locales quand cover_url n’est pas encore en base (clé = titre normalisé). */
 const EVENT_TITLE_COVERS: Record<string, string> = {
-  "dépistage de la peau":
-    "/images/events/depistage-cancer-peau-icpf-2026.jpg",
+  "depistage de la peau": ICPF_AFFICHE,
 };
 
 function eventCoverFromRow(r: EventRow): string | undefined {
   const url = r.cover_url?.trim();
   if (url) return url;
-  const key = r.title.trim().toLowerCase();
-  return EVENT_TITLE_COVERS[key];
+  const key = normalizeTitleKey(r.title);
+  if (EVENT_TITLE_COVERS[key]) return EVENT_TITLE_COVERS[key];
+  if (key.includes("depistage") && key.includes("peau")) return ICPF_AFFICHE;
+  return undefined;
 }
 
 function eventFromRow(r: EventRow): Event {

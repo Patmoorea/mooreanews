@@ -15,6 +15,7 @@ import type {
   RestaurantRow,
   ActivityRow,
   InfoRow,
+  AlertRow,
 } from "@/lib/supabase/types";
 
 export async function dbListArticles(): Promise<ArticleRow[] | null> {
@@ -107,13 +108,15 @@ export async function dbGetAdminStats(): Promise<{
   restaurants: number;
   activities: number;
   infoPratiques: number;
+  alerts: number;
+  urgentAlerts: number;
   pendingSubmissions: number;
   newsletterSubscribers: number;
 } | null> {
   const supabase = await getServerSupabase();
   if (!supabase) return null;
 
-  const [articles, events, anns, restos, acts, infos, subs, news] =
+  const [articles, events, anns, restos, acts, infos, alerts, urgentAlerts, subs, news] =
     await Promise.all([
     supabase.from("articles").select("id", { count: "exact", head: true }),
     supabase.from("events").select("id", { count: "exact", head: true }),
@@ -121,6 +124,12 @@ export async function dbGetAdminStats(): Promise<{
     supabase.from("restaurants").select("id", { count: "exact", head: true }),
     supabase.from("activities").select("id", { count: "exact", head: true }),
     supabase.from("info_pratiques").select("id", { count: "exact", head: true }),
+    supabase.from("alerts").select("id", { count: "exact", head: true }),
+    supabase
+      .from("alerts")
+      .select("id", { count: "exact", head: true })
+      .eq("active", true)
+      .eq("urgent", true),
     supabase
       .from("submissions")
       .select("id", { count: "exact", head: true })
@@ -138,7 +147,35 @@ export async function dbGetAdminStats(): Promise<{
     restaurants: restos.count ?? 0,
     activities: acts.count ?? 0,
     infoPratiques: infos.count ?? 0,
+    alerts: alerts.count ?? 0,
+    urgentAlerts: urgentAlerts.count ?? 0,
     pendingSubmissions: subs.count ?? 0,
     newsletterSubscribers: news.count ?? 0,
   };
+}
+
+export async function dbListActiveAlerts(): Promise<AlertRow[] | null> {
+  const supabase = getPublicSupabase();
+  if (!supabase) return null;
+  const { data } = await supabase
+    .from("alerts")
+    .select("*")
+    .eq("active", true)
+    .order("urgent", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(20);
+  return data;
+}
+
+export async function dbListAdminAlerts(): Promise<AlertRow[] | null> {
+  const supabase = await getServerSupabase();
+  if (!supabase) return null;
+  const { data } = await supabase
+    .from("alerts")
+    .select("*")
+    .order("active", { ascending: false })
+    .order("urgent", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(200);
+  return data;
 }

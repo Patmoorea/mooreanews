@@ -205,6 +205,27 @@ create table if not exists public.submissions (
 create index if not exists submissions_status_idx on public.submissions (status, created_at desc);
 
 -- =====================================================================
+-- 9ter) Alerts (alertes temps réel)
+-- =====================================================================
+create table if not exists public.alerts (
+  id          uuid primary key default gen_random_uuid(),
+  type        text not null check (type in ('coupure_eau','coupure_edt','route','houle','ferry','meteo','autre')),
+  severity    text not null default 'info' check (severity in ('info','warning','alert')),
+  title       text not null,
+  details     text,
+  district    text,
+  source_url  text,
+  starts_at   timestamptz,
+  ends_at     timestamptz,
+  active      boolean not null default true,
+  urgent      boolean not null default false,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+create index if not exists alerts_active_idx on public.alerts (active, urgent, created_at desc);
+
+-- =====================================================================
 -- 9bis) External articles (Phase 3 — agrégation RSS)
 -- =====================================================================
 create table if not exists public.external_articles (
@@ -280,6 +301,7 @@ alter table public.info_pratiques          enable row level security;
 alter table public.submissions             enable row level security;
 alter table public.newsletter_subscribers  enable row level security;
 alter table public.external_articles       enable row level security;
+alter table public.alerts                  enable row level security;
 
 -- Helper : est-on admin ou editor ? (DOIT être créé AVANT les policies RLS)
 create or replace function public.is_admin()
@@ -323,6 +345,15 @@ begin
     execute format('create policy "%I_admin_all" on public.%I for all using (public.is_admin()) with check (public.is_admin())', t, t);
   end loop;
 end$$;
+
+-- Alerts : lecture publique (actives), gestion admin uniquement
+drop policy if exists "alerts_public_read" on public.alerts;
+create policy "alerts_public_read" on public.alerts for select
+  using (active = true);
+
+drop policy if exists "alerts_admin_all" on public.alerts;
+create policy "alerts_admin_all" on public.alerts for all
+  using (public.is_admin()) with check (public.is_admin());
 
 -- Submissions : tout le monde peut insérer (anonymes), seul admin peut lire/modifier
 drop policy if exists "submissions_anyone_insert" on public.submissions;

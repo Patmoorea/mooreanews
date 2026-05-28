@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Hero } from "@/components/home/Hero";
+import { AlertsStrip } from "@/components/home/AlertsStrip";
 import { LiveDashboard } from "@/components/home/LiveDashboard";
 import { CategoriesGrid } from "@/components/home/CategoriesGrid";
 import { FeaturedArticles } from "@/components/home/FeaturedArticles";
@@ -18,6 +19,7 @@ export default function HomePage() {
   return (
     <>
       <Hero />
+      <AlertsStrip />
       <LiveDashboard />
       <FeaturedArticles />
       <ExternalArticles limit={6} />

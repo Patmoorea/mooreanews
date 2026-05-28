@@ -13,7 +13,8 @@ type TableName =
   | "announcements"
   | "restaurants"
   | "activities"
-  | "info_pratiques";
+  | "info_pratiques"
+  | "alerts";
 
 async function requireAdmin() {
   const supabase = await getServerSupabase();
@@ -46,6 +47,8 @@ function publicPathFor(table: TableName): string {
       return "/activites";
     case "info_pratiques":
       return "/infos-pratiques";
+    case "alerts":
+      return "/";
   }
 }
 
@@ -159,6 +162,19 @@ function parseFormPayload(
         published: getBool("published"),
         display_order: Number(get("display_order") || "0"),
       };
+    case "alerts":
+      return {
+        type: get("type") || "autre",
+        severity: get("severity") || "info",
+        title: get("title"),
+        details: get("details") || null,
+        district: get("district") || null,
+        source_url: get("source_url") || null,
+        starts_at: get("starts_at") || null,
+        ends_at: get("ends_at") || null,
+        active: getBool("active"),
+        urgent: getBool("urgent"),
+      };
   }
 }
 
@@ -227,6 +243,28 @@ export async function togglePublished(
   if (error) throw error;
   revalidatePath(adminPathFor(table));
   revalidatePath(publicPathFor(table));
+}
+
+export async function toggleAlertActive(id: string, current: boolean) {
+  const { supabase } = await requireAdmin();
+  const { error } = await supabase
+    .from("alerts")
+    .update({ active: !current, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
+  revalidatePath("/admin/alerts");
+  revalidatePath("/", "layout");
+}
+
+export async function toggleAlertUrgent(id: string, current: boolean) {
+  const { supabase } = await requireAdmin();
+  const { error } = await supabase
+    .from("alerts")
+    .update({ urgent: !current, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
+  revalidatePath("/admin/alerts");
+  revalidatePath("/", "layout");
 }
 
 /**

@@ -7,6 +7,7 @@ import {
   Newspaper,
   Calendar,
   Megaphone,
+  Siren,
   UtensilsCrossed,
   Mountain,
   Phone,
@@ -19,6 +20,7 @@ import {
 
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin", label: "Tableau de bord", icon: LayoutDashboard },
+  { href: "/admin/alerts", label: "Alertes", icon: Siren },
   { href: "/admin/articles", label: "Articles", icon: Newspaper },
   { href: "/admin/events", label: "Événements", icon: Calendar },
   { href: "/admin/announcements", label: "Annonces", icon: Megaphone },
