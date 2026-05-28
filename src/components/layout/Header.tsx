@@ -10,13 +10,7 @@ import { cn } from "@/lib/utils";
 import { SearchBar } from "@/components/layout/SearchBar";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { Logo } from "@/components/ui/Logo";
-
-/** Même hauteur que l’ancien logo/bannière menu (BrandBanner), pas plus haut */
-const BANNER_H = "h-11 lg:h-12 xl:h-[52px]";
-
-/** Pleine largeur écran (évite les marges blanches sur les côtés) */
-const BANNER_FULL_BLEED =
-  "relative w-screen max-w-[100vw] left-1/2 -translate-x-1/2";
+import { BrandBanner } from "@/components/ui/BrandBanner";
 
 function isNavActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -37,116 +31,107 @@ export function Header() {
   return (
     <header
       className={cn(
-        "transition-shadow duration-300",
-        scrolled && "shadow-[var(--shadow-soft)]",
+        "transition-all duration-300",
+        scrolled
+          ? "bg-white/95 backdrop-blur shadow-[var(--shadow-soft)] border-b border-ocean-100"
+          : "bg-white/90 backdrop-blur-sm border-b border-ocean-100/60",
       )}
     >
       {/* ——— Mobile ——— */}
-      <div className="md:hidden">
-        <div
-          className={cn(BANNER_FULL_BLEED, "overflow-hidden bg-ocean-900", BANNER_H)}
+      <div className="md:hidden mx-auto max-w-7xl px-4 flex h-14 items-center justify-between gap-3">
+        <Link
+          href="/"
+          className="flex items-center gap-2 flex-shrink-0"
+          aria-label="MooreaNews — Accueil"
         >
-          <Link href="/" className="block w-full h-full" aria-label="MooreaNews — Accueil">
-            <Image
-              src={SITE.navBanner}
-              alt=""
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover object-[center_30%]"
-            />
+          <Logo size={40} priority className="h-9 w-9 rounded-full shadow-sm" />
+          <span className="font-display text-lg text-ocean-900">
+            Moorea<span className="text-lagon-600">News</span>
+          </span>
+        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/soumettre"
+            className="px-3 py-1.5 rounded-full bg-gradient-to-br from-tiare-400 to-tiare-500 text-white text-xs font-semibold whitespace-nowrap"
+          >
+            + Publier
           </Link>
-        </div>
-        <div className="mx-auto max-w-7xl px-4 flex h-12 items-center justify-between gap-3 bg-white/95 border-b border-ocean-100">
-          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-            <Logo size={36} className="h-8 w-8 rounded-full" />
-            <span className="font-display text-base text-ocean-900">
-              Moorea<span className="text-lagon-600">News</span>
-            </span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/soumettre"
-              className="px-3 py-1.5 rounded-full bg-gradient-to-br from-tiare-400 to-tiare-500 text-white text-xs font-semibold"
-            >
-              + Publier
-            </Link>
-            <button
-              type="button"
-              onClick={() => setIsOpen((v) => !v)}
-              className="p-2 rounded-lg text-ocean-800 hover:bg-lagon-100"
-              aria-label={isOpen ? "Fermer le menu" : "Ouvrir le menu"}
-              aria-expanded={isOpen}
-            >
-              {isOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsOpen((v) => !v)}
+            className="p-2 rounded-lg text-ocean-800 hover:bg-lagon-100"
+            aria-label={isOpen ? "Fermer le menu" : "Ouvrir le menu"}
+            aria-expanded={isOpen}
+          >
+            {isOpen ? <X size={26} /> : <Menu size={26} />}
+          </button>
         </div>
       </div>
 
-      {/* ——— Tablette / desktop : bannière 100 % largeur (même hauteur), puis menu ——— */}
+      {/* ——— md+ : fond tropical pleine largeur (emplacement) + logo BrandBanner inchangé ——— */}
       <div className="hidden md:block">
-        <div
-          className={cn(BANNER_FULL_BLEED, "overflow-hidden bg-ocean-900", BANNER_H)}
-        >
+        <div className="relative w-screen left-1/2 -translate-x-1/2 h-11 lg:h-12 xl:h-[52px] overflow-hidden bg-ocean-900">
           <Image
             src={SITE.navBanner}
             alt=""
             fill
-            priority
             sizes="100vw"
-            className="object-cover object-[center_28%] select-none pointer-events-none"
+            className="object-cover object-[center_28%] pointer-events-none select-none"
             aria-hidden
+            priority
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-ocean-950/30 via-transparent to-ocean-950/40 pointer-events-none" />
+          <div className="absolute inset-0 bg-white/55 pointer-events-none" aria-hidden />
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-full flex items-center">
+            <Link href="/" className="flex-shrink-0" aria-label="MooreaNews — Accueil">
+              <BrandBanner
+                variant="header"
+                priority
+                className="group-hover:opacity-95 transition-opacity shadow-sm"
+              />
+            </Link>
+          </div>
+        </div>
 
-          <div className="absolute inset-y-0 right-0 flex items-center px-3 sm:px-5 lg:px-6">
-            <div className="flex items-center gap-1.5 rounded-full bg-white/92 backdrop-blur-sm px-1.5 py-0.5 shadow-md border border-white/60 [&_button]:!py-1">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 border-b border-ocean-100/70">
+          <div className="flex flex-wrap items-center justify-between gap-y-2 py-2.5">
+            <nav
+              className="flex flex-wrap items-center justify-center gap-x-0.5 gap-y-1 flex-1 min-w-0"
+              aria-label="Navigation principale"
+            >
+              {NAV_ITEMS.map((item) => {
+                const active = isNavActive(pathname, item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "px-2.5 lg:px-3 py-1.5 text-[13px] lg:text-sm font-medium rounded-full transition-colors whitespace-nowrap",
+                      active
+                        ? "bg-lagon-100 text-ocean-900 ring-1 ring-lagon-300"
+                        : "text-ocean-800 hover:bg-lagon-100 hover:text-ocean-900",
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+            <div className="flex items-center gap-2 flex-shrink-0 relative z-[100]">
               <SearchBar />
               <UserMenu />
               <Link
                 href="/soumettre"
-                className="inline-flex items-center px-2.5 py-1 rounded-full bg-gradient-to-br from-tiare-400 to-tiare-500 text-white text-xs font-semibold whitespace-nowrap"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-br from-tiare-400 to-tiare-500 text-white text-sm font-semibold shadow-[var(--shadow-sunset)] hover:-translate-y-0.5 transition-transform whitespace-nowrap"
               >
                 + Publier
               </Link>
             </div>
           </div>
         </div>
-
-        <div
-          className={cn(
-            "border-b border-ocean-100",
-            scrolled ? "bg-white/95 backdrop-blur" : "bg-white/90 backdrop-blur-sm",
-          )}
-        >
-          <nav
-            className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-center gap-x-0.5 gap-y-1 py-2.5"
-            aria-label="Navigation principale"
-          >
-            {NAV_ITEMS.map((item) => {
-              const active = isNavActive(pathname, item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "px-2.5 lg:px-3 py-1.5 text-[13px] lg:text-sm font-medium rounded-full transition-colors whitespace-nowrap",
-                    active
-                      ? "bg-lagon-100 text-ocean-900 ring-1 ring-lagon-300"
-                      : "text-ocean-800 hover:bg-lagon-100 hover:text-ocean-900",
-                  )}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
       </div>
 
       {isOpen && (
-        <div className="md:hidden relative z-50 border-t border-ocean-100 bg-white shadow-lg">
+        <div className="md:hidden relative z-[100] border-t border-ocean-100 bg-white shadow-lg">
           <nav className="mx-auto max-w-7xl px-4 py-3 flex flex-col gap-1 max-h-[70vh] overflow-y-auto">
             {NAV_ITEMS.map((item) => (
               <Link

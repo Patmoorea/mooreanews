@@ -116,7 +116,7 @@ export function UserMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 mt-2 w-64 bg-white border border-ocean-100 rounded-2xl shadow-xl p-2 z-50"
+          className="absolute right-0 mt-2 w-64 bg-white border border-ocean-100 rounded-2xl shadow-xl p-2 z-[200]"
         >
           <div className="px-3 py-2 border-b border-ocean-100 mb-1">
             <p className="text-sm font-semibold text-ocean-900 truncate">
