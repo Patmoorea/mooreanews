@@ -18,6 +18,7 @@ import { ShareButtons } from "@/components/ShareButtons";
 import { getEventBySlug, getEvents, getUpcomingEvents } from "@/lib/content";
 import { formatDateFR } from "@/lib/utils";
 import { SITE } from "@/lib/constants";
+import { EventPoster, hasEventPoster } from "@/components/EventPoster";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -32,6 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const event = await getEventBySlug(slug);
   if (!event) return { title: "Événement introuvable" };
+  const ogImage = hasEventPoster(event.image) ? event.image!.trim() : undefined;
   return {
     title: event.title,
     description: event.description,
@@ -40,6 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: event.title,
       description: event.description,
       type: "article",
+      ...(ogImage ? { images: [{ url: ogImage, alt: event.title }] } : {}),
     },
   };
 }
@@ -143,6 +146,16 @@ export default async function EventDetailPage({ params }: Props) {
           <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl text-balance leading-[1.1] text-ocean-950">
             {event.title}
           </h1>
+
+          {hasEventPoster(event.image) ? (
+            <EventPoster
+              src={event.image!}
+              alt={`Affiche — ${event.title}`}
+              priority
+              sizes="(max-width: 768px) 100vw, 480px"
+              className="mt-8 w-full max-w-md aspect-[3/4] mx-auto sm:mx-0"
+            />
+          ) : null}
 
           <div className="mt-6 grid sm:grid-cols-[auto_1fr] gap-4 sm:gap-8 items-start max-w-3xl">
             <div className="bg-gradient-to-br from-tiare-400 to-tiare-600 text-white rounded-2xl px-6 py-4 text-center shadow-[var(--shadow-tropical)]">

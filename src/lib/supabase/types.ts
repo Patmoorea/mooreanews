@@ -141,6 +141,7 @@ export type SubmissionRow = {
   date: string | null;
   start_time: string | null;
   location: string | null;
+  cover_url: string | null;
   user_name: string;
   user_email: string;
   user_phone: string | null;

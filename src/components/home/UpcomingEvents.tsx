@@ -3,7 +3,7 @@ import { ArrowRight, MapPin, Calendar, Tag } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { getUpcomingEvents } from "@/lib/content";
-import { formatDateShortFR } from "@/lib/utils";
+import { EventPoster, hasEventPoster } from "@/components/EventPoster";
 
 const CATEGORY_VARIANTS = {
   musique: "tiare",
@@ -46,32 +46,50 @@ export async function UpcomingEvents() {
             const month = dateObj.toLocaleDateString("fr-FR", {
               month: "short",
             });
+            const poster = hasEventPoster(e.image);
             return (
-              <article
+              <Link
                 key={e.slug}
-                className="group bg-white rounded-2xl border border-ocean-100 overflow-hidden shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:-translate-y-1 transition-all"
+                href={`/evenements/${e.slug}`}
+                className="group block bg-white rounded-2xl border border-ocean-100 overflow-hidden shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:-translate-y-1 transition-all"
               >
-                <div className="flex">
-                  <div className="w-20 sm:w-24 bg-gradient-to-br from-tiare-400 to-tiare-600 text-white flex flex-col items-center justify-center py-4">
-                    <span className="font-display text-3xl leading-none">
-                      {day}
-                    </span>
-                    <span className="text-xs uppercase tracking-widest mt-1">
-                      {month}
-                    </span>
-                    {e.time && (
-                      <span className="text-[10px] mt-2 opacity-90">
-                        {e.time}
+                {poster ? (
+                  <EventPoster
+                    src={e.image!}
+                    alt={`Affiche — ${e.title}`}
+                    className="w-full aspect-[3/4] max-h-56 rounded-none border-0 border-b border-ocean-100"
+                    sizes="(max-width: 640px) 90vw, 320px"
+                  />
+                ) : null}
+                <div className={poster ? "p-5" : "flex"}>
+                  {!poster ? (
+                    <div className="w-20 sm:w-24 bg-gradient-to-br from-tiare-400 to-tiare-600 text-white flex flex-col items-center justify-center py-4">
+                      <span className="font-display text-3xl leading-none">
+                        {day}
                       </span>
-                    )}
-                  </div>
-                  <div className="flex-1 p-5">
+                      <span className="text-xs uppercase tracking-widest mt-1">
+                        {month}
+                      </span>
+                      {e.time && (
+                        <span className="text-[10px] mt-2 opacity-90">
+                          {e.time}
+                        </span>
+                      )}
+                    </div>
+                  ) : null}
+                  <div className={poster ? "" : "flex-1 p-5"}>
                     <Badge variant={CATEGORY_VARIANTS[e.category]}>
                       {e.category}
                     </Badge>
                     <h3 className="mt-2 font-display text-lg text-ocean-900 leading-tight group-hover:text-tiare-600 transition-colors">
                       {e.title}
                     </h3>
+                    {poster && (
+                      <p className="mt-1 text-xs text-ocean-500">
+                        {day} {month}
+                        {e.time ? ` · ${e.time}` : ""}
+                      </p>
+                    )}
                     <p className="mt-2 text-sm text-ocean-600 line-clamp-2">
                       {e.description}
                     </p>
@@ -89,7 +107,7 @@ export async function UpcomingEvents() {
                     </div>
                   </div>
                 </div>
-              </article>
+              </Link>
             );
           })}
         </div>

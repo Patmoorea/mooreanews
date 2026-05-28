@@ -38,7 +38,7 @@ Alias acceptés : `OPENWEATHER_API_KEY` → météo ; `CONTACT_TO_EMAIL` → ema
 1. Supabase → **SQL Editor** → exécuter le fichier `supabase/storage-media.sql` (bucket public `media`, max 5 Mo).
 2. Admin → **Événements** ou **Articles** → *Choisir une image depuis l’ordinateur* (votre affiche JPEG/PNG).
 
-Le formulaire public `/soumettre` est **texte seulement** ; les visiteurs décrivent l’événement, l’équipe ajoute l’affiche en admin après validation.
+Le formulaire public `/soumettre` accepte une **affiche (photo)** : téléversement vers Supabase Storage (`/api/submit/upload`, dossier `submissions/`). Obligatoire pour événement et annonce. À l’approbation, l’image est recopiée sur l’événement ou l’annonce publiée.
 
 Puis dans Supabase SQL Editor : exécuter `supabase/01-tables.sql` puis `supabase/02-rls.sql`, puis en local `npm run seed`.
 

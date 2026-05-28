@@ -8,6 +8,8 @@ type Props = {
   label?: string;
   defaultValue?: string | null;
   help?: string;
+  /** Route API de téléversement (défaut : admin). */
+  uploadEndpoint?: string;
 };
 
 export function ImageUploadField({
@@ -15,6 +17,7 @@ export function ImageUploadField({
   label = "Image / affiche",
   defaultValue,
   help = "JPEG, PNG, WebP ou GIF — max 5 Mo. Vous pouvez aussi coller une URL plus bas.",
+  uploadEndpoint = "/api/admin/upload",
 }: Props) {
   const [url, setUrl] = useState(defaultValue?.trim() ?? "");
   const [uploading, setUploading] = useState(false);
@@ -30,7 +33,7 @@ export function ImageUploadField({
     try {
       const body = new FormData();
       body.append("file", file);
-      const res = await fetch("/api/admin/upload", {
+      const res = await fetch(uploadEndpoint, {
         method: "POST",
         body,
       });
@@ -80,7 +83,9 @@ export function ImageUploadField({
         ) : (
           <ImagePlus size={18} className="text-lagon-600" />
         )}
-        {uploading ? "Envoi en cours…" : "Choisir une image depuis l’ordinateur"}
+        {uploading
+          ? "Envoi en cours…"
+          : "Choisir une photo ou affiche depuis l’appareil"}
         <input
           type="file"
           accept="image/jpeg,image/png,image/webp,image/gif"

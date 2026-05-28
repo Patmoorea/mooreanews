@@ -234,6 +234,11 @@ export async function approveSubmission(id: string, formData: FormData) {
     .single();
   if (e1 || !sub) throw e1 ?? new Error("not_found");
 
+  const coverUrl =
+    typeof sub.cover_url === "string" && sub.cover_url.trim()
+      ? sub.cover_url.trim()
+      : null;
+
   if (sub.type === "event") {
     await supabase.from("events").insert({
       title: sub.title,
@@ -245,6 +250,7 @@ export async function approveSubmission(id: string, formData: FormData) {
       district: sub.district,
       organizer: sub.user_name,
       contact: sub.user_email,
+      cover_url: coverUrl,
       published: true,
     });
   } else if (sub.type === "annonce" || sub.type === "service") {
@@ -255,6 +261,7 @@ export async function approveSubmission(id: string, formData: FormData) {
       district: sub.district,
       contact: sub.user_email,
       author: sub.user_name,
+      cover_url: coverUrl,
       published: true,
     });
   } else if (sub.type === "signalement" || sub.type === "suggestion") {

@@ -1,27 +1,26 @@
 import { NextResponse } from "next/server";
 import { getAdminSupabase } from "@/lib/supabase/admin";
-import { requireStaffSession } from "@/lib/admin-auth";
 import { uploadImageToMedia } from "@/lib/media-upload";
 
 export const runtime = "nodejs";
 
-export async function POST(req: Request) {
-  const auth = await requireStaffSession();
-  if ("error" in auth) {
-    const status =
-      auth.error === "unauthorized"
-        ? 401
-        : auth.error === "forbidden"
-          ? 403
-          : 503;
-    return NextResponse.json({ ok: false, error: auth.error }, { status });
-  }
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
 
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+}
+
+/** Téléversement d’affiche pour /soumettre (sans compte admin). */
+export async function POST(req: Request) {
   const admin = getAdminSupabase();
   if (!admin) {
     return NextResponse.json(
       { ok: false, error: "storage_not_configured" },
-      { status: 503 },
+      { status: 503, headers: CORS_HEADERS },
     );
   }
 
@@ -31,7 +30,7 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json(
       { ok: false, error: "invalid_form" },
-      { status: 400 },
+      { status: 400, headers: CORS_HEADERS },
     );
   }
 
@@ -39,11 +38,11 @@ export async function POST(req: Request) {
   if (!(file instanceof File)) {
     return NextResponse.json(
       { ok: false, error: "missing_file" },
-      { status: 400 },
+      { status: 400, headers: CORS_HEADERS },
     );
   }
 
-  const result = await uploadImageToMedia(admin, file, "uploads");
+  const result = await uploadImageToMedia(admin, file, "submissions");
   if (!result.ok) {
     const status =
       result.error === "file_too_large"
@@ -53,9 +52,12 @@ export async function POST(req: Request) {
           : 500;
     return NextResponse.json(
       { ok: false, error: result.error, detail: result.detail },
-      { status },
+      { status, headers: CORS_HEADERS },
     );
   }
 
-  return NextResponse.json({ ok: true, url: result.url, path: result.path });
+  return NextResponse.json(
+    { ok: true, url: result.url, path: result.path },
+    { headers: CORS_HEADERS },
+  );
 }

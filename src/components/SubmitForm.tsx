@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Send, Check, AlertCircle } from "lucide-react";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -28,15 +29,30 @@ const DISTRICTS = [
   "Toute l'île",
 ];
 
+const POSTER_TYPES = new Set(["event", "annonce"]);
+
 export function SubmitForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
+  const [pubType, setPubType] = useState("");
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (status === "loading") return;
     const form = e.currentTarget;
-    const data = Object.fromEntries(new FormData(form).entries());
+    const data = Object.fromEntries(new FormData(form).entries()) as Record<
+      string,
+      string
+    >;
+
+    if (POSTER_TYPES.has(data.type) && !data.cover_url?.trim()) {
+      setStatus("error");
+      setMessage(
+        "Ajoutez votre affiche (photo) : la plupart des annonces et événements en ont une.",
+      );
+      return;
+    }
+
     setStatus("loading");
     setMessage("");
     try {
@@ -74,6 +90,7 @@ export function SubmitForm() {
             required
             className="form-input"
             defaultValue=""
+            onChange={(e) => setPubType(e.target.value)}
           >
             <option value="" disabled>
               Sélectionner…
@@ -108,6 +125,17 @@ export function SubmitForm() {
         />
       </Field>
 
+      <ImageUploadField
+        name="cover_url"
+        label={
+          POSTER_TYPES.has(pubType)
+            ? "Affiche / photo (obligatoire pour événement et annonce)"
+            : "Affiche / photo (recommandé)"
+        }
+        uploadEndpoint="/api/submit/upload"
+        help="Photo de l’affiche, flyer ou capture Facebook. JPEG, PNG, WebP ou GIF — max 5 Mo."
+      />
+
       <Field label="Description" required>
         <textarea
           name="description"
@@ -115,7 +143,7 @@ export function SubmitForm() {
           rows={5}
           maxLength={1500}
           className="form-input"
-          placeholder="Détails de votre annonce : date, heure, lieu, prix, contact…"
+          placeholder="Complétez si besoin : date, heure, lieu, prix, contact… (souvent déjà sur l’affiche)"
         />
       </Field>
 

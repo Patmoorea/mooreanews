@@ -18,6 +18,7 @@ const Payload = z.object({
   location: z.string().optional().default(""),
   name: z.string().min(2).max(100),
   contact: z.string().min(3).max(120),
+  cover_url: z.string().url().optional().or(z.literal("")),
   consent: z.union([z.literal("on"), z.boolean()]).optional(),
 });
 
@@ -57,6 +58,7 @@ export async function POST(req: Request) {
   // Persiste en base si Supabase est configuré
   const supabase = getAdminSupabase();
   if (supabase) {
+    const coverUrl = parsed.cover_url?.trim() || null;
     const { error } = await supabase.from("submissions").insert({
       type: normalizedType,
       district: parsed.district || null,
@@ -65,6 +67,7 @@ export async function POST(req: Request) {
       date: parsed.date || null,
       start_time: parsed.time || null,
       location: parsed.location || null,
+      cover_url: coverUrl,
       user_name: parsed.name,
       user_email: parsed.contact.includes("@")
         ? parsed.contact
@@ -146,6 +149,8 @@ function buildTelegramMessage(d: SubmitData): string {
     lines.push(`📅 ${escapeHtml(d.date)} ${escapeHtml(d.time)}`);
   if (d.location) lines.push(`📍 ${escapeHtml(d.location)}`);
   if (d.district) lines.push(`🏝 District : ${escapeHtml(d.district)}`);
+  if (d.cover_url?.trim())
+    lines.push(`🖼 <a href="${escapeHtml(d.cover_url.trim())}">Voir l’affiche</a>`);
   lines.push("");
   lines.push(`👤 ${escapeHtml(d.name)}`);
   lines.push(`📞 ${escapeHtml(d.contact)}`);
@@ -162,6 +167,11 @@ function buildAdminHtml(d: SubmitData): string {
       ${d.date ? `<p><strong>Date :</strong> ${escapeHtml(d.date)} ${escapeHtml(d.time)}</p>` : ""}
       ${d.location ? `<p><strong>Lieu :</strong> ${escapeHtml(d.location)}</p>` : ""}
       ${d.district ? `<p><strong>District :</strong> ${escapeHtml(d.district)}</p>` : ""}
+      ${
+        d.cover_url?.trim()
+          ? `<p><strong>Affiche :</strong> <a href="${escapeHtml(d.cover_url.trim())}">ouvrir l’image</a></p><p><img src="${escapeHtml(d.cover_url.trim())}" alt="Affiche" style="max-width:100%;max-height:400px;border-radius:8px" /></p>`
+          : ""
+      }
       <hr>
       <p><strong>Auteur :</strong> ${escapeHtml(d.name)}</p>
       <p><strong>Contact :</strong> ${escapeHtml(d.contact)}</p>
@@ -179,6 +189,7 @@ function buildAdminText(d: SubmitData): string {
     d.date && `Date : ${d.date} ${d.time}`,
     d.location && `Lieu : ${d.location}`,
     d.district && `District : ${d.district}`,
+    d.cover_url?.trim() && `Affiche : ${d.cover_url.trim()}`,
     "",
     `Auteur : ${d.name}`,
     `Contact : ${d.contact}`,

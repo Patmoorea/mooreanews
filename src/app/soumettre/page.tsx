@@ -31,7 +31,7 @@ export default function SoumettrePage() {
                 num="1"
                 icon={<Megaphone size={18} />}
                 title="Vous publiez"
-                text="Formulaire texte (sans fichier). Pour une affiche photo, indiquez le lien dans la description ou contactez-nous — l’équipe peut l’ajouter."
+                text="Remplissez le formulaire et joignez votre affiche (photo du flyer). C’est le format le plus courant à Moorea."
               />
               <Step
                 num="2"

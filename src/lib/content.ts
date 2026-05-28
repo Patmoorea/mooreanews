@@ -227,6 +227,19 @@ function articleFromRow(r: ArticleRow): Article {
   };
 }
 
+/** Affiches locales quand cover_url n’est pas encore renseigné en admin. */
+const EVENT_TITLE_COVERS: Record<string, string> = {
+  "dépistage de la peau":
+    "/images/events/depistage-cancer-peau-icpf-2026.jpg",
+};
+
+function eventCoverFromRow(r: EventRow): string | undefined {
+  const url = r.cover_url?.trim();
+  if (url) return url;
+  const key = r.title.trim().toLowerCase();
+  return EVENT_TITLE_COVERS[key];
+}
+
 function eventFromRow(r: EventRow): Event {
   return {
     slug: r.id,
@@ -242,7 +255,7 @@ function eventFromRow(r: EventRow): Event {
     price: r.price ?? undefined,
     contact: r.contact ?? undefined,
     url: r.url ?? undefined,
-    image: r.cover_url ?? undefined,
+    image: eventCoverFromRow(r),
   };
 }
 

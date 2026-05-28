@@ -111,6 +111,27 @@ export default async function AdminSubmissionsPage({ searchParams }: Props) {
 
               <p className="text-ocean-800 whitespace-pre-wrap">{s.description}</p>
 
+              {s.cover_url ? (
+                <div className="mt-4">
+                  <p className="text-xs font-semibold text-ocean-600 mb-2">
+                    Affiche jointe
+                  </p>
+                  <a
+                    href={s.cover_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block rounded-xl overflow-hidden border border-ocean-200 max-w-sm"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={s.cover_url}
+                      alt="Affiche soumise"
+                      className="w-full h-auto max-h-80 object-contain bg-ocean-50"
+                    />
+                  </a>
+                </div>
+              ) : null}
+
               <ul className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-xs text-ocean-600">
                 <li className="inline-flex items-center gap-1.5">
                   <Mail size={12} />

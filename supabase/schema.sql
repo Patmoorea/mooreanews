@@ -191,6 +191,7 @@ create table if not exists public.submissions (
   date            date,
   start_time      time,
   location        text,
+  cover_url       text,
   user_name       text not null,
   user_email      text not null,
   user_phone      text,
