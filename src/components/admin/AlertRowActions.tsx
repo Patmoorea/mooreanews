@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pencil, Siren, SirenOff, Power, PowerOff } from "lucide-react";
+import { Pencil, Siren, Power, PowerOff } from "lucide-react";
 import { toggleAlertActive, toggleAlertUrgent } from "@/app/admin/actions";
 
 export function AlertRowActions({
@@ -46,7 +46,7 @@ export function AlertRowActions({
           urgent ? "text-tiare-700 hover:bg-tiare-50" : "text-ocean-400 hover:bg-ocean-50"
         }`}
       >
-        {urgent ? <Siren size={16} /> : <SirenOff size={16} />}
+        <Siren size={16} className={urgent ? "" : "opacity-40"} />
       </button>
       <Link
         href={`/admin/alerts/${id}`}
