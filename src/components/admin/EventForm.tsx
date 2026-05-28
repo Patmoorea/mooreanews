@@ -6,6 +6,7 @@ import {
   Checkbox,
   FormActions,
 } from "@/components/admin/AdminFormFields";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import type { EventRow } from "@/lib/supabase/types";
 
 const CATEGORIES = [
@@ -121,6 +122,12 @@ export function EventForm({
           defaultValue={initial?.url}
         />
       </div>
+      <ImageUploadField
+        name="cover_url"
+        defaultValue={initial?.cover_url}
+        label="Affiche de l’événement"
+        help="Ex. affiche ICPF — JPEG/PNG jusqu’à 5 Mo."
+      />
       <Checkbox
         name="published"
         label="Publié"

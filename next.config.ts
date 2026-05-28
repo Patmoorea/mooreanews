@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.francetvinfo.fr" },
       { protocol: "https", hostname: "**.presidence.pf" },
       { protocol: "https", hostname: "**.radio1.pf" },
+      { protocol: "https", hostname: "**.supabase.co" },
     ],
   },
 };

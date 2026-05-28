@@ -6,6 +6,7 @@ import {
   Checkbox,
   FormActions,
 } from "@/components/admin/AdminFormFields";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import type { ArticleRow } from "@/lib/supabase/types";
 
 const CATEGORY_OPTIONS = CATEGORIES.map((c) => ({
@@ -77,11 +78,11 @@ export function ArticleForm({
         placeholder="moorea, environnement, vie locale"
         help="Séparés par des virgules"
       />
-      <Field
+      <ImageUploadField
         name="cover_url"
-        label="URL de l'image de couverture (vide = image auto)"
         defaultValue={initial?.cover_url}
-        placeholder="https://exemple.com/photo.jpg"
+        label="Image de couverture / affiche"
+        help="Téléversez l’affiche (max 5 Mo) ou collez un lien. Laissez vide pour une image automatique."
       />
       <div className="grid sm:grid-cols-2 gap-5 pt-2">
         <Checkbox

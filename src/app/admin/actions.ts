@@ -97,6 +97,7 @@ function parseFormPayload(
         price: get("price") || null,
         contact: get("contact") || null,
         url: get("url") || null,
+        cover_url: get("cover_url") || null,
         published: getBool("published"),
       };
     case "announcements":

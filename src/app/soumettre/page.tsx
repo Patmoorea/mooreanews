@@ -31,7 +31,7 @@ export default function SoumettrePage() {
                 num="1"
                 icon={<Megaphone size={18} />}
                 title="Vous publiez"
-                text="Remplissez le formulaire ci-contre. Tout est gratuit."
+                text="Formulaire texte (sans fichier). Pour une affiche photo, indiquez le lien dans la description ou contactez-nous — l’équipe peut l’ajouter."
               />
               <Step
                 num="2"
