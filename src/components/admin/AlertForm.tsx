@@ -90,12 +90,14 @@ export function AlertForm({
           label="Début (optionnel)"
           type="datetime-local"
           defaultValue={initial?.starts_at ? toDatetimeLocal(initial.starts_at) : undefined}
+          help="Heure de Tahiti. Avant cette heure, l’alerte reste masquée."
         />
         <Field
           name="ends_at"
           label="Fin (optionnel)"
           type="datetime-local"
           defaultValue={initial?.ends_at ? toDatetimeLocal(initial.ends_at) : undefined}
+          help="Heure de Tahiti. À la fin, l’alerte disparaît du site automatiquement."
         />
       </div>
 

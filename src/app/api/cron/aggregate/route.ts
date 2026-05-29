@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { aggregateAll } from "@/lib/aggregator";
+import { expirePastAlerts } from "@/lib/alert-schedule";
 import { notifyVeilleReport } from "@/lib/telegram-notify";
 
 /**
@@ -33,8 +35,23 @@ export async function GET(req: Request) {
   }
 
   const start = Date.now();
+  const expiredAlerts = await expirePastAlerts();
+  if (expiredAlerts > 0) {
+    revalidatePath("/alertes");
+    revalidatePath("/", "layout");
+  }
+
   const results = await aggregateAll();
   const duration = Date.now() - start;
+
+  const alertsCreated = results.reduce(
+    (s, r) => s + (r.alertsCreated ?? 0),
+    0,
+  );
+  if (alertsCreated > 0) {
+    revalidatePath("/alertes");
+    revalidatePath("/", "layout");
+  }
 
   const totalInserted = results.reduce((s, r) => s + r.inserted, 0);
   const totalFetched = results.reduce((s, r) => s + r.fetched, 0);
@@ -78,6 +95,8 @@ export async function GET(req: Request) {
   return NextResponse.json({
     ok: errors.length === 0,
     durationMs: duration,
+    expiredAlerts,
+    alertsCreated,
     totalFetched,
     totalInserted,
     articlesCreated,

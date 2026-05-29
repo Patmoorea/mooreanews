@@ -4,6 +4,9 @@ import { ExternalLink, MapPin, Siren } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
+import { expirePastAlerts } from "@/lib/alert-schedule";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Alertes — Moorea",
@@ -23,6 +26,7 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 export default async function AlertesPage() {
+  await expirePastAlerts();
   const rows = (await dbListActiveAlerts()) ?? [];
 
   return (

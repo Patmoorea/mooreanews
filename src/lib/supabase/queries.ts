@@ -8,6 +8,7 @@ import {
   getPublicSupabase,
   getServerSupabase,
 } from "@/lib/supabase/server";
+import { isAlertVisibleNow } from "@/lib/alert-schedule";
 import type {
   ArticleRow,
   EventRow,
@@ -163,8 +164,9 @@ export async function dbListActiveAlerts(): Promise<AlertRow[] | null> {
     .eq("active", true)
     .order("urgent", { ascending: false })
     .order("created_at", { ascending: false })
-    .limit(20);
-  return data;
+    .limit(50);
+  if (!data) return null;
+  return data.filter((a) => isAlertVisibleNow(a));
 }
 
 export async function dbListAdminAlerts(): Promise<AlertRow[] | null> {

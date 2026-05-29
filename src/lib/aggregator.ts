@@ -2,6 +2,7 @@
  * Veille Moorea — flux RSS + liens Facebook / pages Meta (voir facebook-watch.ts).
  */
 
+import { importAlertsFromRssItems } from "@/lib/alert-auto-import";
 import { facebookImportMaxAgeDays } from "@/lib/facebook-import-filters";
 import { aggregateWebWatch } from "@/lib/facebook-watch";
 import { fetchRssFeed, type RssItem } from "@/lib/rss-parser";
@@ -19,6 +20,7 @@ export type AggregationResult = {
   articlesSkipped?: number;
   eventsCreated?: number;
   announcementsCreated?: number;
+  alertsCreated?: number;
   createdArticles?: { title: string; slug: string }[];
   createdEvents?: { title: string; id: string; date: string }[];
 };
@@ -85,6 +87,12 @@ async function aggregateOne(source: RssSource): Promise<AggregationResult> {
     result.errors.push(error.message);
   } else {
     result.inserted = count ?? rows.length;
+  }
+
+  try {
+    result.alertsCreated = await importAlertsFromRssItems(matching);
+  } catch (e) {
+    result.errors.push(`alerts: ${String(e)}`);
   }
 
   return result;

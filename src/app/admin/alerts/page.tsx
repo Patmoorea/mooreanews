@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { dbListAdminAlerts } from "@/lib/supabase/queries";
+import { isAlertExpired, isAlertVisibleNow } from "@/lib/alert-schedule";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AlertRowActions } from "@/components/admin/AlertRowActions";
 import { formatDateShortFR } from "@/lib/utils";
@@ -46,7 +47,7 @@ export default async function AdminAlertsPage() {
                 District
               </th>
               <th className="px-4 py-3 text-left hidden lg:table-cell">
-                Créée
+                Fin
               </th>
               <th className="px-4 py-3 text-center">État</th>
               <th className="px-4 py-3 text-right">Actions</th>
@@ -80,12 +81,20 @@ export default async function AdminAlertsPage() {
                   {r.district ?? "—"}
                 </td>
                 <td className="px-4 py-3 hidden lg:table-cell text-ocean-600">
-                  {formatDateShortFR(r.created_at)}
+                  {r.ends_at ? formatDateShortFR(r.ends_at) : "—"}
                 </td>
                 <td className="px-4 py-3 text-center">
-                  {r.active ? (
+                  {isAlertVisibleNow(r) ? (
                     <span className="px-2 py-0.5 rounded-full bg-tipanier-100 text-tipanier-700 text-xs">
-                      Active
+                      En ligne
+                    </span>
+                  ) : r.active && isAlertExpired(r) ? (
+                    <span className="px-2 py-0.5 rounded-full bg-soleil-100 text-soleil-800 text-xs">
+                      Expirée
+                    </span>
+                  ) : r.active ? (
+                    <span className="px-2 py-0.5 rounded-full bg-lagon-100 text-lagon-700 text-xs">
+                      Programmée
                     </span>
                   ) : (
                     <span className="px-2 py-0.5 rounded-full bg-ocean-100 text-ocean-600 text-xs">

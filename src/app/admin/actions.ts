@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { contentReferencesStaleYear } from "@/lib/facebook-import-filters";
+import { parseDatetimeLocalTahiti } from "@/lib/alert-schedule";
 import { hideExternalArticlesForArticleSlug } from "@/lib/facebook-external-sync";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getServerSupabase } from "@/lib/supabase/server";
@@ -175,8 +176,8 @@ function parseFormPayload(
         details: get("details") || null,
         district: get("district") || null,
         source_url: get("source_url") || null,
-        starts_at: get("starts_at") || null,
-        ends_at: get("ends_at") || null,
+        starts_at: parseDatetimeLocalTahiti(get("starts_at")) ?? null,
+        ends_at: parseDatetimeLocalTahiti(get("ends_at")) ?? null,
         active: getBool("active"),
         urgent: getBool("urgent"),
       };
@@ -191,6 +192,11 @@ function revalidateArticlePublicPaths(slug?: string) {
   revalidatePath("/actualites");
   revalidatePath("/", "layout");
   if (slug) revalidatePath(`/actualites/${slug}`);
+}
+
+function revalidateAlertPublicPaths() {
+  revalidatePath("/alertes");
+  revalidatePath("/", "layout");
 }
 
 async function syncFacebookArticleVisibility(
@@ -221,6 +227,9 @@ export async function createContent(table: TableName, formData: FormData) {
   if (table === "events" || table === "announcements") {
     revalidatePath("/", "layout");
   }
+  if (table === "alerts") {
+    revalidateAlertPublicPaths();
+  }
   redirect(adminPathFor(table));
 }
 
@@ -247,6 +256,8 @@ export async function updateContent(
       await syncFacebookArticleVisibility(supabase, id, false);
     }
     revalidateArticlePublicPaths(slug);
+  } else if (table === "alerts") {
+    revalidateAlertPublicPaths();
   } else {
     revalidatePath(publicPathFor(table));
   }
@@ -402,7 +413,7 @@ export async function toggleAlertActive(id: string, current: boolean) {
     .eq("id", id);
   if (error) throw error;
   revalidatePath("/admin/alerts");
-  revalidatePath("/", "layout");
+  revalidateAlertPublicPaths();
 }
 
 export async function toggleAlertUrgent(id: string, current: boolean) {
@@ -413,7 +424,7 @@ export async function toggleAlertUrgent(id: string, current: boolean) {
     .eq("id", id);
   if (error) throw error;
   revalidatePath("/admin/alerts");
-  revalidatePath("/", "layout");
+  revalidateAlertPublicPaths();
 }
 
 /**
