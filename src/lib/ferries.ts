@@ -5,6 +5,7 @@
  */
 
 import bundledSchedules from "../../data/ferries-schedules.json";
+import { fetchFirebaseDepartures } from "@/lib/ferry-firebase";
 
 export type Direction = "Tahiti to Moorea" | "Moorea to Tahiti";
 export type DayKey =
@@ -27,7 +28,11 @@ export type NextDepartures = {
   fromMoorea: Departure[];
   fromTahiti: Departure[];
   fetchedAt: string;
-  source: "horaires-tahiti.com" | "horaires-tahiti.com (cache)" | "unavailable";
+  source:
+    | "compagnies-direct"
+    | "horaires-tahiti.com"
+    | "horaires-tahiti.com (cache)"
+    | "unavailable";
 };
 
 const SOURCE_URL = "https://www.horaires-tahiti.com/The.json";
@@ -272,4 +277,57 @@ export function formatMinutesUntil(min: number): string {
   const h = Math.floor(min / 60);
   const m = min % 60;
   return m === 0 ? `dans ${h}h` : `dans ${h}h${String(m).padStart(2, "0")}`;
+}
+
+function tauatiOnlyRaw(raw: RawData): RawData {
+  const tauati = raw.compagnies?.["Tauati Ferry"];
+  if (!tauati) return { compagnies: {} };
+  return { compagnies: { "Tauati Ferry": tauati } };
+}
+
+function mergeSortedDepartures(
+  ...lists: Departure[][]
+): Departure[] {
+  return lists
+    .flat()
+    .sort((a, b) => a.minutesUntil - b.minutesUntil)
+    .slice(0, 10);
+}
+
+/**
+ * Horaires du jour : Aremiti + Vaeara'i (Firebase officiel) + Tauati (horaires-tahiti).
+ * Secours : JSON horaires-tahiti.com complet (cache local inclus).
+ */
+export async function getNextDepartures(): Promise<NextDepartures> {
+  const [firebase, { raw, source: jsonSource }] = await Promise.all([
+    fetchFirebaseDepartures(),
+    loadFerrySchedules(),
+  ]);
+
+  if (firebase.ok) {
+    const tauati = computeNextDepartures(
+      tauatiOnlyRaw(raw),
+      jsonSource === "horaires-tahiti.com (cache)"
+        ? "horaires-tahiti.com (cache)"
+        : "horaires-tahiti.com",
+    );
+    const fromMoorea = mergeSortedDepartures(
+      firebase.fromMoorea,
+      tauati.fromMoorea,
+    );
+    const fromTahiti = mergeSortedDepartures(
+      firebase.fromTahiti,
+      tauati.fromTahiti,
+    );
+    if (fromMoorea.length > 0 || fromTahiti.length > 0) {
+      return {
+        fromMoorea,
+        fromTahiti,
+        fetchedAt: new Date().toISOString(),
+        source: "compagnies-direct",
+      };
+    }
+  }
+
+  return computeNextDepartures(raw, jsonSource);
 }

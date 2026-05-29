@@ -1,37 +1,38 @@
 /**
- * Synchronisation des horaires ferries (cron).
- * Tente horaires-tahiti.com ; la copie locale data/ferries-schedules.json
- * sert de secours si le fetch échoue (Vercel / Cloudflare).
+ * Vérification des sources horaires (cron).
  */
 
-import bundled from "../../data/ferries-schedules.json";
-import {
-  fetchRawFerries,
-  type RawFerryData,
-} from "@/lib/ferries";
+import { fetchFirebaseDepartures } from "@/lib/ferry-firebase";
+import { fetchRawFerries } from "@/lib/ferries";
 
 export async function checkFerryScheduleSync(): Promise<{
   live: boolean;
   companies: number;
   message: string;
 }> {
-  const raw = await fetchRawFerries();
-  const bundledCount = Object.keys(
-    (bundled as RawFerryData).compagnies ?? {},
-  ).length;
+  const [firebase, tahitiJson] = await Promise.all([
+    fetchFirebaseDepartures(),
+    fetchRawFerries(),
+  ]);
 
-  if (raw) {
-    const liveCount = Object.keys(raw.compagnies ?? {}).length;
-    return {
-      live: true,
-      companies: liveCount,
-      message: `${liveCount} compagnie(s) via horaires-tahiti.com (live)`,
-    };
+  const parts: string[] = [];
+  if (firebase.ok) {
+    parts.push(
+      `Aremiti+Vaeara'i OK (${firebase.fromMoorea.length + firebase.fromTahiti.length} départs)`,
+    );
+  } else {
+    parts.push("Firebase compagnies : échec");
+  }
+
+  if (tahitiJson?.compagnies?.["Tauati Ferry"]) {
+    parts.push("Tauati via horaires-tahiti.com");
+  } else {
+    parts.push("Tauati : cache local");
   }
 
   return {
-    live: false,
-    companies: bundledCount,
-    message: `Fetch live échoué — ${bundledCount} compagnie(s) via cache local`,
+    live: firebase.ok,
+    companies: firebase.ok ? 2 : 0,
+    message: parts.join(" · "),
   };
 }

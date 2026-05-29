@@ -64,6 +64,12 @@ export function FerryCard() {
         />
       </div>
 
+      {data?.source === "compagnies-direct" && (
+        <p className="mt-4 text-[11px] text-ocean-500/80 leading-relaxed">
+          Aremiti &amp; Vaeara&apos;i : horaires en direct (sites officiels). Tauati
+          : horaires-tahiti.com.
+        </p>
+      )}
       {data?.source === "horaires-tahiti.com (cache)" && (
         <p className="mt-4 text-[11px] text-ocean-500/80 leading-relaxed">
           Horaires depuis cache local. Source :{" "}
