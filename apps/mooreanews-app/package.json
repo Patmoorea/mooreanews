@@ -1,21 +1,24 @@
 {
   "name": "mooreanews-app",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "Application native MooreaNews (Android + macOS) — résumé local, détail sur le site",
+  "description": "Applications natives MooreaNews — Android (APK) et iOS (IPA)",
   "scripts": {
     "cap:sync": "npx cap sync",
     "android": "npx cap open android",
-    "mac": "npx cap open @capacitor-community/electron",
-    "build:android": "npx cap sync android && cd android && ./gradlew assembleDebug",
-    "build:mac": "npx cap sync @capacitor-community/electron && cd electron && npm run build"
+    "ios": "bash scripts/build-ios.sh",
+    "build:apk": "bash scripts/build-android.sh",
+    "build:release": "bash scripts/build-android-release.sh apk",
+    "build:aab": "bash scripts/build-android-release.sh aab",
+    "mac": "npx cap open @capacitor-community/electron"
   },
   "dependencies": {
     "@capacitor-community/electron": "^5.0.1",
     "@capacitor/android": "^7.2.0",
-    "@capacitor/core": "^7.2.0",
     "@capacitor/app": "^7.0.1",
     "@capacitor/browser": "^7.0.1",
+    "@capacitor/core": "^7.2.0",
+    "@capacitor/ios": "^7.2.0",
     "@capacitor/splash-screen": "^7.0.1",
     "@capacitor/status-bar": "^7.0.1"
   },
@@ -24,6 +27,6 @@
     "typescript": "^5"
   },
   "capacitor": {
-    "platforms": ["android", "electron"]
+    "platforms": ["android", "ios", "electron"]
   }
 }

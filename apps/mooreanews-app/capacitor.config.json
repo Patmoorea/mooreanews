@@ -5,7 +5,8 @@
   "server": {
     "url": "https://www.mooreanews.com/app",
     "cleartext": false,
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "iosScheme": "https"
   },
   "plugins": {
     "SplashScreen": {
