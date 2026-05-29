@@ -103,7 +103,7 @@ export function Header() {
             );
           })}
           <Link
-            href="/app"
+            href="/telecharger"
             className="px-2.5 lg:px-3 py-1.5 text-[13px] lg:text-sm font-medium rounded-full text-lagon-700 hover:bg-lagon-100 transition-colors whitespace-nowrap"
           >
             App
@@ -136,11 +136,11 @@ export function Header() {
               </Link>
             ))}
             <Link
-              href="/app"
+              href="/telecharger"
               onClick={() => setIsOpen(false)}
               className="px-4 py-3 rounded-xl text-base font-medium text-lagon-700 hover:bg-lagon-100"
             >
-              App MooreaNews
+              Télécharger l&apos;app
             </Link>
             <Link
               href="/en"

@@ -40,6 +40,13 @@ export const SOCIAL = {
   whatsapp: "+689 89 410 211",
 } as const;
 
+/** APK Android téléchargeable sur le site (public/downloads/) */
+export const ANDROID_APK = {
+  href: "/downloads/mooreanews.apk",
+  filename: "MooreaNews.apk",
+  version: "1.1.0",
+} as const;
+
 /** Coordonnées géographiques de Moorea (centre) */
 export const MOOREA_COORDS = {
   lat: -17.5388,
