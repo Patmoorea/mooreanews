@@ -92,13 +92,18 @@ function FerryDirection({
         <p className="text-sm text-ocean-500">Aucun départ aujourd&apos;hui</p>
       )}
       <ul className="space-y-2">
-        {departures.slice(0, 3).map((d, i) => (
+        {departures.slice(0, 5).map((d, i) => (
           <li
-            key={i}
-            className="flex items-center justify-between text-sm bg-white/70 rounded-lg px-3 py-2"
+            key={`${d.time}-${d.company}-${i}`}
+            className="flex items-center justify-between text-sm bg-white/70 rounded-lg px-3 py-2 gap-2"
           >
-            <span className="font-bold text-ocean-900">{d.time}</span>
-            <span className="text-xs text-ocean-600 flex items-center gap-1">
+            <div className="min-w-0">
+              <span className="font-bold text-ocean-900">{d.time}</span>
+              <span className="block text-[10px] text-ocean-500 truncate">
+                {d.company}
+              </span>
+            </div>
+            <span className="text-xs text-ocean-600 flex items-center gap-1 shrink-0">
               <Clock size={12} />
               {formatMinutesUntil(d.minutesUntil)}
             </span>

@@ -100,6 +100,13 @@ export function facebookArticleBodyWithoutFooter(body: string): string {
   return body.replace(FB_SOURCE_FOOTER_RE, "").trim();
 }
 
+/** Extrait auto-généré sans contenu réel. */
+function isGenericFacebookExcerpt(excerpt: string | null | undefined): boolean {
+  const e = (excerpt ?? "").trim();
+  if (!e) return true;
+  return /^Publication repérée sur la page Facebook/i.test(e);
+}
+
 /** Fiche créée sans texte ni affiche exploitable (coquille vide). */
 export function isEmptyFacebookArticleShell(row: {
   title: string;
@@ -110,18 +117,22 @@ export function isEmptyFacebookArticleShell(row: {
   const hasCover = Boolean(row.cover_url?.trim());
   if (hasCover) return false;
 
-  const excerptLen = (row.excerpt ?? "").trim().length;
   const core = facebookArticleBodyWithoutFooter(row.body);
   const stripped = core
     .replace(/^Publication Facebook — [^.]+\.?\s*$/i, "")
     .trim();
 
   const genericTitle = /— publication$/i.test(row.title.trim());
-  if (!genericTitle) {
-    return stripped.length < 15 && excerptLen < 15;
+  if (genericTitle) {
+    return stripped.length < 20;
   }
 
-  return stripped.length < 20 && excerptLen < 40;
+  const excerptLen = (row.excerpt ?? "").trim().length;
+  if (isGenericFacebookExcerpt(row.excerpt)) {
+    return stripped.length < 20;
+  }
+
+  return stripped.length < 15 && excerptLen < 15;
 }
 
 /** Post Graph API / OG : au moins un texte lisible ou une image. */
@@ -133,6 +144,16 @@ export function facebookPostHasPublishableContent(
   if (pic.length > 0 && msg.length >= 8) return true;
   if (pic.length > 0) return true;
   return msg.length >= 25;
+}
+
+export function isFacebookImportArticle(row: {
+  tags?: string[] | null;
+  slug?: string | null;
+}): boolean {
+  return (
+    (row.tags ?? []).includes("facebook-import") ||
+    (row.slug ?? "").includes("-fb-")
+  );
 }
 
 export function isStaleFacebookImportRow(row: {

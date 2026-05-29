@@ -74,13 +74,13 @@ export function Ticker() {
           if (moorea) {
             next.push({
               icon: <Ship size={14} className="text-lagon-300" />,
-              label: `Prochain ferry Moorea → Tahiti à ${moorea.time}`,
+              label: `Prochain ferry Moorea → Tahiti : ${moorea.time} (${moorea.company})`,
             });
           }
           if (tahiti) {
             next.push({
               icon: <Ship size={14} className="text-lagon-300" />,
-              label: `Tahiti → Moorea à ${tahiti.time}`,
+              label: `Tahiti → Moorea : ${tahiti.time} (${tahiti.company})`,
             });
           }
         }
