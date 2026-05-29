@@ -2,9 +2,10 @@
 
 ## Déjà actif : GitHub Actions (recommandé)
 
-Le dépôt **Patmoorea/mooreanews** lance la veille **toutes les heures** via GitHub Actions :
+Le dépôt **Patmoorea/mooreanews** lance la veille via GitHub Actions :
 
 - Fichier : `.github/workflows/veille-hourly.yml`
+- **Horaires : toutes les heures de 5h à 20h (heure de Tahiti)** — 16 passages/jour
 - Secret : `CRON_SECRET` (déjà configuré sur GitHub)
 - Vérifier : **GitHub → Actions → Veille horaire MooreaNews**
 
@@ -47,9 +48,9 @@ Déduplication : un même post Facebook n’est importé qu’**une fois**.
    https://www.mooreanews.com/api/cron/aggregate?secret=VOTRE_CRON_SECRET
    ```
    Remplacez `VOTRE_CRON_SECRET` par la valeur Vercel (Settings → Environment Variables).
-5. **Schedule** : toutes les heures  
-   - Expression : `0 * * * *`  
-   - Ou menu : Every hour at minute 0
+5. **Schedule** : toutes les heures **5h–20h Tahiti**  
+   - Expression UTC : `0 15-23,0-6 * * *`  
+   - (Tahiti = UTC−10, pas de changement d’heure)
 6. **Request method** : GET  
 7. **Activer** le job → Save.
 

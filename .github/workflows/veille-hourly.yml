@@ -5,8 +5,8 @@ name: Veille horaire MooreaNews
 
 on:
   schedule:
-    # Toutes les heures, minute 0 (UTC)
-    - cron: "0 * * * *"
+    # 5h–20h heure de Tahiti (UTC−10) → 15h–23h et 0h–6h UTC
+    - cron: "0 15-23,0-6 * * *"
   workflow_dispatch:
 
 concurrency:
