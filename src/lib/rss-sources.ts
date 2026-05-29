@@ -64,11 +64,11 @@ export const RSS_SOURCES: RssSource[] = [
     keywords: MOOREA_KEYWORDS,
   },
   {
-    id: "radio1-tahiti",
-    name: "Radio 1 Tahiti",
-    url: "https://www.radio1.pf/feed/",
-    homepage: "https://www.radio1.pf",
-    keywords: MOOREA_KEYWORDS,
+    id: "commune-moorea",
+    name: "Commune de Moorea-Maiao",
+    url: "https://www.commune-moorea.net/feed/",
+    homepage: "https://www.commune-moorea.net",
+    acceptAll: true,
   },
   {
     id: "google-news-moorea",

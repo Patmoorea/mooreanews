@@ -21,8 +21,6 @@ export type CreatedArticleNotice = {
 const KNOWN_OPTIONAL_ERROR_MARKERS = [
   "CommuneMooreaMaiao",
   "Commune de Moorea",
-  "radio1-tahiti",
-  "mairie-moorea.pf",
   "polynesie-1ere",
 ];
 

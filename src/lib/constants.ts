@@ -205,7 +205,7 @@ export const USEFUL_LINKS = [
   },
   {
     title: "Mairie de Moorea-Maiao",
-    href: "https://www.mairie-moorea.pf",
+    href: "https://www.commune-moorea.net",
     description: "Site officiel de la commune",
   },
   {

@@ -55,8 +55,8 @@ export async function fetchOpenGraph(
   url: string
 ): Promise<OpenGraphData | null> {
   const userAgent = isFacebookUrl(url)
-    ? "facebookexternalhit/1.1 (+https://mooreanews.com)"
-    : "MooreaHub/1.0 (+https://mooreanews.com)";
+    ? "facebookexternalhit/1.1 (+https://www.mooreanews.com)"
+    : "Mozilla/5.0 (compatible; MooreaNews/1.0; +https://www.mooreanews.com)";
 
   const res = await fetch(url, {
     headers: {

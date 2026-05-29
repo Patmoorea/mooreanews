@@ -109,10 +109,7 @@ export async function GET(req: Request) {
   });
 
   const blockingErrors = errors.filter(
-    (e) =>
-      !e.includes("radio1-tahiti") &&
-      !e.includes("mairie-moorea.pf") &&
-      !e.includes("CommuneMooreaMaiao"),
+    (e) => !e.includes("CommuneMooreaMaiao"),
   );
 
   return NextResponse.json({

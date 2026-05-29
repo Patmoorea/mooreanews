@@ -74,8 +74,12 @@ export function allFacebookWatchUrls(): string[] {
 /** Pages / sites Moorea à sonder (Open Graph à chaque collecte). */
 export const WEB_WATCH_URLS: { url: string; label: string }[] = [
   {
-    url: "https://www.mairie-moorea.pf/",
-    label: "Mairie de Moorea-Maiao",
+    url: "https://www.commune-moorea.net/",
+    label: "Commune de Moorea-Maiao (site officiel)",
+  },
+  {
+    url: "https://www.commune-moorea.net/blog/",
+    label: "Commune — actualités",
   },
   {
     url: "https://moorea.life/",
@@ -88,6 +92,14 @@ export const WEB_WATCH_URLS: { url: string; label: string }[] = [
   {
     url: "https://la1ere.francetvinfo.fr/polynesie/",
     label: "Polynésie la 1ère",
+  },
+  {
+    url: "https://www.edt.pf/",
+    label: "EDT — électricité Polynésie",
+  },
+  {
+    url: "https://www.tntv.pf/",
+    label: "TNTV — télévision locale",
   },
 ];
 

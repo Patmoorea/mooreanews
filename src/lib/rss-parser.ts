@@ -75,8 +75,10 @@ export async function fetchRssFeed(
 ): Promise<RssItem[]> {
   const res = await fetch(url, {
     headers: {
-      "User-Agent": "MooreaHub/1.0 (+https://mooreanews.com)",
-      Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml",
+      "User-Agent":
+        "Mozilla/5.0 (compatible; MooreaNews/1.0; +https://www.mooreanews.com)",
+      Accept:
+        "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
     },
     ...(options?.fresh ? { cache: "no-store" as const } : { next: { revalidate: 600 } }),
   });
