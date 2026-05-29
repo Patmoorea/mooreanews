@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { aggregateAll } from "@/lib/aggregator";
 import { expirePastAlerts } from "@/lib/alert-schedule";
+import { auditPublicContent } from "@/lib/site-content-audit";
 import { notifyVeilleReport } from "@/lib/telegram-notify";
 
 /**
@@ -77,8 +78,11 @@ export async function GET(req: Request) {
   );
   const createdArticles = results.flatMap((r) => r.createdArticles ?? []);
   const createdEvents = results.flatMap((r) => r.createdEvents ?? []);
+  const createdAlertTitles = results.flatMap((r) => r.createdAlerts ?? []);
 
-  await notifyVeilleReport({
+  const audit = await auditPublicContent();
+
+  const telegram = await notifyVeilleReport({
     durationMs: duration,
     totalFetched,
     totalInserted,
@@ -86,10 +90,14 @@ export async function GET(req: Request) {
     articlesSkipped,
     eventsCreated,
     announcementsCreated,
+    alertsCreated,
+    expiredAlerts,
+    createdAlertTitles,
     errors,
     bySource: results,
     createdArticles,
     createdEvents,
+    audit,
   });
 
   return NextResponse.json({
@@ -97,6 +105,13 @@ export async function GET(req: Request) {
     durationMs: duration,
     expiredAlerts,
     alertsCreated,
+    telegram,
+    audit: audit
+      ? {
+          findings: audit.findings.length,
+          totals: audit.totals,
+        }
+      : null,
     totalFetched,
     totalInserted,
     articlesCreated,

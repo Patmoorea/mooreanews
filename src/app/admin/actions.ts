@@ -5,9 +5,6 @@ import { redirect } from "next/navigation";
 import { contentReferencesStaleYear } from "@/lib/facebook-import-filters";
 import { parseDatetimeLocalTahiti } from "@/lib/alert-schedule";
 import { hideExternalArticlesForArticleSlug } from "@/lib/facebook-external-sync";
-import {
-  isStaleFacebookImport,
-} from "@/lib/facebook-legacy-import";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { importMissingRestaurantsFromJson } from "@/lib/supabase/sync-restaurants";
@@ -336,6 +333,23 @@ export async function togglePublished(
     revalidatePath(publicPathFor(table));
   }
   revalidatePath(adminPathFor(table));
+}
+
+function isStaleFacebookImport(row: {
+  title: string;
+  excerpt: string | null;
+  body: string;
+  slug: string;
+}): boolean {
+  const corpus = `${row.title} ${row.excerpt ?? ""} ${row.body}`;
+  if (contentReferencesStaleYear(corpus)) return true;
+  if (
+    /\bpublication du 20\d{2}-\d{2}-\d{2}\b/i.test(row.title) &&
+    contentReferencesStaleYear(row.title)
+  ) {
+    return true;
+  }
+  return /-fb-\d+-\d+$/.test(row.slug) && contentReferencesStaleYear(corpus);
 }
 
 /** Supprime définitivement les imports Facebook obsolètes (2021–2022, etc.). */

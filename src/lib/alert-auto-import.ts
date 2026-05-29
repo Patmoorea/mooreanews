@@ -146,14 +146,15 @@ function autoAlertsEnabled(): boolean {
 /** Crée des alertes actives à partir des items RSS récents (sans doublon par URL). */
 export async function importAlertsFromRssItems(
   items: RssItem[],
-): Promise<number> {
-  if (!autoAlertsEnabled()) return 0;
+): Promise<{ created: number; titles: string[] }> {
+  if (!autoAlertsEnabled()) return { created: 0, titles: [] };
 
   const admin = getAdminSupabase();
-  if (!admin) return 0;
+  if (!admin) return { created: 0, titles: [] };
 
   const now = Date.now();
   let created = 0;
+  const titles: string[] = [];
 
   for (const item of items) {
     const pubMs = Date.parse(item.publishedAt);
@@ -185,8 +186,11 @@ export async function importAlertsFromRssItems(
       urgent: detected.urgent,
     });
 
-    if (!error) created += 1;
+    if (!error) {
+      created += 1;
+      titles.push(detected.title);
+    }
   }
 
-  return created;
+  return { created, titles };
 }

@@ -4,11 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { deleteLegacyFacebookImports } from "@/app/admin/actions";
 
-type Props = {
-  staleCount: number;
-};
-
-export function CleanupFacebookImportsButton({ staleCount }: Props) {
+export function CleanupFacebookImportsButton() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -16,7 +12,7 @@ export function CleanupFacebookImportsButton({ staleCount }: Props) {
   async function onClick() {
     if (
       !confirm(
-        `Supprimer définitivement ${staleCount} actualité(s) Facebook obsolète(s) ?\n\nElles disparaîtront de l'admin ET du site public. Action irréversible.`,
+        "Supprimer définitivement les actualités Facebook de 2021–2022 ?\n\nElles disparaîtront de l'admin ET du site public. Action irréversible.",
       )
     ) {
       return;
@@ -28,7 +24,7 @@ export function CleanupFacebookImportsButton({ staleCount }: Props) {
       setMessage(
         deleted > 0
           ? `${deleted} article(s) supprimé(s). Rechargez mooreanews.com (Cmd+Shift+R).`
-          : "Nettoyage terminé.",
+          : "Aucun import Facebook obsolète trouvé (déjà supprimés).",
       );
       router.refresh();
     } catch (e) {
@@ -43,14 +39,13 @@ export function CleanupFacebookImportsButton({ staleCount }: Props) {
   return (
     <div className="mb-6 rounded-2xl border border-tiare-300 bg-tiare-50 p-4">
       <p className="text-sm text-ocean-900 font-medium">
-        {staleCount} import{staleCount > 1 ? "s" : ""} Facebook obsolète
-        {staleCount > 1 ? "s" : ""} détecté{staleCount > 1 ? "s" : ""} (2021–2022
-        ou dates passées)
+        Imports Facebook 2021–2022 encore visibles sur le site ?
       </p>
       <p className="mt-1 text-sm text-ocean-700">
-        Ce bouton les <strong>supprime définitivement</strong> (admin + site public
-        + veille externe). Pour un seul article, utilisez{" "}
-        <strong>Supprimer</strong> à droite du tableau.
+        Ce bouton les <strong>supprime définitivement</strong> (admin + site
+        public + veille externe). Pour un seul article, utilisez le bouton rouge{" "}
+        <strong>Supprimer</strong> à droite du tableau (faites défiler si besoin
+        →).
       </p>
       <button
         type="button"
@@ -58,9 +53,7 @@ export function CleanupFacebookImportsButton({ staleCount }: Props) {
         disabled={busy}
         className="mt-3 px-4 py-2 rounded-xl bg-tiare-600 text-white text-sm font-semibold hover:bg-tiare-700 disabled:opacity-60"
       >
-        {busy
-          ? "Suppression…"
-          : `Supprimer ${staleCount} import${staleCount > 1 ? "s" : ""} obsolète${staleCount > 1 ? "s" : ""}`}
+        {busy ? "Suppression…" : "Supprimer tous les imports Facebook obsolètes"}
       </button>
       {message && (
         <p className="mt-2 text-sm text-ocean-800 font-medium" role="status">

@@ -21,6 +21,7 @@ export type AggregationResult = {
   eventsCreated?: number;
   announcementsCreated?: number;
   alertsCreated?: number;
+  createdAlerts?: string[];
   createdArticles?: { title: string; slug: string }[];
   createdEvents?: { title: string; id: string; date: string }[];
 };
@@ -90,7 +91,9 @@ async function aggregateOne(source: RssSource): Promise<AggregationResult> {
   }
 
   try {
-    result.alertsCreated = await importAlertsFromRssItems(matching);
+    const alertImport = await importAlertsFromRssItems(matching);
+    result.alertsCreated = alertImport.created;
+    result.createdAlerts = alertImport.titles;
   } catch (e) {
     result.errors.push(`alerts: ${String(e)}`);
   }

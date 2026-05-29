@@ -1,8 +1,9 @@
 /**
- * Messages Telegram admin — veille, erreurs Meta, activité site.
+ * Messages Telegram admin — veille, erreurs Meta, activité site, audit contenu.
  */
 
 import type { AggregationResult } from "@/lib/aggregator";
+import type { ContentAuditReport } from "@/lib/site-content-audit";
 import { escapeHtml, sendTelegramNotification } from "@/lib/telegram";
 
 function siteUrl(): string {
@@ -84,6 +85,92 @@ function formatErrors(errors: string[]): string {
   return lines.join("\n");
 }
 
+function formatSourceScan(bySource: AggregationResult[]): string {
+  if (bySource.length === 0) return "";
+  const lines = ["\n<b>📡 Recherches effectuées</b>"];
+  for (const r of bySource) {
+    const parts = [
+      `${r.fetched} parcouru(s)`,
+      `${r.matched} match`,
+      `${r.inserted} inséré(s)`,
+    ];
+    if ((r.articlesCreated ?? 0) > 0) {
+      parts.push(`${r.articlesCreated} article(s)`);
+    }
+    if ((r.eventsCreated ?? 0) > 0) {
+      parts.push(`${r.eventsCreated} evt`);
+    }
+    if ((r.alertsCreated ?? 0) > 0) {
+      parts.push(`${r.alertsCreated} alerte(s)`);
+    }
+    lines.push(`• ${escapeHtml(r.source)} : ${parts.join(" · ")}`);
+  }
+  return lines.join("\n");
+}
+
+function formatAuditBlock(audit: ContentAuditReport | null | undefined): string {
+  if (!audit) {
+    return "\n<b>🔍 Audit site</b> : non exécuté (Supabase admin absent)";
+  }
+
+  const base = siteUrl();
+  const { findings, totals } = audit;
+
+  if (findings.length === 0) {
+    return (
+      `\n<b>🔍 Audit site</b> : ✅ rien de suspect\n` +
+      `<i>${totals.articles} articles · ${totals.events} événements · ${totals.announcements} annonces · ${totals.external} veille externe</i>`
+    );
+  }
+
+  const critical = findings.filter((f) => f.severity === "critical");
+  const lines = [
+    `\n<b>🔍 Audit site — ${findings.length} suspect(s)</b>`,
+    critical.length > 0
+      ? `🔴 ${critical.length} critique(s) · ⚠️ ${findings.length - critical.length} avertissement(s)`
+      : null,
+  ].filter(Boolean) as string[];
+
+  for (const f of findings.slice(0, 10)) {
+    const icon = f.severity === "critical" ? "🔴" : "⚠️";
+    lines.push(
+      `${icon} <a href="${base}${f.adminPath}">${escapeHtml(truncate(f.title, 55))}</a>`,
+    );
+    lines.push(`   <i>${escapeHtml(truncate(f.reason, 70))}</i>`);
+  }
+  if (findings.length > 10) {
+    lines.push(`… +${findings.length - 10} autre(s) → ${base}/admin`);
+  }
+
+  return lines.join("\n");
+}
+
+/** Envoyer même si rien de nouveau (désactiver avec TELEGRAM_VEILLE_SILENT=true). */
+function shouldNotifyVeille(input: {
+  totalInserted: number;
+  articlesCreated: number;
+  eventsCreated: number;
+  announcementsCreated: number;
+  alertsCreated: number;
+  expiredAlerts: number;
+  errors: string[];
+  audit?: ContentAuditReport | null;
+}): boolean {
+  if (process.env.TELEGRAM_VEILLE_SILENT === "true") {
+    return (
+      input.totalInserted > 0 ||
+      input.articlesCreated > 0 ||
+      input.eventsCreated > 0 ||
+      input.announcementsCreated > 0 ||
+      input.alertsCreated > 0 ||
+      input.expiredAlerts > 0 ||
+      input.errors.some(isCriticalVeilleError) ||
+      (input.audit?.findings.length ?? 0) > 0
+    );
+  }
+  return true;
+}
+
 export async function notifyVeilleReport(input: {
   durationMs: number;
   totalFetched: number;
@@ -92,42 +179,77 @@ export async function notifyVeilleReport(input: {
   articlesSkipped: number;
   eventsCreated: number;
   announcementsCreated: number;
+  alertsCreated?: number;
+  expiredAlerts?: number;
+  createdAlertTitles?: string[];
   errors: string[];
   bySource: AggregationResult[];
   createdArticles?: CreatedArticleNotice[];
   createdEvents?: { title: string; id: string; date: string }[];
-}): Promise<void> {
-  const fbPages = input.bySource.find((r) => r.source === "facebook-pages");
-  const fbFetched = fbPages?.fetched ?? 0;
+  audit?: ContentAuditReport | null;
+}): Promise<{ sent: boolean; reason?: string }> {
+  const alertsCreated = input.alertsCreated ?? 0;
+  const expiredAlerts = input.expiredAlerts ?? 0;
+
+  if (
+    !shouldNotifyVeille({
+      totalInserted: input.totalInserted,
+      articlesCreated: input.articlesCreated,
+      eventsCreated: input.eventsCreated,
+      announcementsCreated: input.announcementsCreated,
+      alertsCreated,
+      expiredAlerts,
+      errors: input.errors,
+      audit: input.audit,
+    })
+  ) {
+    return { sent: false, reason: "silent_mode" };
+  }
+
   const hasCritical = input.errors.some(isCriticalVeilleError);
   const hasMetaToken = input.errors.some(isMetaTokenError);
+  const hasSuspect = (input.audit?.findings.length ?? 0) > 0;
 
-  const statusEmoji = hasCritical ? "🔴" : input.errors.length > 0 ? "⚠️" : "✅";
+  const statusEmoji = hasCritical
+    ? "🔴"
+    : hasSuspect
+      ? "⚠️"
+      : input.errors.length > 0
+        ? "⚠️"
+        : "✅";
 
   const lines = [
     `${statusEmoji} <b>Veille MooreaNews</b>`,
-    `⏱ ${(input.durationMs / 1000).toFixed(1)} s · ${input.totalInserted} entrée(s) · ${input.totalFetched} parcouru(s)`,
+    `⏱ ${(input.durationMs / 1000).toFixed(1)} s · ${input.totalFetched} parcouru(s) · ${input.totalInserted} inséré(s)`,
   ];
 
-  if (fbFetched > 0) {
-    lines.push(
-      `\n📘 <b>Facebook MooreaNews</b> : ${fbFetched} post(s)`,
-    );
-    if (input.eventsCreated > 0) {
-      lines.push(`📅 ${input.eventsCreated} nouvel(le)(s) événement(s) agenda`);
-    }
-    if (input.announcementsCreated > 0) {
-      lines.push(`📢 ${input.announcementsCreated} nouvelle(s) annonce(s)`);
-    }
-    if (input.articlesCreated > 0) {
-      lines.push(`📝 ${input.articlesCreated} nouvel(le)(s) actualité(s)`);
-    } else if ((input.articlesSkipped ?? 0) > 0 && input.eventsCreated === 0) {
-      lines.push(`↩️ ${input.articlesSkipped} déjà importé(s)`);
-    }
+  lines.push(formatSourceScan(input.bySource));
+
+  const creations: string[] = [];
+  if (input.articlesCreated > 0) {
+    creations.push(`${input.articlesCreated} actualité(s)`);
+  }
+  if (input.eventsCreated > 0) {
+    creations.push(`${input.eventsCreated} événement(s)`);
+  }
+  if (input.announcementsCreated > 0) {
+    creations.push(`${input.announcementsCreated} annonce(s)`);
+  }
+  if (alertsCreated > 0) creations.push(`${alertsCreated} alerte(s) auto`);
+  if (expiredAlerts > 0) {
+    creations.push(`${expiredAlerts} alerte(s) expirée(s)`);
+  }
+
+  if (creations.length > 0) {
+    lines.push(`\n<b>📥 Résultat</b> : ${creations.join(" · ")}`);
+  } else if (input.articlesSkipped > 0) {
+    lines.push(`\n↩️ ${input.articlesSkipped} import(s) déjà connu(s)`);
+  } else {
+    lines.push("\n<i>Aucune nouvelle publication créée ce passage.</i>");
   }
 
   if (input.createdEvents && input.createdEvents.length > 0) {
-    lines.push("\n<b>Événements créés :</b>");
+    lines.push("\n<b>📅 Événements créés :</b>");
     const base = siteUrl();
     for (const e of input.createdEvents.slice(0, 6)) {
       lines.push(
@@ -137,7 +259,7 @@ export async function notifyVeilleReport(input: {
   }
 
   if (input.createdArticles && input.createdArticles.length > 0) {
-    lines.push("\n<b>Publications créées :</b>");
+    lines.push("\n<b>📝 Publications créées :</b>");
     const base = siteUrl();
     for (const a of input.createdArticles.slice(0, 8)) {
       lines.push(
@@ -149,17 +271,18 @@ export async function notifyVeilleReport(input: {
     }
   }
 
-  const sourcesWithInserts = input.bySource.filter((r) => r.inserted > 0);
-  if (sourcesWithInserts.length > 0) {
-    lines.push("\n<b>Sources :</b>");
-    for (const r of sourcesWithInserts) {
-      lines.push(`• ${escapeHtml(r.source)} : ${r.inserted}`);
+  if (input.createdAlertTitles && input.createdAlertTitles.length > 0) {
+    lines.push("\n<b>🚨 Alertes mises en ligne :</b>");
+    for (const t of input.createdAlertTitles.slice(0, 5)) {
+      lines.push(`• ${escapeHtml(truncate(t, 80))}`);
     }
   }
 
+  lines.push(formatAuditBlock(input.audit));
+
   if (hasMetaToken) {
     lines.push(
-      "\n🔑 <b>Jeton Meta</b> : invalide ou expiré → regénérez <code>350029589936?fields=access_token</code> puis Vercel.",
+      "\n🔑 <b>Jeton Meta</b> : invalide ou expiré → regénérez le token page puis Vercel.",
     );
   }
 
@@ -168,7 +291,11 @@ export async function notifyVeilleReport(input: {
     lines.push(`\n${errBlock}`);
   }
 
-  await sendTelegramNotification(lines.join("\n"));
+  const message = truncate(lines.join("\n"), 3900);
+  const result = await sendTelegramNotification(message);
+  return result.ok
+    ? { sent: true }
+    : { sent: false, reason: result.error ?? "telegram_failed" };
 }
 
 export async function notifyAccountSignup(input: {
@@ -194,4 +321,24 @@ export async function notifyAccountActivated(input: {
   await sendTelegramNotification(
     `✅ <b>Compte activé</b>\n${escapeHtml(input.email)}\nAccès admin possible.`,
   );
+}
+
+export async function notifyContentAuditOnly(
+  audit: ContentAuditReport,
+): Promise<{ sent: boolean; reason?: string }> {
+  if (audit.findings.length === 0) {
+    const r = await sendTelegramNotification(
+      `✅ <b>Audit MooreaNews</b>\nAucun contenu suspect.\n<i>${audit.totals.articles} articles · ${audit.totals.events} événements vérifiés.</i>`,
+    );
+    return r.ok ? { sent: true } : { sent: false, reason: r.error };
+  }
+
+  const base = siteUrl();
+  const lines = [
+    `⚠️ <b>Audit MooreaNews — ${audit.findings.length} suspect(s)</b>`,
+    formatAuditBlock(audit),
+    `\n→ <a href="${base}/admin">Admin</a>`,
+  ];
+  const r = await sendTelegramNotification(lines.join("\n"));
+  return r.ok ? { sent: true } : { sent: false, reason: r.error };
 }
