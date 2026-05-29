@@ -6,12 +6,28 @@ export default function manifest(): MetadataRoute.Manifest {
     name: `${SITE.name} — ${SITE.tagline}`,
     short_name: SITE.name,
     description: SITE.description,
-    start_url: "/",
+    start_url: "/app",
     display: "standalone",
-    background_color: "#f0f9ff",
+    background_color: "#0c4a6e",
     theme_color: "#06b6d4",
     orientation: "portrait",
     lang: "fr-PF",
+    categories: ["news", "weather", "travel"],
+    shortcuts: [
+      {
+        name: "Moorea du jour",
+        url: "/app",
+        description: "Ferries, météo et alertes",
+      },
+      {
+        name: "Alertes",
+        url: "/alertes",
+      },
+      {
+        name: "Ferries",
+        url: "/#en-direct",
+      },
+    ],
     icons: [
       {
         src: "/brand/logo.png",

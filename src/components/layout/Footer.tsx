@@ -20,8 +20,8 @@ export function Footer() {
                 Restez connecté à Moorea 🌴
               </h2>
               <p className="mt-3 text-ocean-200/90 max-w-md">
-                Recevez une fois par semaine les actus, événements et bons plans
-                de l&apos;île, directement dans votre boîte mail.
+                Recevez le brief matinal (ferries, alertes, météo) et le récap
+                hebdo des actus et bons plans de l&apos;île.
               </p>
             </div>
             <NewsletterForm />

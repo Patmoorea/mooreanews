@@ -8,6 +8,7 @@ import { NAV_ITEMS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { SearchBar } from "@/components/layout/SearchBar";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Logo } from "@/components/ui/Logo";
 
 function isNavActive(pathname: string, href: string) {
@@ -55,6 +56,7 @@ export function Header() {
 
           <div className="flex items-center gap-2 flex-shrink-0">
             <div className="hidden md:flex items-center gap-2 relative z-[100]">
+              <ThemeToggle />
               <SearchBar />
               <UserMenu />
             </div>
@@ -100,6 +102,18 @@ export function Header() {
               </Link>
             );
           })}
+          <Link
+            href="/app"
+            className="px-2.5 lg:px-3 py-1.5 text-[13px] lg:text-sm font-medium rounded-full text-lagon-700 hover:bg-lagon-100 transition-colors whitespace-nowrap"
+          >
+            App
+          </Link>
+          <Link
+            href="/en"
+            className="px-2.5 lg:px-3 py-1.5 text-[13px] lg:text-sm font-medium rounded-full text-ocean-600 hover:bg-lagon-100 transition-colors whitespace-nowrap"
+          >
+            EN
+          </Link>
         </div>
       </nav>
 
@@ -121,7 +135,22 @@ export function Header() {
                 {item.label}
               </Link>
             ))}
+            <Link
+              href="/app"
+              onClick={() => setIsOpen(false)}
+              className="px-4 py-3 rounded-xl text-base font-medium text-lagon-700 hover:bg-lagon-100"
+            >
+              App MooreaNews
+            </Link>
+            <Link
+              href="/en"
+              onClick={() => setIsOpen(false)}
+              className="px-4 py-3 rounded-xl text-base font-medium text-ocean-600 hover:bg-lagon-100"
+            >
+              English
+            </Link>
             <div className="mt-2 pt-2 border-t border-ocean-100 flex flex-col gap-2">
+              <ThemeToggle />
               <SearchBar variant="inline" />
               <UserMenu />
             </div>

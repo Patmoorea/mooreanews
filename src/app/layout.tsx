@@ -1,11 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Marcellus } from "next/font/google";
 import "./globals.css";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
-import { InfoBannerSlot } from "@/components/layout/InfoBannerSlot";
-import { BreakingNewsSlot } from "@/components/layout/BreakingNewsSlot";
-import { Ticker } from "@/components/widgets/Ticker";
+import { SiteChrome } from "@/components/layout/SiteChrome";
 import { SITE } from "@/lib/constants";
 
 const inter = Inter({
@@ -88,13 +84,8 @@ export default function RootLayout({
       lang="fr"
       className={`${inter.variable} ${marcellus.variable} antialiased`}
     >
-      <body className="min-h-screen flex flex-col bg-island-sky bg-palm-pattern text-ocean-950">
-        <InfoBannerSlot />
-        <BreakingNewsSlot />
-        <Header />
-        <Ticker />
-        <main className="flex-1">{children}</main>
-        <Footer />
+      <body className="min-h-screen flex flex-col bg-island-sky bg-palm-pattern text-ocean-950 dark:bg-ocean-950 dark:text-ocean-50">
+        <SiteChrome>{children}</SiteChrome>
       </body>
     </html>
   );

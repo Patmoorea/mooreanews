@@ -68,7 +68,7 @@ export async function POST(req: Request) {
           <div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;padding:24px">
             <h1 style="color:#0c4a6e;font-family:Marcellus,serif">Ia ora na, ${escapeHtml(email)} !</h1>
             <p>Merci de votre inscription à la newsletter de <strong>MooreaNews</strong>.</p>
-            <p>Vous recevrez chaque semaine un récap des actus, événements et bons plans de l'île, directement dans votre boîte mail.</p>
+            <p>Vous recevrez le <strong>brief matinal</strong> (ferries, alertes, météo) et le récap des actus de l'île sur mooreanews.com.</p>
             <p style="color:#075985">À très vite,<br>L'équipe MooreaNews</p>
           </div>
         `,

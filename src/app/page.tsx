@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import { Hero } from "@/components/home/Hero";
 import { AlertsStrip } from "@/components/home/AlertsStrip";
+import { MooreaDuJour } from "@/components/home/MooreaDuJour";
 import { HomeSectionNav } from "@/components/home/HomeSectionNav";
-import { HomeLocalIntro } from "@/components/home/HomeLocalIntro";
 import { LiveDashboard } from "@/components/home/LiveDashboard";
 import { CategoriesGrid } from "@/components/home/CategoriesGrid";
 import { FeaturedArticles } from "@/components/home/FeaturedArticles";
 import { ExternalArticles } from "@/components/ExternalArticles";
 import { UpcomingEvents } from "@/components/home/UpcomingEvents";
+import { WeekendAgenda } from "@/components/home/WeekendAgenda";
 import { RecentAnnouncements } from "@/components/home/RecentAnnouncements";
 import { InteractiveMap } from "@/components/home/InteractiveMap";
 import { CommunityCTA } from "@/components/home/CommunityCTA";
@@ -24,13 +25,14 @@ export default function HomePage() {
     <>
       <Hero />
       <AlertsStrip />
+      <MooreaDuJour />
       <HomeSectionNav />
-      <HomeLocalIntro />
+      <LiveDashboard />
+      <WeekendAgenda />
       <FeaturedArticles />
       <UpcomingEvents />
       <RecentAnnouncements />
       <ExternalArticles limit={6} />
-      <LiveDashboard />
       <InteractiveMap />
       <CategoriesGrid />
       <CommunityCTA />

@@ -448,3 +448,44 @@ h3,
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ============ MODE SOMBRE ============ */
+
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark :root,
+html.dark {
+  --background: #082f49;
+  --foreground: #e0f2fe;
+  --surface: #0c4a6e;
+  --border: rgb(56 189 248 / 0.15);
+}
+
+html.dark body {
+  background-color: #082f49;
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgb(8 145 178 / 0.25), transparent 55%),
+    linear-gradient(180deg, #0c4a6e 0%, #082f49 100%);
+}
+
+html.dark .bg-island-sky {
+  background-color: #082f49;
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgb(8 145 178 / 0.2), transparent 55%),
+    linear-gradient(180deg, #0c4a6e 0%, #082f49 100%);
+}
+
+html.dark header {
+  background: rgb(8 47 73 / 0.95) !important;
+  border-color: rgb(56 189 248 / 0.15) !important;
+}
+
+html.dark .card-tropical,
+html.dark .card-island,
+html.dark article.bg-white {
+  background: #0c4a6e;
+  border-color: rgb(56 189 248 / 0.15);
+  color: #e0f2fe;
+}
