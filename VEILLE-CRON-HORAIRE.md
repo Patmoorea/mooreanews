@@ -1,4 +1,18 @@
-# Veille toutes les heures (cron-job.org)
+# Veille toutes les heures
+
+## Déjà actif : GitHub Actions (recommandé)
+
+Le dépôt **Patmoorea/mooreanews** lance la veille **toutes les heures** via GitHub Actions :
+
+- Fichier : `.github/workflows/veille-hourly.yml`
+- Secret : `CRON_SECRET` (déjà configuré sur GitHub)
+- Vérifier : **GitHub → Actions → Veille horaire MooreaNews**
+
+Aucun compte cron-job.org requis.
+
+---
+
+## Alternative : cron-job.org (gratuit)
 
 Pour publier une **affiche Facebook MooreaNews** sur le site **dans l’heure** qui suit, planifiez la veille **toutes les heures** (Mac éteint OK).
 
