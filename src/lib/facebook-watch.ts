@@ -213,6 +213,22 @@ async function fetchMeAccounts(userToken: string): Promise<MeAccountsPage[]> {
   return json.data ?? [];
 }
 
+/** Permissions granulaires Meta : /me/accounts peut être vide → jeton via l’ID page. */
+async function fetchPageAccessTokenViaUserToken(
+  userToken: string,
+  pageId: string,
+): Promise<string | null> {
+  if (!/^\d+$/.test(pageId)) return null;
+  const apiUrl = new URL(`https://graph.facebook.com/v21.0/${pageId}`);
+  apiUrl.searchParams.set("fields", "access_token");
+  apiUrl.searchParams.set("access_token", userToken);
+
+  const res = await fetch(apiUrl.toString(), { cache: "no-store" });
+  if (!res.ok) return null;
+  const json = (await res.json()) as { access_token?: string };
+  return json.access_token?.trim() ?? null;
+}
+
 function pickTokenForPage(options: {
   page: FacebookPageWatch;
   perPageTokenByIdOrUsername: Map<string, string>;
@@ -284,6 +300,19 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
 
   for (const page of FACEBOOK_PAGE_WATCHES) {
     try {
+      if (userToken && !perPageTokenByIdOrUsername.has(page.pageId)) {
+        const viaUser = await fetchPageAccessTokenViaUserToken(
+          userToken,
+          page.pageId,
+        );
+        if (viaUser) {
+          perPageTokenByIdOrUsername.set(page.pageId, viaUser);
+          if (!/^\d+$/.test(page.pageId)) {
+            perPageTokenByIdOrUsername.set(page.pageId.toLowerCase(), viaUser);
+          }
+        }
+      }
+
       const tokenForPage = pickTokenForPage({
         page,
         perPageTokenByIdOrUsername,

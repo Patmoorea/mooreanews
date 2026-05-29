@@ -170,6 +170,26 @@ export async function checkFacebookTokenHealth(): Promise<FacebookTokenHealth> {
             id: p.id,
             name: p.name ?? p.id,
           }));
+          if (health.pagesFromMeAccounts.length === 0) {
+            const pageUrl = new URL(`${GRAPH}/350029589936`);
+            pageUrl.searchParams.set("fields", "name,access_token");
+            pageUrl.searchParams.set("access_token", userToken);
+            const pageRes = await fetch(pageUrl.toString(), {
+              cache: "no-store",
+            });
+            if (pageRes.ok) {
+              const pageJson = (await pageRes.json()) as {
+                id?: string;
+                name?: string;
+              };
+              if (pageJson.id) {
+                health.pagesFromMeAccounts.push({
+                  id: pageJson.id,
+                  name: pageJson.name ?? "MooreaNews",
+                });
+              }
+            }
+          }
         } else {
           health.errors.push(`me/accounts: HTTP ${res.status}`);
         }
