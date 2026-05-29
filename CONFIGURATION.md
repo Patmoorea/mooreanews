@@ -91,7 +91,7 @@ Le fichier `data/restaurants.json` sert de référence et de fallback local sans
 | Soumettre (`/api/submit`) | `RESEND_*`, `TELEGRAM_*` (opt.), Supabase |
 | Newsletter (`/api/newsletter`) | `RESEND_*`, Supabase |
 | Cron veille (`/api/cron/aggregate`) | `CRON_SECRET`, Supabase service role |
-| Facebook pages (posts récents) | `FACEBOOK_PAGE_ACCESS_TOKEN` (optionnel) |
+| Facebook pages (posts récents) | `FACEBOOK_PAGE_ACCESS_TOKEN` (jeton **page longue durée**, voir ci-dessous) |
 | Importer posts Facebook (événements + actualités + annonces) | `FACEBOOK_IMPORT_AS_ARTICLES=true` + jeton page |
 | Publier directement (sinon brouillon) | `FACEBOOK_ARTICLES_PUBLISHED=false` pour modération avant mise en ligne |
 | Permalinks Facebook supplémentaires | `FACEBOOK_WATCH_URLS` (URLs séparées par des virgules) |
@@ -109,6 +109,18 @@ Checklist rapide :
 
 - **Fréquence** : cron `0 4 * * *` (UTC) = **18h00 Tahiti**, **1×/jour** — adapté au plan Hobby.
 - **Facebook** : commune + groupe + permalinks déjà dans le code ; jeton Meta optionnel pour la page Commune.
+
+### Jeton Facebook qui expire en 1 h (erreur « Session has expired »)
+
+Le token copié depuis l’**Explorateur Graph** (`350029589936?fields=access_token`) est **court** (~1–2 h). Pour Vercel :
+
+1. [developers.facebook.com](https://developers.facebook.com) → votre app → **Outils** → **Explorateur Graph**
+2. Générer un jeton **utilisateur** avec : `pages_read_engagement`, `pages_show_list`
+3. Échanger en jeton long : `GET https://graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token&client_id=APP_ID&client_secret=APP_SECRET&fb_exchange_token=JETON_COURT`
+4. `GET https://graph.facebook.com/v21.0/me/accounts?access_token=JETON_LONG` → copier `access_token` de la page **MooreaNews** (ou Commune)
+5. Coller dans Vercel `FACEBOOK_PAGE_ACCESS_TOKEN` → **Redeploy**
+
+Sans ça, `facebook-watch` (liens OG) fonctionne ; seul `facebook-pages` (API posts) échoue.
 - **Test cron** : `GET /api/cron/aggregate?secret=VOTRE_CRON_SECRET` ou `npm run veille` en local
 - **Plusieurs fois / jour (Hobby)** : [VEILLE-LOCALE.md](./VEILLE-LOCALE.md) — script Mac ou cron-job.org
 - **Sites web Moorea** : `WEB_WATCH_URLS` sur Vercel (URLs séparées par des virgules)

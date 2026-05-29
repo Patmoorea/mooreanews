@@ -32,11 +32,26 @@ export function isRecentFacebookPost(createdTime?: string): boolean {
   return Date.now() - Date.parse(iso) <= maxAgeMs();
 }
 
+function extractYears(text: string): number[] {
+  return [...text.matchAll(/\b(20\d{2})\b/g)].map((m) => Number(m[1]));
+}
+
 /** Texte (titre, extrait) mentionnant une année clairement passée (ex. XTERRA 2022). */
 export function contentReferencesStaleYear(text: string): boolean {
   const threshold = new Date().getFullYear() - 1;
-  const years = [...text.matchAll(/\b(20\d{2})\b/g)].map((m) => Number(m[1]));
-  return years.some((y) => y <= threshold);
+  return extractYears(text).some((y) => y <= threshold);
+}
+
+/** Années très anciennes (2023 et avant en 2026) — pour audit hors Facebook. */
+export function contentReferencesVeryStaleYear(text: string): boolean {
+  const threshold = new Date().getFullYear() - 3;
+  return extractYears(text).some((y) => y <= threshold);
+}
+
+/** Années obsolètes typiques d’imports Facebook (2024 et avant en 2026). */
+export function contentReferencesFacebookStaleYear(text: string): boolean {
+  const threshold = new Date().getFullYear() - 2;
+  return extractYears(text).some((y) => y <= threshold);
 }
 
 /**

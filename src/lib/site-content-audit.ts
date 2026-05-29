@@ -3,7 +3,11 @@
  * (vieux posts Facebook, dates passées, veille externe obsolète…).
  */
 
-import { contentReferencesStaleYear } from "@/lib/facebook-import-filters";
+import {
+  contentReferencesFacebookStaleYear,
+  contentReferencesStaleYear,
+  contentReferencesVeryStaleYear,
+} from "@/lib/facebook-import-filters";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 
 export type ContentAuditFinding = {
@@ -33,10 +37,6 @@ function stalePublicationTitle(title: string): boolean {
   );
 }
 
-function corpusStale(text: string): boolean {
-  return contentReferencesStaleYear(text);
-}
-
 /** Parcourt articles / événements / annonces / veille externe publiés. */
 export async function auditPublicContent(): Promise<ContentAuditReport | null> {
   const admin = getAdminSupabase();
@@ -54,7 +54,6 @@ export async function auditPublicContent(): Promise<ContentAuditReport | null> {
     .limit(500);
 
   for (const a of articles ?? []) {
-    const corpus = `${a.title} ${a.excerpt ?? ""} ${a.body ?? ""}`;
     const isFb =
       (a.tags ?? []).includes("facebook-import") ||
       (a.slug ?? "").includes("-fb-");
@@ -71,32 +70,45 @@ export async function auditPublicContent(): Promise<ContentAuditReport | null> {
       continue;
     }
 
-    if (corpusStale(corpus)) {
-      findings.push({
-        kind: "article",
-        id: a.id,
-        title: a.title,
-        reason: isFb
-          ? "Import Facebook publié avec une année passée (2021, 2022…)"
-          : "Texte mentionnant une année clairement dépassée",
-        severity: isFb ? "critical" : "warning",
-        adminPath: `/admin/articles/${a.id}`,
-      });
-      continue;
-    }
-
-    if (isFb && a.published_at) {
-      const ageMs = Date.now() - Date.parse(a.published_at);
-      if (ageMs > 90 * 24 * 60 * 60 * 1000) {
+    if (isFb) {
+      const corpus = `${a.title} ${a.excerpt ?? ""} ${a.body ?? ""}`;
+      if (contentReferencesFacebookStaleYear(corpus)) {
         findings.push({
           kind: "article",
           id: a.id,
           title: a.title,
-          reason: "Import Facebook publié depuis plus de 90 jours",
-          severity: "warning",
+          reason: "Import Facebook avec année 2024 ou plus ancienne",
+          severity: "critical",
           adminPath: `/admin/articles/${a.id}`,
         });
+        continue;
       }
+      if (a.published_at) {
+        const ageMs = Date.now() - Date.parse(a.published_at);
+        if (ageMs > 90 * 24 * 60 * 60 * 1000) {
+          findings.push({
+            kind: "article",
+            id: a.id,
+            title: a.title,
+            reason: "Import Facebook publié depuis plus de 90 jours",
+            severity: "warning",
+            adminPath: `/admin/articles/${a.id}`,
+          });
+        }
+      }
+      continue;
+    }
+
+    const headline = `${a.title} ${a.excerpt ?? ""}`;
+    if (contentReferencesVeryStaleYear(headline)) {
+      findings.push({
+        kind: "article",
+        id: a.id,
+        title: a.title,
+        reason: "Titre/résumé mentionnant une année très ancienne (≤ 2023)",
+        severity: "warning",
+        adminPath: `/admin/articles/${a.id}`,
+      });
     }
   }
 
@@ -120,12 +132,12 @@ export async function auditPublicContent(): Promise<ContentAuditReport | null> {
       continue;
     }
 
-    if (corpusStale(e.title)) {
+    if (contentReferencesVeryStaleYear(e.title)) {
       findings.push({
         kind: "event",
         id: e.id,
         title: e.title,
-        reason: "Titre avec année passée encore publié",
+        reason: "Titre avec année très ancienne (≤ 2023)",
         severity: "warning",
         adminPath: `/admin/events/${e.id}`,
       });
@@ -151,13 +163,12 @@ export async function auditPublicContent(): Promise<ContentAuditReport | null> {
       continue;
     }
 
-    const corpus = `${n.title} ${n.body ?? ""}`;
-    if (corpusStale(corpus)) {
+    if (contentReferencesVeryStaleYear(n.title)) {
       findings.push({
         kind: "announcement",
         id: n.id,
         title: n.title,
-        reason: "Annonce mentionnant une année passée",
+        reason: "Titre d’annonce avec année très ancienne (≤ 2023)",
         severity: "warning",
         adminPath: `/admin/announcements/${n.id}`,
       });
@@ -172,12 +183,12 @@ export async function auditPublicContent(): Promise<ContentAuditReport | null> {
 
   for (const x of external ?? []) {
     const corpus = `${x.title} ${x.excerpt ?? ""}`;
-    if (corpusStale(corpus)) {
+    if (contentReferencesFacebookStaleYear(corpus)) {
       findings.push({
         kind: "external",
         id: x.id,
         title: x.title,
-        reason: "Veille externe visible avec contenu daté (2021, 2022…)",
+        reason: "Veille externe visible avec année 2024 ou plus ancienne",
         severity: "critical",
         adminPath: "/admin/external",
       });
