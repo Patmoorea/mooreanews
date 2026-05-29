@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
-import { computeNextDepartures, fetchRawFerries } from "@/lib/ferries";
+import { computeNextDepartures, loadFerrySchedules } from "@/lib/ferries";
 
-export const revalidate = 1800;
+export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const raw = await fetchRawFerries();
-  const data = computeNextDepartures(raw);
+  const { raw, source } = await loadFerrySchedules();
+  const data = computeNextDepartures(raw, source);
   return NextResponse.json(data, {
     headers: {
-      "Cache-Control":
-        "public, s-maxage=1800, stale-while-revalidate=3600",
+      "Cache-Control": "public, max-age=60, s-maxage=120, stale-while-revalidate=300",
     },
   });
 }

@@ -7,6 +7,7 @@ import {
   refreshFacebookUserTokenInProcess,
 } from "@/lib/facebook-token";
 import { purgeStaleFacebookImports } from "@/lib/facebook-import-cleanup";
+import { checkFerryScheduleSync } from "@/lib/ferry-sync";
 import { auditPublicContent } from "@/lib/site-content-audit";
 import { notifyVeilleReport } from "@/lib/telegram-notify";
 
@@ -92,6 +93,11 @@ export async function GET(req: Request) {
     revalidatePath("/", "layout");
   }
 
+  revalidatePath("/");
+  revalidatePath("/api/ferries");
+
+  const ferrySync = await checkFerryScheduleSync();
+
   const audit = await auditPublicContent();
   const facebookHealth = await checkFacebookTokenHealth();
   if (fbRefresh.refreshed) facebookHealth.refreshedThisRun = true;
@@ -138,6 +144,7 @@ export async function GET(req: Request) {
     articlesSkipped,
     eventsCreated,
     announcementsCreated,
+    ferrySync,
     errors,
     bySource: results,
   });

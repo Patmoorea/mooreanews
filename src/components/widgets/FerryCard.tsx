@@ -64,9 +64,31 @@ export function FerryCard() {
         />
       </div>
 
-      {data?.source === "fallback" && (
+      {data?.source === "horaires-tahiti.com (cache)" && (
         <p className="mt-4 text-[11px] text-ocean-500/80 leading-relaxed">
-          Horaires indicatifs. Confirmez auprès de la compagnie.
+          Horaires depuis cache local. Source :{" "}
+          <a
+            href="https://www.horaires-tahiti.com"
+            className="underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            horaires-tahiti.com
+          </a>
+        </p>
+      )}
+      {data?.source === "unavailable" && (
+        <p className="mt-4 text-[11px] text-tiare-700 leading-relaxed">
+          Horaires indisponibles. Consultez{" "}
+          <a
+            href="https://www.horaires-tahiti.com"
+            className="underline font-medium"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            horaires-tahiti.com
+          </a>
+          .
         </p>
       )}
     </div>

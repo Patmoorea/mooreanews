@@ -1,7 +1,10 @@
 /**
  * Récupère et traite les horaires de ferries Tahiti ↔ Moorea
- * depuis horaires-tahiti.com (source publique, MAJ hebdo).
+ * depuis horaires-tahiti.com (JSON agrégé Aremiti + Tauati + Vaeara'i).
+ * Copie locale data/ferries-schedules.json en secours si fetch live échoue.
  */
+
+import bundledSchedules from "../../data/ferries-schedules.json";
 
 export type Direction = "Tahiti to Moorea" | "Moorea to Tahiti";
 export type DayKey =
@@ -24,7 +27,7 @@ export type NextDepartures = {
   fromMoorea: Departure[];
   fromTahiti: Departure[];
   fetchedAt: string;
-  source: "horaires-tahiti.com" | "fallback";
+  source: "horaires-tahiti.com" | "horaires-tahiti.com (cache)" | "unavailable";
 };
 
 const SOURCE_URL = "https://www.horaires-tahiti.com/The.json";
@@ -63,6 +66,8 @@ type RawData = {
     schedule?: Partial<Record<DayKey, string[]>>;
   }>;
 };
+
+export type RawFerryData = RawData;
 
 function getTahitiClock(): { nowMin: number; dayKey: DayKey } {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -162,11 +167,12 @@ export function normalizeFerrySchedules(raw: RawData | null): RawSchedule[] {
     .filter((c) => Object.keys(c.schedule).length > 0);
 }
 
-/** Récupération brute du JSON depuis horaires-tahiti.com. */
+/** Récupération live depuis horaires-tahiti.com (JSON officiel agrégé). */
 export async function fetchRawFerries(): Promise<RawData | null> {
   try {
     const res = await fetch(SOURCE_URL, {
-      next: { revalidate: 1800 },
+      cache: "no-store",
+      redirect: "follow",
       headers: {
         Accept: "application/json",
         "User-Agent":
@@ -174,13 +180,48 @@ export async function fetchRawFerries(): Promise<RawData | null> {
       },
     });
     if (!res.ok) return null;
-    return (await res.json()) as RawData;
+    const data = (await res.json()) as RawData;
+    if (!data.compagnies && !data.companies) return null;
+    return data;
   } catch {
     return null;
   }
 }
 
-export function computeNextDepartures(raw: RawData | null): NextDepartures {
+function loadBundledFerries(): RawData {
+  return bundledSchedules as RawData;
+}
+
+/** Live d’abord, sinon copie locale (même JSON que horaires-tahiti.com). */
+export async function loadFerrySchedules(): Promise<{
+  raw: RawData;
+  source: NextDepartures["source"];
+}> {
+  const live = await fetchRawFerries();
+  if (live) {
+    return { raw: live, source: "horaires-tahiti.com" };
+  }
+  return {
+    raw: loadBundledFerries(),
+    source: "horaires-tahiti.com (cache)",
+  };
+}
+
+/** Prochain départ de chaque compagnie (pour le bandeau). */
+export function nextDeparturesPerCompany(departures: Departure[]): Departure[] {
+  const byCompany = new Map<string, Departure>();
+  for (const d of departures) {
+    if (!byCompany.has(d.company)) byCompany.set(d.company, d);
+  }
+  return [...byCompany.values()].sort(
+    (a, b) => a.minutesUntil - b.minutesUntil,
+  );
+}
+
+export function computeNextDepartures(
+  raw: RawData | null,
+  source: NextDepartures["source"] = "horaires-tahiti.com",
+): NextDepartures {
   const { nowMin, dayKey } = getTahitiClock();
   const companies = normalizeFerrySchedules(raw);
 
@@ -210,39 +251,19 @@ export function computeNextDepartures(raw: RawData | null): NextDepartures {
 
   if (fromMoorea.length === 0 && fromTahiti.length === 0) {
     return {
-      fromMoorea: fallbackDepartures("Moorea"),
-      fromTahiti: fallbackDepartures("Tahiti"),
+      fromMoorea: [],
+      fromTahiti: [],
       fetchedAt: new Date().toISOString(),
-      source: "fallback",
+      source: "unavailable",
     };
   }
 
   return {
-    fromMoorea: fromMoorea.slice(0, 6),
-    fromTahiti: fromTahiti.slice(0, 6),
+    fromMoorea: fromMoorea.slice(0, 8),
+    fromTahiti: fromTahiti.slice(0, 8),
     fetchedAt: new Date().toISOString(),
-    source: "horaires-tahiti.com",
+    source,
   };
-}
-
-function fallbackDepartures(from: "Moorea" | "Tahiti"): Departure[] {
-  const baseTimes =
-    from === "Moorea"
-      ? ["06:00", "07:30", "09:00", "12:00", "15:30"]
-      : ["07:00", "10:30", "14:00", "16:00", "17:30"];
-  const { nowMin } = getTahitiClock();
-  return baseTimes
-    .map((t) => {
-      const m = timeToMinutes(t);
-      return {
-        time: formatTimeFR(t),
-        company: "Indicatif",
-        duration: "30 min",
-        minutesUntil: Math.max(0, m - nowMin),
-      };
-    })
-    .filter((d) => d.minutesUntil > 0)
-    .slice(0, 3);
 }
 
 export function formatMinutesUntil(min: number): string {

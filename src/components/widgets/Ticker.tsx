@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import type { WeatherSummary } from "@/lib/weather";
 import type { SunMoonData } from "@/lib/sun";
+import type { NextDepartures } from "@/lib/ferries";
+import { nextDeparturesPerCompany } from "@/lib/ferries";
 
 type TickerItem = {
   icon: React.ReactNode;
@@ -68,19 +70,17 @@ export function Ticker() {
         }
 
         if (ferryRes?.ok) {
-          const f = await ferryRes.json();
-          const moorea = f?.fromMoorea?.[0];
-          const tahiti = f?.fromTahiti?.[0];
-          if (moorea) {
+          const f = (await ferryRes.json()) as NextDepartures;
+          for (const d of nextDeparturesPerCompany(f.fromMoorea ?? [])) {
             next.push({
               icon: <Ship size={14} className="text-lagon-300" />,
-              label: `Prochain ferry Moorea → Tahiti : ${moorea.time} (${moorea.company})`,
+              label: `Moorea → Tahiti : ${d.time} · ${d.company}`,
             });
           }
-          if (tahiti) {
+          for (const d of nextDeparturesPerCompany(f.fromTahiti ?? [])) {
             next.push({
               icon: <Ship size={14} className="text-lagon-300" />,
-              label: `Tahiti → Moorea : ${tahiti.time} (${tahiti.company})`,
+              label: `Tahiti → Moorea : ${d.time} · ${d.company}`,
             });
           }
         }
