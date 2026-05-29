@@ -118,6 +118,14 @@ export function Footer() {
               </li>
               <li>
                 <Link
+                  href="/telecharger"
+                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
+                >
+                  Télécharger l&apos;app
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/en"
                   className="text-sm text-ocean-200/80 hover:text-white transition-colors"
                 >

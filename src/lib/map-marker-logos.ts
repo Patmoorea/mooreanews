@@ -3,7 +3,7 @@
  */
 
 export const MAP_MARKER_LOGOS: Record<string, string> = {
-  "rai-tahiti-vsl": "/partners/raitahiti-marker.svg",
+  "rai-tahiti-vsl": "/partners/logo.png",
 };
 
 export function resolveMapIconUrl(

@@ -87,7 +87,7 @@ export function InfoForm({
           label="Logo sur la carte (optionnel)"
           defaultValue={initial?.map_icon_url ?? ""}
           placeholder="/partners/mon-logo.png ou https://…"
-          help="Image carrée recommandée. RAI TAHITI : laissez vide pour le logo croix rouge par défaut."
+          help="Image carrée recommandée. RAI TAHITI : /partners/logo.png par défaut."
         />
       </div>
       <Field name="url" label="Site web" defaultValue={initial?.url} />

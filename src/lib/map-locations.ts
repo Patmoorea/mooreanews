@@ -149,7 +149,7 @@ export const STATIC_MAP_MARKERS: MapMarker[] = [
     lon: -149.772,
     description: "Transport sanitaire — base Pihaena (PK 14,5) · 89 77 76 24",
     href: "/infos-pratiques/rai-tahiti-vsl",
-    iconUrl: "/partners/raitahiti-marker.svg",
+    iconUrl: "/partners/logo.png",
   },
   {
     id: "marche-paopao",
