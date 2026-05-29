@@ -31,16 +31,32 @@ export function AdminRowActions({
   const router = useRouter();
 
   async function onToggle() {
-    await togglePublished(table, id, published);
-    router.refresh();
+    try {
+      await togglePublished(table, id, published);
+      router.refresh();
+    } catch (e) {
+      alert(
+        e instanceof Error
+          ? e.message
+          : "Impossible de changer l'état de publication.",
+      );
+    }
   }
 
   async function onDelete() {
     if (!confirm(`Supprimer ${itemLabel} ? Cette action est irréversible.`)) {
       return;
     }
-    await deleteContent(table, id);
-    router.refresh();
+    try {
+      await deleteContent(table, id);
+      router.refresh();
+    } catch (e) {
+      alert(
+        e instanceof Error
+          ? e.message
+          : "Suppression impossible (droits ou connexion).",
+      );
+    }
   }
 
   return (

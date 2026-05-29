@@ -2,6 +2,7 @@
  * Veille Moorea — flux RSS + liens Facebook / pages Meta (voir facebook-watch.ts).
  */
 
+import { facebookImportMaxAgeDays } from "@/lib/facebook-import-filters";
 import { aggregateWebWatch } from "@/lib/facebook-watch";
 import { fetchRssFeed, type RssItem } from "@/lib/rss-parser";
 import { RSS_SOURCES, type RssSource } from "@/lib/rss-sources";
@@ -101,10 +102,16 @@ export async function aggregateAll(): Promise<AggregationResult[]> {
 export async function listExternalArticles(limit = 20) {
   const supabase = getPublicSupabase() ?? getAdminSupabase();
   if (!supabase) return null;
+
+  const cutoff = new Date(
+    Date.now() - facebookImportMaxAgeDays() * 24 * 60 * 60 * 1000,
+  ).toISOString();
+
   const { data, error } = await supabase
     .from("external_articles")
     .select("*")
     .eq("hidden", false)
+    .gte("published_at", cutoff)
     .order("published_at", { ascending: false })
     .limit(limit);
   if (error) return null;

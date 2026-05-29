@@ -2,6 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { contentReferencesStaleYear } from "@/lib/facebook-import-filters";
+import { hideExternalArticlesForArticleSlug } from "@/lib/facebook-external-sync";
+import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { importMissingRestaurantsFromJson } from "@/lib/supabase/sync-restaurants";
 import { importMissingInfoPratiquesFromJson } from "@/lib/supabase/sync-info-pratiques";
@@ -184,6 +187,29 @@ function adminPathFor(table: TableName): string {
   return table === "info_pratiques" ? "/admin/info" : `/admin/${table}`;
 }
 
+function revalidateArticlePublicPaths(slug?: string) {
+  revalidatePath("/actualites");
+  revalidatePath("/", "layout");
+  if (slug) revalidatePath(`/actualites/${slug}`);
+}
+
+async function syncFacebookArticleVisibility(
+  supabase: Awaited<ReturnType<typeof getServerSupabase>>,
+  id: string,
+  published: boolean,
+) {
+  if (!supabase || published) return;
+  const { data } = await supabase
+    .from("articles")
+    .select("slug, tags")
+    .eq("id", id)
+    .maybeSingle();
+  if (!data?.slug) return;
+  const tags = data.tags ?? [];
+  if (!tags.includes("facebook-import")) return;
+  await hideExternalArticlesForArticleSlug(data.slug);
+}
+
 export async function createContent(table: TableName, formData: FormData) {
   const { supabase } = await requireAdmin();
   const payload = parseFormPayload(table, formData);
@@ -212,8 +238,20 @@ export async function updateContent(
     .update(payload)
     .eq("id", id);
   if (error) throw error;
+
+  if (table === "articles") {
+    const slug =
+      typeof payload.slug === "string" ? payload.slug : undefined;
+    const published = payload.published === true;
+    if (!published) {
+      await syncFacebookArticleVisibility(supabase, id, false);
+    }
+    revalidateArticlePublicPaths(slug);
+  } else {
+    revalidatePath(publicPathFor(table));
+  }
+
   revalidatePath(adminPathFor(table));
-  revalidatePath(publicPathFor(table));
   if (table === "events") revalidatePath(`/evenements/${id}`);
   if (table === "announcements") revalidatePath(`/annonces/${id}`);
   redirect(adminPathFor(table));
@@ -221,10 +259,28 @@ export async function updateContent(
 
 export async function deleteContent(table: TableName, id: string) {
   const { supabase } = await requireAdmin();
+
+  let articleSlug: string | undefined;
+  if (table === "articles") {
+    const { data } = await supabase
+      .from("articles")
+      .select("slug, tags")
+      .eq("id", id)
+      .maybeSingle();
+    articleSlug = data?.slug;
+    if (data?.tags?.includes("facebook-import") && articleSlug) {
+      await hideExternalArticlesForArticleSlug(articleSlug);
+    }
+  }
+
   const { error } = await supabase.from(table).delete().eq("id", id);
   if (error) throw error;
   revalidatePath(adminPathFor(table));
-  revalidatePath(publicPathFor(table));
+  if (table === "articles") {
+    revalidateArticlePublicPaths(articleSlug);
+  } else {
+    revalidatePath(publicPathFor(table));
+  }
   if (table === "restaurants") {
     revalidatePath(`/restaurants/${id}`);
   }
@@ -236,15 +292,70 @@ export async function togglePublished(
   current: boolean
 ) {
   const { supabase } = await requireAdmin();
+  const nextPublished = !current;
+
+  let articleSlug: string | undefined;
+  if (table === "articles") {
+    const { data } = await supabase
+      .from("articles")
+      .select("slug")
+      .eq("id", id)
+      .maybeSingle();
+    articleSlug = data?.slug;
+  }
+
   const { error } = await (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     supabase.from(table) as any
   )
-    .update({ published: !current })
+    .update({ published: nextPublished })
     .eq("id", id);
   if (error) throw error;
+
+  if (table === "articles") {
+    await syncFacebookArticleVisibility(supabase, id, nextPublished);
+    revalidateArticlePublicPaths(articleSlug);
+  } else {
+    revalidatePath(publicPathFor(table));
+  }
   revalidatePath(adminPathFor(table));
-  revalidatePath(publicPathFor(table));
+}
+
+/** Dépublie les imports Facebook déjà en base (2021–2022, etc.) et masque la veille externe liée. */
+export async function unpublishLegacyFacebookImports(): Promise<{
+  unpublished: number;
+}> {
+  const { supabase } = await requireAdmin();
+  const admin = getAdminSupabase();
+  const db = admin ?? supabase;
+
+  const { data: rows } = await db
+    .from("articles")
+    .select("id, slug, title, excerpt, body, tags, published")
+    .contains("tags", ["facebook-import"]);
+
+  let unpublished = 0;
+  for (const row of rows ?? []) {
+    const corpus = `${row.title} ${row.excerpt} ${row.body}`;
+    const staleByText = contentReferencesStaleYear(corpus);
+    const staleByTitle =
+      /\bpublication du 20\d{2}-\d{2}-\d{2}\b/i.test(row.title) &&
+      contentReferencesStaleYear(row.title);
+
+    if (!staleByText && !staleByTitle && row.published) continue;
+
+    if (row.published) {
+      await db.from("articles").update({ published: false }).eq("id", row.id);
+      unpublished += 1;
+    }
+    if (row.slug) {
+      await hideExternalArticlesForArticleSlug(row.slug);
+    }
+  }
+
+  revalidatePath("/admin/articles");
+  revalidateArticlePublicPaths();
+  return { unpublished };
 }
 
 export async function toggleAlertActive(id: string, current: boolean) {

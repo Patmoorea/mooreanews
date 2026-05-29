@@ -47,7 +47,6 @@ export async function importFacebookOgAsArticles(
       message: item.excerpt?.trim() || item.title.trim(),
       permalink_url: item.url,
       full_picture: item.imageUrl ?? undefined,
-      created_time: new Date().toISOString(),
     }));
 
   if (posts.length === 0) return empty;

@@ -7,6 +7,7 @@ import { externalIdFromFacebookUrl, isFacebookUrl } from "@/lib/facebook-url";
 import { fetchOpenGraph } from "@/lib/open-graph";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { importFacebookPostsAsContent } from "@/lib/facebook-content-import";
+import { shouldImportFacebookPost } from "@/lib/facebook-import-filters";
 import { importFacebookOgAsArticles } from "@/lib/og-article-import";
 import {
   allFacebookWatchUrls,
@@ -297,8 +298,12 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
         });
       }
       for (const post of posts) {
+        const message = post.message?.trim() ?? "";
+        const freshness = shouldImportFacebookPost(message, post.created_time);
+        if (!freshness.ok) continue;
+
         const title =
-          post.message?.split("\n")[0]?.trim().slice(0, 200) ||
+          message.split("\n")[0]?.trim().slice(0, 200) ||
           `${page.name} — publication`;
         const link = post.permalink_url ?? `${page.homepage}/posts/${post.id}`;
         rows.push({
@@ -307,9 +312,9 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
           external_id: `fb-graph-${post.id}`,
           url: link,
           title,
-          excerpt: post.message?.slice(0, 400) ?? null,
+          excerpt: message.slice(0, 400) || null,
           image_url: post.full_picture ?? null,
-          published_at: post.created_time ?? new Date().toISOString(),
+          published_at: freshness.publishedAt,
         });
         result.matched += 1;
       }

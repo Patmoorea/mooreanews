@@ -5,6 +5,7 @@
 import type { FacebookPostForImport } from "@/lib/facebook-article-import";
 import type { FacebookPageImportConfig } from "@/lib/facebook-article-import";
 import { getAdminSupabase } from "@/lib/supabase/admin";
+import { shouldImportFacebookPost } from "@/lib/facebook-import-filters";
 import {
   announcementCategoryFromMessage,
   classifyFacebookPost,
@@ -21,6 +22,7 @@ export type FacebookContentImportResult = {
   announcementsCreated: number;
   articlesCreated: number;
   skipped: number;
+  skippedStale: number;
   errors: string[];
   createdEvents: { title: string; id: string; date: string }[];
   createdArticles: { title: string; slug: string }[];
@@ -169,6 +171,7 @@ async function importAsArticle(
   post: FacebookPostForImport,
   config: FacebookPageImportConfig,
   published: boolean,
+  publishedAt: string,
 ): Promise<{ ok: true; title: string; slug: string } | { ok: false; reason: string }> {
   const supabase = getAdminSupabase();
   if (!supabase) return { ok: false, reason: "Supabase absent" };
@@ -204,6 +207,7 @@ async function importAsArticle(
     author: config.authorLabel,
     featured: false,
     published,
+    published_at: publishedAt,
   });
 
   if (error) return { ok: false, reason: error.message };
@@ -220,6 +224,7 @@ export async function importFacebookPostsAsContent(
     announcementsCreated: 0,
     articlesCreated: 0,
     skipped: 0,
+    skippedStale: 0,
     errors: [],
     createdEvents: [],
     createdArticles: [],
@@ -232,6 +237,13 @@ export async function importFacebookPostsAsContent(
 
   for (const post of posts) {
     const message = post.message?.trim() ?? "";
+    const freshness = shouldImportFacebookPost(message, post.created_time);
+    if (!freshness.ok) {
+      result.skippedStale += 1;
+      continue;
+    }
+    const publishedAt = freshness.publishedAt;
+
     const hasImage = Boolean(post.full_picture?.trim());
     const kind = classifyFacebookPost(message, hasImage);
 
@@ -265,7 +277,7 @@ export async function importFacebookPostsAsContent(
       continue;
     }
 
-    const r = await importAsArticle(post, config, published);
+    const r = await importAsArticle(post, config, published, publishedAt);
     if (r.ok) {
       result.articlesCreated += 1;
       result.createdArticles.push({ title: r.title, slug: r.slug });
