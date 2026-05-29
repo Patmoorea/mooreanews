@@ -1,0 +1,34 @@
+# Veille MooreaNews toutes les heures (alternative à cron-job.org).
+# Secret requis : Settings → Secrets → CRON_SECRET (même valeur que Vercel).
+
+name: Veille horaire MooreaNews
+
+on:
+  schedule:
+    # Toutes les heures, minute 0 (UTC)
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: veille-hourly
+  cancel-in-progress: false
+
+jobs:
+  veille:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Appeler /api/cron/aggregate
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET manquant dans les secrets GitHub du dépôt."
+            exit 1
+          fi
+          url="https://www.mooreanews.com/api/cron/aggregate?secret=${CRON_SECRET}"
+          code=$(curl -sS -o /tmp/veille.json -w "%{http_code}" "$url")
+          echo "HTTP ${code}"
+          head -c 3000 /tmp/veille.json
+          echo ""
+          test "$code" = "200" || exit 1
