@@ -3,7 +3,8 @@
 
 alter table public.info_pratiques
   add column if not exists lat double precision,
-  add column if not exists lon double precision;
+  add column if not exists lon double precision,
+  add column if not exists map_icon_url text;
 
 -- RAI TAHITI (base Pihaena PK 14,5) — ajustez si besoin
 update public.info_pratiques

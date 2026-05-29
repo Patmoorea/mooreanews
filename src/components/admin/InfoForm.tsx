@@ -82,6 +82,13 @@ export function InfoForm({
             placeholder="-149.772"
           />
         </div>
+        <Field
+          name="map_icon_url"
+          label="Logo sur la carte (optionnel)"
+          defaultValue={initial?.map_icon_url ?? ""}
+          placeholder="/partners/mon-logo.png ou https://…"
+          help="Image carrée recommandée. RAI TAHITI : laissez vide pour le logo croix rouge par défaut."
+        />
       </div>
       <Field name="url" label="Site web" defaultValue={initial?.url} />
       <div className="grid sm:grid-cols-2 gap-5 pt-2">

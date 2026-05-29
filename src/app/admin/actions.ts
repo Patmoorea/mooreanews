@@ -172,6 +172,7 @@ function parseFormPayload(
         url: get("url") || null,
         lat: getNum("lat"),
         lon: getNum("lon"),
+        map_icon_url: get("map_icon_url") || null,
         published: getBool("published"),
         display_order: Number(get("display_order") || "0"),
       };
@@ -235,11 +236,20 @@ export async function createContent(table: TableName, formData: FormData) {
   const { supabase } = await requireAdmin();
   const payload = parseFormPayload(table, formData);
   if (table === "info_pratiques") {
-    const { error } = await insertInfoPratiqueRow(
+    const { error, legacySchema } = await insertInfoPratiqueRow(
       supabase,
       payload as InfoPratiqueRowInput,
     );
     if (error) throw new Error(error);
+    revalidatePath(adminPathFor(table));
+    revalidatePath(publicPathFor(table));
+    revalidatePath("/");
+    if (
+      legacySchema &&
+      (payload.lat != null || payload.lon != null)
+    ) {
+      redirect(`${adminPathFor(table)}?warning=coords_schema`);
+    }
   } else if (table === "alerts") {
     const { data, error } = await supabase
       .from("alerts")
@@ -272,12 +282,19 @@ export async function updateContent(
   const { supabase } = await requireAdmin();
   const payload = parseFormPayload(table, formData);
   if (table === "info_pratiques") {
-    const { error } = await updateInfoPratiqueRow(
+    const { error, legacySchema } = await updateInfoPratiqueRow(
       supabase,
       id,
       payload as Partial<InfoPratiqueRowInput>,
     );
     if (error) throw new Error(error);
+    revalidatePath("/");
+    if (
+      legacySchema &&
+      (payload.lat != null || payload.lon != null)
+    ) {
+      redirect(`${adminPathFor(table)}/${id}?warning=coords_schema`);
+    }
   } else if (table === "alerts") {
     const { data, error } = await supabase
       .from("alerts")
@@ -295,6 +312,9 @@ export async function updateContent(
       .update(payload)
       .eq("id", id);
     if (error) throw error;
+    if (table === "restaurants" || table === "activities") {
+      revalidatePath("/");
+    }
   }
 
   if (table === "articles") {

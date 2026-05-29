@@ -126,6 +126,7 @@ export type InfoRow = {
   url: string | null;
   lat: number | null;
   lon: number | null;
+  map_icon_url: string | null;
   published: boolean;
   display_order: number;
   created_at: string;

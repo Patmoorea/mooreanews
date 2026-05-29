@@ -3,6 +3,7 @@ import {
   STATIC_MAP_MARKERS,
   type MapMarker,
 } from "@/lib/map-locations";
+import { resolveMapIconUrl } from "@/lib/map-marker-logos";
 
 function coords(
   lat?: number | null,
@@ -68,6 +69,7 @@ export async function buildMapMarkers(): Promise<MapMarker[]> {
       lon: c.lon,
       description: i.address ?? i.description.slice(0, 100),
       href: `/infos-pratiques/${i.slug}`,
+      iconUrl: resolveMapIconUrl(i.slug, i.mapIconUrl),
     });
   }
 

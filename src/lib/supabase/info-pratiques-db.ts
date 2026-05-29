@@ -12,6 +12,7 @@ export type InfoPratiqueRowInput = {
   url: string | null;
   lat: number | null;
   lon: number | null;
+  map_icon_url: string | null;
   published: boolean;
   emergency: boolean;
 };
@@ -22,14 +23,16 @@ const COORDS_MIGRATION_HINT =
 function isMissingCoordsColumnError(message: string): boolean {
   return (
     /schema cache/i.test(message) &&
-    (/\blat\b/i.test(message) || /\blon\b/i.test(message))
+    (/\blat\b/i.test(message) ||
+      /\blon\b/i.test(message) ||
+      /\bmap_icon_url\b/i.test(message))
   );
 }
 
 export function stripInfoCoords(
   row: InfoPratiqueRowInput,
-): Omit<InfoPratiqueRowInput, "lat" | "lon"> {
-  const { lat: _lat, lon: _lon, ...rest } = row;
+): Omit<InfoPratiqueRowInput, "lat" | "lon" | "map_icon_url"> {
+  const { lat: _lat, lon: _lon, map_icon_url: _icon, ...rest } = row;
   return rest;
 }
 
@@ -68,7 +71,7 @@ export async function updateInfoPratiqueRow(
   if (!error) return { error: null, legacySchema: false };
 
   if (isMissingCoordsColumnError(error.message)) {
-    const { lat: _lat, lon: _lon, ...rest } = row;
+    const { lat: _lat, lon: _lon, map_icon_url: _icon, ...rest } = row;
     const { error: legacyError } = await supabase
       .from("info_pratiques")
       .update(rest)

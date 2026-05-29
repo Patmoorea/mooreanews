@@ -49,9 +49,17 @@ export function MooreaMap({ markers }: Props) {
 
     for (const m of filtered) {
       const color = CATEGORY_COLORS[m.category];
-      const icon = L.divIcon({
-        className: "moorea-marker",
-        html: `<div style="
+      const icon = m.iconUrl
+        ? L.divIcon({
+            className: "moorea-marker moorea-marker-logo",
+            html: logoMarkerHtml(m.iconUrl),
+            iconSize: [40, 40],
+            iconAnchor: [20, 20],
+            popupAnchor: [0, -22],
+          })
+        : L.divIcon({
+            className: "moorea-marker",
+            html: `<div style="
           background:${color};
           width:28px;height:28px;border-radius:999px;
           border:3px solid white;
@@ -59,9 +67,9 @@ export function MooreaMap({ markers }: Props) {
           display:flex;align-items:center;justify-content:center;
           color:white;font-size:14px;font-weight:600;
         ">${markerEmoji(m.category)}</div>`,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
-      });
+            iconSize: [28, 28],
+            iconAnchor: [14, 14],
+          });
       const marker = L.marker([m.lat, m.lon], { icon }).addTo(map);
       marker.bindPopup(
         `<div style="font-family:Inter,sans-serif;min-width:180px">
@@ -161,4 +169,15 @@ function markerEmoji(cat: MapMarker["category"]): string {
     case "info":
       return "ⓘ";
   }
+}
+
+function logoMarkerHtml(iconUrl: string): string {
+  const src = iconUrl.replace(/"/g, "&quot;");
+  return `<div style="
+    width:40px;height:40px;border-radius:999px;
+    border:3px solid white;
+    box-shadow:0 4px 14px rgba(0,0,0,0.25);
+    overflow:hidden;background:white;
+    display:flex;align-items:center;justify-content:center;
+  "><img src="${src}" alt="" style="width:100%;height:100%;object-fit:cover" /></div>`;
 }

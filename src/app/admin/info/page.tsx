@@ -5,10 +5,14 @@ import { getMissingInfoPratiquesFromJson } from "@/lib/supabase/sync-info-pratiq
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminRowActions } from "@/components/admin/AdminRowActions";
 import { ImportInfoPratiquesBanner } from "@/components/admin/ImportInfoPratiquesBanner";
+import { InfoCoordsBanner } from "@/components/admin/InfoCoordsBanner";
 
 export const metadata = { title: "Infos pratiques" };
 
-export default async function AdminInfoPage() {
+type Props = { searchParams: Promise<{ warning?: string }> };
+
+export default async function AdminInfoPage({ searchParams }: Props) {
+  const { warning } = await searchParams;
   const supabase = await getServerSupabase();
   const { data: rows } =
     (await supabase
@@ -27,6 +31,7 @@ export default async function AdminInfoPage() {
         newHref="/admin/info/new"
         newLabel="Nouvelle info"
       />
+      <InfoCoordsBanner warning={warning} />
       <ImportInfoPratiquesBanner missingTitles={missingTitles} />
       <div className="bg-white rounded-2xl border border-ocean-100 overflow-hidden">
         <table className="w-full text-sm">

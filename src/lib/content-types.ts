@@ -105,4 +105,6 @@ export type InfoPratique = {
   image?: string;
   lat?: number;
   lon?: number;
+  /** Logo sur la carte interactive (URL ou chemin /partners/…) */
+  mapIconUrl?: string;
 };

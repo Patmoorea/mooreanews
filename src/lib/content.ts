@@ -337,5 +337,6 @@ function infoFromRow(r: InfoRow): InfoPratique {
     image: jsonMatch?.image,
     lat: r.lat ?? jsonMatch?.lat,
     lon: r.lon ?? jsonMatch?.lon,
+    mapIconUrl: r.map_icon_url ?? jsonMatch?.mapIconUrl,
   };
 }

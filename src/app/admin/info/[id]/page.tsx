@@ -1,15 +1,20 @@
 import { notFound } from "next/navigation";
 import { InfoForm } from "@/components/admin/InfoForm";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { InfoCoordsBanner } from "@/components/admin/InfoCoordsBanner";
 import { updateContent } from "@/app/admin/actions";
 import { getServerSupabase } from "@/lib/supabase/server";
 
 export const metadata = { title: "Éditer l'info" };
 
-type Props = { params: Promise<{ id: string }> };
+type Props = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ warning?: string }>;
+};
 
-export default async function EditInfoPage({ params }: Props) {
+export default async function EditInfoPage({ params, searchParams }: Props) {
   const { id } = await params;
+  const { warning } = await searchParams;
   const supabase = await getServerSupabase();
   if (!supabase) notFound();
   const { data: row } = await supabase
@@ -25,6 +30,7 @@ export default async function EditInfoPage({ params }: Props) {
   return (
     <div>
       <AdminPageHeader title="Éditer l'info" description={row.title} />
+      <InfoCoordsBanner warning={warning} />
       <InfoForm action={action} initial={row} />
     </div>
   );

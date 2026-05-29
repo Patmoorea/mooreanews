@@ -37,6 +37,9 @@ export function mergeInfoPratiqueCatalog(
         hours: entry.hours ?? fromJson.hours,
         website: entry.website ?? fromJson.website,
         image: entry.image ?? fromJson.image,
+        lat: entry.lat ?? fromJson.lat,
+        lon: entry.lon ?? fromJson.lon,
+        mapIconUrl: entry.mapIconUrl ?? fromJson.mapIconUrl,
       });
     } else {
       merged.set(key, entry);

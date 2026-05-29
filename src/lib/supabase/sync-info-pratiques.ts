@@ -21,6 +21,7 @@ function infoToRow(i: InfoPratique, displayOrder: number): InfoRowInput {
     url: i.website ?? null,
     lat: i.lat ?? null,
     lon: i.lon ?? null,
+    map_icon_url: i.mapIconUrl ?? null,
     published: true,
     emergency: false,
   };
