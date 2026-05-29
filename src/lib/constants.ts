@@ -237,6 +237,24 @@ export const USEFUL_LINKS = [
   },
 ] as const;
 
+/** Liens billetterie ferry (compagnies Tahiti ↔ Moorea) */
+export const FERRY_BOOKING_URLS: Record<string, string> = {
+  aremiti: "https://www.aremiti.pf",
+  térévau: "https://www.terevau.pf",
+  terevau: "https://www.terevau.pf",
+  vaearai: "https://www.vaearai.pf",
+  "vaeara'i": "https://www.vaearai.pf",
+  default: "https://www.horaires-tahiti.com",
+};
+
+export function ferryBookingUrl(company: string): string {
+  const key = company.trim().toLowerCase();
+  for (const [k, url] of Object.entries(FERRY_BOOKING_URLS)) {
+    if (key.includes(k)) return url;
+  }
+  return FERRY_BOOKING_URLS.default;
+}
+
 /** Configuration API externes (chargées via env) */
 export const ENV = {
   openWeatherMapKey:

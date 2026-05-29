@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ExternalLink, Siren } from "lucide-react";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
 import { expirePastAlerts } from "@/lib/alert-schedule";
+import { syncMeteoVigilanceAlert } from "@/lib/meteo-vigilance-sync";
 import { Container } from "@/components/ui/Container";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -15,7 +16,7 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 export async function AlertsStrip() {
-  await expirePastAlerts();
+  await Promise.all([expirePastAlerts(), syncMeteoVigilanceAlert()]);
   const rows = (await dbListActiveAlerts()) ?? [];
   const urgent = rows.filter((a) => a.urgent).slice(0, 2);
   const rest = rows.filter((a) => !a.urgent).slice(0, 4 - urgent.length);

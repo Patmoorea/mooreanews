@@ -41,6 +41,7 @@ export async function buildMapMarkers(): Promise<MapMarker[]> {
       lon: c.lon,
       description: r.address,
       href: `/restaurants/${r.slug}`,
+      district: r.district,
     });
   }
 
@@ -55,6 +56,7 @@ export async function buildMapMarkers(): Promise<MapMarker[]> {
       lon: c.lon,
       description: a.district ?? a.description.slice(0, 80),
       href: `/activites/${a.slug}`,
+      district: a.district,
     });
   }
 

@@ -70,6 +70,8 @@ export type AnnouncementRow = {
   cover_url: string | null;
   published: boolean;
   expires_at: string | null;
+  boosted_until: string | null;
+  stripe_session_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -90,6 +92,9 @@ export type RestaurantRow = {
   url: string | null;
   published: boolean;
   featured: boolean;
+  menu_du_jour: string | null;
+  merchant_email: string | null;
+  premium_until: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -242,10 +247,23 @@ export type PageViewRow = {
   viewed_at: string;
 };
 
+export type CommercePaymentRow = {
+  id: string;
+  kind: "announcement_boost" | "restaurant_premium";
+  target_id: string;
+  stripe_session_id: string | null;
+  amount_cents: number | null;
+  currency: string | null;
+  status: string;
+  created_at: string;
+  completed_at: string | null;
+};
+
 export type Database = {
   public: {
     Tables: {
       page_views: TableDef<PageViewRow>;
+      commerce_payments: TableDef<CommercePaymentRow>;
       profiles: TableDef<Profile>;
       articles: TableDef<ArticleRow>;
       events: TableDef<EventRow>;

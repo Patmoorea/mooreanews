@@ -13,6 +13,8 @@ export type MapMarker = {
   href?: string;
   /** Logo personnalisé (épingle carte) */
   iconUrl?: string;
+  /** Quartier Moorea (filtre carte) */
+  district?: string;
 };
 
 /**
@@ -28,6 +30,7 @@ export const STATIC_MAP_MARKERS: MapMarker[] = [
     category: "ferry",
     lat: -17.4946,
     lon: -149.7672,
+    district: "Vaiare",
     description: "Ferries Tahiti ↔ Moorea (Aremiti, Terevau)",
     href: "/infos-pratiques",
   },
@@ -37,6 +40,7 @@ export const STATIC_MAP_MARKERS: MapMarker[] = [
     category: "ferry",
     lat: -17.4898,
     lon: -149.7619,
+    district: "Temae",
     description: "Vols quotidiens vers Tahiti (Air Tahiti, Air Moana)",
     href: "/infos-pratiques",
   },
@@ -129,6 +133,7 @@ export const STATIC_MAP_MARKERS: MapMarker[] = [
     category: "info",
     lat: -17.5544,
     lon: -149.7747,
+    district: "Afareaitu",
     description: "Démarches administratives, état civil",
     href: "/infos-pratiques",
   },
@@ -147,6 +152,7 @@ export const STATIC_MAP_MARKERS: MapMarker[] = [
     category: "info",
     lat: -17.5185,
     lon: -149.772,
+    district: "Paopao",
     description: "Transport sanitaire — base Pihaena (PK 14,5) · 89 77 76 24",
     href: "/infos-pratiques/rai-tahiti-vsl",
     iconUrl: "/partners/logo.png",

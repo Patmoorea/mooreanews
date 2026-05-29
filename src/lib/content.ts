@@ -103,13 +103,17 @@ export async function getEventBySlug(
 
 export async function getAnnouncements(): Promise<Announcement[]> {
   const db = await dbListAnnouncements();
-  if (db) return db.map(announcementFromRow);
-  return (announcementsData as Announcement[])
-    .slice()
-    .sort(
-      (a, b) =>
-        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+  const items = db
+    ? db.map(announcementFromRow)
+    : (announcementsData as Announcement[]);
+  return items.slice().sort((a, b) => {
+    const aBoost = a.boosted ? 1 : 0;
+    const bBoost = b.boosted ? 1 : 0;
+    if (aBoost !== bBoost) return bBoost - aBoost;
+    return (
+      new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
     );
+  });
 }
 
 export async function getAnnouncementBySlug(
@@ -264,6 +268,8 @@ function eventFromRow(r: EventRow): Event {
 }
 
 function announcementFromRow(r: AnnouncementRow): Announcement {
+  const boosted =
+    r.boosted_until != null && new Date(r.boosted_until).getTime() > Date.now();
   return {
     slug: r.id,
     title: r.title,
@@ -274,6 +280,7 @@ function announcementFromRow(r: AnnouncementRow): Announcement {
     contact: r.contact ?? "",
     publishedAt: r.created_at,
     image: r.cover_url ?? undefined,
+    boosted,
   };
 }
 

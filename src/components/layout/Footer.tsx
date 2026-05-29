@@ -118,6 +118,14 @@ export function Footer() {
               </li>
               <li>
                 <Link
+                  href="/commercant"
+                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
+                >
+                  Espace commerçant
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/telecharger"
                   className="text-sm text-ocean-200/80 hover:text-white transition-colors"
                 >

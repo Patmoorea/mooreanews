@@ -4,7 +4,7 @@ import { getTides } from "@/lib/tides";
 export const revalidate = 3600;
 
 export async function GET() {
-  const data = getTides();
+  const data = await getTides();
   return NextResponse.json(data, {
     headers: {
       "Cache-Control":

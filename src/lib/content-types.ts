@@ -45,6 +45,7 @@ export type Announcement = {
   district?: string;
   publishedAt: string;
   image?: string;
+  boosted?: boolean;
 };
 
 export type Restaurant = {

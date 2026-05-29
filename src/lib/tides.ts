@@ -54,7 +54,7 @@ function formatHHhMM(date: Date): string {
     .replace(":", "h");
 }
 
-export function getTides(): TidesData {
+export function getTidesComputed(): TidesData {
   const now = getPolynesiaNow();
   const dateStr = now.toISOString().slice(0, 10);
 
@@ -87,4 +87,11 @@ export function getTides(): TidesData {
     source: "computed",
     note: "Horaires indicatifs. Vérifiez auprès du SHOM ou de la capitainerie avant toute activité maritime.",
   };
+}
+
+/** Marées API WorldTides (SHOM) si clé configurée, sinon calcul local. */
+export async function getTides(): Promise<TidesData> {
+  const { fetchTidesFromApi } = await import("@/lib/tides-fetch");
+  const api = await fetchTidesFromApi();
+  return api ?? getTidesComputed();
 }

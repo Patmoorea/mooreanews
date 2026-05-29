@@ -19,6 +19,10 @@ export const FACEBOOK_WATCH_URLS: { url: string; label: string }[] = [
     label: "Commune de Moorea-Maiao (page)",
   },
   {
+    url: "https://www.facebook.com/infoscyclones",
+    label: "Météo-France — Infos cyclones Polynésie",
+  },
+  {
     url: "https://www.facebook.com/groups/461940821326616/",
     label: "Groupe MOOREA Qui sait quoi ???",
   },
@@ -96,6 +100,14 @@ export const WEB_WATCH_URLS: { url: string; label: string }[] = [
   {
     url: "https://www.edt.pf/",
     label: "EDT — électricité Polynésie",
+  },
+  {
+    url: "https://meteo.pf/fr/vigilance",
+    label: "Météo-France — vigilance Polynésie",
+  },
+  {
+    url: "https://meteo.pf/fr/vigilance/tahiti-moorea",
+    label: "Météo-France — vigilance Tahiti & Moorea",
   },
   {
     url: "https://www.tntv.pf/",

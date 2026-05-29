@@ -10,6 +10,7 @@ import { purgeStaleFacebookImports } from "@/lib/facebook-import-cleanup";
 import { checkFerryScheduleSync } from "@/lib/ferry-sync";
 import { auditPublicContent } from "@/lib/site-content-audit";
 import { notifyVeilleReport } from "@/lib/telegram-notify";
+import { syncMeteoVigilanceAlert } from "@/lib/meteo-vigilance-sync";
 
 /**
  * Endpoint d'agrégation RSS + Facebook, appelé par Vercel Cron (1×/jour, 18h Tahiti).
@@ -49,6 +50,7 @@ export async function GET(req: Request) {
     revalidatePath("/", "layout");
   }
 
+  const meteoVigilance = await syncMeteoVigilanceAlert();
   const results = await aggregateAll();
   const duration = Date.now() - start;
 
@@ -56,7 +58,12 @@ export async function GET(req: Request) {
     (s, r) => s + (r.alertsCreated ?? 0),
     0,
   );
-  if (alertsCreated > 0) {
+  if (
+    alertsCreated > 0 ||
+    meteoVigilance.action === "created" ||
+    meteoVigilance.action === "updated" ||
+    meteoVigilance.action === "cleared"
+  ) {
     revalidatePath("/alertes");
     revalidatePath("/", "layout");
   }
@@ -131,6 +138,7 @@ export async function GET(req: Request) {
     durationMs: duration,
     expiredAlerts,
     alertsCreated,
+    meteoVigilance,
     telegram,
     audit: audit
       ? {

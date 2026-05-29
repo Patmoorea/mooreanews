@@ -9,7 +9,8 @@ import { getAnnouncementBySlug, getAnnouncements } from "@/lib/content";
 import { ANNOUNCEMENT_TYPE_LABELS } from "@/lib/content-labels";
 import { SITE } from "@/lib/constants";
 import { timeAgo } from "@/lib/utils";
-import { PosterImage, hasPoster } from "@/components/PosterImage";
+import { BoostAnnouncementButton } from "@/components/commerce/BoostAnnouncementButton";
+import { hasPoster, PosterImage } from "@/components/PosterImage";
 
 function ogImageUrl(item: { image?: string }) {
   return hasPoster(item.image) ? item.image!.trim() : undefined;
@@ -67,6 +68,11 @@ export default async function AnnonceDetailPage({ params }: Props) {
             {item.price && (
               <span className="text-lg font-bold text-tiare-600">{item.price}</span>
             )}
+            {item.boosted && (
+              <span className="text-xs font-bold uppercase tracking-wide px-2 py-1 rounded-full bg-soleil-400 text-white">
+                Boost
+              </span>
+            )}
           </div>
           <h1 className="font-display text-4xl sm:text-5xl text-ocean-950 text-balance">
             {item.title}
@@ -112,6 +118,8 @@ export default async function AnnonceDetailPage({ params }: Props) {
         <div className="mt-10 pt-8 border-t border-ocean-100">
           <ShareButtons url={shareUrl} title={item.title} description={item.body} />
         </div>
+
+        <BoostAnnouncementButton announcementId={item.slug} />
       </Container>
 
       {/* JSON-LD (Annonce) */}

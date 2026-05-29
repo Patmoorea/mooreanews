@@ -54,8 +54,10 @@ const STATUS_META: Record<
   },
 };
 
-export function getSwimConditions(weather: WeatherSummary): SwimConditions {
-  const tides = getTides();
+export function getSwimConditionsFromTides(
+  weather: WeatherSummary,
+  tides: import("@/lib/tides").TidesData,
+): SwimConditions {
   const next = tides.tides[0] ?? null;
   const status = statusFromInputs(
     weather.windSpeed,
@@ -72,4 +74,11 @@ export function getSwimConditions(weather: WeatherSummary): SwimConditions {
     windKmh: Math.round(weather.windSpeed),
     nextTide: next ? { time: next.time, type: next.type } : null,
   };
+}
+
+export async function getSwimConditions(
+  weather: WeatherSummary,
+): Promise<SwimConditions> {
+  const tides = await getTides();
+  return getSwimConditionsFromTides(weather, tides);
 }

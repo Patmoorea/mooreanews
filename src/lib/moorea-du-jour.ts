@@ -22,7 +22,7 @@ export type MooreaDuJour = {
   siteUrl: string;
   alerts: { count: number; items: { id: string; title: string; urgent: boolean }[] };
   weather: { temp: number; description: string; windKmh: number; icon: string };
-  swim: ReturnType<typeof getSwimConditions>;
+  swim: Awaited<ReturnType<typeof getSwimConditions>>;
   tides: { time: string; type: string }[];
   ferries: {
     fromMoorea: { time: string; company: string; minutesUntil: number }[];
@@ -70,8 +70,8 @@ export async function getMooreaDuJour(): Promise<MooreaDuJour> {
       getFeaturedArticles(),
     ]);
 
-  const swim = getSwimConditions(weather);
-  const tides = getTides();
+  const swim = await getSwimConditions(weather);
+  const tides = await getTides();
   const today = tahitiDateIso();
   const { start: wStart, end: wEnd } = weekendRange();
 

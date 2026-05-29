@@ -103,15 +103,16 @@ function pushPayload(alert: AlertRow) {
 
 export async function notifyAlertSubscribers(
   alert: AlertRow,
-): Promise<{ pushSent: number; emailsSent: number; errors: string[] }> {
+): Promise<{ pushSent: number; emailsSent: number; newsletterSent: number; errors: string[] }> {
   if (!alert.active) {
-    return { pushSent: 0, emailsSent: 0, errors: [] };
+    return { pushSent: 0, emailsSent: 0, newsletterSent: 0, errors: [] };
   }
 
   const admin = getAdminSupabase();
   const errors: string[] = [];
   let pushSent = 0;
   let emailsSent = 0;
+  let newsletterSent = 0;
 
   if (admin) {
     const { data: pushRows } = await admin.from("push_subscriptions").select("*");
@@ -168,10 +169,40 @@ export async function notifyAlertSubscribers(
         });
         if (!result.error) emailsSent += 1;
       }
+
+      if (alert.urgent) {
+        const { data: newsletterRows } = await admin
+          .from("newsletter_subscribers")
+          .select("email")
+          .eq("confirmed", true);
+        const alertEmails = new Set(
+          (emailRows ?? []).map((r) => r.email.toLowerCase()),
+        );
+
+        for (const row of newsletterRows ?? []) {
+          if (alertEmails.has(row.email.toLowerCase())) continue;
+          const result = await resend.emails.send({
+            from: ENV.resendFrom,
+            to: [row.email],
+            subject: `🚨 URGENT Moorea — ${alert.title}`,
+            html: `
+            <div style="font-family:Inter,sans-serif;max-width:560px;padding:20px;border-left:4px solid #dc2626">
+              <h2 style="color:#dc2626">Alerte urgente</h2>
+              <h3 style="color:#0c4a6e">${alert.title}</h3>
+              ${alert.district ? `<p><strong>Quartier :</strong> ${alert.district}</p>` : ""}
+              ${alert.details ? `<p>${alert.details.replace(/\n/g, "<br>")}</p>` : ""}
+              <p><a href="${url}">Voir sur MooreaNews →</a></p>
+            </div>
+          `,
+            text: `URGENT: ${alert.title}\n${alert.details ?? ""}\n${url}`,
+          });
+          if (!result.error) newsletterSent += 1;
+        }
+      }
     }
   }
 
-  return { pushSent, emailsSent, errors };
+  return { pushSent, emailsSent, newsletterSent, errors };
 }
 
 export function isPushAvailable(): boolean {

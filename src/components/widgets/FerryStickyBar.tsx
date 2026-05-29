@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Ship, X } from "lucide-react";
+import { Ship, X, Ticket } from "lucide-react";
+import { ferryBookingUrl } from "@/lib/constants";
 
 type Departure = {
   time: string;
@@ -21,20 +22,15 @@ export function FerryStickyBar() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/ferries")
-      .then((r) => r.json() as Promise<FerryData>)
-      .then((d) => {
-        if (!cancelled) setData(d);
-      })
-      .catch(() => {});
-    const id = setInterval(() => {
+    const load = () =>
       fetch("/api/ferries")
         .then((r) => r.json() as Promise<FerryData>)
         .then((d) => {
           if (!cancelled) setData(d);
         })
         .catch(() => {});
-    }, 120_000);
+    load();
+    const id = setInterval(load, 120_000);
     return () => {
       cancelled = true;
       clearInterval(id);
@@ -46,6 +42,9 @@ export function FerryStickyBar() {
   const moorea = data.fromMoorea[0];
   const tahiti = data.fromTahiti[0];
   if (!moorea && !tahiti) return null;
+
+  const next = moorea ?? tahiti;
+  const bookingUrl = ferryBookingUrl(next.company);
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-40 md:hidden pb-[env(safe-area-inset-bottom)]">
@@ -73,6 +72,16 @@ export function FerryStickyBar() {
               )}
             </div>
           </Link>
+          <a
+            href={bookingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 px-3 text-xs font-semibold bg-white/15 hover:bg-white/25 border-l border-white/10"
+            aria-label="Billetterie ferry"
+          >
+            <Ticket size={14} />
+            Billets
+          </a>
           <button
             type="button"
             onClick={() => setDismissed(true)}
