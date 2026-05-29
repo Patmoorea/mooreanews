@@ -7,6 +7,8 @@ import { ArticlesFilter } from "@/components/ArticlesFilter";
 import { ExternalArticles } from "@/components/ExternalArticles";
 import { getArticles } from "@/lib/content";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Actualités de Moorea",
   description:

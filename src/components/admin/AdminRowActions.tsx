@@ -60,33 +60,38 @@ export function AdminRowActions({
   }
 
   return (
-    <div className="inline-flex items-center gap-1">
+    <div className="inline-flex flex-wrap items-center justify-end gap-1.5 min-w-[9.5rem]">
       <button
         type="button"
         onClick={onToggle}
         title={published ? "Dépublier" : "Publier"}
-        className={`p-1.5 rounded-lg transition-colors ${
+        className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-colors ${
           published
-            ? "text-tipanier-600 hover:bg-tipanier-50"
-            : "text-ocean-400 hover:bg-ocean-50"
+            ? "text-tipanier-700 bg-tipanier-50 hover:bg-tipanier-100"
+            : "text-ocean-600 bg-ocean-50 hover:bg-ocean-100"
         }`}
       >
-        {published ? <Eye size={16} /> : <EyeOff size={16} />}
+        {published ? <Eye size={14} /> : <EyeOff size={14} />}
+        <span className="hidden sm:inline">
+          {published ? "Dépublier" : "Publier"}
+        </span>
       </button>
       <Link
         href={editHref}
         title="Éditer"
-        className="p-1.5 rounded-lg text-lagon-600 hover:bg-lagon-50"
+        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-lagon-700 bg-lagon-50 hover:bg-lagon-100"
       >
-        <Pencil size={16} />
+        <Pencil size={14} />
+        <span className="hidden sm:inline">Éditer</span>
       </Link>
       <button
         type="button"
         onClick={onDelete}
         title="Supprimer"
-        className="p-1.5 rounded-lg text-tiare-600 hover:bg-tiare-50"
+        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-white bg-tiare-600 hover:bg-tiare-700"
       >
-        <Trash2 size={16} />
+        <Trash2 size={14} />
+        <span>Supprimer</span>
       </button>
     </div>
   );

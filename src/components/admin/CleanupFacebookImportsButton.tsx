@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { unpublishLegacyFacebookImports } from "@/app/admin/actions";
+import { deleteLegacyFacebookImports } from "@/app/admin/actions";
 
 export function CleanupFacebookImportsButton() {
   const router = useRouter();
@@ -12,7 +12,7 @@ export function CleanupFacebookImportsButton() {
   async function onClick() {
     if (
       !confirm(
-        "Dépublier les actualités importées de Facebook datant de 2021–2022 (et masquer les doublons « veille externe ») ?",
+        "Supprimer définitivement les actualités Facebook de 2021–2022 ?\n\nElles disparaîtront de l'admin ET du site public. Action irréversible.",
       )
     ) {
       return;
@@ -20,16 +20,16 @@ export function CleanupFacebookImportsButton() {
     setBusy(true);
     setMessage(null);
     try {
-      const { unpublished } = await unpublishLegacyFacebookImports();
+      const { deleted } = await deleteLegacyFacebookImports();
       setMessage(
-        unpublished > 0
-          ? `${unpublished} article(s) passé(s) en brouillon. Rechargez le site public.`
-          : "Aucun article ancien à corriger (déjà en brouillon ou introuvable).",
+        deleted > 0
+          ? `${deleted} article(s) supprimé(s). Rechargez mooreanews.com (Cmd+Shift+R).`
+          : "Aucun import Facebook obsolète trouvé (déjà supprimés).",
       );
       router.refresh();
     } catch (e) {
       setMessage(
-        e instanceof Error ? e.message : "Échec du nettoyage. Réessayez.",
+        e instanceof Error ? e.message : "Échec de la suppression. Réessayez.",
       );
     } finally {
       setBusy(false);
@@ -37,10 +37,15 @@ export function CleanupFacebookImportsButton() {
   }
 
   return (
-    <div className="mb-6 rounded-2xl border border-tiare-200 bg-tiare-50/60 p-4">
-      <p className="text-sm text-ocean-800">
-        Des posts Facebook de 2021–2022 ont pu être importés comme « récents ».
-        Utilisez ce bouton pour les retirer du site (brouillon + veille externe).
+    <div className="mb-6 rounded-2xl border border-tiare-300 bg-tiare-50 p-4">
+      <p className="text-sm text-ocean-900 font-medium">
+        Imports Facebook 2021–2022 encore visibles sur le site ?
+      </p>
+      <p className="mt-1 text-sm text-ocean-700">
+        Ce bouton les <strong>supprime définitivement</strong> (admin + site
+        public + veille externe). Pour un seul article, utilisez le bouton rouge{" "}
+        <strong>Supprimer</strong> à droite du tableau (faites défiler si besoin
+        →).
       </p>
       <button
         type="button"
@@ -48,10 +53,10 @@ export function CleanupFacebookImportsButton() {
         disabled={busy}
         className="mt-3 px-4 py-2 rounded-xl bg-tiare-600 text-white text-sm font-semibold hover:bg-tiare-700 disabled:opacity-60"
       >
-        {busy ? "Nettoyage…" : "Retirer les imports Facebook obsolètes"}
+        {busy ? "Suppression…" : "Supprimer tous les imports Facebook obsolètes"}
       </button>
       {message && (
-        <p className="mt-2 text-sm text-ocean-700" role="status">
+        <p className="mt-2 text-sm text-ocean-800 font-medium" role="status">
           {message}
         </p>
       )}

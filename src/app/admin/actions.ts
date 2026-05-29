@@ -258,7 +258,10 @@ export async function updateContent(
 }
 
 export async function deleteContent(table: TableName, id: string) {
-  const { supabase } = await requireAdmin();
+  await requireAdmin();
+  const admin = getAdminSupabase();
+  const supabase = admin ?? (await getServerSupabase());
+  if (!supabase) throw new Error("Supabase not configured");
 
   let articleSlug: string | undefined;
   if (table === "articles") {
@@ -274,7 +277,7 @@ export async function deleteContent(table: TableName, id: string) {
   }
 
   const { error } = await supabase.from(table).delete().eq("id", id);
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   revalidatePath(adminPathFor(table));
   if (table === "articles") {
     revalidateArticlePublicPaths(articleSlug);
@@ -321,41 +324,74 @@ export async function togglePublished(
   revalidatePath(adminPathFor(table));
 }
 
-/** Dépublie les imports Facebook déjà en base (2021–2022, etc.) et masque la veille externe liée. */
-export async function unpublishLegacyFacebookImports(): Promise<{
-  unpublished: number;
-}> {
-  const { supabase } = await requireAdmin();
-  const admin = getAdminSupabase();
-  const db = admin ?? supabase;
+function isStaleFacebookImport(row: {
+  title: string;
+  excerpt: string | null;
+  body: string;
+  slug: string;
+}): boolean {
+  const corpus = `${row.title} ${row.excerpt ?? ""} ${row.body}`;
+  if (contentReferencesStaleYear(corpus)) return true;
+  if (
+    /\bpublication du 20\d{2}-\d{2}-\d{2}\b/i.test(row.title) &&
+    contentReferencesStaleYear(row.title)
+  ) {
+    return true;
+  }
+  return /-fb-\d+-\d+$/.test(row.slug) && contentReferencesStaleYear(corpus);
+}
 
-  const { data: rows } = await db
+/** Supprime définitivement les imports Facebook obsolètes (2021–2022, etc.). */
+export async function deleteLegacyFacebookImports(): Promise<{
+  deleted: number;
+}> {
+  await requireAdmin();
+  const admin = getAdminSupabase();
+  if (!admin) {
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY manquant sur Vercel — suppression impossible.",
+    );
+  }
+
+  const { data: rows } = await admin
     .from("articles")
-    .select("id, slug, title, excerpt, body, tags, published")
+    .select("id, slug, title, excerpt, body, tags")
     .contains("tags", ["facebook-import"]);
 
-  let unpublished = 0;
+  let deleted = 0;
   for (const row of rows ?? []) {
-    const corpus = `${row.title} ${row.excerpt} ${row.body}`;
-    const staleByText = contentReferencesStaleYear(corpus);
-    const staleByTitle =
-      /\bpublication du 20\d{2}-\d{2}-\d{2}\b/i.test(row.title) &&
-      contentReferencesStaleYear(row.title);
+    if (!isStaleFacebookImport(row)) continue;
+    if (row.slug) await hideExternalArticlesForArticleSlug(row.slug);
+    const { error } = await admin.from("articles").delete().eq("id", row.id);
+    if (!error) deleted += 1;
+  }
 
-    if (!staleByText && !staleByTitle && row.published) continue;
+  const { data: externalRows } = await admin
+    .from("external_articles")
+    .select("id, title, excerpt")
+    .eq("hidden", false);
 
-    if (row.published) {
-      await db.from("articles").update({ published: false }).eq("id", row.id);
-      unpublished += 1;
-    }
-    if (row.slug) {
-      await hideExternalArticlesForArticleSlug(row.slug);
+  for (const ext of externalRows ?? []) {
+    const corpus = `${ext.title} ${ext.excerpt ?? ""}`;
+    if (contentReferencesStaleYear(corpus)) {
+      await admin
+        .from("external_articles")
+        .update({ hidden: true })
+        .eq("id", ext.id);
     }
   }
 
   revalidatePath("/admin/articles");
   revalidateArticlePublicPaths();
-  return { unpublished };
+  return { deleted };
+}
+
+/** @deprecated Utiliser deleteLegacyFacebookImports */
+export async function unpublishLegacyFacebookImports(): Promise<{
+  unpublished: number;
+}> {
+  const { deleted } = await deleteLegacyFacebookImports();
+  return { unpublished: deleted };
 }
 
 export async function toggleAlertActive(id: string, current: boolean) {

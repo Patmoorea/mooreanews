@@ -26,8 +26,8 @@ export default async function AdminArticlesPage() {
 
       <CleanupFacebookImportsButton />
 
-      <div className="bg-white rounded-2xl border border-ocean-100 overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white rounded-2xl border border-ocean-100 overflow-x-auto">
+        <table className="w-full min-w-[720px]">
           <thead className="bg-ocean-50 text-xs uppercase tracking-wide text-ocean-600">
             <tr>
               <th className="px-4 py-3 text-left">Titre</th>
