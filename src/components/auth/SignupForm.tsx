@@ -41,6 +41,15 @@ export function SignupForm() {
       return;
     }
 
+    void fetch("/api/auth/signup-notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: email.trim(),
+        fullName: fullName.trim(),
+      }),
+    }).catch(() => {});
+
     setSuccess(true);
     setLoading(false);
   }

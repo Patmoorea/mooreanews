@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/lib/supabase/types";
 import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/server";
+import { notifyAccountActivated } from "@/lib/telegram-notify";
 
 /**
  * Callback de confirmation d'email / magic link Supabase.
@@ -50,6 +51,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(
       `${origin}/auth/login?error=${encodeURIComponent(error.message)}`
     );
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user?.email && user.created_at && user.last_sign_in_at) {
+    const created = Date.parse(user.created_at);
+    const lastSignIn = Date.parse(user.last_sign_in_at);
+    if (Math.abs(lastSignIn - created) < 120_000) {
+      await notifyAccountActivated({ email: user.email });
+    }
   }
 
   return response;

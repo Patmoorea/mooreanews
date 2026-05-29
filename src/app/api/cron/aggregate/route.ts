@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { aggregateAll } from "@/lib/aggregator";
-import { sendTelegramNotification } from "@/lib/telegram";
+import { notifyVeilleReport } from "@/lib/telegram-notify";
 
 /**
  * Endpoint d'agrégation RSS + Facebook, appelé par Vercel Cron (1×/jour, 18h Tahiti).
@@ -42,17 +42,6 @@ export async function GET(req: Request) {
     r.errors.map((e) => `${r.source}: ${e}`)
   );
 
-  // Notification Telegram si nouveaux articles
-  if (totalInserted > 0) {
-    const summary = results
-      .filter((r) => r.inserted > 0)
-      .map((r) => `• ${r.source} : ${r.inserted} nouveau(x)`)
-      .join("\n");
-    await sendTelegramNotification(
-      `🤖 <b>Veille Moorea</b>\n${totalInserted} nouvel(s) article(s) agrégé(s).\n\n${summary}`
-    );
-  }
-
   const articlesCreated = results.reduce(
     (s, r) => s + (r.articlesCreated ?? 0),
     0,
@@ -61,6 +50,18 @@ export async function GET(req: Request) {
     (s, r) => s + (r.articlesSkipped ?? 0),
     0,
   );
+  const createdArticles = results.flatMap((r) => r.createdArticles ?? []);
+
+  await notifyVeilleReport({
+    durationMs: duration,
+    totalFetched,
+    totalInserted,
+    articlesCreated,
+    articlesSkipped,
+    errors,
+    bySource: results,
+    createdArticles,
+  });
 
   return NextResponse.json({
     ok: errors.length === 0,

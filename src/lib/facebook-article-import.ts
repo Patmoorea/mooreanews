@@ -16,6 +16,7 @@ export type FacebookArticleImportResult = {
   created: number;
   skipped: number;
   errors: string[];
+  createdArticles: { title: string; slug: string }[];
 };
 
 export type FacebookPageImportConfig = {
@@ -59,6 +60,7 @@ export async function importFacebookPagePostsAsArticles(
     created: 0,
     skipped: 0,
     errors: [],
+    createdArticles: [],
   };
 
   if (!facebookImportEnabled()) return result;
@@ -114,6 +116,7 @@ export async function importFacebookPagePostsAsArticles(
       result.errors.push(`${slug}: ${error.message}`);
     } else {
       result.created += 1;
+      result.createdArticles.push({ title, slug });
     }
   }
 

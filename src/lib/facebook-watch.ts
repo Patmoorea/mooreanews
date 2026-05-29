@@ -310,6 +310,12 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
       (result.articlesCreated ?? 0) + imported.created;
     result.articlesSkipped =
       (result.articlesSkipped ?? 0) + imported.skipped;
+    if (imported.createdArticles.length > 0) {
+      result.createdArticles = [
+        ...(result.createdArticles ?? []),
+        ...imported.createdArticles,
+      ];
+    }
     for (const err of imported.errors) {
       result.errors.push(err);
     }

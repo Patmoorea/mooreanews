@@ -16,6 +16,7 @@ export type AggregationResult = {
   errors: string[];
   articlesCreated?: number;
   articlesSkipped?: number;
+  createdArticles?: { title: string; slug: string }[];
 };
 
 function normalize(s: string): string {
