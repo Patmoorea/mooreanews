@@ -208,6 +208,24 @@ export type AlertRow = {
   updated_at: string;
 };
 
+export type PushSubscriptionRow = {
+  id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  districts: string[];
+  user_agent: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AlertEmailSubscriptionRow = {
+  id: string;
+  email: string;
+  districts: string[];
+  created_at: string;
+};
+
 type TableDef<TRow> = {
   Row: TRow;
   Insert: Partial<TRow>;
@@ -229,6 +247,8 @@ export type Database = {
       newsletter_subscribers: TableDef<NewsletterSubscriber>;
       external_articles: TableDef<ExternalArticleRow>;
       alerts: TableDef<AlertRow>;
+      push_subscriptions: TableDef<PushSubscriptionRow>;
+      alert_email_subscriptions: TableDef<AlertEmailSubscriptionRow>;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

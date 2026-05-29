@@ -14,6 +14,8 @@ import {
   updateInfoPratiqueRow,
   type InfoPratiqueRowInput,
 } from "@/lib/supabase/info-pratiques-db";
+import { notifyAlertSubscribers } from "@/lib/push-notify";
+import type { AlertRow } from "@/lib/supabase/types";
 import { slugify } from "@/lib/utils";
 
 type TableName =
@@ -204,6 +206,14 @@ function revalidateAlertPublicPaths() {
   revalidatePath("/", "layout");
 }
 
+async function dispatchAlertNotifications(alert: AlertRow) {
+  try {
+    await notifyAlertSubscribers(alert);
+  } catch {
+    /* push/email ne doit pas bloquer l'admin */
+  }
+}
+
 async function syncFacebookArticleVisibility(
   supabase: Awaited<ReturnType<typeof getServerSupabase>>,
   id: string,
@@ -230,6 +240,14 @@ export async function createContent(table: TableName, formData: FormData) {
       payload as InfoPratiqueRowInput,
     );
     if (error) throw new Error(error);
+  } else if (table === "alerts") {
+    const { data, error } = await supabase
+      .from("alerts")
+      .insert(payload as Partial<AlertRow>)
+      .select("*")
+      .single();
+    if (error) throw error;
+    if (data?.active) await dispatchAlertNotifications(data);
   } else {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from(table) as any).insert(payload);
@@ -260,6 +278,15 @@ export async function updateContent(
       payload as Partial<InfoPratiqueRowInput>,
     );
     if (error) throw new Error(error);
+  } else if (table === "alerts") {
+    const { data, error } = await supabase
+      .from("alerts")
+      .update(payload as Partial<AlertRow>)
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    if (data?.active) await dispatchAlertNotifications(data);
   } else {
     const { error } = await (
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -404,11 +431,15 @@ export async function unpublishLegacyFacebookImports(): Promise<{
 
 export async function toggleAlertActive(id: string, current: boolean) {
   const { supabase } = await requireAdmin();
-  const { error } = await supabase
+  const next = !current;
+  const { data, error } = await supabase
     .from("alerts")
-    .update({ active: !current, updated_at: new Date().toISOString() })
-    .eq("id", id);
+    .update({ active: next, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select("*")
+    .single();
   if (error) throw error;
+  if (data?.active) await dispatchAlertNotifications(data);
   revalidatePath("/admin/alerts");
   revalidateAlertPublicPaths();
 }

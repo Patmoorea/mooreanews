@@ -174,7 +174,7 @@ export async function importAlertsFromRssItems(
     if (existing) continue;
 
     const startsAt = new Date().toISOString();
-    const { error } = await admin.from("alerts").insert({
+    const { data: inserted, error } = await admin.from("alerts").insert({
       type: detected.type,
       severity: detected.severity,
       title: detected.title,
@@ -184,11 +184,17 @@ export async function importAlertsFromRssItems(
       ends_at: detected.ends_at,
       active: true,
       urgent: detected.urgent,
-    });
+    }).select("*").single();
 
-    if (!error) {
+    if (!error && inserted) {
       created += 1;
       titles.push(detected.title);
+      try {
+        const { notifyAlertSubscribers } = await import("@/lib/push-notify");
+        await notifyAlertSubscribers(inserted);
+      } catch {
+        /* non bloquant */
+      }
     }
   }
 
