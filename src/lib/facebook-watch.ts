@@ -7,6 +7,7 @@ import { externalIdFromFacebookUrl, isFacebookUrl } from "@/lib/facebook-url";
 import { fetchOpenGraph } from "@/lib/open-graph";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { importFacebookPagePostsAsArticles } from "@/lib/facebook-article-import";
+import { importFacebookOgAsArticles } from "@/lib/og-article-import";
 import {
   allFacebookWatchUrls,
   FACEBOOK_PAGE_WATCHES,
@@ -80,6 +81,7 @@ export async function aggregateFacebookWatchUrls(): Promise<AggregationResult> {
   }
 
   const rows: Parameters<typeof upsertFacebookRows>[0] = [];
+  const ogForImport: Parameters<typeof importFacebookOgAsArticles>[0] = [];
 
   for (const url of urls) {
     if (!isFacebookUrl(url)) continue;
@@ -88,7 +90,7 @@ export async function aggregateFacebookWatchUrls(): Promise<AggregationResult> {
       const og = await fetchOpenGraph(url);
       const title = og?.title?.trim() || fallbackTitle;
       result.matched += 1;
-      rows.push({
+      const row = {
         source_id: "facebook-watch",
         source_name: og?.title ? "Facebook — veille" : "Facebook — lien surveillé",
         external_id: externalIdFromFacebookUrl(url),
@@ -97,7 +99,17 @@ export async function aggregateFacebookWatchUrls(): Promise<AggregationResult> {
         excerpt: og?.description || null,
         image_url: og?.imageUrl ?? null,
         published_at: new Date().toISOString(),
-      });
+      };
+      rows.push(row);
+      if (og) {
+        ogForImport.push({
+          url: row.url,
+          title,
+          excerpt: og.description || null,
+          imageUrl: og.imageUrl ?? null,
+          sourceLabel: fallbackTitle,
+        });
+      }
     } catch (e) {
       result.errors.push(`${url}: ${String(e)}`);
       result.matched += 1;
@@ -118,6 +130,14 @@ export async function aggregateFacebookWatchUrls(): Promise<AggregationResult> {
     result.inserted = await upsertFacebookRows(rows);
   } catch (e) {
     result.errors.push(String(e));
+  }
+
+  const imported = await importFacebookOgAsArticles(ogForImport);
+  result.articlesCreated = imported.created;
+  result.articlesSkipped = imported.skipped;
+  result.createdArticles = imported.createdArticles;
+  for (const err of imported.errors) {
+    result.errors.push(err);
   }
 
   return result;

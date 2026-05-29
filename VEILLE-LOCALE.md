@@ -6,7 +6,7 @@
 |--------|----------------|----------------|
 | Trouver un article RSS / Google News avec « Moorea » | Oui (cron ou script) | Bloc **« Moorea sur le web & Facebook »** |
 | Vérifier liens Facebook + pages web listées | Oui | Idem (lien vers la source) |
-| Créer une **vraie actualité** MooreaNews (`/actualites/…`) | **Non** — admin ou `/soumettre` | Rubrique Actualités |
+| Créer une **vraie actualité** MooreaNews (`/actualites/…`) | **Oui** si `FACEBOOK_IMPORT_AS_ARTICLES=true` (page MooreaNews + liens FB avec affiche/texte OG) | Rubrique Actualités |
 
 **« Mettre en ligne »** pour la veille = **afficher le lien + titre** sur l’accueil (souvent en quelques minutes après la collecte). Ce n’est pas une réécriture d’article par une IA sur le serveur.
 
