@@ -11,6 +11,7 @@ import {
   shouldImportFacebookPost,
 } from "@/lib/facebook-import-filters";
 import { fetchOpenGraph } from "@/lib/open-graph";
+import { cleanImportedText } from "@/lib/html-entities";
 import {
   announcementCategoryFromMessage,
   classifyFacebookPost,
@@ -46,22 +47,39 @@ function publishedByDefault(): boolean {
 async function enrichPostFromOpenGraph(
   post: FacebookPostForImport,
 ): Promise<FacebookPostForImport> {
-  if (facebookPostHasPublishableContent(post)) return post;
+  let message = cleanImportedText(post.message?.trim() ?? "");
+  let full_picture = post.full_picture?.trim() ?? "";
   const url = post.permalink_url?.trim();
-  if (!url) return post;
 
-  try {
-    const og = await fetchOpenGraph(url);
-    if (!og) return post;
-    const candidates = [post.message?.trim(), og.description?.trim(), og.title?.trim()]
-      .filter((s): s is string => typeof s === "string" && s.length > 0 && !isFacebookJunkText(s));
-    const message = candidates[0] ?? "";
-    const full_picture =
-      post.full_picture?.trim() || og.imageUrl?.trim() || undefined;
-    return { ...post, message: message || undefined, full_picture };
-  } catch {
-    return post;
+  if (url) {
+    try {
+      const og = await fetchOpenGraph(url);
+      if (og) {
+        const ogText = cleanImportedText(
+          og.description?.trim() || og.title?.trim() || "",
+        );
+        if (
+          ogText &&
+          !isFacebookJunkText(ogText) &&
+          (ogText.length > message.length || !message)
+        ) {
+          message = ogText;
+        }
+        const ogImage = og.imageUrl?.trim();
+        if (ogImage?.startsWith("http")) {
+          full_picture = ogImage;
+        }
+      }
+    } catch {
+      // silencieux
+    }
   }
+
+  return {
+    ...post,
+    message: message || undefined,
+    full_picture: full_picture || undefined,
+  };
 }
 
 function slugForPost(pageKey: string, postId: string): string {
@@ -262,7 +280,10 @@ export async function importFacebookPostsAsContent(
   const published = publishedByDefault();
 
   for (const raw of posts) {
-    const post = await enrichPostFromOpenGraph(raw);
+    const post = await enrichPostFromOpenGraph({
+      ...raw,
+      message: raw.message ? cleanImportedText(raw.message) : raw.message,
+    });
     const message = post.message?.trim() ?? "";
     const freshness = shouldImportFacebookPost(
       message,

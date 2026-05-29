@@ -1,4 +1,5 @@
 import { isFacebookUrl } from "@/lib/facebook-url";
+import { decodeHtmlEntities } from "@/lib/html-entities";
 
 export type OpenGraphData = {
   url: string;
@@ -7,33 +8,23 @@ export type OpenGraphData = {
   imageUrl?: string;
 };
 
-function decodeHtmlEntities(s: string): string {
-  return s
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'");
-}
-
 function extractMeta(html: string, key: string): string | null {
   const patterns = [
     new RegExp(
       `<meta[^>]+property=["']${key}["'][^>]+content=["']([^"']+)["']`,
-      "i"
+      "i",
     ),
     new RegExp(
       `<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${key}["']`,
-      "i"
+      "i",
     ),
     new RegExp(
       `<meta[^>]+name=["']${key}["'][^>]+content=["']([^"']+)["']`,
-      "i"
+      "i",
     ),
     new RegExp(
       `<meta[^>]+content=["']([^"']+)["'][^>]+name=["']${key}["']`,
-      "i"
+      "i",
     ),
   ];
   for (const re of patterns) {
@@ -43,16 +34,25 @@ function extractMeta(html: string, key: string): string | null {
   return null;
 }
 
+function extractBestImage(html: string): string | undefined {
+  const keys = ["og:image:secure_url", "og:image", "twitter:image"];
+  for (const key of keys) {
+    const url = extractMeta(html, key);
+    if (url?.startsWith("http")) return url;
+  }
+  return undefined;
+}
+
 function cleanFacebookTitle(title: string): string {
   return title.replace(/\s*\|\s*Facebook\s*$/i, "").trim();
 }
 
 /**
- * Récupère titre / description / image via balises Open Graph.
- * Facebook : user-agent « facebookexternalhit » (seul moyen fiable sans API Meta).
+ * Récupère titre / description / affiche via Open Graph.
+ * Facebook : user-agent « facebookexternalhit » (affiche = og:image).
  */
 export async function fetchOpenGraph(
-  url: string
+  url: string,
 ): Promise<OpenGraphData | null> {
   const userAgent = isFacebookUrl(url)
     ? "facebookexternalhit/1.1 (+https://www.mooreanews.com)"
@@ -76,24 +76,24 @@ export async function fetchOpenGraph(
     extractMeta(html, "twitter:title") ??
     html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] ??
     "";
-  title = isFacebookUrl(url) ? cleanFacebookTitle(title) : title.trim();
+  title = decodeHtmlEntities(
+    isFacebookUrl(url) ? cleanFacebookTitle(title) : title.trim(),
+  );
 
-  const description =
+  const description = decodeHtmlEntities(
     extractMeta(html, "og:description") ??
-    extractMeta(html, "description") ??
-    "";
+      extractMeta(html, "description") ??
+      "",
+  );
 
-  const imageUrl =
-    extractMeta(html, "og:image") ??
-    extractMeta(html, "twitter:image") ??
-    undefined;
+  const imageUrl = extractBestImage(html);
 
   if (!title) return null;
 
   return {
     url: ogUrl,
     title: title.slice(0, 500),
-    description: description.slice(0, 400),
+    description: description.slice(0, 2000),
     imageUrl,
   };
 }

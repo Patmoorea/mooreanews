@@ -5,6 +5,7 @@
 import type { AggregationResult } from "@/lib/aggregator";
 import { externalIdFromFacebookUrl, isFacebookUrl } from "@/lib/facebook-url";
 import { fetchOpenGraph } from "@/lib/open-graph";
+import { cleanImportedText } from "@/lib/html-entities";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { importFacebookPostsAsContent } from "@/lib/facebook-content-import";
 import {
@@ -44,16 +45,17 @@ type GraphPost = {
 };
 
 function normalizeGraphPost(raw: GraphPost): GraphPost {
-  let message = raw.message?.trim() ?? "";
+  let message = cleanImportedText(raw.message?.trim() ?? "");
   let full_picture = raw.full_picture?.trim() ?? "";
 
   for (const att of raw.attachments?.data ?? []) {
-    if (!full_picture) {
-      full_picture = att.media?.image?.src?.trim() ?? "";
+    const attImage = att.media?.image?.src?.trim() ?? "";
+    if (attImage && (!full_picture || attImage.length > full_picture.length)) {
+      full_picture = attImage;
     }
     const extra = [att.title, att.description]
-      .map((s) => s?.trim())
-      .filter((s): s is string => Boolean(s))
+      .map((s) => cleanImportedText(s?.trim() ?? ""))
+      .filter((s) => s.length > 0)
       .join("\n");
     if (extra && !message.includes(extra)) {
       message = message ? `${message}\n\n${extra}` : extra;
@@ -127,7 +129,7 @@ export async function aggregateFacebookWatchUrls(): Promise<AggregationResult> {
     const fallbackTitle = labelForFacebookUrl(url);
     try {
       const og = await fetchOpenGraph(url);
-      const title = og?.title?.trim() || fallbackTitle;
+      const title = cleanImportedText(og?.title?.trim() || fallbackTitle);
       result.matched += 1;
       const row = {
         source_id: "facebook-watch",
@@ -135,7 +137,7 @@ export async function aggregateFacebookWatchUrls(): Promise<AggregationResult> {
         external_id: externalIdFromFacebookUrl(url),
         url: og?.url || url,
         title,
-        excerpt: og?.description || null,
+        excerpt: og?.description ? cleanImportedText(og.description) : null,
         image_url: og?.imageUrl ?? null,
         published_at: new Date().toISOString(),
       };

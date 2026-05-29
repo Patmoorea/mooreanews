@@ -6,6 +6,7 @@ import { externalIdFromFacebookUrl } from "@/lib/facebook-url";
 import type { FacebookArticleImportResult } from "@/lib/facebook-article-import";
 import { isFacebookJunkText } from "@/lib/facebook-import-filters";
 import { importFacebookPostsAsContent } from "@/lib/facebook-content-import";
+import { cleanImportedText } from "@/lib/html-entities";
 
 export type OgFacebookItem = {
   url: string;
@@ -16,17 +17,25 @@ export type OgFacebookItem = {
 };
 
 function hasPublishableContent(item: OgFacebookItem): boolean {
-  const title = item.title.trim();
-  const excerpt = item.excerpt?.trim() ?? "";
+  const title = cleanImportedText(item.title);
+  const excerpt = cleanImportedText(item.excerpt ?? "");
   if (isFacebookJunkText(title) || isFacebookJunkText(excerpt)) return false;
   const text = excerpt || title;
   const img = item.imageUrl?.trim() ?? "";
   if (isFacebookJunkText(text)) return false;
   if (text.length >= 40) return true;
-  return text.length >= 20 && img.length > 0;
+  return text.length >= 15 && img.length > 0;
 }
 
-/** Crée événement / annonce / article à partir des métadonnées OG. */
+function pageKeyFromLabel(label: string): string {
+  return label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40) || "fb-og";
+}
+
+/** Crée événement / annonce / article à partir des métadonnées OG (affiche incluse). */
 export async function importFacebookOgAsArticles(
   items: OgFacebookItem[],
 ): Promise<
@@ -36,7 +45,7 @@ export async function importFacebookOgAsArticles(
     createdEvents: { title: string; id: string; date: string }[];
   }
 > {
-  const empty = {
+  const result = {
     created: 0,
     skipped: 0,
     errors: [] as string[],
@@ -46,32 +55,41 @@ export async function importFacebookOgAsArticles(
     createdEvents: [] as { title: string; id: string; date: string }[],
   };
 
-  const posts = items
-    .filter(hasPublishableContent)
-    .map((item) => ({
-      id: externalIdFromFacebookUrl(item.url),
-      message: item.excerpt?.trim() || item.title.trim(),
-      permalink_url: item.url,
-      full_picture: item.imageUrl ?? undefined,
-    }));
+  for (const item of items) {
+    if (!hasPublishableContent(item)) continue;
 
-  if (posts.length === 0) return empty;
+    const message = cleanImportedText(
+      item.excerpt?.trim() || item.title.trim(),
+    );
+    const label = item.sourceLabel.trim() || "Facebook";
 
-  const imported = await importFacebookPostsAsContent(posts, {
-    pageKey: "fb-og",
-    pageName: items[0]?.sourceLabel ?? "Facebook",
-    homepage: "https://www.facebook.com",
-    authorLabel: `${items[0]?.sourceLabel ?? "Facebook"} (veille)`,
-    tag: "facebook-og",
-  });
+    const imported = await importFacebookPostsAsContent(
+      [
+        {
+          id: externalIdFromFacebookUrl(item.url),
+          message,
+          permalink_url: item.url,
+          full_picture: item.imageUrl?.trim() || undefined,
+          created_time: new Date().toISOString(),
+        },
+      ],
+      {
+        pageKey: pageKeyFromLabel(label),
+        pageName: label,
+        homepage: "https://www.facebook.com",
+        authorLabel: `${label} (Facebook)`,
+        tag: "facebook-og",
+      },
+    );
 
-  return {
-    created: imported.articlesCreated,
-    skipped: imported.skipped,
-    errors: imported.errors,
-    createdArticles: imported.createdArticles,
-    eventsCreated: imported.eventsCreated,
-    announcementsCreated: imported.announcementsCreated,
-    createdEvents: imported.createdEvents,
-  };
+    result.created += imported.articlesCreated;
+    result.skipped += imported.skipped + imported.skippedStale;
+    result.eventsCreated += imported.eventsCreated;
+    result.announcementsCreated += imported.announcementsCreated;
+    result.createdArticles.push(...imported.createdArticles);
+    result.createdEvents.push(...imported.createdEvents);
+    result.errors.push(...imported.errors);
+  }
+
+  return result;
 }
