@@ -9,6 +9,7 @@ import { Ticker } from "@/components/widgets/Ticker";
 import { FerryStickyBar } from "@/components/widgets/FerryStickyBar";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
+import { PageViewTracker } from "@/components/analytics/PageViewTracker";
 
 function isMinimalChrome(pathname: string): boolean {
   return pathname.startsWith("/app") || pathname.startsWith("/admin");
@@ -22,6 +23,7 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
     return (
       <>
         <ServiceWorkerRegister />
+        <PageViewTracker />
         <main className="flex-1">{children}</main>
       </>
     );
@@ -30,6 +32,7 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
   return (
     <>
       <ServiceWorkerRegister />
+      <PageViewTracker />
       <InfoBannerSlot />
       <BreakingNewsSlot />
       <Header />

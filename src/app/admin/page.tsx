@@ -11,6 +11,7 @@ import {
   Rss,
   ExternalLink,
   Info,
+  BarChart3,
 } from "lucide-react";
 import { dbGetAdminStats } from "@/lib/supabase/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/server";
@@ -84,6 +85,13 @@ export default async function AdminDashboard() {
           icon={<Mail size={20} />}
           href="/admin/newsletter"
           color="from-ocean-500 to-ocean-700"
+        />
+        <StatCard
+          label="Statistiques visites"
+          value="→"
+          icon={<BarChart3 size={20} />}
+          href="/admin/analytics"
+          color="from-lagon-400 to-ocean-500"
         />
       </div>
 

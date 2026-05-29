@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Marcellus } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import { SiteChrome } from "@/components/layout/SiteChrome";
 import { SITE } from "@/lib/constants";
@@ -86,6 +87,7 @@ export default function RootLayout({
     >
       <body className="min-h-screen flex flex-col bg-island-sky bg-palm-pattern text-ocean-950 dark:bg-ocean-950 dark:text-ocean-50">
         <SiteChrome>{children}</SiteChrome>
+        <Analytics />
       </body>
     </html>
   );

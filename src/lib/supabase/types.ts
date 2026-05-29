@@ -233,9 +233,18 @@ type TableDef<TRow> = {
   Relationships: [];
 };
 
+export type PageViewRow = {
+  id: string;
+  path: string;
+  referrer: string | null;
+  visitor_id: string | null;
+  viewed_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
+      page_views: TableDef<PageViewRow>;
       profiles: TableDef<Profile>;
       articles: TableDef<ArticleRow>;
       events: TableDef<EventRow>;

@@ -14,12 +14,14 @@ import {
   Inbox,
   Mail,
   Rss,
+  BarChart3,
   ArrowLeft,
   type LucideIcon,
 } from "lucide-react";
 
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin", label: "Tableau de bord", icon: LayoutDashboard },
+  { href: "/admin/analytics", label: "Statistiques", icon: BarChart3 },
   { href: "/admin/alerts", label: "Alertes", icon: Siren },
   { href: "/admin/articles", label: "Articles", icon: Newspaper },
   { href: "/admin/events", label: "Événements", icon: Calendar },
