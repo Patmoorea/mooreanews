@@ -1,0 +1,5 @@
+node_modules/
+electron/node_modules/
+.DS_Store
+*.jks
+*.keystore
