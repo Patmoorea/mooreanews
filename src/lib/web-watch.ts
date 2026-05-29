@@ -22,6 +22,10 @@ function externalIdFromUrl(url: string): string {
   return Buffer.from(url).toString("base64url").slice(0, 120);
 }
 
+function isOptionalWebUrl(url: string): boolean {
+  return Boolean(WEB_WATCH_URLS.find((w) => w.url === url)?.optional);
+}
+
 /** Sonde les URLs web listées (titre / description / image OG). */
 export async function aggregateWebPagesWatch(): Promise<AggregationResult> {
   const result: AggregationResult = {
@@ -57,7 +61,9 @@ export async function aggregateWebPagesWatch(): Promise<AggregationResult> {
     try {
       const og = await fetchOpenGraph(url);
       if (!og?.title && !og?.description) {
-        result.errors.push(`${url}: pas de métadonnées OG`);
+        if (!isOptionalWebUrl(url)) {
+          result.errors.push(`${url}: pas de métadonnées OG`);
+        }
         continue;
       }
       result.matched += 1;

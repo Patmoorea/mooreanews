@@ -12,7 +12,7 @@ export type FacebookPageWatch = {
   optional?: boolean;
 };
 
-/** Liens importants à re-vérifier à chaque passage du cron (Open Graph). */
+/** Liens Facebook à re-vérifier à chaque passage du cron (Open Graph). */
 export const FACEBOOK_WATCH_URLS: { url: string; label: string }[] = [
   {
     url: "https://www.facebook.com/CommuneMooreaMaiao",
@@ -76,7 +76,7 @@ export function allFacebookWatchUrls(): string[] {
 }
 
 /** Pages / sites Moorea à sonder (Open Graph à chaque collecte). */
-export const WEB_WATCH_URLS: { url: string; label: string }[] = [
+export const WEB_WATCH_URLS: { url: string; label: string; optional?: boolean }[] = [
   {
     url: "https://www.commune-moorea.net/",
     label: "Commune de Moorea-Maiao (site officiel)",
@@ -112,6 +112,7 @@ export const WEB_WATCH_URLS: { url: string; label: string }[] = [
   {
     url: "https://www.tntv.pf/",
     label: "TNTV — télévision locale",
+    optional: true,
   },
 ];
 

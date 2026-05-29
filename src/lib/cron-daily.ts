@@ -38,7 +38,7 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   const jobs: Record<string, unknown> = { tahiti: clock.label };
 
   const fbRefresh = await refreshFacebookUserTokenInProcess();
-  jobs.facebookToken = fbRefresh;
+  jobs.facebookToken = { refreshed: fbRefresh.refreshed };
 
   const expiredAlerts = await expirePastAlerts();
   jobs.expiredAlerts = expiredAlerts;
@@ -145,7 +145,10 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   });
 
   const blockingErrors = errors.filter(
-    (e) => !e.includes("CommuneMooreaMaiao"),
+    (e) =>
+      !e.includes("CommuneMooreaMaiao") &&
+      !e.includes("tntv.pf") &&
+      !e.includes("pas de métadonnées OG"),
   );
 
   return {
