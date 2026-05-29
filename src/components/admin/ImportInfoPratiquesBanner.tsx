@@ -29,8 +29,9 @@ export function ImportInfoPratiquesBanner({ missingTitles }: Props) {
       } else if (result.imported.length === 0) {
         setMessage("Toutes les infos pratiques du fichier sont déjà en base.");
       } else {
+        setError(false);
         setMessage(
-          `${result.imported.length} entrée(s) importée(s) : ${result.imported.join(", ")}`,
+          `${result.imported.length} entrée(s) importée(s) : ${result.imported.join(", ")}${result.warning ? `. Note : ${result.warning}` : ""}`,
         );
         router.refresh();
       }

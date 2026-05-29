@@ -9,6 +9,11 @@ import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { importMissingRestaurantsFromJson } from "@/lib/supabase/sync-restaurants";
 import { importMissingInfoPratiquesFromJson } from "@/lib/supabase/sync-info-pratiques";
+import {
+  insertInfoPratiqueRow,
+  updateInfoPratiqueRow,
+  type InfoPratiqueRowInput,
+} from "@/lib/supabase/info-pratiques-db";
 import { slugify } from "@/lib/utils";
 
 type TableName =
@@ -219,9 +224,17 @@ async function syncFacebookArticleVisibility(
 export async function createContent(table: TableName, formData: FormData) {
   const { supabase } = await requireAdmin();
   const payload = parseFormPayload(table, formData);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from(table) as any).insert(payload);
-  if (error) throw error;
+  if (table === "info_pratiques") {
+    const { error } = await insertInfoPratiqueRow(
+      supabase,
+      payload as InfoPratiqueRowInput,
+    );
+    if (error) throw new Error(error);
+  } else {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from(table) as any).insert(payload);
+    if (error) throw error;
+  }
   revalidatePath(adminPathFor(table));
   revalidatePath(publicPathFor(table));
   if (table === "events" || table === "announcements") {
@@ -240,13 +253,22 @@ export async function updateContent(
 ) {
   const { supabase } = await requireAdmin();
   const payload = parseFormPayload(table, formData);
-  const { error } = await (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    supabase.from(table) as any
-  )
-    .update(payload)
-    .eq("id", id);
-  if (error) throw error;
+  if (table === "info_pratiques") {
+    const { error } = await updateInfoPratiqueRow(
+      supabase,
+      id,
+      payload as Partial<InfoPratiqueRowInput>,
+    );
+    if (error) throw new Error(error);
+  } else {
+    const { error } = await (
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      supabase.from(table) as any
+    )
+      .update(payload)
+      .eq("id", id);
+    if (error) throw error;
+  }
 
   if (table === "articles") {
     const slug =

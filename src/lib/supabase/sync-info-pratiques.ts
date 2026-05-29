@@ -1,21 +1,13 @@
 import infoData from "@/../data/info-pratiques.json";
 import type { InfoPratique } from "@/lib/content-types";
 import { getAdminSupabase } from "@/lib/supabase/admin";
+import {
+  COORDS_MIGRATION_HINT,
+  insertInfoPratiqueRow,
+  type InfoPratiqueRowInput,
+} from "@/lib/supabase/info-pratiques-db";
 
-type InfoRowInput = {
-  title: string;
-  description: string;
-  category: string;
-  display_order: number;
-  address: string | null;
-  phone: string | null;
-  hours: string | null;
-  url: string | null;
-  lat: number | null;
-  lon: number | null;
-  published: boolean;
-  emergency: boolean;
-};
+type InfoRowInput = InfoPratiqueRowInput;
 
 function infoToRow(i: InfoPratique, displayOrder: number): InfoRowInput {
   return {
@@ -60,6 +52,7 @@ export async function importMissingInfoPratiquesFromJson(): Promise<{
   imported: string[];
   skipped: number;
   error?: string;
+  warning?: string;
 }> {
   const supabase = getAdminSupabase();
   if (!supabase) {
@@ -68,6 +61,7 @@ export async function importMissingInfoPratiquesFromJson(): Promise<{
 
   const missing = await listMissingInfoPratiquesFromJson();
   const imported: string[] = [];
+  let legacySchema = false;
 
   // ordre stable : on garde l’ordre du fichier JSON
   const all = infoData as InfoPratique[];
@@ -75,14 +69,22 @@ export async function importMissingInfoPratiquesFromJson(): Promise<{
 
   for (const i of missing) {
     const displayOrder = orderByTitle.get(i.title) ?? 0;
-    const { error } = await supabase.from("info_pratiques").insert(infoToRow(i, displayOrder));
+    const { error, legacySchema: legacy } = await insertInfoPratiqueRow(
+      supabase,
+      infoToRow(i, displayOrder),
+    );
     if (error) {
-      return { imported, skipped: 0, error: `${i.title}: ${error.message}` };
+      return { imported, skipped: 0, error: `${i.title}: ${error}` };
     }
+    if (legacy) legacySchema = true;
     imported.push(i.title);
   }
 
   const jsonCount = (infoData as InfoPratique[]).length;
-  return { imported, skipped: jsonCount - missing.length };
+  return {
+    imported,
+    skipped: jsonCount - missing.length,
+    warning: legacySchema ? COORDS_MIGRATION_HINT : undefined,
+  };
 }
 
