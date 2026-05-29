@@ -1,11 +1,10 @@
 /**
- * Importe une publication Facebook (Open Graph) en article MooreaNews :
- * titre, texte, affiche (og:image) — sans API Meta Graph.
+ * Importe une publication Facebook (Open Graph) → événement / annonce / actualité.
  */
 
 import { externalIdFromFacebookUrl } from "@/lib/facebook-url";
-import { getAdminSupabase } from "@/lib/supabase/admin";
 import type { FacebookArticleImportResult } from "@/lib/facebook-article-import";
+import { importFacebookPostsAsContent } from "@/lib/facebook-content-import";
 
 export type OgFacebookItem = {
   url: string;
@@ -15,90 +14,59 @@ export type OgFacebookItem = {
   sourceLabel: string;
 };
 
-function importEnabled(): boolean {
-  return process.env.FACEBOOK_IMPORT_AS_ARTICLES === "true";
-}
-
-function publishedByDefault(): boolean {
-  if (process.env.FACEBOOK_ARTICLES_PUBLISHED === "false") return false;
-  return true;
-}
-
-function slugForOg(url: string): string {
-  const id = externalIdFromFacebookUrl(url).replace(/[^a-zA-Z0-9-]/g, "-");
-  return `fb-og-${id}`.slice(0, 100);
-}
-
 function hasPublishableContent(item: OgFacebookItem): boolean {
-  const text = item.excerpt?.trim() ?? "";
+  const text = item.excerpt?.trim() ?? item.title.trim();
   const img = item.imageUrl?.trim() ?? "";
-  return img.length > 0 || text.length >= 20;
+  return img.length > 0 || text.length >= 10;
 }
 
-/** Crée des articles à partir des métadonnées OG (groupe, permalinks, photos FB). */
+/** Crée événement / annonce / article à partir des métadonnées OG. */
 export async function importFacebookOgAsArticles(
   items: OgFacebookItem[],
-): Promise<FacebookArticleImportResult> {
-  const result: FacebookArticleImportResult = {
+): Promise<
+  FacebookArticleImportResult & {
+    eventsCreated: number;
+    announcementsCreated: number;
+    createdEvents: { title: string; id: string; date: string }[];
+  }
+> {
+  const empty = {
     created: 0,
     skipped: 0,
-    errors: [],
-    createdArticles: [],
+    errors: [] as string[],
+    createdArticles: [] as { title: string; slug: string }[],
+    eventsCreated: 0,
+    announcementsCreated: 0,
+    createdEvents: [] as { title: string; id: string; date: string }[],
   };
 
-  if (!importEnabled()) return result;
+  const posts = items
+    .filter(hasPublishableContent)
+    .map((item) => ({
+      id: externalIdFromFacebookUrl(item.url),
+      message: item.excerpt?.trim() || item.title.trim(),
+      permalink_url: item.url,
+      full_picture: item.imageUrl ?? undefined,
+      created_time: new Date().toISOString(),
+    }));
 
-  const supabase = getAdminSupabase();
-  if (!supabase) {
-    result.errors.push("Supabase non configuré — import OG impossible");
-    return result;
-  }
+  if (posts.length === 0) return empty;
 
-  const published = publishedByDefault();
+  const imported = await importFacebookPostsAsContent(posts, {
+    pageKey: "fb-og",
+    pageName: items[0]?.sourceLabel ?? "Facebook",
+    homepage: "https://www.facebook.com",
+    authorLabel: `${items[0]?.sourceLabel ?? "Facebook"} (veille)`,
+    tag: "facebook-og",
+  });
 
-  for (const item of items) {
-    if (!hasPublishableContent(item)) continue;
-
-    const slug = slugForOg(item.url);
-    const { data: existing } = await supabase
-      .from("articles")
-      .select("id")
-      .eq("slug", slug)
-      .maybeSingle();
-
-    if (existing) {
-      result.skipped += 1;
-      continue;
-    }
-
-    const title = item.title.trim().slice(0, 200) || item.sourceLabel;
-    const excerpt =
-      item.excerpt?.trim().slice(0, 280) ||
-      `Publication repérée sur Facebook (${item.sourceLabel}).`;
-    const bodyText = item.excerpt?.trim() ?? "";
-    const footer = `\n\n---\n\nSource : [Facebook — ${item.sourceLabel}](${item.url})`;
-    const body = bodyText ? `${bodyText}${footer}` : footer.trim();
-
-    const { error } = await supabase.from("articles").insert({
-      slug,
-      title,
-      excerpt,
-      body,
-      category: "actualites",
-      tags: ["facebook-import", "facebook-og"],
-      cover_url: item.imageUrl?.trim() || null,
-      author: `${item.sourceLabel} (Facebook)`,
-      featured: false,
-      published,
-    });
-
-    if (error) {
-      result.errors.push(`${slug}: ${error.message}`);
-    } else {
-      result.created += 1;
-      result.createdArticles.push({ title, slug });
-    }
-  }
-
-  return result;
+  return {
+    created: imported.articlesCreated,
+    skipped: imported.skipped,
+    errors: imported.errors,
+    createdArticles: imported.createdArticles,
+    eventsCreated: imported.eventsCreated,
+    announcementsCreated: imported.announcementsCreated,
+    createdEvents: imported.createdEvents,
+  };
 }

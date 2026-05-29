@@ -50,7 +50,16 @@ export async function GET(req: Request) {
     (s, r) => s + (r.articlesSkipped ?? 0),
     0,
   );
+  const eventsCreated = results.reduce(
+    (s, r) => s + (r.eventsCreated ?? 0),
+    0,
+  );
+  const announcementsCreated = results.reduce(
+    (s, r) => s + (r.announcementsCreated ?? 0),
+    0,
+  );
   const createdArticles = results.flatMap((r) => r.createdArticles ?? []);
+  const createdEvents = results.flatMap((r) => r.createdEvents ?? []);
 
   await notifyVeilleReport({
     durationMs: duration,
@@ -58,9 +67,12 @@ export async function GET(req: Request) {
     totalInserted,
     articlesCreated,
     articlesSkipped,
+    eventsCreated,
+    announcementsCreated,
     errors,
     bySource: results,
     createdArticles,
+    createdEvents,
   });
 
   return NextResponse.json({
@@ -70,6 +82,8 @@ export async function GET(req: Request) {
     totalInserted,
     articlesCreated,
     articlesSkipped,
+    eventsCreated,
+    announcementsCreated,
     errors,
     bySource: results,
   });

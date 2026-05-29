@@ -6,7 +6,7 @@ import type { AggregationResult } from "@/lib/aggregator";
 import { externalIdFromFacebookUrl, isFacebookUrl } from "@/lib/facebook-url";
 import { fetchOpenGraph } from "@/lib/open-graph";
 import { getAdminSupabase } from "@/lib/supabase/admin";
-import { importFacebookPagePostsAsArticles } from "@/lib/facebook-article-import";
+import { importFacebookPostsAsContent } from "@/lib/facebook-content-import";
 import { importFacebookOgAsArticles } from "@/lib/og-article-import";
 import {
   allFacebookWatchUrls,
@@ -134,8 +134,11 @@ export async function aggregateFacebookWatchUrls(): Promise<AggregationResult> {
 
   const imported = await importFacebookOgAsArticles(ogForImport);
   result.articlesCreated = imported.created;
+  result.eventsCreated = imported.eventsCreated;
+  result.announcementsCreated = imported.announcementsCreated;
   result.articlesSkipped = imported.skipped;
   result.createdArticles = imported.createdArticles;
+  result.createdEvents = imported.createdEvents;
   for (const err of imported.errors) {
     result.errors.push(err);
   }
@@ -263,8 +266,8 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
 
   const rows: Parameters<typeof upsertFacebookRows>[0] = [];
   const articleImports: {
-    posts: Parameters<typeof importFacebookPagePostsAsArticles>[0];
-    config: Parameters<typeof importFacebookPagePostsAsArticles>[1];
+    posts: Parameters<typeof importFacebookPostsAsContent>[0];
+    config: Parameters<typeof importFacebookPostsAsContent>[1];
   }[] = [];
 
   for (const page of FACEBOOK_PAGE_WATCHES) {
@@ -322,18 +325,28 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
   }
 
   for (const batch of articleImports) {
-    const imported = await importFacebookPagePostsAsArticles(
+    const imported = await importFacebookPostsAsContent(
       batch.posts,
       batch.config,
     );
     result.articlesCreated =
-      (result.articlesCreated ?? 0) + imported.created;
+      (result.articlesCreated ?? 0) + imported.articlesCreated;
+    result.eventsCreated =
+      (result.eventsCreated ?? 0) + imported.eventsCreated;
+    result.announcementsCreated =
+      (result.announcementsCreated ?? 0) + imported.announcementsCreated;
     result.articlesSkipped =
       (result.articlesSkipped ?? 0) + imported.skipped;
     if (imported.createdArticles.length > 0) {
       result.createdArticles = [
         ...(result.createdArticles ?? []),
         ...imported.createdArticles,
+      ];
+    }
+    if (imported.createdEvents.length > 0) {
+      result.createdEvents = [
+        ...(result.createdEvents ?? []),
+        ...imported.createdEvents,
       ];
     }
     for (const err of imported.errors) {

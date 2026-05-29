@@ -90,9 +90,12 @@ export async function notifyVeilleReport(input: {
   totalInserted: number;
   articlesCreated: number;
   articlesSkipped: number;
+  eventsCreated: number;
+  announcementsCreated: number;
   errors: string[];
   bySource: AggregationResult[];
   createdArticles?: CreatedArticleNotice[];
+  createdEvents?: { title: string; id: string; date: string }[];
 }): Promise<void> {
   const fbPages = input.bySource.find((r) => r.source === "facebook-pages");
   const fbFetched = fbPages?.fetched ?? 0;
@@ -110,10 +113,26 @@ export async function notifyVeilleReport(input: {
     lines.push(
       `\n📘 <b>Facebook MooreaNews</b> : ${fbFetched} post(s)`,
     );
+    if (input.eventsCreated > 0) {
+      lines.push(`📅 ${input.eventsCreated} nouvel(le)(s) événement(s) agenda`);
+    }
+    if (input.announcementsCreated > 0) {
+      lines.push(`📢 ${input.announcementsCreated} nouvelle(s) annonce(s)`);
+    }
     if (input.articlesCreated > 0) {
-      lines.push(`📝 ${input.articlesCreated} nouvel(le)(s) article(s) site`);
-    } else if ((input.articlesSkipped ?? 0) > 0) {
+      lines.push(`📝 ${input.articlesCreated} nouvel(le)(s) actualité(s)`);
+    } else if ((input.articlesSkipped ?? 0) > 0 && input.eventsCreated === 0) {
       lines.push(`↩️ ${input.articlesSkipped} déjà importé(s)`);
+    }
+  }
+
+  if (input.createdEvents && input.createdEvents.length > 0) {
+    lines.push("\n<b>Événements créés :</b>");
+    const base = siteUrl();
+    for (const e of input.createdEvents.slice(0, 6)) {
+      lines.push(
+        `• <a href="${base}/evenements/${encodeURIComponent(e.id)}">${escapeHtml(truncate(e.title, 80))}</a> (${e.date})`,
+      );
     }
   }
 
