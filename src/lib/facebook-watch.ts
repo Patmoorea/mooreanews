@@ -8,6 +8,7 @@ import { fetchOpenGraph } from "@/lib/open-graph";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { importFacebookPostsAsContent } from "@/lib/facebook-content-import";
 import { shouldImportFacebookPost } from "@/lib/facebook-import-filters";
+import { refreshFacebookUserTokenInProcess } from "@/lib/facebook-token";
 import { importFacebookOgAsArticles } from "@/lib/og-article-import";
 import {
   allFacebookWatchUrls,
@@ -237,14 +238,24 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
     errors: [],
   };
 
-  const fallbackPageToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim();
-  const userToken = process.env.FACEBOOK_USER_ACCESS_TOKEN?.trim();
+  let fallbackPageToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim();
+  let userToken = process.env.FACEBOOK_USER_ACCESS_TOKEN?.trim();
   if (!fallbackPageToken && !userToken) return result;
 
   const supabase = getAdminSupabase();
   if (!supabase) {
     result.errors.push("Supabase not configured");
     return result;
+  }
+
+  if (userToken) {
+    const refreshed = await refreshFacebookUserTokenInProcess();
+    if (refreshed.token) userToken = refreshed.token;
+    if (refreshed.refreshed) {
+      result.errors.push(
+        "Jeton utilisateur Facebook renouvelé pour ce cron (mettez à jour FACEBOOK_USER_ACCESS_TOKEN sur Vercel)",
+      );
+    }
   }
 
   const perPageTokenByIdOrUsername = new Map<string, string>();
@@ -276,7 +287,8 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
       const tokenForPage = pickTokenForPage({
         page,
         perPageTokenByIdOrUsername,
-        fallbackPageToken,
+        fallbackPageToken:
+          perPageTokenByIdOrUsername.size > 0 ? undefined : fallbackPageToken,
       });
       if (!tokenForPage) {
         result.errors.push(`Token manquant pour ${page.pageId}`);

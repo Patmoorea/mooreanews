@@ -20,6 +20,8 @@ export async function GET() {
     cronSecret: Boolean(process.env.CRON_SECRET?.trim()),
     facebookPageToken: Boolean(process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim()),
     facebookUserToken: Boolean(process.env.FACEBOOK_USER_ACCESS_TOKEN?.trim()),
+    facebookAppId: Boolean(process.env.FACEBOOK_APP_ID?.trim()),
+    facebookAppSecret: Boolean(process.env.FACEBOOK_APP_SECRET?.trim()),
   };
 
   const ready =

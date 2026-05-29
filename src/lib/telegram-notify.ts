@@ -3,6 +3,7 @@
  */
 
 import type { AggregationResult } from "@/lib/aggregator";
+import type { FacebookTokenHealth } from "@/lib/facebook-token";
 import type { ContentAuditReport } from "@/lib/site-content-audit";
 import { escapeHtml, sendTelegramNotification } from "@/lib/telegram";
 
@@ -187,6 +188,7 @@ export async function notifyVeilleReport(input: {
   createdArticles?: CreatedArticleNotice[];
   createdEvents?: { title: string; id: string; date: string }[];
   audit?: ContentAuditReport | null;
+  facebookHealth?: FacebookTokenHealth | null;
 }): Promise<{ sent: boolean; reason?: string }> {
   const alertsCreated = input.alertsCreated ?? 0;
   const expiredAlerts = input.expiredAlerts ?? 0;
@@ -279,6 +281,23 @@ export async function notifyVeilleReport(input: {
   }
 
   lines.push(formatAuditBlock(input.audit));
+
+  if (input.facebookHealth) {
+    const h = input.facebookHealth;
+    if (!h.pageTokenValid && !h.userTokenValid) {
+      lines.push(
+        "\n🔑 <b>Facebook</b> : jetons invalides sur Vercel — refaire /me/accounts → FACEBOOK_PAGE_ACCESS_TOKEN",
+      );
+    } else if (h.daysUntilUserExpiry != null && h.daysUntilUserExpiry < 14) {
+      lines.push(
+        `\n🔑 <b>Facebook</b> : jeton utilisateur expire dans ~${h.daysUntilUserExpiry} j — renouveler (APP_ID + APP_SECRET)`,
+      );
+    } else if (h.refreshedThisRun) {
+      lines.push(
+        "\n🔑 <b>Facebook</b> : jeton utilisateur renouvelé en mémoire — mettre à jour Vercel",
+      );
+    }
+  }
 
   if (hasMetaToken) {
     lines.push(

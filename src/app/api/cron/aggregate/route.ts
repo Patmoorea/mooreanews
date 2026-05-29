@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { aggregateAll } from "@/lib/aggregator";
 import { expirePastAlerts } from "@/lib/alert-schedule";
+import {
+  checkFacebookTokenHealth,
+  refreshFacebookUserTokenInProcess,
+} from "@/lib/facebook-token";
 import { auditPublicContent } from "@/lib/site-content-audit";
 import { notifyVeilleReport } from "@/lib/telegram-notify";
 
@@ -36,6 +40,7 @@ export async function GET(req: Request) {
   }
 
   const start = Date.now();
+  const fbRefresh = await refreshFacebookUserTokenInProcess();
   const expiredAlerts = await expirePastAlerts();
   if (expiredAlerts > 0) {
     revalidatePath("/alertes");
@@ -81,6 +86,8 @@ export async function GET(req: Request) {
   const createdAlertTitles = results.flatMap((r) => r.createdAlerts ?? []);
 
   const audit = await auditPublicContent();
+  const facebookHealth = await checkFacebookTokenHealth();
+  if (fbRefresh.refreshed) facebookHealth.refreshedThisRun = true;
 
   const telegram = await notifyVeilleReport({
     durationMs: duration,
@@ -98,6 +105,7 @@ export async function GET(req: Request) {
     createdArticles,
     createdEvents,
     audit,
+    facebookHealth,
   });
 
   return NextResponse.json({
