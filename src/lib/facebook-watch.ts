@@ -30,7 +30,41 @@ type GraphPost = {
   permalink_url?: string;
   created_time?: string;
   full_picture?: string;
+  attachments?: {
+    data?: Array<{
+      description?: string;
+      title?: string;
+      media_type?: string;
+      media?: { image?: { src?: string } };
+    }>;
+  };
 };
+
+function normalizeGraphPost(raw: GraphPost): GraphPost {
+  let message = raw.message?.trim() ?? "";
+  let full_picture = raw.full_picture?.trim() ?? "";
+
+  for (const att of raw.attachments?.data ?? []) {
+    if (!full_picture) {
+      full_picture = att.media?.image?.src?.trim() ?? "";
+    }
+    const extra = [att.title, att.description]
+      .map((s) => s?.trim())
+      .filter((s): s is string => Boolean(s))
+      .join("\n");
+    if (extra && !message.includes(extra)) {
+      message = message ? `${message}\n\n${extra}` : extra;
+    }
+  }
+
+  return {
+    id: raw.id,
+    permalink_url: raw.permalink_url,
+    created_time: raw.created_time,
+    message: message || undefined,
+    full_picture: full_picture || undefined,
+  };
+}
 
 type MeAccountsPage = {
   id: string;
@@ -179,7 +213,8 @@ async function fetchPagePosts(
     : page.id === "moorea-news"
       ? "me"
       : await resolveGraphPageId(page, token);
-  const fields = "id,message,permalink_url,created_time,full_picture";
+  const fields =
+    "id,message,permalink_url,created_time,full_picture,attachments{description,title,media_type,media{image{src}}}";
   const apiUrl = new URL(
     `https://graph.facebook.com/v21.0/${graphPageId}/posts`
   );
@@ -195,7 +230,7 @@ async function fetchPagePosts(
     );
   }
   const json = (await res.json()) as { data?: GraphPost[] };
-  return json.data ?? [];
+  return (json.data ?? []).map(normalizeGraphPost);
 }
 
 async function fetchMeAccounts(userToken: string): Promise<MeAccountsPage[]> {
@@ -343,7 +378,11 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
       }
       for (const post of posts) {
         const message = post.message?.trim() ?? "";
-        const freshness = shouldImportFacebookPost(message, post.created_time);
+        const freshness = shouldImportFacebookPost(
+          message,
+          post.created_time,
+          post,
+        );
         if (!freshness.ok) continue;
 
         const title =

@@ -2,6 +2,7 @@
  * Filtres d'actualité pour l'import Facebook (Graph API + OG).
  */
 
+import type { FacebookPostForImport } from "@/lib/facebook-article-import";
 import { parseDateFromMessage } from "@/lib/facebook-post-parse";
 
 const DEFAULT_MAX_AGE_DAYS = 60;
@@ -61,7 +62,12 @@ export function contentReferencesFacebookStaleYear(text: string): boolean {
 export function shouldImportFacebookPost(
   message: string,
   createdTime?: string,
+  post?: Pick<FacebookPostForImport, "full_picture">,
 ): { ok: true; publishedAt: string } | { ok: false; reason: string } {
+  if (post && !facebookPostHasPublishableContent({ message, ...post })) {
+    return { ok: false, reason: "no_publishable_content" };
+  }
+
   const corpus = message.trim();
   if (contentReferencesStaleYear(corpus)) {
     return { ok: false, reason: "stale_year_in_text" };
@@ -84,4 +90,76 @@ export function shouldImportFacebookPost(
   }
 
   return { ok: true, publishedAt };
+}
+
+const FB_SOURCE_FOOTER_RE =
+  /\n\n---\n\nSource : \[Publication Facebook[^\]]*\]\([^)]*\)\s*$/;
+
+/** Corps utile (hors pied de page « Source Facebook »). */
+export function facebookArticleBodyWithoutFooter(body: string): string {
+  return body.replace(FB_SOURCE_FOOTER_RE, "").trim();
+}
+
+/** Fiche créée sans texte ni affiche exploitable (coquille vide). */
+export function isEmptyFacebookArticleShell(row: {
+  title: string;
+  excerpt: string | null;
+  body: string;
+  cover_url?: string | null;
+}): boolean {
+  const hasCover = Boolean(row.cover_url?.trim());
+  if (hasCover) return false;
+
+  const excerptLen = (row.excerpt ?? "").trim().length;
+  const core = facebookArticleBodyWithoutFooter(row.body);
+  const stripped = core
+    .replace(/^Publication Facebook — [^.]+\.?\s*$/i, "")
+    .trim();
+
+  const genericTitle = /— publication$/i.test(row.title.trim());
+  if (!genericTitle) {
+    return stripped.length < 15 && excerptLen < 15;
+  }
+
+  return stripped.length < 20 && excerptLen < 40;
+}
+
+/** Post Graph API / OG : au moins un texte lisible ou une image. */
+export function facebookPostHasPublishableContent(
+  post: Pick<FacebookPostForImport, "message" | "full_picture">,
+): boolean {
+  const msg = post.message?.trim() ?? "";
+  const pic = post.full_picture?.trim() ?? "";
+  if (pic.length > 0 && msg.length >= 8) return true;
+  if (pic.length > 0) return true;
+  return msg.length >= 25;
+}
+
+export function isStaleFacebookImportRow(row: {
+  title: string;
+  excerpt: string | null;
+  body: string;
+  slug: string;
+  published_at?: string | null;
+  cover_url?: string | null;
+}): boolean {
+  if (isEmptyFacebookArticleShell(row)) return true;
+
+  const corpus = `${row.title} ${row.excerpt ?? ""} ${row.body}`;
+  if (contentReferencesStaleYear(corpus)) return true;
+  if (
+    /\bpublication du 20\d{2}-\d{2}-\d{2}\b/i.test(row.title) &&
+    contentReferencesStaleYear(row.title)
+  ) {
+    return true;
+  }
+
+  if (row.published_at) {
+    const ms = Date.parse(row.published_at);
+    if (!Number.isNaN(ms) && Date.now() - ms > maxAgeMs()) {
+      return true;
+    }
+  }
+
+  return /-fb-\d+-\d+$/.test(row.slug) && contentReferencesStaleYear(corpus);
 }

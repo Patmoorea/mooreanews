@@ -6,6 +6,7 @@ import {
   checkFacebookTokenHealth,
   refreshFacebookUserTokenInProcess,
 } from "@/lib/facebook-token";
+import { purgeStaleFacebookImports } from "@/lib/facebook-import-cleanup";
 import { auditPublicContent } from "@/lib/site-content-audit";
 import { notifyVeilleReport } from "@/lib/telegram-notify";
 
@@ -85,6 +86,12 @@ export async function GET(req: Request) {
   const createdEvents = results.flatMap((r) => r.createdEvents ?? []);
   const createdAlertTitles = results.flatMap((r) => r.createdAlerts ?? []);
 
+  const facebookPurge = await purgeStaleFacebookImports();
+  if (facebookPurge.deleted > 0) {
+    revalidatePath("/actualites");
+    revalidatePath("/", "layout");
+  }
+
   const audit = await auditPublicContent();
   const facebookHealth = await checkFacebookTokenHealth();
   if (fbRefresh.refreshed) facebookHealth.refreshedThisRun = true;
@@ -106,6 +113,7 @@ export async function GET(req: Request) {
     createdEvents,
     audit,
     facebookHealth,
+    facebookPurgeDeleted: facebookPurge.deleted,
   });
 
   const blockingErrors = errors.filter(

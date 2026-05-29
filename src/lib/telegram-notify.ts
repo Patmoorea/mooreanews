@@ -187,6 +187,7 @@ export async function notifyVeilleReport(input: {
   createdEvents?: { title: string; id: string; date: string }[];
   audit?: ContentAuditReport | null;
   facebookHealth?: FacebookTokenHealth | null;
+  facebookPurgeDeleted?: number;
 }): Promise<{ sent: boolean; reason?: string }> {
   const alertsCreated = input.alertsCreated ?? 0;
   const expiredAlerts = input.expiredAlerts ?? 0;
@@ -238,6 +239,12 @@ export async function notifyVeilleReport(input: {
   if (alertsCreated > 0) creations.push(`${alertsCreated} alerte(s) auto`);
   if (expiredAlerts > 0) {
     creations.push(`${expiredAlerts} alerte(s) expirée(s)`);
+  }
+
+  if ((input.facebookPurgeDeleted ?? 0) > 0) {
+    lines.push(
+      `\n🧹 <b>${input.facebookPurgeDeleted}</b> import(s) Facebook vide(s) ou obsolète(s) supprimé(s)`,
+    );
   }
 
   if (creations.length > 0) {

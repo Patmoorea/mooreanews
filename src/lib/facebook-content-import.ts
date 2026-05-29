@@ -5,7 +5,11 @@
 import type { FacebookPostForImport } from "@/lib/facebook-article-import";
 import type { FacebookPageImportConfig } from "@/lib/facebook-article-import";
 import { getAdminSupabase } from "@/lib/supabase/admin";
-import { shouldImportFacebookPost } from "@/lib/facebook-import-filters";
+import {
+  facebookPostHasPublishableContent,
+  shouldImportFacebookPost,
+} from "@/lib/facebook-import-filters";
+import { fetchOpenGraph } from "@/lib/open-graph";
 import {
   announcementCategoryFromMessage,
   classifyFacebookPost,
@@ -36,6 +40,29 @@ function importEnabled(): boolean {
 function publishedByDefault(): boolean {
   if (process.env.FACEBOOK_ARTICLES_PUBLISHED === "false") return false;
   return true;
+}
+
+async function enrichPostFromOpenGraph(
+  post: FacebookPostForImport,
+): Promise<FacebookPostForImport> {
+  if (facebookPostHasPublishableContent(post)) return post;
+  const url = post.permalink_url?.trim();
+  if (!url) return post;
+
+  try {
+    const og = await fetchOpenGraph(url);
+    if (!og) return post;
+    const message =
+      post.message?.trim() ||
+      og.description?.trim() ||
+      og.title?.trim() ||
+      "";
+    const full_picture =
+      post.full_picture?.trim() || og.imageUrl?.trim() || undefined;
+    return { ...post, message: message || undefined, full_picture };
+  } catch {
+    return post;
+  }
 }
 
 function slugForPost(pageKey: string, postId: string): string {
@@ -235,9 +262,14 @@ export async function importFacebookPostsAsContent(
 
   const published = publishedByDefault();
 
-  for (const post of posts) {
+  for (const raw of posts) {
+    const post = await enrichPostFromOpenGraph(raw);
     const message = post.message?.trim() ?? "";
-    const freshness = shouldImportFacebookPost(message, post.created_time);
+    const freshness = shouldImportFacebookPost(
+      message,
+      post.created_time,
+      post,
+    );
     if (!freshness.ok) {
       result.skippedStale += 1;
       continue;

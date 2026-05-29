@@ -335,23 +335,6 @@ export async function togglePublished(
   revalidatePath(adminPathFor(table));
 }
 
-function isStaleFacebookImport(row: {
-  title: string;
-  excerpt: string | null;
-  body: string;
-  slug: string;
-}): boolean {
-  const corpus = `${row.title} ${row.excerpt ?? ""} ${row.body}`;
-  if (contentReferencesStaleYear(corpus)) return true;
-  if (
-    /\bpublication du 20\d{2}-\d{2}-\d{2}\b/i.test(row.title) &&
-    contentReferencesStaleYear(row.title)
-  ) {
-    return true;
-  }
-  return /-fb-\d+-\d+$/.test(row.slug) && contentReferencesStaleYear(corpus);
-}
-
 /** Supprime définitivement les imports Facebook obsolètes (2021–2022, etc.). */
 export async function deleteLegacyFacebookImports(): Promise<{
   deleted: number;
@@ -364,18 +347,10 @@ export async function deleteLegacyFacebookImports(): Promise<{
     );
   }
 
-  const { data: rows } = await admin
-    .from("articles")
-    .select("id, slug, title, excerpt, body, tags")
-    .contains("tags", ["facebook-import"]);
-
-  let deleted = 0;
-  for (const row of rows ?? []) {
-    if (!isStaleFacebookImport(row)) continue;
-    if (row.slug) await hideExternalArticlesForArticleSlug(row.slug);
-    const { error } = await admin.from("articles").delete().eq("id", row.id);
-    if (!error) deleted += 1;
-  }
+  const { purgeStaleFacebookImports } = await import(
+    "@/lib/facebook-import-cleanup"
+  );
+  const { deleted } = await purgeStaleFacebookImports();
 
   const { data: externalRows } = await admin
     .from("external_articles")

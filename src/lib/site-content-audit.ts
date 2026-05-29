@@ -7,6 +7,7 @@ import {
   contentReferencesFacebookStaleYear,
   contentReferencesStaleYear,
   contentReferencesVeryStaleYear,
+  isEmptyFacebookArticleShell,
 } from "@/lib/facebook-import-filters";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 
@@ -49,7 +50,9 @@ export async function auditPublicContent(): Promise<ContentAuditReport | null> {
 
   const { data: articles } = await admin
     .from("articles")
-    .select("id, slug, title, excerpt, body, tags, published, published_at")
+    .select(
+      "id, slug, title, excerpt, body, tags, published, published_at, cover_url",
+    )
     .eq("published", true)
     .limit(500);
 
@@ -71,6 +74,25 @@ export async function auditPublicContent(): Promise<ContentAuditReport | null> {
     }
 
     if (isFb) {
+      if (
+        isEmptyFacebookArticleShell({
+          title: a.title,
+          excerpt: a.excerpt,
+          body: a.body ?? "",
+          cover_url: a.cover_url,
+        })
+      ) {
+        findings.push({
+          kind: "article",
+          id: a.id,
+          title: a.title,
+          reason: "Import Facebook sans texte ni affiche (coquille vide)",
+          severity: "critical",
+          adminPath: `/admin/articles/${a.id}`,
+        });
+        continue;
+      }
+
       const corpus = `${a.title} ${a.excerpt ?? ""} ${a.body ?? ""}`;
       if (contentReferencesFacebookStaleYear(corpus)) {
         findings.push({

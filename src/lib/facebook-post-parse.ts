@@ -212,7 +212,11 @@ export function classifyFacebookPost(
   const hasDate = parseDateFromMessage(message) !== null;
   const hasEventWord = EVENT_KEYWORDS.some((k) => n.includes(normalize(k)));
 
-  if (hasImage && (hasDate || hasEventWord || message.trim().length < 400)) {
+  if (
+    hasImage &&
+    message.trim().length > 0 &&
+    (hasDate || hasEventWord || message.trim().length < 400)
+  ) {
     return "event";
   }
 
