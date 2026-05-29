@@ -4,6 +4,7 @@
 
 import { externalIdFromFacebookUrl } from "@/lib/facebook-url";
 import type { FacebookArticleImportResult } from "@/lib/facebook-article-import";
+import { isFacebookJunkText } from "@/lib/facebook-import-filters";
 import { importFacebookPostsAsContent } from "@/lib/facebook-content-import";
 
 export type OgFacebookItem = {
@@ -15,9 +16,14 @@ export type OgFacebookItem = {
 };
 
 function hasPublishableContent(item: OgFacebookItem): boolean {
-  const text = item.excerpt?.trim() ?? item.title.trim();
+  const title = item.title.trim();
+  const excerpt = item.excerpt?.trim() ?? "";
+  if (isFacebookJunkText(title) || isFacebookJunkText(excerpt)) return false;
+  const text = excerpt || title;
   const img = item.imageUrl?.trim() ?? "";
-  return img.length > 0 || text.length >= 10;
+  if (isFacebookJunkText(text)) return false;
+  if (text.length >= 40) return true;
+  return text.length >= 20 && img.length > 0;
 }
 
 /** Crée événement / annonce / article à partir des métadonnées OG. */

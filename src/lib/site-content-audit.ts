@@ -8,6 +8,7 @@ import {
   contentReferencesStaleYear,
   contentReferencesVeryStaleYear,
   isEmptyFacebookArticleShell,
+  isFacebookJunkText,
 } from "@/lib/facebook-import-filters";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 
@@ -74,6 +75,18 @@ export async function auditPublicContent(): Promise<ContentAuditReport | null> {
     }
 
     if (isFb) {
+      if (isFacebookJunkText(a.title)) {
+        findings.push({
+          kind: "article",
+          id: a.id,
+          title: a.title,
+          reason: "Facebook : contenu indisponible ou lien mort",
+          severity: "critical",
+          adminPath: `/admin/articles/${a.id}`,
+        });
+        continue;
+      }
+
       if (
         isEmptyFacebookArticleShell({
           title: a.title,

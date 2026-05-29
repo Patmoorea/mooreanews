@@ -69,6 +69,9 @@ export function shouldImportFacebookPost(
   }
 
   const corpus = message.trim();
+  if (isFacebookJunkText(corpus)) {
+    return { ok: false, reason: "facebook_content_unavailable" };
+  }
   if (contentReferencesStaleYear(corpus)) {
     return { ok: false, reason: "stale_year_in_text" };
   }
@@ -95,6 +98,22 @@ export function shouldImportFacebookPost(
 const FB_SOURCE_FOOTER_RE =
   /\n\n---\n\nSource : \[Publication Facebook[^\]]*\]\([^)]*\)\s*$/;
 
+/** Titres / textes Facebook quand le post est privé, supprimé ou inaccessible. */
+const FB_UNAVAILABLE_RE =
+  /contenu n['’]est pas disponible|content isn['’]t available|not available right now|page not found|ce lien est peut[- ]être cassé/i;
+
+const FB_GENERIC_TITLE_RE =
+  /^[^—]+ — publication$/i;
+
+/** Texte ou titre inutilisable (erreur Facebook, coquille générique). */
+export function isFacebookJunkText(text: string): boolean {
+  const t = text.trim();
+  if (!t) return true;
+  if (FB_UNAVAILABLE_RE.test(t)) return true;
+  if (FB_GENERIC_TITLE_RE.test(t) && t.length < 80) return true;
+  return false;
+}
+
 /** Corps utile (hors pied de page « Source Facebook »). */
 export function facebookArticleBodyWithoutFooter(body: string): string {
   return body.replace(FB_SOURCE_FOOTER_RE, "").trim();
@@ -114,6 +133,8 @@ export function isEmptyFacebookArticleShell(row: {
   body: string;
   cover_url?: string | null;
 }): boolean {
+  if (isFacebookJunkText(row.title)) return true;
+
   const hasCover = Boolean(row.cover_url?.trim());
   if (hasCover) return false;
 
@@ -140,10 +161,11 @@ export function facebookPostHasPublishableContent(
   post: Pick<FacebookPostForImport, "message" | "full_picture">,
 ): boolean {
   const msg = post.message?.trim() ?? "";
+  if (isFacebookJunkText(msg)) return false;
   const pic = post.full_picture?.trim() ?? "";
-  if (pic.length > 0 && msg.length >= 8) return true;
-  if (pic.length > 0) return true;
-  return msg.length >= 25;
+  if (msg.length >= 40) return true;
+  if (msg.length >= 20 && pic.length > 0) return true;
+  return false;
 }
 
 export function isFacebookImportArticle(row: {

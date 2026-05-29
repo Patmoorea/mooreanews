@@ -7,6 +7,7 @@ import type { FacebookPageImportConfig } from "@/lib/facebook-article-import";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import {
   facebookPostHasPublishableContent,
+  isFacebookJunkText,
   shouldImportFacebookPost,
 } from "@/lib/facebook-import-filters";
 import { fetchOpenGraph } from "@/lib/open-graph";
@@ -37,9 +38,9 @@ function importEnabled(): boolean {
   return process.env.FACEBOOK_IMPORT_AS_ARTICLES === "true";
 }
 
+/** Brouillon par défaut — publier seulement si FACEBOOK_ARTICLES_PUBLISHED=true sur Vercel. */
 function publishedByDefault(): boolean {
-  if (process.env.FACEBOOK_ARTICLES_PUBLISHED === "false") return false;
-  return true;
+  return process.env.FACEBOOK_ARTICLES_PUBLISHED === "true";
 }
 
 async function enrichPostFromOpenGraph(
@@ -52,11 +53,9 @@ async function enrichPostFromOpenGraph(
   try {
     const og = await fetchOpenGraph(url);
     if (!og) return post;
-    const message =
-      post.message?.trim() ||
-      og.description?.trim() ||
-      og.title?.trim() ||
-      "";
+    const candidates = [post.message?.trim(), og.description?.trim(), og.title?.trim()]
+      .filter((s): s is string => typeof s === "string" && s.length > 0 && !isFacebookJunkText(s));
+    const message = candidates[0] ?? "";
     const full_picture =
       post.full_picture?.trim() || og.imageUrl?.trim() || undefined;
     return { ...post, message: message || undefined, full_picture };

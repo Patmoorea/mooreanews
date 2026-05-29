@@ -7,7 +7,10 @@ import { externalIdFromFacebookUrl, isFacebookUrl } from "@/lib/facebook-url";
 import { fetchOpenGraph } from "@/lib/open-graph";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { importFacebookPostsAsContent } from "@/lib/facebook-content-import";
-import { shouldImportFacebookPost } from "@/lib/facebook-import-filters";
+import {
+  isFacebookJunkText,
+  shouldImportFacebookPost,
+} from "@/lib/facebook-import-filters";
 import { refreshFacebookUserTokenInProcess } from "@/lib/facebook-token";
 import { importFacebookOgAsArticles } from "@/lib/og-article-import";
 import {
@@ -137,7 +140,11 @@ export async function aggregateFacebookWatchUrls(): Promise<AggregationResult> {
         published_at: new Date().toISOString(),
       };
       rows.push(row);
-      if (og) {
+      if (
+        og &&
+        !isFacebookJunkText(title) &&
+        !isFacebookJunkText(og.description ?? "")
+      ) {
         ogForImport.push({
           url: row.url,
           title,
