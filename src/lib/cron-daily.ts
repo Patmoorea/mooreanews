@@ -1,0 +1,158 @@
+/**
+ * Job cron unique (compatible Vercel Hobby = 1×/jour).
+ * Planifié 16:05 UTC ≈ 6:05 heure de Tahiti.
+ */
+
+import { revalidatePath } from "next/cache";
+import { expirePastAlerts } from "@/lib/alert-schedule";
+import { aggregateAll } from "@/lib/aggregator";
+import {
+  getTahitiClock,
+  shouldSendMorningDigest,
+  shouldSendWeekendDigest,
+} from "@/lib/cron-tahiti";
+import { purgeStaleFacebookImports } from "@/lib/facebook-import-cleanup";
+import {
+  checkFacebookTokenHealth,
+  refreshFacebookUserTokenInProcess,
+} from "@/lib/facebook-token";
+import { checkFerryScheduleSync } from "@/lib/ferry-sync";
+import { sendMorningDigest } from "@/lib/morning-digest";
+import { syncMeteoVigilanceAlert } from "@/lib/meteo-vigilance-sync";
+import { auditPublicContent } from "@/lib/site-content-audit";
+import { notifyVeilleReport } from "@/lib/telegram-notify";
+import { sendWeekendDigest } from "@/lib/weekend-digest";
+
+export type DailyCronResult = {
+  ok: boolean;
+  durationMs: number;
+  tahiti: string;
+  jobs: Record<string, unknown>;
+  errors: string[];
+};
+
+export async function runDailyCron(): Promise<DailyCronResult> {
+  const start = Date.now();
+  const clock = getTahitiClock();
+  const errors: string[] = [];
+  const jobs: Record<string, unknown> = { tahiti: clock.label };
+
+  const fbRefresh = await refreshFacebookUserTokenInProcess();
+  jobs.facebookToken = fbRefresh;
+
+  const expiredAlerts = await expirePastAlerts();
+  jobs.expiredAlerts = expiredAlerts;
+  if (expiredAlerts > 0) {
+    revalidatePath("/alertes");
+    revalidatePath("/", "layout");
+  }
+
+  jobs.meteoVigilance = await syncMeteoVigilanceAlert();
+  if (
+    jobs.meteoVigilance &&
+    typeof jobs.meteoVigilance === "object" &&
+    "action" in (jobs.meteoVigilance as object)
+  ) {
+    const action = (jobs.meteoVigilance as { action: string }).action;
+    if (action === "created" || action === "updated" || action === "cleared") {
+      revalidatePath("/alertes");
+      revalidatePath("/", "layout");
+    }
+  }
+
+  if (shouldSendMorningDigest(clock)) {
+    jobs.morningDigest = await sendMorningDigest();
+  } else {
+    jobs.morningDigest = { skipped: true, reason: "hors créneau 5h–10h Tahiti" };
+  }
+
+  if (shouldSendWeekendDigest(clock)) {
+    jobs.weekendDigest = await sendWeekendDigest();
+  } else {
+    jobs.weekendDigest = {
+      skipped: true,
+      reason: "hors créneau vendredi matin Tahiti",
+    };
+  }
+
+  const results = await aggregateAll();
+  jobs.aggregate = {
+    sources: results.length,
+    inserted: results.reduce((s, r) => s + r.inserted, 0),
+    alertsCreated: results.reduce((s, r) => s + (r.alertsCreated ?? 0), 0),
+  };
+
+  const alertsCreated = results.reduce(
+    (s, r) => s + (r.alertsCreated ?? 0),
+    0,
+  );
+  if (alertsCreated > 0) {
+    revalidatePath("/alertes");
+    revalidatePath("/", "layout");
+  }
+
+  const aggErrors = results.flatMap((r) =>
+    r.errors.map((e) => `${r.source}: ${e}`),
+  );
+  errors.push(...aggErrors);
+
+  const facebookPurge = await purgeStaleFacebookImports();
+  jobs.facebookPurge = facebookPurge;
+  if (facebookPurge.deleted > 0) {
+    revalidatePath("/actualites");
+    revalidatePath("/", "layout");
+  }
+
+  revalidatePath("/");
+  revalidatePath("/api/ferries");
+
+  jobs.ferrySync = await checkFerryScheduleSync();
+  jobs.audit = await auditPublicContent();
+
+  const facebookHealth = await checkFacebookTokenHealth();
+  if (fbRefresh.refreshed) facebookHealth.refreshedThisRun = true;
+
+  jobs.telegram = await notifyVeilleReport({
+    durationMs: Date.now() - start,
+    totalFetched: results.reduce((s, r) => s + r.fetched, 0),
+    totalInserted: results.reduce((s, r) => s + r.inserted, 0),
+    articlesCreated: results.reduce(
+      (s, r) => s + (r.articlesCreated ?? 0),
+      0,
+    ),
+    articlesSkipped: results.reduce(
+      (s, r) => s + (r.articlesSkipped ?? 0),
+      0,
+    ),
+    eventsCreated: results.reduce(
+      (s, r) => s + (r.eventsCreated ?? 0),
+      0,
+    ),
+    announcementsCreated: results.reduce(
+      (s, r) => s + (r.announcementsCreated ?? 0),
+      0,
+    ),
+    alertsCreated,
+    expiredAlerts,
+    createdAlertTitles: results.flatMap((r) => r.createdAlerts ?? []),
+    errors: aggErrors,
+    bySource: results,
+    createdArticles: results.flatMap((r) => r.createdArticles ?? []),
+    createdEvents: results.flatMap((r) => r.createdEvents ?? []),
+    audit: jobs.audit as Awaited<ReturnType<typeof auditPublicContent>>,
+    facebookHealth,
+    facebookPurgeDeleted: facebookPurge.deleted,
+  });
+
+  const blockingErrors = errors.filter(
+    (e) => !e.includes("CommuneMooreaMaiao"),
+  );
+
+  return {
+    ok: blockingErrors.length === 0,
+    durationMs: Date.now() - start,
+    tahiti: clock.label,
+    jobs,
+    errors,
+  };
+}

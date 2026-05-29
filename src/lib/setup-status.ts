@@ -48,8 +48,8 @@ export async function getProductionSetupStatus(): Promise<SetupCheck[]> {
     label: "Crons sécurisés",
     ok: Boolean(process.env.CRON_SECRET?.trim()),
     detail: process.env.CRON_SECRET
-      ? "CRON_SECRET défini"
-      : "Recommandé en production (Vercel Cron)",
+      ? "CRON_SECRET défini — job unique /api/cron/daily (~6h Tahiti)"
+      : "Recommandé en production (Vercel Cron Hobby = 1×/jour)",
     action: "CRON_SECRET",
   });
 

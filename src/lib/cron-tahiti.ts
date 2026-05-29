@@ -1,0 +1,54 @@
+/** Heure locale Polynésie (UTC−10, pas de changement d'heure). */
+
+const DAY_INDEX: Record<string, number> = {
+  Sunday: 0,
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
+};
+
+export type TahitiClock = {
+  hour: number;
+  minute: number;
+  weekday: number;
+  label: string;
+};
+
+export function getTahitiClock(now = new Date()): TahitiClock {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Pacific/Tahiti",
+    hour: "2-digit",
+    minute: "2-digit",
+    weekday: "long",
+    hour12: false,
+  });
+  const parts = Object.fromEntries(
+    fmt
+      .formatToParts(now)
+      .filter((p) => p.type !== "literal")
+      .map((p) => [p.type, p.value]),
+  );
+  const weekdayName = parts.weekday ?? "Monday";
+  return {
+    hour: parseInt(parts.hour ?? "0", 10),
+    minute: parseInt(parts.minute ?? "0", 10),
+    weekday: DAY_INDEX[weekdayName] ?? 0,
+    label: `${weekdayName} ${parts.hour}:${parts.minute} (Tahiti)`,
+  };
+}
+
+/** Digest matin : entre 5h et 10h Tahiti. */
+export function shouldSendMorningDigest(clock: TahitiClock): boolean {
+  return clock.hour >= 5 && clock.hour < 10;
+}
+
+/**
+ * Digest week-end : vendredi matin Tahiti (cron unique Hobby).
+ * Équivalent pratique au jeudi 17h si un seul passage/jour à ~6h vendredi.
+ */
+export function shouldSendWeekendDigest(clock: TahitiClock): boolean {
+  return clock.weekday === 5 && clock.hour >= 5 && clock.hour < 12;
+}

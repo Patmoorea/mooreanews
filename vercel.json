@@ -2,20 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     {
-      "path": "/api/cron/aggregate",
-      "schedule": "0 4 * * *"
-    },
-    {
-      "path": "/api/cron/morning-digest",
-      "schedule": "0 16 * * *"
-    },
-    {
-      "path": "/api/cron/weekend-digest",
-      "schedule": "0 3 * * 5"
-    },
-    {
-      "path": "/api/cron/meteo-vigilance",
-      "schedule": "5 15,1 * * *"
+      "path": "/api/cron/daily",
+      "schedule": "5 16 * * *"
     }
   ]
 }
