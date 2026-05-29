@@ -8,6 +8,8 @@ export type FacebookPageWatch = {
   pageId: string;
   name: string;
   homepage: string;
+  /** Si true : pas d’erreur cron si jeton Meta absent pour cette page. */
+  optional?: boolean;
 };
 
 /** Liens importants à re-vérifier à chaque passage du cron (Open Graph). */
@@ -51,6 +53,7 @@ export const FACEBOOK_PAGE_WATCHES: FacebookPageWatch[] = [
     pageId: "CommuneMooreaMaiao",
     name: "Commune de Moorea-Maiao",
     homepage: "https://www.facebook.com/CommuneMooreaMaiao",
+    optional: true,
   },
 ];
 

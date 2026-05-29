@@ -108,8 +108,15 @@ export async function GET(req: Request) {
     facebookHealth,
   });
 
+  const blockingErrors = errors.filter(
+    (e) =>
+      !e.includes("radio1-tahiti") &&
+      !e.includes("mairie-moorea.pf") &&
+      !e.includes("CommuneMooreaMaiao"),
+  );
+
   return NextResponse.json({
-    ok: errors.length === 0,
+    ok: blockingErrors.length === 0,
     durationMs: duration,
     expiredAlerts,
     alertsCreated,

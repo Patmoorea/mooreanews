@@ -213,13 +213,14 @@ async function fetchMeAccounts(userToken: string): Promise<MeAccountsPage[]> {
   return json.data ?? [];
 }
 
-/** Permissions granulaires Meta : /me/accounts peut être vide → jeton via l’ID page. */
+/** Permissions granulaires Meta : /me/accounts vide → jeton via ID ou username page. */
 async function fetchPageAccessTokenViaUserToken(
   userToken: string,
   pageId: string,
 ): Promise<string | null> {
-  if (!/^\d+$/.test(pageId)) return null;
-  const apiUrl = new URL(`https://graph.facebook.com/v21.0/${pageId}`);
+  const apiUrl = new URL(
+    `https://graph.facebook.com/v21.0/${encodeURIComponent(pageId)}`,
+  );
   apiUrl.searchParams.set("fields", "access_token");
   apiUrl.searchParams.set("access_token", userToken);
 
@@ -320,7 +321,9 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
           perPageTokenByIdOrUsername.size > 0 ? undefined : fallbackPageToken,
       });
       if (!tokenForPage) {
-        result.errors.push(`Token manquant pour ${page.pageId}`);
+        if (!page.optional) {
+          result.errors.push(`Token manquant pour ${page.pageId}`);
+        }
         continue;
       }
       const posts = await fetchPagePosts(page, tokenForPage);
