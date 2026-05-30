@@ -14,19 +14,6 @@
     "premium": true
   },
   {
-    "slug": "le-mahogany",
-    "name": "Le Mahogany",
-    "description": "Restaurant gastronomique sur la plage, spécialités de poisson cru, mahi-mahi et tartare de thon rouge.",
-    "cuisine": ["Gastronomique", "Fruits de mer"],
-    "priceLevel": 3,
-    "district": "Maharepa",
-    "address": "Maharepa, route de ceinture PK 5,5",
-    "phone": "40 56 39 73",
-    "openingHours": "Tous les jours 12h-14h30 / 18h30-22h",
-    "image": "/images/restaurants/mahogany.jpg",
-    "features": ["Plage", "Réservation conseillée", "Climatisé"]
-  },
-  {
     "slug": "snack-mahana",
     "name": "Snack Mahana",
     "description": "Cantine locale incontournable. Poisson cru à la tahitienne, chao men, plat du jour pour 1500 XPF.",

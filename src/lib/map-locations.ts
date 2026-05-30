@@ -55,15 +55,6 @@ export const STATIC_MAP_MARKERS: MapMarker[] = [
     href: "/restaurants",
   },
   {
-    id: "mahogany",
-    name: "Le Mahogany",
-    category: "restaurant",
-    lat: -17.4837,
-    lon: -149.7889,
-    description: "Restaurant gastronomique de plage",
-    href: "/restaurants",
-  },
-  {
     id: "mahana",
     name: "Snack Mahana",
     category: "restaurant",

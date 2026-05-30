@@ -32,6 +32,7 @@ import {
   mergeInfoPratiqueCatalog,
   normalizeInfoTitle,
 } from "@/lib/info-catalog";
+import { isClosedRestaurant } from "@/lib/closed-restaurants";
 
 import type {
   ArticleRow,
@@ -140,8 +141,10 @@ export async function getRestaurants(): Promise<Restaurant[]> {
   const db = await dbListRestaurants();
   // En prod (Supabase configuré), la base est la seule source : une suppression
   // admin ne doit pas être annulée par le fallback JSON.
-  if (db) return db.map(restaurantFromRow);
-  return restaurantsData as Restaurant[];
+  const list = db
+    ? db.map(restaurantFromRow)
+    : (restaurantsData as Restaurant[]);
+  return list.filter((r) => !isClosedRestaurant(r));
 }
 
 export async function getRestaurantBySlug(
