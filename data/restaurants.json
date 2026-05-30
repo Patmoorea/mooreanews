@@ -35,7 +35,7 @@
     "district": "Paopao",
     "address": "Face au débarcadère de Pao Pao",
     "phone": "40 56 27 18",
-    "openingHours": "Lun-Sam 6h-15h",
+    "openingHours": "Lun-Sam 10h-14h30",
     "image": "/images/restaurants/mahana.jpg",
     "features": ["Sur le pouce", "Pas cher", "Locaux"]
   },
@@ -78,7 +78,7 @@
     "district": "Maharepa",
     "address": "Plage de Temae",
     "phone": "87 30 21 09",
-    "openingHours": "Tous les jours 7h-21h",
+    "openingHours": "Tous les jours 8h-21h",
     "image": "/images/restaurants/beach-cafe.jpg",
     "features": ["Plage", "Brunch", "Wifi", "Famille"]
   },
@@ -90,7 +90,7 @@
     "priceLevel": 1,
     "district": "Vaiare",
     "address": "Débarcadère de Vaiare",
-    "openingHours": "Tous les jours 6h-22h",
+    "openingHours": "Mer-Dim 17h30-21h30 (variable selon les ferries)",
     "image": "/images/restaurants/roulotte.jpg",
     "features": ["Pratique", "Pas cher", "Près du ferry"]
   }

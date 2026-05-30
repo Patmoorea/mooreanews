@@ -4,6 +4,7 @@ import { UtensilsCrossed, Calendar, Music } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 import { getMooreaDuJour } from "@/lib/moorea-du-jour";
+import { OPEN_HOURS_DISCLAIMER } from "@/lib/open-now";
 
 export const dynamic = "force-dynamic";
 
@@ -32,9 +33,10 @@ export default async function CeSoirPage() {
         <section className="mb-10">
           <div className="flex items-center gap-2 mb-4">
             <UtensilsCrossed size={20} className="text-tiare-600" />
-            <h2 className="font-display text-xl text-ocean-950">Restaurants ouverts</h2>
+            <h2 className="font-display text-xl text-ocean-950">Restaurants (estimation ce soir)</h2>
           </div>
-          {data.openRestaurants.length === 0 ? (
+          <p className="mb-4 text-xs text-ocean-500">{OPEN_HOURS_DISCLAIMER}</p>
+          {data.openRestaurantsEvening.length === 0 ? (
             <p className="text-sm text-ocean-600">
               Horaires non renseignés — consultez{" "}
               <Link href="/restaurants" className="text-lagon-700 font-semibold hover:underline">
@@ -44,7 +46,7 @@ export default async function CeSoirPage() {
             </p>
           ) : (
             <ul className="grid gap-3">
-              {data.openRestaurants.map((r) => (
+              {data.openRestaurantsEvening.map((r) => (
                 <li key={r.slug}>
                   <Link
                     href={`/restaurants/${r.slug}`}

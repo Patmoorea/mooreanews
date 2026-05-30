@@ -53,8 +53,8 @@ export async function buildTripPlan(
       {
         title: "Sunset & dîner",
         detail:
-          digest.openRestaurants[0]?.name ??
-          "Restaurants ouverts ce soir sur MooreaNews",
+          digest.openRestaurantsEvening[0]?.name ??
+          "Restaurants sur MooreaNews (voir /ce-soir)",
         href: `${base}/ce-soir`,
       },
     ],

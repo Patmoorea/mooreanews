@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { RestaurantPriceLevel } from "@/components/RestaurantPriceLevel";
 import { PublicationCover } from "@/components/PublicationCover";
 import { getRestaurants } from "@/lib/content";
-import { isOpenNow } from "@/lib/open-now";
+import { isOpenNow, OPEN_HOURS_DISCLAIMER } from "@/lib/open-now";
 
 export const metadata: Metadata = {
   title: "Restaurants de Moorea",
@@ -55,9 +55,15 @@ export default async function RestaurantsPage({
                 : "bg-ocean-100 text-ocean-700 hover:bg-ocean-200"
             }`}
           >
-            Ouverts maintenant
+            Ouverts (estimation)
           </Link>
         </div>
+
+        {openOnly && (
+          <p className="mb-6 rounded-xl border border-soleil-200 bg-soleil-50 px-4 py-3 text-sm text-soleil-900">
+            {OPEN_HOURS_DISCLAIMER}
+          </p>
+        )}
 
         {openOnly && items.length === 0 && (
           <p className="text-center text-ocean-600 py-12">
@@ -90,7 +96,7 @@ export default async function RestaurantsPage({
                   />
                   {open === true && (
                     <div className="absolute top-3 right-3 z-10">
-                      <Badge variant="tipanier">Ouvert</Badge>
+                      <Badge variant="tipanier">Ouvert (estim.)</Badge>
                     </div>
                   )}
                   {r.premium && (

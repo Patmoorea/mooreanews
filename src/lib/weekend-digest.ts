@@ -52,11 +52,11 @@ export async function sendWeekendDigest(): Promise<{
       }
 
       ${
-        digest.openRestaurants.length > 0
+        digest.openRestaurantsEvening.length > 0
           ? `<div style="background:#fff7ed;border-radius:12px;padding:16px;margin:16px 0">
-        <h2 style="font-size:16px">🍽 Ouverts ce soir (aperçu)</h2>
-        <p>${digest.openRestaurants.map((r) => escapeHtml(r.name)).join(" · ")}</p>
-        <p><a href="${base}/restaurants?open=1">Tous les restaurants →</a></p>
+        <h2 style="font-size:16px">🍽 Restos ce soir (estimation)</h2>
+        <p>${digest.openRestaurantsEvening.map((r) => escapeHtml(r.name)).join(" · ")}</p>
+        <p><a href="${base}/ce-soir">Ce soir à Moorea →</a></p>
       </div>`
           : ""
       }

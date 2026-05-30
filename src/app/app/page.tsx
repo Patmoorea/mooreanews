@@ -164,11 +164,11 @@ export default async function AppPage() {
         )}
 
         {/* Open restaurants */}
-        {data.openRestaurants.length > 0 && (
+        {data.featuredRestaurants.length > 0 && (
           <section className="rounded-2xl bg-white/5 border border-white/10 p-4">
-            <h2 className="font-display text-lg mb-3">Ouverts maintenant</h2>
+            <h2 className="font-display text-lg mb-3">Où manger</h2>
             <div className="flex flex-wrap gap-2">
-              {data.openRestaurants.map((r) => (
+              {data.featuredRestaurants.map((r) => (
                 <a
                   key={r.slug}
                   href={`${base}/restaurants/${r.slug}`}

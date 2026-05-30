@@ -182,16 +182,16 @@ export async function MooreaDuJour() {
           </article>
         </div>
 
-        {(data.openRestaurants.length > 0 || data.headlines.length > 0) && (
+        {(data.featuredRestaurants.length > 0 || data.headlines.length > 0) && (
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {data.openRestaurants.length > 0 && (
+            {data.featuredRestaurants.length > 0 && (
               <article className="rounded-2xl bg-white/5 border border-white/10 p-5">
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-tipanier-200 mb-3">
                   <UtensilsCrossed size={14} />
-                  Ouverts maintenant
+                  Où manger
                 </div>
                 <ul className="flex flex-wrap gap-2">
-                  {data.openRestaurants.map((r) => (
+                  {data.featuredRestaurants.map((r) => (
                     <li key={r.slug}>
                       <Link
                         href={`/restaurants/${r.slug}`}
@@ -202,8 +202,11 @@ export async function MooreaDuJour() {
                     </li>
                   ))}
                 </ul>
+                <p className="mt-3 text-[11px] text-ocean-300 leading-relaxed">
+                  Annuaire restos MooreaNews — horaires sur chaque fiche, pas de statut temps réel.
+                </p>
                 <div className="mt-3">
-                  <ReadMore href="/restaurants?open=1" label="Tous les restaurants" />
+                  <ReadMore href="/restaurants" label="Tous les restaurants" />
                 </div>
               </article>
             )}

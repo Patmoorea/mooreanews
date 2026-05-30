@@ -9,7 +9,7 @@ import {
   getRestaurants,
 } from "@/lib/content";
 import { getNextDepartures, nextDeparturesPerCompany } from "@/lib/ferries";
-import { isOpenNow } from "@/lib/open-now";
+import { isOpenThisEvening } from "@/lib/open-now";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
 import { getSwimConditions } from "@/lib/swim-conditions";
 import { getTides } from "@/lib/tides";
@@ -29,7 +29,10 @@ export type MooreaDuJour = {
   };
   todayEvents: { slug: string; title: string; time?: string; location: string }[];
   weekendEvents: { slug: string; title: string; date: string; location: string }[];
-  openRestaurants: { slug: string; name: string; district: string }[];
+  /** Annuaire resto (sans prétendre « temps réel »). */
+  featuredRestaurants: { slug: string; name: string; district: string }[];
+  /** Estimation soir (18h30) — horaires texte admin. */
+  openRestaurantsEvening: { slug: string; name: string; district: string }[];
   headlines: { slug: string; title: string; category: string }[];
 };
 
@@ -100,9 +103,20 @@ export async function getMooreaDuJour(): Promise<MooreaDuJour> {
       location: e.location,
     }));
 
-  const openRestaurants = restaurants
-    .filter((r) => isOpenNow(r.openingHours) === true)
+  const featuredRestaurants = restaurants
+    .slice()
+    .sort((a, b) => {
+      const ap = a.premium ? 1 : 0;
+      const bp = b.premium ? 1 : 0;
+      if (ap !== bp) return bp - ap;
+      return a.name.localeCompare(b.name, "fr");
+    })
     .slice(0, 6)
+    .map((r) => ({ slug: r.slug, name: r.name, district: r.district }));
+
+  const openRestaurantsEvening = restaurants
+    .filter((r) => isOpenThisEvening(r.openingHours) === true)
+    .slice(0, 8)
     .map((r) => ({ slug: r.slug, name: r.name, district: r.district }));
 
   const headlines = featured.slice(0, 4).map((a) => ({
@@ -137,7 +151,8 @@ export async function getMooreaDuJour(): Promise<MooreaDuJour> {
     },
     todayEvents,
     weekendEvents,
-    openRestaurants,
+    openRestaurantsEvening,
+    featuredRestaurants,
     headlines,
   };
 }
