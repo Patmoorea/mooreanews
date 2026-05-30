@@ -7,9 +7,13 @@ import {
   getFeaturedArticles,
   getUpcomingEvents,
   getRestaurants,
+  restaurantToOpenMeta,
 } from "@/lib/content";
 import { getNextDepartures, nextDeparturesPerCompany } from "@/lib/ferries";
-import { isOpenThisEvening } from "@/lib/open-now";
+import {
+  listOpenRestaurantsNow,
+  type OpenRestaurantNow,
+} from "@/lib/restaurant-open-status";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
 import { getSwimConditions } from "@/lib/swim-conditions";
 import { getTides } from "@/lib/tides";
@@ -29,10 +33,9 @@ export type MooreaDuJour = {
   };
   todayEvents: { slug: string; title: string; time?: string; location: string }[];
   weekendEvents: { slug: string; title: string; date: string; location: string }[];
-  /** Annuaire resto (sans prétendre « temps réel »). */
   featuredRestaurants: { slug: string; name: string; district: string }[];
-  /** Estimation soir (18h30) — horaires texte admin. */
-  openRestaurantsEvening: { slug: string; name: string; district: string }[];
+  /** Google Maps ou déclaration commerçant (< 12 h) — jamais estimé. */
+  openRestaurantsNow: OpenRestaurantNow[];
   headlines: { slug: string; title: string; category: string }[];
 };
 
@@ -114,10 +117,9 @@ export async function getMooreaDuJour(): Promise<MooreaDuJour> {
     .slice(0, 6)
     .map((r) => ({ slug: r.slug, name: r.name, district: r.district }));
 
-  const openRestaurantsEvening = restaurants
-    .filter((r) => isOpenThisEvening(r.openingHours) === true)
-    .slice(0, 8)
-    .map((r) => ({ slug: r.slug, name: r.name, district: r.district }));
+  const openRestaurantsNow = await listOpenRestaurantsNow(
+    restaurants.map(restaurantToOpenMeta),
+  );
 
   const headlines = featured.slice(0, 4).map((a) => ({
     slug: a.slug,
@@ -151,7 +153,7 @@ export async function getMooreaDuJour(): Promise<MooreaDuJour> {
     },
     todayEvents,
     weekendEvents,
-    openRestaurantsEvening,
+    openRestaurantsNow,
     featuredRestaurants,
     headlines,
   };

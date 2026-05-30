@@ -6,8 +6,14 @@ import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/PageHeader";
 import { RestaurantPriceLevel } from "@/components/RestaurantPriceLevel";
 import { PublicationCover } from "@/components/PublicationCover";
-import { getRestaurants } from "@/lib/content";
-import { isOpenNow, OPEN_HOURS_DISCLAIMER } from "@/lib/open-now";
+import { getRestaurants, restaurantToOpenMeta } from "@/lib/content";
+import {
+  listOpenRestaurantsNow,
+  resolveRestaurantOpenStatus,
+  openStatusLabel,
+  OPEN_STATUS_HELP,
+  isOpenStatusConfigured,
+} from "@/lib/restaurant-open-status";
 
 export const metadata: Metadata = {
   title: "Restaurants de Moorea",
@@ -23,9 +29,21 @@ export default async function RestaurantsPage({
   const { open } = await searchParams;
   const openOnly = open === "1" || open === "true";
   const all = await getRestaurants();
-  const items = openOnly
-    ? all.filter((r) => isOpenNow(r.openingHours) === true)
-    : all;
+  const metas = all.map(restaurantToOpenMeta);
+  const verifiedOpen = await listOpenRestaurantsNow(metas);
+  const openSlugs = new Set(verifiedOpen.map((r) => r.slug));
+  const items = openOnly ? all.filter((r) => openSlugs.has(r.slug)) : all;
+
+  const statusBySlug = new Map(
+    await Promise.all(
+      all.map(async (r) => {
+        const status = await resolveRestaurantOpenStatus(restaurantToOpenMeta(r));
+        return [r.slug, status] as const;
+      }),
+    ),
+  );
+
+  const googleOn = isOpenStatusConfigured();
 
   return (
     <>
@@ -55,26 +73,38 @@ export default async function RestaurantsPage({
                 : "bg-ocean-100 text-ocean-700 hover:bg-ocean-200"
             }`}
           >
-            Ouverts (estimation)
+            Ouverts maintenant
+            {verifiedOpen.length > 0 ? ` (${verifiedOpen.length})` : ""}
           </Link>
         </div>
 
         {openOnly && (
-          <p className="mb-6 rounded-xl border border-soleil-200 bg-soleil-50 px-4 py-3 text-sm text-soleil-900">
-            {OPEN_HOURS_DISCLAIMER}
+          <p className="mb-6 rounded-xl border border-lagon-200 bg-lagon-50 px-4 py-3 text-sm text-lagon-900">
+            {OPEN_STATUS_HELP}
+            {!googleOn && (
+              <>
+                {" "}
+                Configurez <code className="text-xs">GOOGLE_PLACES_API_KEY</code> sur
+                Vercel et renseignez les Place ID dans l&apos;admin, ou demandez aux
+                commerçants de déclarer leur statut.
+              </>
+            )}
           </p>
         )}
 
         {openOnly && items.length === 0 && (
           <p className="text-center text-ocean-600 py-12">
-            Aucun restaurant détecté comme ouvert pour l&apos;instant. Les
-            horaires sont indicatifs — vérifiez avant de vous déplacer.
+            Aucun restaurant confirmé ouvert pour l&apos;instant. Les statuts viennent de
+            Google Maps (Place ID) ou d&apos;une déclaration commerçant du jour — pas
+            d&apos;estimation à partir du texte horaires.
           </p>
         )}
 
         <div className="grid gap-6 lg:grid-cols-2">
           {items.map((r) => {
-            const open = isOpenNow(r.openingHours);
+            const status = statusBySlug.get(r.slug);
+            const isOpen = status?.state === "open";
+            const isClosed = status?.state === "closed";
             return (
               <article
                 key={r.slug}
@@ -94,9 +124,18 @@ export default async function RestaurantsPage({
                     className="w-full aspect-[16/10] sm:aspect-auto sm:min-h-[140px]"
                     sizes="(max-width: 640px) 100vw, 192px"
                   />
-                  {open === true && (
+                  {isOpen && status && (
                     <div className="absolute top-3 right-3 z-10">
-                      <Badge variant="tipanier">Ouvert (estim.)</Badge>
+                      <Badge variant="tipanier">
+                        Ouvert · {openStatusLabel(status.source)}
+                      </Badge>
+                    </div>
+                  )}
+                  {isClosed && status && (
+                    <div className="absolute top-3 right-3 z-10">
+                      <Badge variant="neutral">
+                        Fermé · {openStatusLabel(status.source)}
+                      </Badge>
                     </div>
                   )}
                   {r.premium && (

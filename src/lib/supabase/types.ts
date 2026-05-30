@@ -94,6 +94,9 @@ export type RestaurantRow = {
   featured: boolean;
   menu_du_jour: string | null;
   merchant_email: string | null;
+  google_place_id: string | null;
+  merchant_open_status: "open" | "closed" | null;
+  merchant_open_updated_at: string | null;
   premium_until: string | null;
   created_at: string;
   updated_at: string;

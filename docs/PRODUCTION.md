@@ -120,5 +120,23 @@ curl "http://localhost:3000/api/cron/daily?secret=VOTRE_CRON_SECRET"
 | Emails ne partent pas | Resend absent | `RESEND_*` + redeploy |
 | Push ne marche pas | VAPID absent | Générer clés + redeploy |
 | Stripe erreur | Webhook / clés | Vérifier `whsec_` et pk_live |
+| « Ouverts maintenant » vide | Pas de Place ID / clé Google | Voir ci-dessous |
 | Tables rouges dans setup | SQL non exécuté | `prod-setup-all.sql` |
 | Cron 401 | Secret incorrect | `CRON_SECRET` identique partout |
+
+## Statut « Ouverts maintenant » (Google Places)
+
+Le site **n’estime plus** les horaires texte. Un restaurant n’apparaît ouvert que si :
+
+1. **Google Maps** — `GOOGLE_PLACES_API_KEY` sur Vercel + **Place ID** sur chaque fiche (Admin → Restaurants), ou
+2. **Déclaration commerçant** — email enregistré sur la fiche + bouton sur `/commercant` (valide 12 h).
+
+### Mise en place
+
+1. [Google Cloud Console](https://console.cloud.google.com) → activer **Places API (New)**
+2. Créer une clé API restreinte (Places API uniquement)
+3. Vercel → `GOOGLE_PLACES_API_KEY`
+4. Supabase → exécuter `supabase/restaurant-open-status.sql`
+5. Admin → chaque restaurant : **Google Place ID** (depuis Google Maps → lieu → Partager) et **email commerçant**
+
+Sans Place ID ni déclaration commerçant, le statut reste **inconnu** (rien d’affiché — pas de faux positif).

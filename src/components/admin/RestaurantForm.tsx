@@ -62,9 +62,34 @@ export function RestaurantForm({
       </div>
       <Field
         name="hours"
-        label="Horaires"
+        label="Horaires (affichage fiche)"
         defaultValue={initial?.hours}
         placeholder="Ex. Mar-Dim 11h-14h, 18h-22h"
+        help="Texte informatif uniquement — le statut « ouvert » vient de Google ou du commerçant."
+      />
+      <Field
+        name="google_place_id"
+        label="Google Place ID"
+        defaultValue={initial?.google_place_id ?? ""}
+        placeholder="ChIJ… (Google Maps → Partager → copier le lieu)"
+        help="Permet le statut ouvert en temps réel via Google Places API."
+      />
+      <Field
+        name="merchant_email"
+        label="Email commerçant (déclaration ouvert/fermé)"
+        type="email"
+        defaultValue={initial?.merchant_email ?? ""}
+        placeholder="contact@monrestaurant.pf"
+      />
+      <Select
+        name="merchant_open_status"
+        label="Statut commerçant (manuel, 12 h)"
+        defaultValue={initial?.merchant_open_status ?? ""}
+        options={[
+          { value: "", label: "— Non renseigné (utiliser Google si Place ID)" },
+          { value: "open", label: "Ouvert maintenant" },
+          { value: "closed", label: "Fermé pour l'instant" },
+        ]}
       />
       <div className="grid sm:grid-cols-2 gap-5">
         <Field

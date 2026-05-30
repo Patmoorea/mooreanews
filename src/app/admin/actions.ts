@@ -146,6 +146,13 @@ function parseFormPayload(
         cover_url: get("cover_url") || null,
         published: getBool("published"),
         featured: getBool("featured"),
+        google_place_id: get("google_place_id") || null,
+        merchant_email: get("merchant_email") || null,
+        merchant_open_status:
+          get("merchant_open_status") === "open" ||
+          get("merchant_open_status") === "closed"
+            ? get("merchant_open_status")
+            : null,
       };
     case "accommodations":
       return {
@@ -284,8 +291,17 @@ export async function createContent(table: TableName, formData: FormData) {
     if (error) throw error;
     if (data?.active) await dispatchAlertNotifications(data);
   } else {
+    let finalPayload = payload;
+    if (table === "restaurants") {
+      const p = { ...payload } as Record<string, unknown>;
+      const status = p.merchant_open_status;
+      if (status === "open" || status === "closed") {
+        p.merchant_open_updated_at = new Date().toISOString();
+      }
+      finalPayload = p;
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from(table) as any).insert(payload);
+    const { error } = await (supabase.from(table) as any).insert(finalPayload);
     if (error) throw error;
   }
   revalidatePath(adminPathFor(table));
@@ -334,11 +350,22 @@ export async function updateContent(
     if (error) throw error;
     if (data?.active) await dispatchAlertNotifications(data);
   } else {
+    let finalPayload = payload;
+    if (table === "restaurants") {
+      const p = payload as Record<string, unknown>;
+      const status = p.merchant_open_status;
+      if (status === "open" || status === "closed") {
+        p.merchant_open_updated_at = new Date().toISOString();
+      } else if (status === null) {
+        p.merchant_open_updated_at = null;
+      }
+      finalPayload = p;
+    }
     const { error } = await (
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       supabase.from(table) as any
     )
-      .update(payload)
+      .update(finalPayload)
       .eq("id", id);
     if (error) throw error;
     if (table === "restaurants" || table === "activities" || table === "accommodations") {

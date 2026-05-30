@@ -15,7 +15,11 @@ import { Badge } from "@/components/ui/Badge";
 import { ShareButtons } from "@/components/ShareButtons";
 import { RestaurantPriceLevel } from "@/components/RestaurantPriceLevel";
 import { getRestaurantPriceLevelDisplay } from "@/lib/content-labels";
-import { getRestaurantBySlug, getRestaurants } from "@/lib/content";
+import { getRestaurantBySlug, getRestaurants, restaurantToOpenMeta } from "@/lib/content";
+import {
+  resolveRestaurantOpenStatus,
+  openStatusLabel,
+} from "@/lib/restaurant-open-status";
 import { SITE } from "@/lib/constants";
 
 type Props = {
@@ -48,6 +52,8 @@ export default async function RestaurantDetailPage({ params }: Props) {
   const restaurant = await getRestaurantBySlug(slug);
   if (!restaurant) notFound();
 
+  const openStatus = await resolveRestaurantOpenStatus(restaurantToOpenMeta(restaurant));
+
   const all = await getRestaurants();
   const related = all
     .filter((r) => r.slug !== restaurant.slug && r.district === restaurant.district)
@@ -76,6 +82,16 @@ export default async function RestaurantDetailPage({ params }: Props) {
           </Link>
 
           <div className="flex items-center gap-3 mb-3 flex-wrap">
+            {openStatus.state === "open" && (
+              <Badge variant="tipanier">
+                Ouvert · {openStatusLabel(openStatus.source)}
+              </Badge>
+            )}
+            {openStatus.state === "closed" && (
+              <Badge variant="neutral">
+                Fermé · {openStatusLabel(openStatus.source)}
+              </Badge>
+            )}
             {restaurant.premium && (
               <Badge variant="soleil" icon={<Star size={10} />}>
                 Premium

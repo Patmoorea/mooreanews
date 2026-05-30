@@ -35,9 +35,9 @@ export function formatMorningBrief30s(d: MooreaDuJour): { title: string; body: s
 export function formatEveningBrief(d: MooreaDuJour): { title: string; body: string } {
   const parts: string[] = [];
 
-  if (d.openRestaurantsEvening.length > 0) {
-    parts.push(`🍽 ${d.openRestaurantsEvening.length} resto(s) ce soir (estim.)`);
-    parts.push(d.openRestaurantsEvening[0]!.name.slice(0, 30));
+  if (d.openRestaurantsNow.length > 0) {
+    parts.push(`🍽 ${d.openRestaurantsNow.length} resto(s) ouverts`);
+    parts.push(d.openRestaurantsNow[0]!.name.slice(0, 30));
   }
 
   const ev = d.todayEvents.find((e) => e.time && parseInt(e.time, 10) >= 17) ?? d.todayEvents[0];

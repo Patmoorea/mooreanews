@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { CommercantForm } from "@/components/commerce/CommercantForm";
+import { MerchantDeclareOpen } from "@/components/commerce/MerchantDeclareOpen";
 import { PremiumRestaurantButton } from "@/components/commerce/PremiumRestaurantButton";
 import { PremiumAccommodationButton } from "@/components/commerce/PremiumAccommodationButton";
 import { getRestaurants } from "@/lib/content";
@@ -32,6 +33,14 @@ export default async function CommercantPage({ searchParams }: Props) {
         .order("name")
     : { data: [] };
 
+  const { data: declareRestaurants } = admin
+    ? await admin
+        .from("restaurants")
+        .select("id, name")
+        .eq("published", true)
+        .order("name")
+    : { data: restaurants.map((r) => ({ id: r.slug, name: r.name })) };
+
   return (
     <div className="min-h-screen bg-island-sky py-12 sm:py-16">
       <Container className="max-w-2xl">
@@ -53,6 +62,10 @@ export default async function CommercantPage({ searchParams }: Props) {
             Paiement reçu — votre hébergement sera mis à la une visiteurs sous quelques minutes.
           </p>
         )}
+
+        <section className="mt-10">
+          <MerchantDeclareOpen restaurants={declareRestaurants ?? []} />
+        </section>
 
         <section className="mt-10">
           <h2 className="font-display text-xl text-ocean-900 mb-4">

@@ -64,6 +64,12 @@ export type Restaurant = {
   lon?: number;
   features?: string[];
   premium?: boolean;
+  /** Place ID Google Maps — statut ouvert via Places API */
+  googlePlaceId?: string;
+  /** Déclaration commerçant (valide 12 h) */
+  merchantOpenStatus?: "open" | "closed";
+  merchantOpenUpdatedAt?: string;
+  merchantEmail?: string;
 };
 
 export type Activity = {

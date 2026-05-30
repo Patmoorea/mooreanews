@@ -33,6 +33,7 @@ import {
   normalizeInfoTitle,
 } from "@/lib/info-catalog";
 import { isClosedRestaurant } from "@/lib/closed-restaurants";
+import type { RestaurantOpenMeta } from "@/lib/restaurant-open-status";
 
 import type {
   ArticleRow,
@@ -297,6 +298,7 @@ function announcementFromRow(r: AnnouncementRow): Announcement {
 }
 
 function restaurantFromRow(r: RestaurantRow): Restaurant {
+  const premium = isPremiumRestaurant(r);
   return {
     slug: r.id,
     name: r.name,
@@ -309,9 +311,30 @@ function restaurantFromRow(r: RestaurantRow): Restaurant {
     website: r.url ?? undefined,
     openingHours: r.hours ?? undefined,
     image: r.cover_url ?? undefined,
-    premium: r.featured,
+    premium,
     lat: r.lat ?? undefined,
     lon: r.lon ?? undefined,
+    googlePlaceId: r.google_place_id ?? undefined,
+    merchantOpenStatus: r.merchant_open_status ?? undefined,
+    merchantOpenUpdatedAt: r.merchant_open_updated_at ?? undefined,
+    merchantEmail: r.merchant_email ?? undefined,
+  };
+}
+
+function isPremiumRestaurant(r: RestaurantRow): boolean {
+  if (r.featured) return true;
+  if (!r.premium_until) return false;
+  return new Date(r.premium_until).getTime() > Date.now();
+}
+
+export function restaurantToOpenMeta(r: Restaurant): RestaurantOpenMeta {
+  return {
+    slug: r.slug,
+    name: r.name,
+    district: r.district,
+    googlePlaceId: r.googlePlaceId,
+    merchantOpenStatus: r.merchantOpenStatus,
+    merchantOpenUpdatedAt: r.merchantOpenUpdatedAt,
   };
 }
 
