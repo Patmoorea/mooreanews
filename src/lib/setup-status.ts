@@ -10,6 +10,8 @@ export type SetupCheck = {
   id: string;
   label: string;
   ok: boolean;
+  /** Ne compte pas dans le score « requis » (ex. marées payantes). */
+  optional?: boolean;
   detail: string;
   action?: string;
 };
@@ -56,21 +58,29 @@ export async function getProductionSetupStatus(): Promise<SetupCheck[]> {
   checks.push({
     id: "stripe",
     label: "Stripe (monétisation)",
-    ok: Boolean(process.env.STRIPE_SECRET_KEY?.trim()),
-    detail: process.env.STRIPE_SECRET_KEY
-      ? "Stripe configuré"
-      : "STRIPE_SECRET_KEY manquante — boost annonces désactivé",
-    action: "STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+    ok: Boolean(
+      process.env.STRIPE_SECRET_KEY?.trim() &&
+        process.env.STRIPE_WEBHOOK_SECRET?.trim() &&
+        process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim(),
+    ),
+    detail:
+      process.env.STRIPE_SECRET_KEY?.trim() &&
+      process.env.STRIPE_WEBHOOK_SECRET?.trim() &&
+      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim()
+        ? "Stripe configuré (boost annonces + premium restaurant)"
+        : "Clés Stripe incomplètes — paiements désactivés",
+    action:
+      "STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY + webhook checkout.session.completed",
   });
 
   checks.push({
     id: "tides",
-    label: "Marées WorldTides",
-    ok: Boolean(process.env.WORLD_TIDES_API_KEY?.trim()),
-    detail: process.env.WORLD_TIDES_API_KEY
-      ? "API marées active (fallback algorithme si erreur)"
-      : "WORLD_TIDES_API_KEY optionnelle — marées indicatives",
-    action: "https://www.worldtides.info/register",
+    label: "Marées WorldTides (optionnel)",
+    ok: true,
+    optional: true,
+    detail: process.env.WORLD_TIDES_API_KEY?.trim()
+      ? "Clé API active — marées précises SHOM/WorldTides"
+      : "Ignoré — marées calculées localement (gratuit, sans API payante)",
   });
 
   const admin = getAdminSupabase();
@@ -89,9 +99,12 @@ export async function getProductionSetupStatus(): Promise<SetupCheck[]> {
         label: `Table ${t.label}`,
         ok: !error,
         detail: error
-          ? `Table absente : exécutez supabase/prod-setup-all.sql`
+          ? `Table absente : exécutez supabase/prod-setup-all.sql puis page-analytics-v2.sql si stats`
           : "OK",
-        action: "Supabase → SQL Editor → prod-setup-all.sql",
+        action:
+          t.name === "page_views"
+            ? "Supabase → prod-setup-all.sql + page-analytics-v2.sql"
+            : "Supabase → SQL Editor → prod-setup-all.sql",
       });
     }
 
