@@ -8,6 +8,7 @@ import {
   isPushSupported,
   markPushActive,
   subscribeToPushAlerts,
+  syncPushDistricts,
 } from "@/lib/push-client";
 
 const STORAGE_KEY = "mooreanews-alert-districts";
@@ -46,7 +47,7 @@ export function AlertDistrictSubscribe({
   useEffect(() => {
     if (!isPushMarkedActive() || !isPushSupported()) return;
     const t = setTimeout(() => {
-      subscribeToPushAlerts(selected).catch(() => {});
+      syncPushDistricts(selected);
     }, 600);
     return () => clearTimeout(t);
   }, [selected]);

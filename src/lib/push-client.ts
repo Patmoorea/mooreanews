@@ -51,6 +51,70 @@ export type PushSubscribeResult =
   | { ok: true; districts: string[] }
   | { ok: false; reason: "unsupported" | "denied" | "not_configured" | "failed"; message?: string };
 
+function pushErrorMessage(err: unknown): string {
+  const name = err instanceof Error ? err.name : "";
+  const msg = err instanceof Error ? err.message : String(err);
+  if (name === "NotAllowedError" || /permission/i.test(msg)) {
+    return "Autorisez les notifications dans les réglages du navigateur.";
+  }
+  if (/different applicationServerKey|vapid|key/i.test(msg)) {
+    return "Abonnement obsolète — réessayez (nouvelle paire de clés VAPID).";
+  }
+  if (/service worker/i.test(msg)) {
+    return "Service worker indisponible — rechargez la page ou installez l’app PWA.";
+  }
+  return msg.slice(0, 200) || "Erreur lors de l’abonnement push.";
+}
+
+async function fetchVapidPublicKey(): Promise<string | null> {
+  const res = await fetch("/api/push/vapid");
+  const text = await res.text();
+  try {
+    const data = JSON.parse(text) as { ok: boolean; publicKey?: string };
+    return data.ok && data.publicKey ? data.publicKey : null;
+  } catch {
+    return null;
+  }
+}
+
+async function saveSubscriptionOnServer(
+  subscription: PushSubscription,
+  districts: string[],
+): Promise<{ ok: true; districts: string[] } | { ok: false; message: string }> {
+  const res = await fetch("/api/push/subscribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subscription: subscription.toJSON(), districts }),
+  });
+
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    return {
+      ok: false,
+      message: body.error ?? `Serveur (${res.status}) — vérifiez Supabase.`,
+    };
+  }
+
+  const data = (await res.json()) as { districts?: string[] };
+  return { ok: true, districts: data.districts ?? districts };
+}
+
+/** Met à jour les quartiers sans recréer l’abonnement navigateur. */
+export async function syncPushDistricts(districts: string[]): Promise<void> {
+  if (!isPushSupported() || !isPushMarkedActive()) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      markPushActive(false);
+      return;
+    }
+    await saveSubscriptionOnServer(sub, districts);
+  } catch {
+    /* silencieux */
+  }
+}
+
 /** Demande permission, s'abonne et enregistre côté serveur. */
 export async function subscribeToPushAlerts(
   districts: string[],
@@ -59,48 +123,44 @@ export async function subscribeToPushAlerts(
     return { ok: false, reason: "unsupported" };
   }
 
-  const perm = await Notification.requestPermission();
-  if (perm !== "granted") {
-    return { ok: false, reason: "denied" };
-  }
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") {
+      return { ok: false, reason: "denied" };
+    }
 
-  const vapidRes = await fetch("/api/push/vapid");
-  const vapid = (await vapidRes.json()) as { ok: boolean; publicKey?: string };
-  if (!vapid.ok || !vapid.publicKey) {
-    return {
-      ok: false,
-      reason: "not_configured",
-      message: "VAPID non configuré sur le serveur.",
-    };
-  }
+    const publicKey = await fetchVapidPublicKey();
+    if (!publicKey) {
+      return {
+        ok: false,
+        reason: "not_configured",
+        message: "Clé VAPID publique absente sur Vercel.",
+      };
+    }
 
-  const reg = await ensureServiceWorkerReady();
-  let sub = await reg.pushManager.getSubscription();
-  if (!sub) {
-    sub = await reg.pushManager.subscribe({
+    const reg = await ensureServiceWorkerReady();
+    const applicationServerKey = urlBase64ToUint8Array(
+      publicKey,
+    ) as BufferSource;
+
+    const existing = await reg.pushManager.getSubscription();
+    if (existing) {
+      await existing.unsubscribe();
+    }
+
+    const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(
-        vapid.publicKey,
-      ) as BufferSource,
+      applicationServerKey,
     });
+
+    const saved = await saveSubscriptionOnServer(sub, districts);
+    if (!saved.ok) {
+      return { ok: false, reason: "failed", message: saved.message };
+    }
+
+    markPushActive(true);
+    return { ok: true, districts: saved.districts };
+  } catch (err) {
+    return { ok: false, reason: "failed", message: pushErrorMessage(err) };
   }
-
-  const res = await fetch("/api/push/subscribe", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ subscription: sub.toJSON(), districts }),
-  });
-
-  if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { error?: string };
-    return {
-      ok: false,
-      reason: "failed",
-      message: body.error ?? "Enregistrement serveur impossible.",
-    };
-  }
-
-  const data = (await res.json()) as { districts?: string[] };
-  markPushActive(true);
-  return { ok: true, districts: data.districts ?? districts };
 }

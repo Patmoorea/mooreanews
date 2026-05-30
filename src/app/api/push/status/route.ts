@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { getAdminSupabase } from "@/lib/supabase/admin";
-import { getVapidPublicKey, isPushAvailable } from "@/lib/push-notify";
+import { getVapidPublicKey } from "@/lib/push-notify";
 
 export const dynamic = "force-dynamic";
 
 /** Diagnostic public push (sans données sensibles). */
 export async function GET() {
-  const vapid = isPushAvailable();
   const publicKey = getVapidPublicKey();
 
   let tableOk = false;
@@ -27,18 +26,25 @@ export async function GET() {
     emailSubscribers = emailCount ?? 0;
   }
 
+  const publicKeySet = Boolean(publicKey);
+  const privateKeySet = Boolean(process.env.VAPID_PRIVATE_KEY?.trim());
+
   return NextResponse.json({
-    ok: vapid && tableOk,
-    vapidConfigured: vapid,
+    ok: publicKeySet && privateKeySet && tableOk,
+    vapidConfigured: publicKeySet && privateKeySet,
+    publicKeySet,
+    privateKeySet,
     publicKeyPreview: publicKey ? `${publicKey.slice(0, 12)}…` : null,
     tableReady: tableOk,
     pushSubscribers: subscribers,
     emailSubscribers,
     subscribeUrl: "/alertes",
-    hint: !vapid
-      ? "Ajoutez VAPID_PUBLIC_KEY et VAPID_PRIVATE_KEY sur Vercel puis redeploy."
-      : !tableOk
-        ? "Exécutez supabase/prod-setup-all.sql (table push_subscriptions)."
-        : "Prêt — activez les notifications sur /alertes.",
+    hint: !publicKeySet
+      ? "Ajoutez VAPID_PUBLIC_KEY sur Vercel puis redeploy."
+      : !privateKeySet
+        ? "VAPID_PUBLIC_KEY OK mais VAPID_PRIVATE_KEY manquante — les notifs ne partiront pas."
+        : !tableOk
+          ? "Exécutez supabase/prod-setup-all.sql (table push_subscriptions)."
+          : "Prêt — activez les notifications sur /alertes.",
   });
 }
