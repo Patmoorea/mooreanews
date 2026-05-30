@@ -13,6 +13,7 @@ export async function FeaturedArticles() {
   ]);
   const featured = featuredAll.slice(0, 2);
   const recent = allArticles.slice(0, 4);
+  const hasFeatured = featured.length > 0;
 
   return (
     <section
@@ -22,12 +23,19 @@ export async function FeaturedArticles() {
       <Container>
         <div className="flex items-end justify-between mb-10">
           <div>
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-lagon-100 text-lagon-700 text-xs font-semibold uppercase tracking-widest border border-lagon-200/60">
-              <span aria-hidden>📰</span>
-              À la une
-            </span>
+            {hasFeatured ? (
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-lagon-100 text-lagon-700 text-xs font-semibold uppercase tracking-widest border border-lagon-200/60">
+                <span aria-hidden>📰</span>
+                À la une
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ocean-100 text-ocean-700 text-xs font-semibold uppercase tracking-widest border border-ocean-200/60">
+                <span aria-hidden>📰</span>
+                Actualités
+              </span>
+            )}
             <h2 className="mt-3 font-display text-3xl sm:text-4xl text-ocean-950">
-              Dernières actualités
+              {hasFeatured ? "À la une & dernières actualités" : "Dernières actualités"}
             </h2>
           </div>
           <Link
@@ -39,9 +47,15 @@ export async function FeaturedArticles() {
           </Link>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* À la une (les deux premiers featured) */}
-          {featured.map((a, idx) => (
+        <div
+          className={
+            hasFeatured
+              ? "grid lg:grid-cols-3 gap-6"
+              : "grid sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          }
+        >
+          {hasFeatured &&
+            featured.map((a, idx) => (
             <Link
               href={`/actualites/${a.slug}`}
               key={a.slug}
@@ -83,11 +97,16 @@ export async function FeaturedArticles() {
                 </p>
               </div>
             </Link>
-          ))}
+            ))}
 
-          {/* Les plus récents */}
-          <div className="grid gap-4 lg:col-start-3 lg:row-start-1 lg:row-span-2 self-start">
-            {recent.slice(featured.length).map((a) => (
+          <div
+            className={
+              hasFeatured
+                ? "grid gap-4 lg:col-start-3 lg:row-start-1 lg:row-span-2 self-start"
+                : "contents sm:contents"
+            }
+          >
+            {(hasFeatured ? recent.slice(featured.length) : recent).map((a) => (
               <Link
                 href={`/actualites/${a.slug}`}
                 key={a.slug}

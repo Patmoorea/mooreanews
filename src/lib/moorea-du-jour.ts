@@ -4,7 +4,6 @@
 
 import { expirePastAlerts } from "@/lib/alert-schedule";
 import {
-  getArticles,
   getFeaturedArticles,
   getUpcomingEvents,
   getRestaurants,
@@ -106,8 +105,7 @@ export async function getMooreaDuJour(): Promise<MooreaDuJour> {
     .slice(0, 6)
     .map((r) => ({ slug: r.slug, name: r.name, district: r.district }));
 
-  const articles = featured.length > 0 ? featured : await getArticles();
-  const headlines = articles.slice(0, 4).map((a) => ({
+  const headlines = featured.slice(0, 4).map((a) => ({
     slug: a.slug,
     title: a.title,
     category: a.category,
