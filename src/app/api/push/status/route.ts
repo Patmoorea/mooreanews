@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSupabase } from "@/lib/supabase/admin";
-import { getVapidPublicKey } from "@/lib/push-notify";
+import { isValidVapidPublicKey } from "@/lib/push-keys";
+import { getVapidPublicKey, purgeInvalidPushSubscriptions } from "@/lib/push-notify";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,8 @@ export async function GET() {
 
   const admin = getAdminSupabase();
   if (admin) {
+    await purgeInvalidPushSubscriptions();
+
     const { error: pushErr, count: pushCount } = await admin
       .from("push_subscriptions")
       .select("id", { count: "exact", head: true });
@@ -26,7 +29,7 @@ export async function GET() {
     emailSubscribers = emailCount ?? 0;
   }
 
-  const publicKeySet = Boolean(publicKey);
+  const publicKeySet = Boolean(publicKey && isValidVapidPublicKey(publicKey));
   const privateKeySet = Boolean(process.env.VAPID_PRIVATE_KEY?.trim());
 
   return NextResponse.json({

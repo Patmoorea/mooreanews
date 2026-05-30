@@ -2,6 +2,11 @@
  * Client Web Push — enregistrement SW + abonnement VAPID.
  */
 
+import {
+  decodeBase64Url,
+  isValidVapidPublicKey,
+} from "@/lib/push-keys";
+
 const SW_URL = "/sw.js";
 const PUSH_OK_KEY = "mooreanews-push-ok";
 
@@ -32,12 +37,9 @@ export function markPushActive(active: boolean): void {
 }
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const raw = atob(base64);
-  const arr = new Uint8Array(raw.length);
-  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
-  return arr;
+  const decoded = decodeBase64Url(base64String);
+  if (!decoded) throw new Error("Clé VAPID illisible");
+  return decoded;
 }
 
 /** Enregistre le SW et attend qu'il soit prêt. */
@@ -57,8 +59,11 @@ function pushErrorMessage(err: unknown): string {
   if (name === "NotAllowedError" || /permission/i.test(msg)) {
     return "Autorisez les notifications dans les réglages du navigateur.";
   }
+  if (/push service error|Registration failed/i.test(msg)) {
+    return "Service push refusé — utilisez Chrome, Firefox ou Safari (PWA installée), pas un navigateur intégré.";
+  }
   if (/different applicationServerKey|vapid|key/i.test(msg)) {
-    return "Abonnement obsolète — réessayez (nouvelle paire de clés VAPID).";
+    return "Clés VAPID changées — réessayez après avoir vidé le cache du site.";
   }
   if (/service worker/i.test(msg)) {
     return "Service worker indisponible — rechargez la page ou installez l’app PWA.";
@@ -135,6 +140,13 @@ export async function subscribeToPushAlerts(
         ok: false,
         reason: "not_configured",
         message: "Clé VAPID publique absente sur Vercel.",
+      };
+    }
+    if (!isValidVapidPublicKey(publicKey)) {
+      return {
+        ok: false,
+        reason: "not_configured",
+        message: "Clé VAPID publique invalide sur Vercel (regénérez la paire).",
       };
     }
 

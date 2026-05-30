@@ -5,6 +5,11 @@
 import webpush from "web-push";
 import { Resend } from "resend";
 import { ENV, SITE } from "@/lib/constants";
+import {
+  isValidPushSubscriptionKeys,
+  isValidVapidPublicKey,
+  pushKeysErrorMessage,
+} from "@/lib/push-keys";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import type { AlertRow } from "@/lib/supabase/types";
 
@@ -15,9 +20,10 @@ export type PushSubscriptionInput = {
 };
 
 function vapidConfigured(): boolean {
+  const publicKey = process.env.VAPID_PUBLIC_KEY?.trim();
+  const privateKey = process.env.VAPID_PRIVATE_KEY?.trim();
   return Boolean(
-    process.env.VAPID_PUBLIC_KEY?.trim() &&
-      process.env.VAPID_PRIVATE_KEY?.trim(),
+    publicKey && privateKey && isValidVapidPublicKey(publicKey),
   );
 }
 
@@ -31,9 +37,32 @@ function configureWebPush(): boolean {
   const subject =
     process.env.VAPID_SUBJECT?.trim() ??
     `mailto:${SITE.email}`;
-  if (!publicKey || !privateKey) return false;
+  if (!publicKey || !privateKey || !isValidVapidPublicKey(publicKey)) return false;
   webpush.setVapidDetails(subject, publicKey, privateKey);
   return true;
+}
+
+async function deleteInvalidPushRow(
+  admin: NonNullable<ReturnType<typeof getAdminSupabase>>,
+  rowId: string,
+): Promise<void> {
+  await admin.from("push_subscriptions").delete().eq("id", rowId);
+}
+
+/** Supprime les abonnements corrompus (tests curl, anciennes clés…). */
+export async function purgeInvalidPushSubscriptions(): Promise<number> {
+  const admin = getAdminSupabase();
+  if (!admin) return 0;
+
+  const { data: rows } = await admin.from("push_subscriptions").select("id, p256dh, auth");
+  let deleted = 0;
+  for (const row of rows ?? []) {
+    if (!isValidPushSubscriptionKeys(row.p256dh, row.auth)) {
+      await deleteInvalidPushRow(admin, row.id);
+      deleted += 1;
+    }
+  }
+  return deleted;
 }
 
 /** Abonnement pertinent : quartiers choisis + alertes île entière (district null). */
@@ -54,6 +83,13 @@ export async function savePushSubscription(
   if (!admin) return { ok: false, error: "Supabase non configuré" };
 
   const districts = (input.districts ?? []).filter(Boolean);
+  if (!isValidPushSubscriptionKeys(input.keys.p256dh, input.keys.auth)) {
+    return {
+      ok: false,
+      error: pushKeysErrorMessage(input.keys.p256dh, input.keys.auth),
+    };
+  }
+
   const { error } = await admin.from("push_subscriptions").upsert(
     {
       endpoint: input.endpoint,
@@ -123,6 +159,11 @@ export async function notifyAlertSubscribers(
       if (!subscriptionMatchesAlert(row.districts ?? [], alert)) continue;
       if (!pushConfigured) break;
 
+      if (!isValidPushSubscriptionKeys(row.p256dh, row.auth)) {
+        await deleteInvalidPushRow(admin, row.id);
+        continue;
+      }
+
       try {
         await webpush.sendNotification(
           {
@@ -134,8 +175,8 @@ export async function notifyAlertSubscribers(
         pushSent += 1;
       } catch (e) {
         const msg = String(e);
-        if (/410|404|expired|unsubscribed/i.test(msg)) {
-          await admin.from("push_subscriptions").delete().eq("id", row.id);
+        if (/410|404|expired|unsubscribed|65 bytes/i.test(msg)) {
+          await deleteInvalidPushRow(admin, row.id);
         } else {
           errors.push(`push: ${msg.slice(0, 120)}`);
         }
@@ -242,6 +283,8 @@ export async function sendTestPushNotification(): Promise<{
     return { sent: 0, errors: ["VAPID non configuré sur Vercel"] };
   }
 
+  await purgeInvalidPushSubscriptions();
+
   const payload = {
     title: "🔔 Test MooreaNews",
     body: "Les notifications push fonctionnent. Vous recevrez les alertes de votre quartier ici.",
@@ -255,6 +298,11 @@ export async function sendTestPushNotification(): Promise<{
   const errors: string[] = [];
 
   for (const row of rows ?? []) {
+    if (!isValidPushSubscriptionKeys(row.p256dh, row.auth)) {
+      await deleteInvalidPushRow(admin, row.id);
+      continue;
+    }
+
     try {
       await webpush.sendNotification(
         {
@@ -266,12 +314,18 @@ export async function sendTestPushNotification(): Promise<{
       sent += 1;
     } catch (e) {
       const msg = String(e);
-      if (/410|404|expired|unsubscribed/i.test(msg)) {
-        await admin.from("push_subscriptions").delete().eq("id", row.id);
+      if (/410|404|expired|unsubscribed|65 bytes/i.test(msg)) {
+        await deleteInvalidPushRow(admin, row.id);
       } else {
         errors.push(msg.slice(0, 120));
       }
     }
+  }
+
+  if (sent === 0 && errors.length === 0) {
+    errors.push(
+      "Aucun abonné valide — réactivez les notifications sur /alertes.",
+    );
   }
 
   return { sent, errors };
