@@ -99,6 +99,31 @@ export type RestaurantRow = {
   updated_at: string;
 };
 
+export type AccommodationRow = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  type: "hotel" | "pension" | "fare" | "villa";
+  district: string;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  url: string | null;
+  price_hint: string | null;
+  availability_status: "available" | "limited" | "contact" | "full";
+  lat: number | null;
+  lon: number | null;
+  cover_url: string | null;
+  merchant_email: string | null;
+  published: boolean;
+  featured: boolean;
+  premium_until: string | null;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type ActivityRow = {
   id: string;
   name: string;
@@ -274,7 +299,7 @@ export type PageViewRow = {
 
 export type CommercePaymentRow = {
   id: string;
-  kind: "announcement_boost" | "restaurant_premium";
+  kind: "announcement_boost" | "restaurant_premium" | "accommodation_premium";
   target_id: string;
   stripe_session_id: string | null;
   amount_cents: number | null;
@@ -294,6 +319,7 @@ export type Database = {
       events: TableDef<EventRow>;
       announcements: TableDef<AnnouncementRow>;
       restaurants: TableDef<RestaurantRow>;
+      accommodations: TableDef<AccommodationRow>;
       activities: TableDef<ActivityRow>;
       info_pratiques: TableDef<InfoRow>;
       submissions: TableDef<SubmissionRow>;

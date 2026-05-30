@@ -10,6 +10,7 @@ type TableName =
   | "events"
   | "announcements"
   | "restaurants"
+  | "accommodations"
   | "activities"
   | "info_pratiques";
 

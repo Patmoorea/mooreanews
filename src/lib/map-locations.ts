@@ -6,7 +6,7 @@
 export type MapMarker = {
   id: string;
   name: string;
-  category: "restaurant" | "activite" | "info" | "ferry" | "plage";
+  category: "restaurant" | "activite" | "info" | "ferry" | "plage" | "hebergement";
   lat: number;
   lon: number;
   description?: string;

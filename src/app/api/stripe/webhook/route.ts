@@ -44,6 +44,20 @@ async function fulfillSession(session: Stripe.Checkout.Session) {
     revalidatePath(`/restaurants/${targetId}`);
   }
 
+  if (kind === "accommodation_premium") {
+    const until = new Date(now);
+    until.setDate(until.getDate() + STRIPE_PRICES.premiumDays);
+    await admin
+      .from("accommodations")
+      .update({
+        premium_until: until.toISOString(),
+        featured: true,
+      })
+      .eq("id", targetId);
+    revalidatePath("/hebergements");
+    revalidatePath("/visiteurs");
+  }
+
   await admin
     .from("commerce_payments")
     .update({ status: "completed", completed_at: now.toISOString() })

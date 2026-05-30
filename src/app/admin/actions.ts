@@ -8,6 +8,7 @@ import { hideExternalArticlesForArticleSlug } from "@/lib/facebook-external-sync
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { importMissingRestaurantsFromJson } from "@/lib/supabase/sync-restaurants";
+import { importMissingAccommodationsFromJson } from "@/lib/supabase/sync-accommodations";
 import { importMissingInfoPratiquesFromJson } from "@/lib/supabase/sync-info-pratiques";
 import {
   insertInfoPratiqueRow,
@@ -23,6 +24,7 @@ type TableName =
   | "events"
   | "announcements"
   | "restaurants"
+  | "accommodations"
   | "activities"
   | "info_pratiques"
   | "alerts";
@@ -54,6 +56,8 @@ function publicPathFor(table: TableName): string {
       return "/annonces";
     case "restaurants":
       return "/restaurants";
+    case "accommodations":
+      return "/hebergements";
     case "activities":
       return "/activites";
     case "info_pratiques":
@@ -142,6 +146,27 @@ function parseFormPayload(
         cover_url: get("cover_url") || null,
         published: getBool("published"),
         featured: getBool("featured"),
+      };
+    case "accommodations":
+      return {
+        slug: get("slug") || slugify(get("name")),
+        name: get("name"),
+        description: get("description"),
+        type: get("type") || "pension",
+        district: get("district"),
+        address: get("address") || null,
+        phone: get("phone") || null,
+        email: get("email") || null,
+        url: get("url") || null,
+        price_hint: get("price_hint") || null,
+        availability_status: get("availability_status") || "contact",
+        lat: getNum("lat"),
+        lon: getNum("lon"),
+        cover_url: get("cover_url") || null,
+        merchant_email: get("merchant_email") || null,
+        published: getBool("published"),
+        featured: getBool("featured"),
+        display_order: Number(get("display_order") || "0"),
       };
     case "activities":
       return {
@@ -268,6 +293,10 @@ export async function createContent(table: TableName, formData: FormData) {
   if (table === "events" || table === "announcements") {
     revalidatePath("/", "layout");
   }
+  if (table === "accommodations") {
+    revalidatePath("/visiteurs");
+    revalidatePath("/hebergements");
+  }
   if (table === "alerts") {
     revalidateAlertPublicPaths();
   }
@@ -312,7 +341,7 @@ export async function updateContent(
       .update(payload)
       .eq("id", id);
     if (error) throw error;
-    if (table === "restaurants" || table === "activities") {
+    if (table === "restaurants" || table === "activities" || table === "accommodations") {
       revalidatePath("/");
     }
   }
@@ -607,5 +636,15 @@ export async function importInfoPratiquesFromJson() {
   const result = await importMissingInfoPratiquesFromJson();
   revalidatePath("/admin/info");
   revalidatePath("/infos-pratiques");
+  return result;
+}
+
+/** Importe les hébergements du JSON catalogue (admin, 1 clic). */
+export async function importAccommodationsFromCatalog() {
+  await requireAdmin();
+  const result = await importMissingAccommodationsFromJson();
+  revalidatePath("/admin/accommodations");
+  revalidatePath("/hebergements");
+  revalidatePath("/visiteurs");
   return result;
 }

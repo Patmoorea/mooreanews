@@ -8,6 +8,7 @@ import { SITE } from "@/lib/constants";
 export const STRIPE_PRICES = {
   announcementBoostEurCents: 1250,
   restaurantPremiumEurCents: 4900,
+  accommodationPremiumEurCents: 4900,
   boostDays: 7,
   premiumDays: 30,
 } as const;

@@ -14,6 +14,7 @@ const FILTERS: { value: CategoryFilter; label: string; color: string }[] = [
   { value: "restaurant", label: "Restaurants", color: "bg-couchant" },
   { value: "activite", label: "Activités", color: "bg-tipanier-500" },
   { value: "plage", label: "Plages", color: "bg-lagon-500" },
+  { value: "hebergement", label: "Hébergements", color: "bg-soleil-500" },
   { value: "ferry", label: "Transports", color: "bg-ocean-600" },
   { value: "info", label: "Infos", color: "bg-tiare-500" },
 ];
@@ -22,6 +23,7 @@ const CATEGORY_COLORS: Record<MapMarker["category"], string> = {
   restaurant: "#fb923c",
   activite: "#10b981",
   plage: "#06b6d4",
+  hebergement: "#eab308",
   ferry: "#0284c7",
   info: "#f43f5e",
 };
@@ -263,6 +265,8 @@ function markerEmoji(cat: MapMarker["category"]): string {
       return "⛴";
     case "info":
       return "ⓘ";
+    case "hebergement":
+      return "🛏";
   }
 }
 

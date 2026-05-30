@@ -14,6 +14,7 @@ import type {
   EventRow,
   AnnouncementRow,
   RestaurantRow,
+  AccommodationRow,
   ActivityRow,
   InfoRow,
   AlertRow,
@@ -74,6 +75,17 @@ export async function dbListRestaurants(): Promise<RestaurantRow[] | null> {
     .select("*")
     .eq("published", true)
     .order("featured", { ascending: false });
+  return data;
+}
+
+export async function dbListAccommodations(): Promise<AccommodationRow[] | null> {
+  const supabase = getPublicSupabase();
+  if (!supabase) return null;
+  const { data } = await supabase
+    .from("accommodations")
+    .select("*")
+    .eq("published", true)
+    .order("display_order", { ascending: true });
   return data;
 }
 

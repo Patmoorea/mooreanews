@@ -128,10 +128,10 @@ export default async function VisiteursPage() {
               </p>
             </div>
             <Link
-              href="/annonces"
+              href="/hebergements"
               className="text-sm font-semibold text-lagon-700 hover:underline"
             >
-              Toutes les annonces →
+              Annuaire complet →
             </Link>
           </div>
           <AccommodationsList items={accommodations} />

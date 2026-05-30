@@ -5,6 +5,8 @@
 import accommodationsData from "@/../data/accommodations.json";
 import { getAnnouncements } from "@/lib/content";
 import type { Announcement } from "@/lib/content-types";
+import { dbListAccommodations } from "@/lib/supabase/queries";
+import type { AccommodationRow } from "@/lib/supabase/types";
 
 export type AccommodationType = "hotel" | "pension" | "fare" | "villa";
 
@@ -21,14 +23,17 @@ export type Accommodation = {
   district: string;
   description: string;
   contact: string;
-  website?: string;
-  lat?: number;
-  lon?: number;
+  website?: string | null;
+  priceHint?: string | null;
+  lat?: number | null;
+  lon?: number | null;
   availabilityStatus: AvailabilityStatus;
   featured?: boolean;
+  premium?: boolean;
   source: "directory" | "announcement";
   href?: string;
   price?: string;
+  coverUrl?: string | null;
 };
 
 const TYPE_LABELS: Record<AccommodationType, string> = {
@@ -53,15 +58,52 @@ export function availabilityLabel(status: AvailabilityStatus): string {
   return AVAIL_LABELS[status];
 }
 
-function fromJson(
-  row: (typeof accommodationsData)[number],
-): Accommodation {
+function isPremium(row: AccommodationRow): boolean {
+  if (!row.premium_until) return false;
+  return new Date(row.premium_until).getTime() > Date.now();
+}
+
+function fromRow(row: AccommodationRow): Accommodation {
+  const premium = isPremium(row);
   return {
-    ...row,
-    type: row.type as AccommodationType,
-    availabilityStatus: row.availabilityStatus as AvailabilityStatus,
+    slug: row.slug,
+    name: row.name,
+    type: row.type,
+    district: row.district,
+    description: row.description,
+    contact: row.phone ?? row.email ?? "Contacter l'établissement",
+    website: row.url,
+    priceHint: row.price_hint,
+    lat: row.lat,
+    lon: row.lon,
+    availabilityStatus: row.availability_status,
+    featured: row.featured || premium,
+    premium,
     source: "directory",
-    href: row.website,
+    href: `/hebergements/${row.slug}`,
+    coverUrl: row.cover_url,
+  };
+}
+
+type JsonEntry = (typeof accommodationsData)[number];
+
+function fromJson(entry: JsonEntry): Accommodation {
+  return {
+    slug: entry.slug,
+    name: entry.name,
+    type: entry.type as AccommodationType,
+    district: entry.district,
+    description: entry.description,
+    contact: entry.phone ?? "Contacter l'établissement",
+    website: entry.website ?? null,
+    priceHint: entry.priceHint ?? null,
+    lat: entry.lat,
+    lon: entry.lon,
+    availabilityStatus: (entry.availabilityStatus ??
+      "contact") as AvailabilityStatus,
+    featured: entry.featured,
+    source: "directory",
+    href: `/hebergements/${entry.slug}`,
   };
 }
 
@@ -81,16 +123,8 @@ function fromAnnouncement(a: Announcement): Accommodation {
   };
 }
 
-/** Annuaire + annonces « location » publiées sur MooreaNews. */
-export async function getVisitorAccommodations(): Promise<Accommodation[]> {
-  const directory = (accommodationsData as typeof accommodationsData).map(
-    fromJson,
-  );
-  const announcements = (await getAnnouncements())
-    .filter((a) => a.type === "location")
-    .map(fromAnnouncement);
-
-  const merged = [...directory, ...announcements].sort((a, b) => {
+function sortAccommodations(items: Accommodation[]): Accommodation[] {
+  return items.slice().sort((a, b) => {
     const af = a.featured ? 1 : 0;
     const bf = b.featured ? 1 : 0;
     if (af !== bf) return bf - af;
@@ -102,6 +136,41 @@ export async function getVisitorAccommodations(): Promise<Accommodation[]> {
     };
     return order[a.availabilityStatus] - order[b.availabilityStatus];
   });
+}
 
-  return merged;
+export async function getAccommodations(): Promise<Accommodation[]> {
+  const db = await dbListAccommodations();
+  if (db?.length) return sortAccommodations(db.map(fromRow));
+  return sortAccommodations(
+    (accommodationsData as JsonEntry[]).map(fromJson),
+  );
+}
+
+/** Annuaire + annonces « location » publiées sur MooreaNews. */
+export async function getVisitorAccommodations(): Promise<Accommodation[]> {
+  const [directory, announcements] = await Promise.all([
+    getAccommodations(),
+    getAnnouncements(),
+  ]);
+
+  const locations = announcements
+    .filter((a) => a.type === "location")
+    .map(fromAnnouncement);
+
+  return sortAccommodations([...directory, ...locations]);
+}
+
+export async function getAccommodationBySlug(
+  slug: string,
+): Promise<Accommodation | undefined> {
+  const all = await getAccommodations();
+  return all.find((a) => a.slug === slug && a.source === "directory");
+}
+
+export async function getAccommodationRowBySlug(
+  slug: string,
+): Promise<AccommodationRow | null> {
+  const db = await dbListAccommodations();
+  if (!db) return null;
+  return db.find((r) => r.slug === slug) ?? null;
 }

@@ -102,6 +102,14 @@ export function Footer() {
             <ul className="mt-4 space-y-2">
               <li>
                 <Link
+                  href="/hebergements"
+                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
+                >
+                  Hébergements
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/visiteurs"
                   className="text-sm text-ocean-200/80 hover:text-white transition-colors"
                 >

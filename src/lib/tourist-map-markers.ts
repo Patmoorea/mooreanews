@@ -4,6 +4,7 @@
 
 import { MOOREA_BEACHES } from "@/lib/beaches";
 import { getRestaurants, getUpcomingEvents } from "@/lib/content";
+import { getAccommodations } from "@/lib/accommodations";
 import { getBeachSwimScores } from "@/lib/swim-beaches";
 import type { MapMarker } from "@/lib/map-locations";
 
@@ -25,10 +26,11 @@ export type TouristMapMarker = MapMarker & {
 };
 
 export async function buildTouristMapMarkers(): Promise<TouristMapMarker[]> {
-  const [restaurants, events, beachScores] = await Promise.all([
+  const [restaurants, events, beachScores, accommodations] = await Promise.all([
     getRestaurants(),
     getUpcomingEvents(12),
     getBeachSwimScores(),
+    getAccommodations(),
   ]);
 
   const markers: TouristMapMarker[] = [];
@@ -59,6 +61,20 @@ export async function buildTouristMapMarkers(): Promise<TouristMapMarker[]> {
       district: r.district,
       description: r.address ?? r.district,
       href: `/restaurants/${r.slug}`,
+    });
+  }
+
+  for (const a of accommodations) {
+    if (a.lat == null || a.lon == null || a.source !== "directory") continue;
+    markers.push({
+      id: `hebergement-${a.slug}`,
+      name: a.name,
+      category: "hebergement",
+      lat: a.lat,
+      lon: a.lon,
+      district: a.district,
+      description: a.description.slice(0, 80),
+      href: a.href,
     });
   }
 

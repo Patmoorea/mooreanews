@@ -49,13 +49,26 @@ export function AccommodationsList({
                 À la une
               </span>
             )}
+            {a.premium && (
+              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-soleil-100 text-soleil-800">
+                Premium
+              </span>
+            )}
             <span
               className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${AVAIL_STYLE[a.availabilityStatus]}`}
             >
               {availabilityLabel(a.availabilityStatus)}
             </span>
           </div>
-          <h3 className="font-semibold text-ocean-900">{a.name}</h3>
+          <h3 className="font-semibold text-ocean-900">
+            {a.href && a.source === "directory" ? (
+              <Link href={a.href} className="hover:text-lagon-700">
+                {a.name}
+              </Link>
+            ) : (
+              a.name
+            )}
+          </h3>
           <p className="mt-1 text-sm text-ocean-600 line-clamp-2">{a.description}</p>
           <div className="mt-3 flex flex-wrap gap-3 text-xs text-ocean-500">
             <span className="flex items-center gap-1">
