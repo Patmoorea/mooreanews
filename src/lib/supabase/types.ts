@@ -244,6 +244,7 @@ export type PageViewRow = {
   path: string;
   referrer: string | null;
   visitor_id: string | null;
+  device_type: "mobile" | "desktop" | "tablet" | "unknown" | null;
   viewed_at: string;
 };
 

@@ -6,6 +6,9 @@ const Payload = z.object({
   path: z.string().min(1).max(500),
   referrer: z.string().max(500).optional(),
   visitorId: z.string().max(64).optional(),
+  deviceType: z
+    .enum(["mobile", "desktop", "tablet", "unknown"])
+    .optional(),
 });
 
 export async function POST(req: Request) {

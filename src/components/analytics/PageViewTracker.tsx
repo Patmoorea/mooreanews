@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 
+import { deviceTypeFromUserAgent } from "@/lib/page-analytics";
+
 const VISITOR_KEY = "mn_visitor_id";
 
 function getVisitorId(): string {
@@ -35,6 +37,7 @@ export function PageViewTracker() {
         path: pathname,
         referrer: document.referrer || undefined,
         visitorId: getVisitorId(),
+        deviceType: deviceTypeFromUserAgent(navigator.userAgent ?? ""),
       }),
       keepalive: true,
     }).catch(() => {});

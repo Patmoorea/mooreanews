@@ -22,6 +22,9 @@ create table if not exists public.page_views (
 );
 create index if not exists page_views_viewed_at_idx on public.page_views (viewed_at desc);
 create index if not exists page_views_path_idx on public.page_views (path);
+alter table public.page_views
+  add column if not exists device_type text check (device_type in ('mobile', 'desktop', 'tablet', 'unknown'));
+create index if not exists page_views_device_idx on public.page_views (device_type);
 alter table public.page_views enable row level security;
 drop policy if exists "page_views_public_insert" on public.page_views;
 create policy "page_views_public_insert" on public.page_views for insert with check (true);
