@@ -13,6 +13,8 @@ export type RssSource = {
   keywords?: string[];
   /** Si true, on accepte tous les articles (pas de filtre par mots-clés). */
   acceptAll?: boolean;
+  /** Si true, le cron crée aussi une fiche dans Actualités (table articles). */
+  autoPublishAsArticles?: boolean;
   /** Logo ou favicon de la source. */
   iconUrl?: string;
 };
@@ -48,6 +50,7 @@ export const RSS_SOURCES: RssSource[] = [
     url: "https://www.tahiti-infos.com/xml/syndication.rss",
     homepage: "https://www.tahiti-infos.com",
     keywords: MOOREA_KEYWORDS,
+    autoPublishAsArticles: true,
   },
   {
     id: "polynesie-1ere",
@@ -69,6 +72,7 @@ export const RSS_SOURCES: RssSource[] = [
     url: "https://www.commune-moorea.net/feed/",
     homepage: "https://www.commune-moorea.net",
     acceptAll: true,
+    autoPublishAsArticles: true,
   },
   {
     id: "google-news-moorea",

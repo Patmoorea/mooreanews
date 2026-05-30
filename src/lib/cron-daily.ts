@@ -91,6 +91,15 @@ export async function runDailyCron(): Promise<DailyCronResult> {
     revalidatePath("/", "layout");
   }
 
+  const articlesCreated = results.reduce(
+    (s, r) => s + (r.articlesCreated ?? 0),
+    0,
+  );
+  if (articlesCreated > 0) {
+    revalidatePath("/actualites");
+    revalidatePath("/", "layout");
+  }
+
   const aggErrors = results.flatMap((r) =>
     r.errors.map((e) => `${r.source}: ${e}`),
   );

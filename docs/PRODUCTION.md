@@ -46,6 +46,8 @@ Cette page a été ajoutée récemment. Un **404** signifie que **Vercel n’a p
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe → pk_live_… | ✅ paiements |
 | `WORLD_TIDES_API_KEY` | [worldtides.info](https://www.worldtides.info/register) | optionnel |
 | `AUTO_ALERTS_FROM_VEILLE` | `true` | optionnel alertes RSS |
+| `RSS_AUTO_PUBLISH_AS_ARTICLES` | `true` (défaut) | commune + Tahiti Infos → Actualités |
+| `RSS_ARTICLE_MAX_AGE_DAYS` | `30` | ignore les items RSS plus vieux |
 
 3. **Save** sur chaque variable
 4. **Deployments** → **Redeploy** (obligatoire après ajout de variables)

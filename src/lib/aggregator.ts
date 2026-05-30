@@ -3,6 +3,7 @@
  */
 
 import { importAlertsFromRssItems } from "@/lib/alert-auto-import";
+import { importArticlesFromRssItems } from "@/lib/rss-article-import";
 import { facebookImportMaxAgeDays } from "@/lib/facebook-import-filters";
 import { aggregateWebWatch } from "@/lib/facebook-watch";
 import { fetchRssFeed, type RssItem } from "@/lib/rss-parser";
@@ -96,6 +97,19 @@ async function aggregateOne(source: RssSource): Promise<AggregationResult> {
     result.createdAlerts = alertImport.titles;
   } catch (e) {
     result.errors.push(`alerts: ${String(e)}`);
+  }
+
+  try {
+    const articleImport = await importArticlesFromRssItems(matching, source);
+    result.articlesCreated = articleImport.created;
+    result.articlesSkipped =
+      (result.articlesSkipped ?? 0) + articleImport.skipped;
+    result.createdArticles = articleImport.createdArticles;
+    for (const err of articleImport.errors) {
+      result.errors.push(`articles: ${err}`);
+    }
+  } catch (e) {
+    result.errors.push(`articles: ${String(e)}`);
   }
 
   return result;
