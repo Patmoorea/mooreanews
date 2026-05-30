@@ -64,7 +64,7 @@ export default async function CommercantPage({ searchParams }: Props) {
         {stripeOn && (accommodations?.length ?? 0) > 0 && (
           <section className="mt-10">
             <h2 className="font-display text-xl text-ocean-900 mb-4">
-              Premium hébergement (49 € / 30 j)
+              Premium hébergement (~15 000 XPF / 30 j)
             </h2>
             <p className="text-sm text-ocean-600 mb-4">
               Top de{" "}
@@ -88,7 +88,7 @@ export default async function CommercantPage({ searchParams }: Props) {
         {stripeOn && restaurants.length > 0 && (
           <section className="mt-10">
             <h2 className="font-display text-xl text-ocean-900 mb-4">
-              Premium restaurant (49 € / 30 j)
+              Premium restaurant (~15 000 XPF / 30 j)
             </h2>
             <div className="space-y-4">
               {restaurants.slice(0, 8).map((r) => (

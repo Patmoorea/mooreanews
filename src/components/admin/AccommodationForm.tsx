@@ -84,7 +84,7 @@ export function AccommodationForm({
           name="price_hint"
           label="Fourchette prix"
           defaultValue={initial?.price_hint ?? ""}
-          placeholder="€€ ou à partir de 120€/nuit"
+          placeholder="ex. à partir de 12 000 XPF/nuit"
         />
       </div>
       <Select

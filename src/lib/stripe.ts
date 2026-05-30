@@ -5,10 +5,11 @@
 import Stripe from "stripe";
 import { SITE } from "@/lib/constants";
 
+/** Montants en francs CFP (XPF) — devise zéro décimale côté Stripe. */
 export const STRIPE_PRICES = {
-  announcementBoostEurCents: 1250,
-  restaurantPremiumEurCents: 4900,
-  accommodationPremiumEurCents: 4900,
+  announcementBoostXpf: 2000,
+  restaurantPremiumXpf: 15000,
+  accommodationPremiumXpf: 15000,
   boostDays: 7,
   premiumDays: 30,
 } as const;

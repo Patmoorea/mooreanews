@@ -44,11 +44,11 @@ export async function POST(req: Request) {
     line_items: [
       {
         price_data: {
-          currency: "eur",
-          unit_amount: STRIPE_PRICES.restaurantPremiumEurCents,
+          currency: "xpf",
+          unit_amount: STRIPE_PRICES.restaurantPremiumXpf,
           product_data: {
             name: `Premium commerçant 30 jours — MooreaNews`,
-            description: resto.name,
+            description: `${resto.name} (${STRIPE_PRICES.restaurantPremiumXpf.toLocaleString("fr-FR")} F CFP)`,
           },
         },
         quantity: 1,
@@ -66,8 +66,8 @@ export async function POST(req: Request) {
     kind: "restaurant_premium",
     target_id: resto.id,
     stripe_session_id: session.id,
-    amount_cents: STRIPE_PRICES.restaurantPremiumEurCents,
-    currency: "eur",
+    amount_cents: STRIPE_PRICES.restaurantPremiumXpf,
+    currency: "xpf",
     status: "pending",
   });
 

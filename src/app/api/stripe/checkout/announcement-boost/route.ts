@@ -44,11 +44,11 @@ export async function POST(req: Request) {
     line_items: [
       {
         price_data: {
-          currency: "eur",
-          unit_amount: STRIPE_PRICES.announcementBoostEurCents,
+          currency: "xpf",
+          unit_amount: STRIPE_PRICES.announcementBoostXpf,
           product_data: {
             name: `Boost annonce 7 jours — MooreaNews`,
-            description: ann.title.slice(0, 200),
+            description: `${ann.title.slice(0, 160)} (${STRIPE_PRICES.announcementBoostXpf.toLocaleString("fr-FR")} F CFP)`,
           },
         },
         quantity: 1,
@@ -66,8 +66,8 @@ export async function POST(req: Request) {
     kind: "announcement_boost",
     target_id: ann.id,
     stripe_session_id: session.id,
-    amount_cents: STRIPE_PRICES.announcementBoostEurCents,
-    currency: "eur",
+    amount_cents: STRIPE_PRICES.announcementBoostXpf,
+    currency: "xpf",
     status: "pending",
   });
 

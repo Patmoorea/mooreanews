@@ -10,19 +10,19 @@ const TIERS = [
   },
   {
     title: "À la une visiteurs",
-    price: "49 € / mois",
+    price: "~15 000 XPF / mois",
     desc: "Top de la liste hébergements + QR pack hébergeur personnalisé.",
     href: "/commercant",
   },
   {
     title: "Boost annonce location",
-    price: "12,50 € / 7 j",
+    price: "~2 000 XPF / 7 j",
     desc: "Annonce location en tête — idéal fares et villas.",
     href: "/commercant",
   },
   {
     title: "Restaurant premium",
-    price: "49 € / mois",
+    price: "~15 000 XPF / mois",
     desc: "Mis en avant restos + carte touriste.",
     href: "/commercant",
   },

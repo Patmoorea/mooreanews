@@ -44,11 +44,11 @@ export async function POST(req: Request) {
     line_items: [
       {
         price_data: {
-          currency: "eur",
-          unit_amount: STRIPE_PRICES.accommodationPremiumEurCents,
+          currency: "xpf",
+          unit_amount: STRIPE_PRICES.accommodationPremiumXpf,
           product_data: {
             name: "À la une visiteurs 30 jours — MooreaNews",
-            description: acc.name,
+            description: `${acc.name} (${STRIPE_PRICES.accommodationPremiumXpf.toLocaleString("fr-FR")} F CFP)`,
           },
         },
         quantity: 1,
@@ -66,8 +66,8 @@ export async function POST(req: Request) {
     kind: "accommodation_premium",
     target_id: acc.id,
     stripe_session_id: session.id,
-    amount_cents: STRIPE_PRICES.accommodationPremiumEurCents,
-    currency: "eur",
+    amount_cents: STRIPE_PRICES.accommodationPremiumXpf,
+    currency: "xpf",
     status: "pending",
   });
 

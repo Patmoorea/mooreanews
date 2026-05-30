@@ -75,7 +75,8 @@ export function AccommodationsList({
               <MapPin size={12} />
               {a.district}
             </span>
-            {a.price && <span>{a.price}</span>}
+            {a.priceHint && <span>{a.priceHint}</span>}
+            {!a.priceHint && a.price && <span>{a.price}</span>}
           </div>
           <div className="mt-3 flex flex-wrap gap-3 text-xs">
             {a.href?.startsWith("http") ? (

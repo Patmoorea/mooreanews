@@ -44,7 +44,7 @@ export function PremiumRestaurantButton({ restaurantId, restaurantName }: Props)
         Premium 30 jours — {restaurantName}
       </p>
       <p className="mt-1 text-sm text-ocean-600">
-        Badge « Ouvert maintenant », mise en avant annuaire et menu du jour visible (49 €).
+        Badge « Ouvert maintenant », mise en avant annuaire et menu du jour visible (~15 000 XPF).
       </p>
       <button
         type="button"

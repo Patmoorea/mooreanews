@@ -43,7 +43,7 @@ export function BoostAnnouncementButton({ announcementId }: Props) {
         Mettre en avant 7 jours
       </p>
       <p className="mt-1 text-sm text-ocean-600">
-        Votre annonce apparaît en tête de liste sur MooreaNews (12,50 €).
+        Votre annonce apparaît en tête de liste sur MooreaNews (~2 000 XPF).
       </p>
       <button
         type="button"
