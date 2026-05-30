@@ -1,0 +1,100 @@
+[
+  {
+    "slug": "hilton-moorea",
+    "name": "Hilton Moorea Lagoon Resort & Spa",
+    "type": "hotel",
+    "district": "Papetoai",
+    "description": "Resort lagon — bungalows sur pilotis, plage privée.",
+    "contact": "+689 40 55 11 11",
+    "website": "https://www.hilton.com",
+    "lat": -17.491,
+    "lon": -149.828,
+    "availabilityStatus": "contact",
+    "featured": true
+  },
+  {
+    "slug": "sofitel-moorea",
+    "name": "Sofitel Moorea Ia Ora Beach Resort",
+    "type": "hotel",
+    "district": "Maharepa",
+    "description": "Baie de Temae — vue Tahiti, piscine lagon.",
+    "contact": "+689 40 55 12 12",
+    "website": "https://www.sofitel.com",
+    "lat": -17.498,
+    "lon": -149.768,
+    "availabilityStatus": "contact",
+    "featured": true
+  },
+  {
+    "slug": "manava-beach",
+    "name": "Manava Beach Resort & Spa Moorea",
+    "type": "hotel",
+    "district": "Maharepa",
+    "description": "Front de mer Maharepa, accès plage Temae.",
+    "contact": "+689 40 55 05 05",
+    "lat": -17.501,
+    "lon": -149.771,
+    "availabilityStatus": "contact",
+    "featured": false
+  },
+  {
+    "slug": "linareva",
+    "name": "Linareva Moorea Beach Resort",
+    "type": "hotel",
+    "district": "Haapiti",
+    "description": "Tipaniers — cadre authentique côte ouest.",
+    "contact": "+689 40 56 40 56",
+    "lat": -17.477,
+    "lon": -149.864,
+    "availabilityStatus": "contact",
+    "featured": false
+  },
+  {
+    "slug": "fare-pension-tipaniers",
+    "name": "Pensions & fares Tipaniers / Haapiti",
+    "type": "pension",
+    "district": "Haapiti",
+    "description": "Plusieurs pensions familiales — réserver direct ou via annonces MooreaNews.",
+    "contact": "Voir annonces location",
+    "lat": -17.478,
+    "lon": -149.865,
+    "availabilityStatus": "limited",
+    "featured": false
+  },
+  {
+    "slug": "pension-paopao",
+    "name": "Pensions Paopao & Tiahura",
+    "type": "pension",
+    "district": "Paopao",
+    "description": "Quartier central — accès ferry Vaiare, roulottes, marché.",
+    "contact": "Voir annonces location",
+    "lat": -17.492,
+    "lon": -149.812,
+    "availabilityStatus": "contact",
+    "featured": false
+  },
+  {
+    "slug": "fare-afareaitu",
+    "name": "Fares & locations Afareaitu",
+    "type": "fare",
+    "district": "Afareaitu",
+    "description": "Baie d'Afareaitu — calme, proche hôpital et mairie.",
+    "contact": "Voir annonces location",
+    "lat": -17.554,
+    "lon": -149.775,
+    "availabilityStatus": "contact",
+    "featured": false
+  },
+  {
+    "slug": "villa-vaiare",
+    "name": "Locations & villas Vaiare / Temae",
+    "type": "villa",
+    "district": "Vaiare",
+    "description": "Proche débarcadère ferry — pratique sans voiture.",
+    "contact": "Voir annonces location",
+    "lat": -17.507,
+    "lon": -149.776,
+    "availabilityStatus": "limited",
+    "featured": false
+  }
+]

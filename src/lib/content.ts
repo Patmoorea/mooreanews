@@ -90,6 +90,15 @@ export async function getUpcomingEvents(limit?: number): Promise<Event[]> {
   return typeof limit === "number" ? items.slice(0, limit) : items;
 }
 
+/** Événements dans une plage de dates (séjour visiteur). */
+export async function getEventsBetween(
+  startDate: string,
+  endDate: string,
+): Promise<Event[]> {
+  const all = await getEvents();
+  return all.filter((e) => e.date >= startDate && e.date <= endDate);
+}
+
 export async function getEventBySlug(
   slug: string,
 ): Promise<Event | undefined> {

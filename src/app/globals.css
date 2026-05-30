@@ -489,3 +489,12 @@ html.dark article.bg-white {
   border-color: rgb(56 189 248 / 0.15);
   color: #e0f2fe;
 }
+
+@media print {
+  header,
+  footer,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+}

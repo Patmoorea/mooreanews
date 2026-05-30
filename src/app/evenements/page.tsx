@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { MapPin, Tag, Clock, User, ArrowRight } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/PageHeader";
-import { getUpcomingEvents } from "@/lib/content";
+import { StayDateFilter } from "@/components/visiteurs/StayDateFilter";
+import { getEventsBetween, getUpcomingEvents } from "@/lib/content";
 import { PosterImage, hasPoster } from "@/components/PosterImage";
 
 export const metadata: Metadata = {
@@ -23,8 +25,21 @@ const CATEGORY_VARIANTS = {
   communaute: "ocean",
 } as const;
 
-export default async function EvenementsPage() {
-  const events = await getUpcomingEvents();
+type Props = {
+  searchParams: Promise<{ du?: string; au?: string }>;
+};
+
+export default async function EvenementsPage({ searchParams }: Props) {
+  const params = await searchParams;
+  const du = params.du?.trim();
+  const au = params.au?.trim();
+
+  const events =
+    du && au
+      ? await getEventsBetween(du, au)
+      : du
+        ? await getEventsBetween(du, du)
+        : await getUpcomingEvents();
 
   return (
     <>
@@ -35,6 +50,20 @@ export default async function EvenementsPage() {
         variant="tiare"
       />
       <Container className="py-12 sm:py-16">
+        <Suspense fallback={null}>
+          <StayDateFilter defaultStart={du} defaultEnd={au} />
+        </Suspense>
+        {du && au && (
+          <p className="mt-4 text-sm text-ocean-600">
+            {events.length} événement(s) du{" "}
+            {new Date(du).toLocaleDateString("fr-FR")} au{" "}
+            {new Date(au).toLocaleDateString("fr-FR")}.{" "}
+            <Link href="/visiteurs" className="text-lagon-700 font-semibold hover:underline">
+              Guide visiteurs →
+            </Link>
+          </p>
+        )}
+        <div className="mt-8">
         {events.length === 0 ? (
           <p className="text-center text-ocean-600">
             Aucun événement à venir pour le moment.
@@ -121,6 +150,7 @@ export default async function EvenementsPage() {
             })}
           </ul>
         )}
+        </div>
       </Container>
     </>
   );
