@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { stripePublicEnabled } from "@/lib/stripe";
+import { stripePublicEnabled, formatXpf, STRIPE_PRICES } from "@/lib/stripe";
 
 const TIERS = [
   {
@@ -10,19 +10,19 @@ const TIERS = [
   },
   {
     title: "À la une visiteurs",
-    price: "~15 000 XPF / mois",
+    price: `${formatXpf(STRIPE_PRICES.accommodationPremiumXpf)} / mois`,
     desc: "Top de la liste hébergements + QR pack hébergeur personnalisé.",
     href: "/commercant",
   },
   {
     title: "Boost annonce location",
-    price: "~2 000 XPF / 7 j",
+    price: `${formatXpf(STRIPE_PRICES.announcementBoostXpf)} / 7 j`,
     desc: "Annonce location en tête — idéal fares et villas.",
     href: "/commercant",
   },
   {
     title: "Restaurant premium",
-    price: "~15 000 XPF / mois",
+    price: `${formatXpf(STRIPE_PRICES.restaurantPremiumXpf)} / mois`,
     desc: "Mis en avant restos + carte touriste.",
     href: "/commercant",
   },

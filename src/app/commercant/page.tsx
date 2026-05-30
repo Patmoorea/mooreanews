@@ -6,7 +6,7 @@ import { PremiumRestaurantButton } from "@/components/commerce/PremiumRestaurant
 import { PremiumAccommodationButton } from "@/components/commerce/PremiumAccommodationButton";
 import { getRestaurants } from "@/lib/content";
 import { getAdminSupabase } from "@/lib/supabase/admin";
-import { stripePublicEnabled } from "@/lib/stripe";
+import { stripePublicEnabled, formatXpf, STRIPE_PRICES } from "@/lib/stripe";
 
 export const metadata: Metadata = {
   title: "Espace commerçant",
@@ -64,7 +64,7 @@ export default async function CommercantPage({ searchParams }: Props) {
         {stripeOn && (accommodations?.length ?? 0) > 0 && (
           <section className="mt-10">
             <h2 className="font-display text-xl text-ocean-900 mb-4">
-              Premium hébergement (~15 000 XPF / 30 j)
+              Premium hébergement ({formatXpf(STRIPE_PRICES.accommodationPremiumXpf)} / 30 j)
             </h2>
             <p className="text-sm text-ocean-600 mb-4">
               Top de{" "}
@@ -88,7 +88,7 @@ export default async function CommercantPage({ searchParams }: Props) {
         {stripeOn && restaurants.length > 0 && (
           <section className="mt-10">
             <h2 className="font-display text-xl text-ocean-900 mb-4">
-              Premium restaurant (~15 000 XPF / 30 j)
+              Premium restaurant ({formatXpf(STRIPE_PRICES.restaurantPremiumXpf)} / 30 j)
             </h2>
             <div className="space-y-4">
               {restaurants.slice(0, 8).map((r) => (

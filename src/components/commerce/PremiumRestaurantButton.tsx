@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Store, Loader2 } from "lucide-react";
-import { stripePublicEnabled } from "@/lib/stripe";
+import { stripePublicEnabled, formatXpf, STRIPE_PRICES } from "@/lib/stripe";
 
 type Props = {
   restaurantId: string;
@@ -44,7 +44,7 @@ export function PremiumRestaurantButton({ restaurantId, restaurantName }: Props)
         Premium 30 jours — {restaurantName}
       </p>
       <p className="mt-1 text-sm text-ocean-600">
-        Badge « Ouvert maintenant », mise en avant annuaire et menu du jour visible (~15 000 XPF).
+        Badge « Ouvert maintenant », mise en avant annuaire et menu du jour visible ({formatXpf(STRIPE_PRICES.restaurantPremiumXpf)} / 30 j).
       </p>
       <button
         type="button"

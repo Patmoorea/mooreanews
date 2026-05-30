@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { BedDouble, Loader2 } from "lucide-react";
-import { stripePublicEnabled } from "@/lib/stripe";
+import { stripePublicEnabled, formatXpf, STRIPE_PRICES } from "@/lib/stripe";
 
 type Props = {
   accommodationId: string;
@@ -47,7 +47,7 @@ export function PremiumAccommodationButton({
         À la une visiteurs — {accommodationName}
       </p>
       <p className="mt-1 text-sm text-ocean-600">
-        Top de l&apos;annuaire /visiteurs, badge premium et QR pack hébergeur (~15 000 XPF / 30 j).
+        Top de l&apos;annuaire /visiteurs, badge premium et QR pack hébergeur ({formatXpf(STRIPE_PRICES.accommodationPremiumXpf)} / 30 j).
       </p>
       <button
         type="button"

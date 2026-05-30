@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
-import { stripePublicEnabled } from "@/lib/stripe";
+import { stripePublicEnabled, formatXpf, STRIPE_PRICES } from "@/lib/stripe";
 
 type Props = {
   announcementId: string;
@@ -43,7 +43,7 @@ export function BoostAnnouncementButton({ announcementId }: Props) {
         Mettre en avant 7 jours
       </p>
       <p className="mt-1 text-sm text-ocean-600">
-        Votre annonce apparaît en tête de liste sur MooreaNews (~2 000 XPF).
+        Votre annonce apparaît en tête de liste sur MooreaNews ({formatXpf(STRIPE_PRICES.announcementBoostXpf)} / 7 j).
       </p>
       <button
         type="button"
