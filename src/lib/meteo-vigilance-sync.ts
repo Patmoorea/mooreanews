@@ -20,6 +20,18 @@ export type MeteoVigilanceSyncResult = {
   error?: string;
 };
 
+const SYNC_TAG_PREFIX = "<!--vigilance-sync:";
+
+function detailsWithSyncTag(details: string, fingerprint: string): string {
+  return `${details}\n${SYNC_TAG_PREFIX}${fingerprint}-->`;
+}
+
+function extractSyncFingerprint(details: string | null): string | null {
+  if (!details) return null;
+  const m = details.match(/<!--vigilance-sync:([^>]+)-->/);
+  return m?.[1] ?? null;
+}
+
 async function findExistingVigilanceAlert() {
   const admin = getAdminSupabase();
   if (!admin) return null;
@@ -28,22 +40,18 @@ async function findExistingVigilanceAlert() {
     .from("alerts")
     .select("*")
     .eq("type", "meteo")
-    .in("source_url", [METEO_VIGILANCE_SOURCE_ID, METEO_VIGILANCE_MOOREA_PAGE])
     .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(8);
 
-  return data;
-}
-
-function snapshotFingerprint(snapshot: MeteoVigilanceSnapshot): string {
-  const zones = snapshot.mooreaZones
-    .map((z) => `${z.id}:${z.maxColorId}`)
-    .join(",");
-  const phen = snapshot.activePhenomena
-    .map((p) => `${p.id}:${p.maxColorId}`)
-    .join(",");
-  return `${snapshot.updateTime}|${snapshot.mooreaMaxColorId}|${snapshot.cycloneMaxColorId}|${zones}|${phen}`;
+  return (
+    data?.find(
+      (a) =>
+        a.source_url === METEO_VIGILANCE_MOOREA_PAGE ||
+        a.source_url === METEO_VIGILANCE_SOURCE_ID ||
+        a.title?.includes("Vigilance") ||
+        a.title?.includes("cyclonique"),
+    ) ?? null
+  );
 }
 
 /** Met à jour ou désactive l'alerte vigilance officielle. */
@@ -89,21 +97,15 @@ export async function syncMeteoVigilanceAlert(): Promise<MeteoVigilanceSyncResul
   }
 
   const title = vigilanceAlertTitle(snapshot);
-  const fingerprint = snapshotFingerprint(snapshot);
-  const details = `${snapshot.details}\n<!--vigi-sync:${fingerprint}-->`;
-
-  function previousMooreaLevel(detailsText: string | null): number {
-    const m = detailsText?.match(/<!--vigi-sync:[^|]+\|(\d+)\|/);
-    return m ? Number(m[1]) || 0 : 0;
-  }
+  const details = detailsWithSyncTag(snapshot.details, snapshot.syncFingerprint);
 
   if (existing) {
+    const prevFp = extractSyncFingerprint(existing.details);
     const sameState =
       existing.active &&
       existing.title === title &&
       existing.urgent === snapshot.urgent &&
-      existing.details?.includes(`<!--vigi-sync:${fingerprint}-->`) &&
-      existing.ends_at === endsAt;
+      prevFp === snapshot.syncFingerprint;
 
     if (sameState) {
       return {
@@ -137,7 +139,7 @@ export async function syncMeteoVigilanceAlert(): Promise<MeteoVigilanceSyncResul
 
     const wasInactive = !existing.active;
     const levelIncreased =
-      snapshot.mooreaMaxColorId > previousMooreaLevel(existing.details);
+      (prevFp?.split("|")[1] ?? "0") < String(snapshot.mooreaMaxColorId);
 
     if (wasInactive || levelIncreased) {
       try {

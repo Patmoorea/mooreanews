@@ -6,8 +6,11 @@ import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/PageHeader";
 import { PublicationCard } from "@/components/PublicationCard";
 import { getAnnouncements } from "@/lib/content";
+import { expireStaleAnnouncements } from "@/lib/announcement-expiry";
 import { ANNOUNCEMENT_TYPE_LABELS } from "@/lib/content-labels";
 import { timeAgo } from "@/lib/utils";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Annonces — Moorea",
@@ -17,6 +20,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AnnoncesPage() {
+  await expireStaleAnnouncements();
   const items = await getAnnouncements();
 
   return (

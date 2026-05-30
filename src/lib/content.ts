@@ -33,6 +33,9 @@ import {
   normalizeInfoTitle,
 } from "@/lib/info-catalog";
 import { isClosedRestaurant } from "@/lib/closed-restaurants";
+import {
+  isAnnouncementVisible,
+} from "@/lib/announcement-expiry";
 import type { RestaurantOpenMeta } from "@/lib/restaurant-open-status";
 
 import type {
@@ -114,10 +117,12 @@ export async function getEventBySlug(
 
 export async function getAnnouncements(): Promise<Announcement[]> {
   const db = await dbListAnnouncements();
-  const items = db
-    ? db.map(announcementFromRow)
-    : (announcementsData as Announcement[]);
-  return items.slice().sort((a, b) => {
+  const raw = db
+    ? db.filter(isAnnouncementVisible).map(announcementFromRow)
+    : (announcementsData as Announcement[]).filter((a) =>
+        isAnnouncementVisible({ created_at: a.publishedAt, expires_at: null }),
+      );
+  return raw.slice().sort((a, b) => {
     const aBoost = a.boosted ? 1 : 0;
     const bBoost = b.boosted ? 1 : 0;
     if (aBoost !== bBoost) return bBoost - aBoost;

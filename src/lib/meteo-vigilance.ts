@@ -10,6 +10,9 @@ export const METEO_VIGILANCE_PAGE = "https://meteo.pf/fr/vigilance";
 export const METEO_VIGILANCE_MOOREA_PAGE =
   "https://meteo.pf/fr/vigilance/tahiti-moorea";
 export const METEO_VIGILANCE_SOURCE_ID = "meteo-vigilance-vigi987";
+export const INFOSCYCLONES_URL = "https://www.facebook.com/infoscyclones";
+export const METEO_VIGILANCE_MAP_URL =
+  "https://meteo.pf/fr/vigilance/tahiti-moorea/carte";
 
 /** Zones Îles du Vent / Tahiti-Moorea (meteo.pf). */
 export const MOOREA_VIGILANCE_ZONE_IDS = [
@@ -50,12 +53,15 @@ export const VIGILANCE_ZONE_LABELS: Record<string, string> = {
 
 export const PHENOMENON_LABELS: Record<number, string> = {
   1: "Vents violents",
-  2: "Fortes pluies",
+  2: "Fortes pluies / inondations",
   3: "Orages",
-  9: "Vagues-submersion / houle",
+  4: "Houle / vagues-submersion",
+  5: "Canicule",
+  6: "Grand froid",
+  7: "Avalanches",
+  8: "Neige / verglas",
+  9: "Cyclone tropical",
 };
-
-export const INFOS_CYCLONES_URL = "https://www.facebook.com/infoscyclones";
 
 type VigilanceColor = {
   id: number;
@@ -93,10 +99,10 @@ export type VigilanceTimelapsResponse = {
   }[];
 };
 
-export type VigilancePhenomenon = {
+export type ActivePhenomenon = {
   id: number;
   label: string;
-  maxColorId: number;
+  colorId: number;
   colorName: string;
 };
 
@@ -107,13 +113,14 @@ export type MeteoVigilanceSnapshot = {
   mooreaMaxColorId: number;
   mooreaZones: { id: string; label: string; maxColorId: number }[];
   cycloneMaxColorId: number | null;
-  activePhenomena: VigilancePhenomenon[];
+  activePhenomena: ActivePhenomenon[];
   levelLabel: string;
   levelName: string;
   severity: "info" | "warning" | "alert";
   urgent: boolean;
   details: string;
   sourceUrl: string;
+  syncFingerprint: string;
 };
 
 const LEVEL_META: Record<
@@ -206,105 +213,116 @@ function maxForZones(
   return { max, zones };
 }
 
-function summarizePhenomena(
-  responses: VigilanceTimelapsResponse[],
-): VigilancePhenomenon[] {
-  const byId = new Map<number, number>();
-
-  for (const response of responses) {
-    for (const block of response.timelaps ?? []) {
-      const max = Math.max(
-        1,
-        ...(block.timelaps_items?.map((i) => i.color_id) ?? [1]),
-      );
-      const prev = byId.get(block.phenomenon_id) ?? 1;
-      byId.set(block.phenomenon_id, Math.max(prev, max));
-    }
-  }
-
-  return [...byId.entries()]
-    .filter(([, level]) => level > 1)
-    .map(([id, maxColorId]) => ({
-      id,
-      label: PHENOMENON_LABELS[id] ?? `Phénomène ${id}`,
-      maxColorId,
-      colorName: COLOR_NAMES[maxColorId] ?? `niveau ${maxColorId}`,
-    }))
-    .sort((a, b) => b.maxColorId - a.maxColorId);
-}
-
-function formatValidity(endValidityTime: number): string {
-  return new Date(endValidityTime * 1000).toLocaleString("fr-FR", {
-    timeZone: "Pacific/Tahiti",
-    dateStyle: "short",
-    timeStyle: "short",
-  });
-}
-
 function buildDetails(
   snapshot: {
     mooreaZones: { id: string; label: string; maxColorId: number }[];
     nationalMax: number;
     endValidityTime: number;
-    activePhenomena: VigilancePhenomenon[];
+    activePhenomena: ActivePhenomenon[];
+    levelLabel: string;
     cycloneMaxColorId: number | null;
   },
 ): string {
   const lines: string[] = [];
-  const validUntil = formatValidity(snapshot.endValidityTime);
+
+  lines.push(
+    `Bulletin Météo-France Polynésie · ${snapshot.levelLabel}.`,
+  );
+  lines.push(
+    `Validité jusqu'au ${new Date(snapshot.endValidityTime * 1000).toLocaleString("fr-FR", { timeZone: "Pacific/Tahiti", dateStyle: "full", timeStyle: "short" })} (heure de Tahiti).`,
+  );
 
   if (snapshot.activePhenomena.length > 0) {
-    lines.push("Phénomènes en vigilance (Météo-France Polynésie) :");
+    lines.push("");
+    lines.push("Phénomènes en vigilance (Tahiti–Moorea) :");
     for (const p of snapshot.activePhenomena) {
       lines.push(
-        `• ${p.label} — niveau ${p.colorName.toUpperCase()} (vigilance ${p.maxColorId}/4)`,
+        `• ${p.label} — niveau ${COLOR_NAMES[p.colorId] ?? p.colorId} (${LEVEL_META[p.colorId]?.label ?? "vigilance"})`,
       );
     }
-  } else if (snapshot.cycloneMaxColorId !== null && snapshot.cycloneMaxColorId >= 2) {
-    lines.push(
-      `• Alerte cyclonique — niveau ${COLOR_NAMES[snapshot.cycloneMaxColorId] ?? snapshot.cycloneMaxColorId}`,
-    );
-  } else {
-    lines.push("Vigilance météorologique en cours — détail des phénomènes sur meteo.pf.");
-  }
-
-  lines.push("");
-  lines.push(`Validité du bulletin : jusqu'au ${validUntil} (heure de Tahiti).`);
-
-  if (snapshot.mooreaZones.length > 0) {
+  } else if (snapshot.mooreaZones.length > 0) {
     lines.push("");
     lines.push(
-      "Zones Tahiti–Moorea les plus touchées : " +
+      "Zones sous vigilance : " +
         snapshot.mooreaZones
-          .slice(0, 5)
-          .map((z) => `${z.label} (${COLOR_NAMES[z.maxColorId] ?? z.maxColorId})`)
+          .slice(0, 8)
+          .map((z) => `${z.label} (${COLOR_NAMES[z.maxColorId] ?? "niveau " + z.maxColorId})`)
           .join(", ") +
-        (snapshot.mooreaZones.length > 5 ? "…" : ""),
+        (snapshot.mooreaZones.length > 8 ? "…" : ""),
+    );
+    lines.push(
+      "Consultez la carte officielle pour le détail vent / pluie / houle / cyclone.",
     );
   } else if (snapshot.nationalMax > 1) {
     lines.push("");
     lines.push(
-      "Vigilance en cours en Polynésie — consultez la carte officielle pour Moorea.",
+      "Vigilance en cours en Polynésie — consultez meteo.pf pour le détail par phénomène.",
+    );
+  }
+
+  if (snapshot.cycloneMaxColorId !== null && snapshot.cycloneMaxColorId >= 2) {
+    lines.push("");
+    lines.push(
+      `Suivi cyclone : niveau ${COLOR_NAMES[snapshot.cycloneMaxColorId] ?? snapshot.cycloneMaxColorId} — Infos Cyclones (Facebook officiel).`,
     );
   }
 
   lines.push("");
-  lines.push("Que faire ?");
-  lines.push("• Lire le bulletin complet et la carte des zones sur meteo.pf");
-  lines.push("• En cas de cyclone : suivre Infos Cyclones (Facebook officiel)");
-  lines.push("• MooreaNews — mode cyclone et checklist : /vigilance-cyclone");
-  lines.push("");
-  lines.push(`Bulletin officiel : ${METEO_VIGILANCE_MOOREA_PAGE}`);
-  lines.push(`Infos cyclones : ${INFOS_CYCLONES_URL}`);
+  lines.push("Liens officiels :");
+  lines.push(`→ Carte vigilance Tahiti–Moorea : ${METEO_VIGILANCE_MAP_URL}`);
+  lines.push(`→ Bulletin complet : ${METEO_VIGILANCE_MOOREA_PAGE}`);
+  lines.push(`→ Infos cyclones : ${INFOSCYCLONES_URL}`);
 
   return lines.join("\n");
+}
+
+async function fetchActivePhenomena(
+  token: string,
+  domain: string,
+  nowSec: number,
+): Promise<ActivePhenomenon[]> {
+  try {
+    const data = await meteoApiGet<VigilanceTimelapsResponse>(
+      token,
+      "warning/timelaps",
+      {
+        warning_type: "vigilance",
+        domain,
+      },
+    );
+
+    const active: ActivePhenomenon[] = [];
+    for (const block of data.timelaps ?? []) {
+      const label =
+        PHENOMENON_LABELS[block.phenomenon_id] ??
+        `Phénomène ${block.phenomenon_id}`;
+      let maxColor = 0;
+      for (const item of block.timelaps_items ?? []) {
+        if (nowSec >= item.begin_time && nowSec < item.end_time) {
+          maxColor = Math.max(maxColor, item.color_id);
+        }
+      }
+      if (maxColor >= 2) {
+        active.push({
+          id: block.phenomenon_id,
+          label,
+          colorId: maxColor,
+          colorName: COLOR_NAMES[maxColor] ?? String(maxColor),
+        });
+      }
+    }
+    return active.sort((a, b) => b.colorId - a.colorId);
+  } catch {
+    return [];
+  }
 }
 
 /** Récupère l'état actuel de la vigilance pour Moorea / Tahiti. */
 export async function fetchMeteoVigilance(): Promise<MeteoVigilanceSnapshot> {
   const token = await fetchMeteoToken();
+  const nowSec = Math.floor(Date.now() / 1000);
 
-  const [vigi, cyclone] = await Promise.all([
+  const [vigi, cyclone, phenomena] = await Promise.all([
     meteoApiGet<VigilanceMaxColorResponse>(token, "warning/maxcolor", {
       warning_type: "vigilance",
       domain: "VIGI987",
@@ -315,28 +333,12 @@ export async function fetchMeteoVigilance(): Promise<MeteoVigilanceSnapshot> {
       domain: "CYCL987",
       depth: 1,
     }).catch(() => null),
+    fetchActivePhenomena(token, "VIGI987-14", nowSec),
   ]);
 
   const { max: mooreaMax, zones: mooreaZones } = maxForZones(
     vigi.subdomains_max_color ?? [],
     MOOREA_VIGILANCE_ZONE_IDS,
-  );
-
-  const timelapsDomains = [
-    "VIGI987-14",
-    ...mooreaZones.map((z) => z.id),
-  ];
-  const timelapsResponses = await Promise.all(
-    [...new Set(timelapsDomains)].map((domain) =>
-      meteoApiGet<VigilanceTimelapsResponse>(token, "warning/timelaps", {
-        warning_type: "vigilance",
-        domain,
-        depth: 0,
-      }).catch(() => null),
-    ),
-  );
-  const activePhenomena = summarizePhenomena(
-    timelapsResponses.filter(Boolean) as VigilanceTimelapsResponse[],
   );
 
   const cycloneLevel = cyclone?.max_color_id ?? null;
@@ -347,6 +349,9 @@ export async function fetchMeteoVigilance(): Promise<MeteoVigilanceSnapshot> {
       : mooreaMax;
   const meta = LEVEL_META[levelId] ?? LEVEL_META[4];
   const colorName = COLOR_NAMES[levelId] ?? "inconnue";
+
+  const activePhenomena = phenomena;
+  const syncFingerprint = `${vigi.update_time}|${levelId}|${cycloneLevel}|${activePhenomena.map((p) => `${p.id}:${p.colorId}`).join(",")}`;
 
   return {
     updateTime: vigi.update_time,
@@ -365,10 +370,28 @@ export async function fetchMeteoVigilance(): Promise<MeteoVigilanceSnapshot> {
       nationalMax: vigi.max_color_id,
       endValidityTime: vigi.end_validity_time,
       activePhenomena,
+      levelLabel: meta.label,
       cycloneMaxColorId: cycloneLevel,
     }),
     sourceUrl: METEO_VIGILANCE_MOOREA_PAGE,
+    syncFingerprint,
   };
+}
+
+export function vigilanceAlertTitle(snapshot: MeteoVigilanceSnapshot): string {
+  if (snapshot.cycloneMaxColorId !== null && snapshot.cycloneMaxColorId >= 4) {
+    return `Alerte cyclonique — ${snapshot.levelLabel}`;
+  }
+  const color =
+    snapshot.levelName.charAt(0).toUpperCase() + snapshot.levelName.slice(1);
+  const phen =
+    snapshot.activePhenomena.length > 0
+      ? snapshot.activePhenomena.map((p) => p.label).join(", ")
+      : null;
+  if (phen) {
+    return `Vigilance ${color} — ${phen}`;
+  }
+  return `Vigilance météo ${color} — Tahiti & Moorea`;
 }
 
 export function vigilanceNeedsAlert(snapshot: MeteoVigilanceSnapshot): boolean {
@@ -379,43 +402,8 @@ export function vigilanceNeedsAlert(snapshot: MeteoVigilanceSnapshot): boolean {
   return false;
 }
 
-export function vigilanceAlertTitle(snapshot: MeteoVigilanceSnapshot): string {
-  if (snapshot.cycloneMaxColorId !== null && snapshot.cycloneMaxColorId >= 4) {
-    return `Alerte cyclonique — ${snapshot.levelLabel}`;
-  }
-  const color =
-    snapshot.levelName.charAt(0).toUpperCase() + snapshot.levelName.slice(1);
-
-  const main = snapshot.activePhenomena[0];
-  if (main) {
-    return `Vigilance ${color} — ${main.label} (Tahiti & Moorea)`;
-  }
-
-  return `Vigilance météo ${color} — Tahiti & Moorea`;
-}
-
-/** Retire les métadonnées techniques de sync avant affichage public. */
-export function sanitizeAlertDetailsForDisplay(details: string | null): string {
+/** Retire la balise technique de synchro avant affichage public. */
+export function meteoAlertPublicDetails(details: string | null): string {
   if (!details) return "";
-  return details
-    .replace(/<!--vigi-sync:[^>]+-->/g, "")
-    .split("\n")
-    .filter((line) => !/^Ref\.\s/.test(line.trim()))
-    .join("\n")
-    .trim();
-}
-
-export function isMeteoVigilanceSourceUrl(url: string | null | undefined): boolean {
-  if (!url) return false;
-  return (
-    url === METEO_VIGILANCE_SOURCE_ID ||
-    url.includes("meteo.pf/fr/vigilance")
-  );
-}
-
-export function resolveMeteoVigilancePublicUrl(
-  url: string | null | undefined,
-): string {
-  if (isMeteoVigilanceSourceUrl(url)) return METEO_VIGILANCE_MOOREA_PAGE;
-  return url ?? METEO_VIGILANCE_MOOREA_PAGE;
+  return details.replace(/\n<!--vigilance-sync:[^>]+-->/g, "").trim();
 }

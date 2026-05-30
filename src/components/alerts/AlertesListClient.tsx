@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ExternalLink, MapPin, Siren } from "lucide-react";
 import {
@@ -9,11 +9,10 @@ import {
   loadStoredDistrictFilter,
 } from "@/components/alerts/AlertDistrictSubscribe";
 import {
-  INFOS_CYCLONES_URL,
+  INFOSCYCLONES_URL,
+  METEO_VIGILANCE_MAP_URL,
   METEO_VIGILANCE_MOOREA_PAGE,
-  isMeteoVigilanceSourceUrl,
-  resolveMeteoVigilancePublicUrl,
-  sanitizeAlertDetailsForDisplay,
+  meteoAlertPublicDetails,
 } from "@/lib/meteo-vigilance";
 
 type AlertItem = {
@@ -32,31 +31,22 @@ const TYPE_LABEL: Record<string, string> = {
   route: "🚧 Route / travaux",
   houle: "🌊 Houle",
   ferry: "⛴ Ferry",
-  meteo: "⛅ Météo",
+  meteo: "⛅ Météo officielle",
   autre: "ℹ️ Autre",
 };
 
-function linkifyLine(line: string): ReactNode {
-  const urlMatch = line.match(/(https?:\/\/[^\s]+)/);
-  if (!urlMatch) return line;
-  const [before, after] = [
-    line.slice(0, urlMatch.index),
-    line.slice((urlMatch.index ?? 0) + urlMatch[0].length),
-  ];
-  return (
-    <>
-      {before}
-      <a
-        href={urlMatch[0]}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-lagon-700 font-semibold hover:underline break-all"
-      >
-        {urlMatch[0]}
-      </a>
-      {after}
-    </>
-  );
+function displayDetails(alert: AlertItem): string {
+  if (!alert.details) return "";
+  if (alert.type === "meteo") {
+    return meteoAlertPublicDetails(alert.details);
+  }
+  return alert.details;
+}
+
+function externalHref(url: string | null): string | null {
+  if (!url) return null;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  return null;
 }
 
 export function AlertesListClient({ alerts }: { alerts: AlertItem[] }) {
@@ -93,11 +83,8 @@ export function AlertesListClient({ alerts }: { alerts: AlertItem[] }) {
       ) : (
         <div className="grid gap-4">
           {visible.map((a) => {
-            const isMeteoVigilance =
-              a.type === "meteo" && isMeteoVigilanceSourceUrl(a.source_url);
-            const publicUrl = resolveMeteoVigilancePublicUrl(a.source_url);
-            const body = sanitizeAlertDetailsForDisplay(a.details);
-
+            const body = displayDetails(a);
+            const sourceHref = externalHref(a.source_url);
             return (
               <article
                 key={a.id}
@@ -118,38 +105,35 @@ export function AlertesListClient({ alerts }: { alerts: AlertItem[] }) {
                     </div>
                     <h2 className="font-display text-2xl text-ocean-950">{a.title}</h2>
                     {body ? (
-                      <div className="mt-3 text-ocean-700 whitespace-pre-wrap space-y-1">
-                        {body.split("\n").map((line, i) => (
-                          <p key={i}>{linkifyLine(line)}</p>
-                        ))}
-                      </div>
+                      <p className="mt-2 text-ocean-700 whitespace-pre-wrap">{body}</p>
                     ) : null}
 
-                    {isMeteoVigilance && (
-                      <div className="mt-5 flex flex-wrap gap-2">
-                        <a
+                    {a.type === "meteo" && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <Link
+                          href={METEO_VIGILANCE_MAP_URL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-full bg-lagon-600 px-4 py-2 text-xs font-semibold text-white hover:bg-lagon-700"
+                        >
+                          <ExternalLink size={12} />
+                          Carte vigilance (meteo.pf)
+                        </Link>
+                        <Link
                           href={METEO_VIGILANCE_MOOREA_PAGE}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-lagon-600 text-white text-sm font-semibold hover:bg-lagon-700"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-lagon-200 bg-lagon-50 px-4 py-2 text-xs font-semibold text-lagon-800 hover:bg-lagon-100"
                         >
-                          <ExternalLink size={14} />
-                          Bulletin meteo.pf
-                        </a>
-                        <a
-                          href={INFOS_CYCLONES_URL}
+                          Bulletin Tahiti–Moorea
+                        </Link>
+                        <Link
+                          href={INFOSCYCLONES_URL}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-ocean-100 text-ocean-900 text-sm font-semibold hover:bg-ocean-200"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-ocean-200 bg-white px-4 py-2 text-xs font-semibold text-ocean-800 hover:bg-ocean-50"
                         >
-                          <ExternalLink size={14} />
                           Infos cyclones
-                        </a>
-                        <Link
-                          href="/vigilance-cyclone"
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-ocean-200 text-ocean-800 text-sm font-semibold hover:border-lagon-300"
-                        >
-                          Mode cyclone MooreaNews
                         </Link>
                       </div>
                     )}
@@ -166,15 +150,15 @@ export function AlertesListClient({ alerts }: { alerts: AlertItem[] }) {
                           Toute l&apos;île
                         </span>
                       )}
-                      {a.source_url && !isMeteoVigilance ? (
+                      {sourceHref ? (
                         <Link
-                          href={publicUrl}
+                          href={sourceHref}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 text-lagon-700 hover:underline"
                         >
                           <ExternalLink size={12} />
-                          Source
+                          Source officielle
                         </Link>
                       ) : null}
                     </div>
