@@ -8,7 +8,7 @@ import {
   getUpcomingEvents,
   getRestaurants,
 } from "@/lib/content";
-import { getNextDepartures } from "@/lib/ferries";
+import { getNextDepartures, nextDeparturesPerCompany } from "@/lib/ferries";
 import { isOpenNow } from "@/lib/open-now";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
 import { getSwimConditions } from "@/lib/swim-conditions";
@@ -124,12 +124,12 @@ export async function getMooreaDuJour(): Promise<MooreaDuJour> {
     swim,
     tides: tides.tides.slice(0, 2).map((t) => ({ time: t.time, type: t.type })),
     ferries: {
-      fromMoorea: ferries.fromMoorea.slice(0, 3).map((d) => ({
+      fromMoorea: nextDeparturesPerCompany(ferries.fromMoorea).map((d) => ({
         time: d.time,
         company: d.company,
         minutesUntil: d.minutesUntil,
       })),
-      fromTahiti: ferries.fromTahiti.slice(0, 3).map((d) => ({
+      fromTahiti: nextDeparturesPerCompany(ferries.fromTahiti).map((d) => ({
         time: d.time,
         company: d.company,
         minutesUntil: d.minutesUntil,

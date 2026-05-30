@@ -12,7 +12,7 @@ import {
 import type { WeatherSummary } from "@/lib/weather";
 import type { SunMoonData } from "@/lib/sun";
 import type { Departure, NextDepartures } from "@/lib/ferries";
-import { nextDeparturesPerCompany } from "@/lib/ferries";
+import { formatMinutesUntil, nextDeparturesPerCompany } from "@/lib/ferries";
 
 type TickerItem = {
   icon: React.ReactNode;
@@ -26,13 +26,14 @@ function shortCompany(name: string): string {
   return name.split(/\s+/)[0] ?? name;
 }
 
-function ferryLine(label: string, departures: Departure[]): string | null {
-  const next = nextDeparturesPerCompany(departures);
-  if (next.length === 0) return null;
-  const times = next
-    .map((d) => `${d.time} ${shortCompany(d.company)}`)
-    .join(" · ");
-  return `${label} : ${times}`;
+function ferryTickerItems(
+  label: string,
+  departures: Departure[],
+): TickerItem[] {
+  return nextDeparturesPerCompany(departures).map((d) => ({
+    icon: <Ship size={14} className="text-lagon-300" />,
+    label: `${label} : ${d.time} ${shortCompany(d.company)} (${formatMinutesUntil(d.minutesUntil)})`,
+  }));
 }
 
 /**
@@ -66,20 +67,10 @@ export function Ticker() {
 
         if (ferryRes?.ok) {
           const f = (await ferryRes.json()) as NextDepartures;
-          const mooreaLine = ferryLine("Moorea → Tahiti", f.fromMoorea ?? []);
-          const tahitiLine = ferryLine("Tahiti → Moorea", f.fromTahiti ?? []);
-          if (mooreaLine) {
-            next.push({
-              icon: <Ship size={14} className="text-lagon-300" />,
-              label: mooreaLine,
-            });
-          }
-          if (tahitiLine) {
-            next.push({
-              icon: <Ship size={14} className="text-lagon-300" />,
-              label: tahitiLine,
-            });
-          }
+          next.push(
+            ...ferryTickerItems("Moorea → Tahiti", f.fromMoorea ?? []),
+            ...ferryTickerItems("Tahiti → Moorea", f.fromTahiti ?? []),
+          );
         }
 
         if (weatherRes?.ok) {

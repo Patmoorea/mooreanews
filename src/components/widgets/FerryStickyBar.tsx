@@ -4,12 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Ship, X, Ticket } from "lucide-react";
 import { ferryBookingUrl } from "@/lib/constants";
-
-type Departure = {
-  time: string;
-  company: string;
-  minutesUntil: number;
-};
+import {
+  nextDeparturesPerCompany,
+  type Departure,
+} from "@/lib/ferries";
 
 type FerryData = {
   fromMoorea: Departure[];
@@ -39,11 +37,11 @@ export function FerryStickyBar() {
 
   if (dismissed || !data) return null;
 
-  const moorea = data.fromMoorea[0];
-  const tahiti = data.fromTahiti[0];
-  if (!moorea && !tahiti) return null;
+  const moorea = nextDeparturesPerCompany(data.fromMoorea);
+  const tahiti = nextDeparturesPerCompany(data.fromTahiti);
+  if (moorea.length === 0 && tahiti.length === 0) return null;
 
-  const next = moorea ?? tahiti;
+  const next = moorea[0] ?? tahiti[0];
   const bookingUrl = ferryBookingUrl(next.company);
 
   return (
@@ -56,20 +54,20 @@ export function FerryStickyBar() {
           >
             <Ship size={18} className="flex-shrink-0 text-lagon-200" />
             <div className="min-w-0 text-xs leading-tight">
-              {moorea && (
-                <p className="truncate">
+              {moorea.map((d) => (
+                <p key={`m-${d.company}`} className="truncate">
                   <span className="text-ocean-300">M→T</span>{" "}
-                  <strong>{moorea.company}</strong> {moorea.time}
-                  <span className="text-ocean-300 ml-1">({moorea.minutesUntil}m)</span>
+                  <strong>{d.company.replace(/ Express.*/, "")}</strong> {d.time}
+                  <span className="text-ocean-300 ml-1">({d.minutesUntil}m)</span>
                 </p>
-              )}
-              {tahiti && (
-                <p className="truncate mt-0.5">
+              ))}
+              {tahiti.map((d) => (
+                <p key={`t-${d.company}`} className="truncate mt-0.5">
                   <span className="text-ocean-300">T→M</span>{" "}
-                  <strong>{tahiti.company}</strong> {tahiti.time}
-                  <span className="text-ocean-300 ml-1">({tahiti.minutesUntil}m)</span>
+                  <strong>{d.company.replace(/ Express.*/, "")}</strong> {d.time}
+                  <span className="text-ocean-300 ml-1">({d.minutesUntil}m)</span>
                 </p>
-              )}
+              ))}
             </div>
           </Link>
           <a

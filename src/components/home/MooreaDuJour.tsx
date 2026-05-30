@@ -26,8 +26,8 @@ function ReadMore({ href, label }: { href: string; label: string }) {
 
 export async function MooreaDuJour() {
   const data = await getMooreaDuJour();
-  const nextMoorea = data.ferries.fromMoorea[0];
-  const nextTahiti = data.ferries.fromTahiti[0];
+  const fromMoorea = data.ferries.fromMoorea;
+  const fromTahiti = data.ferries.fromTahiti;
 
   return (
     <section
@@ -93,29 +93,37 @@ export async function MooreaDuJour() {
               Prochains ferries
             </div>
             <div className="space-y-3 text-sm">
-              {nextMoorea && (
-                <p>
-                  <span className="text-ocean-300">Moorea → Tahiti</span>
-                  <br />
-                  <strong className="text-lg">
-                    {nextMoorea.company} {nextMoorea.time}
-                  </strong>
-                  <span className="text-ocean-200 text-xs ml-2">
-                    ({nextMoorea.minutesUntil} min)
-                  </span>
-                </p>
+              {fromMoorea.length > 0 && (
+                <div>
+                  <p className="text-ocean-300 mb-1">Moorea → Tahiti</p>
+                  <ul className="space-y-1.5">
+                    {fromMoorea.map((d) => (
+                      <li key={`m-${d.company}`}>
+                        <strong className="text-base">{d.company}</strong>{" "}
+                        {d.time}
+                        <span className="text-ocean-200 text-xs ml-1">
+                          ({d.minutesUntil} min)
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
-              {nextTahiti && (
-                <p>
-                  <span className="text-ocean-300">Tahiti → Moorea</span>
-                  <br />
-                  <strong className="text-lg">
-                    {nextTahiti.company} {nextTahiti.time}
-                  </strong>
-                  <span className="text-ocean-200 text-xs ml-2">
-                    ({nextTahiti.minutesUntil} min)
-                  </span>
-                </p>
+              {fromTahiti.length > 0 && (
+                <div>
+                  <p className="text-ocean-300 mb-1">Tahiti → Moorea</p>
+                  <ul className="space-y-1.5">
+                    {fromTahiti.map((d) => (
+                      <li key={`t-${d.company}`}>
+                        <strong className="text-base">{d.company}</strong>{" "}
+                        {d.time}
+                        <span className="text-ocean-200 text-xs ml-1">
+                          ({d.minutesUntil} min)
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
             <div className="mt-4">
