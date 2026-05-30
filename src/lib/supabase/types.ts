@@ -220,9 +220,33 @@ export type PushSubscriptionRow = {
   p256dh: string;
   auth: string;
   districts: string[];
+  topics?: string[] | null;
   user_agent: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type FaqEntryRow = {
+  id: string;
+  slug: string;
+  question: string;
+  answer: string;
+  category: string;
+  source_label: string | null;
+  source_url: string | null;
+  district: string | null;
+  published: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type UserFavoriteRow = {
+  id: string;
+  user_id: string;
+  entity_type: string;
+  entity_id: string;
+  created_at: string;
 };
 
 export type AlertEmailSubscriptionRow = {
@@ -278,6 +302,8 @@ export type Database = {
       alerts: TableDef<AlertRow>;
       push_subscriptions: TableDef<PushSubscriptionRow>;
       alert_email_subscriptions: TableDef<AlertEmailSubscriptionRow>;
+      faq_entries: TableDef<FaqEntryRow>;
+      user_favorites: TableDef<UserFavoriteRow>;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

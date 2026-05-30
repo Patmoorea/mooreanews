@@ -52,3 +52,9 @@ export function shouldSendMorningDigest(clock: TahitiClock): boolean {
 export function shouldSendWeekendDigest(clock: TahitiClock): boolean {
   return clock.weekday === 5 && clock.hour >= 5 && clock.hour < 12;
 }
+
+/** Push « Ce soir à Moorea » : jeu–dim entre 16h et 20h Tahiti (cron externe recommandé). */
+export function shouldSendEveningDigest(clock: TahitiClock): boolean {
+  const eveningDays = new Set([0, 4, 5, 6]);
+  return eveningDays.has(clock.weekday) && clock.hour >= 16 && clock.hour < 20;
+}

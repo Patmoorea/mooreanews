@@ -1,0 +1,39 @@
+[
+  {
+    "slug": "horaires-poste-paopao",
+    "question": "Quels sont les horaires du bureau de poste à Paopao ?",
+    "answer": "Le bureau de poste de Paopao est généralement ouvert du lundi au vendredi. Vérifiez les horaires à jour sur le site officiel OPT ou en appelant la poste locale avant de vous déplacer.",
+    "category": "demarches",
+    "source_label": "Qui sait quoi — communauté",
+    "district": "Paopao"
+  },
+  {
+    "slug": "vaccination-bebe-moorea",
+    "question": "Où faire vacciner un bébé à Moorea ?",
+    "answer": "Rendez-vous au centre de santé ou à l'hôpital d'Afareaitu (CHPF). Pensez à apporter le carnet de santé et à prendre rendez-vous si nécessaire.",
+    "category": "sante",
+    "source_label": "Qui sait quoi — communauté",
+    "district": "Afareaitu"
+  },
+  {
+    "slug": "ferry-reservation-vehicule",
+    "question": "Faut-il réserver le ferry avec une voiture ?",
+    "answer": "Oui, fortement recommandé surtout en haute saison et le week-end. Réservez en ligne sur le site de votre compagnie (Aremiti, Vaeara'i ou Tauati) plusieurs jours à l'avance.",
+    "category": "transport",
+    "source_label": "MooreaNews"
+  },
+  {
+    "slug": "coupure-eau-signalement",
+    "question": "Comment signaler une coupure d'eau non annoncée ?",
+    "answer": "Utilisez le formulaire « Publier une info » sur MooreaNews (type Signalement) ou consultez la page Alertes. Nous modérons et publions une alerte quartier si confirmé.",
+    "category": "services",
+    "source_label": "MooreaNews"
+  },
+  {
+    "slug": "pharmacie-garde",
+    "question": "Comment trouver la pharmacie de garde ?",
+    "answer": "Consultez la page Infos pratiques ou appelez la CPS. MooreaNews affiche aussi les alertes santé lorsqu'elles sont communiquées officiellement.",
+    "category": "sante",
+    "source_label": "MooreaNews"
+  }
+]

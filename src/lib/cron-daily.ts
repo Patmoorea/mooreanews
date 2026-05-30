@@ -8,6 +8,7 @@ import { expirePastAlerts } from "@/lib/alert-schedule";
 import { aggregateAll } from "@/lib/aggregator";
 import {
   getTahitiClock,
+  shouldSendEveningDigest,
   shouldSendMorningDigest,
   shouldSendWeekendDigest,
 } from "@/lib/cron-tahiti";
@@ -18,9 +19,14 @@ import {
 } from "@/lib/facebook-token";
 import { checkFerryScheduleSync } from "@/lib/ferry-sync";
 import { sendMorningDigest } from "@/lib/morning-digest";
+import {
+  sendEveningDigestPush,
+  sendMorningDigestPush,
+  sendWeekendDigestPush,
+} from "@/lib/push-notify";
 import { syncMeteoVigilanceAlert } from "@/lib/meteo-vigilance-sync";
 import { auditPublicContent } from "@/lib/site-content-audit";
-import { notifyVeilleReport } from "@/lib/telegram-notify";
+import { notifyVeilleReport, sendPublicMooreaBrief } from "@/lib/telegram-notify";
 import { sendWeekendDigest } from "@/lib/weekend-digest";
 
 export type DailyCronResult = {
@@ -62,17 +68,31 @@ export async function runDailyCron(): Promise<DailyCronResult> {
 
   if (shouldSendMorningDigest(clock)) {
     jobs.morningDigest = await sendMorningDigest();
+    jobs.morningPush = await sendMorningDigestPush();
+    jobs.publicTelegramBrief = await sendPublicMooreaBrief();
   } else {
     jobs.morningDigest = { skipped: true, reason: "hors créneau 5h–10h Tahiti" };
+    jobs.morningPush = { skipped: true, reason: "hors créneau 5h–10h Tahiti" };
+  }
+
+  if (shouldSendEveningDigest(clock)) {
+    jobs.eveningPush = await sendEveningDigestPush();
+  } else {
+    jobs.eveningPush = {
+      skipped: true,
+      reason: "hors créneau jeu–dim 16h–20h Tahiti (utiliser /api/cron/evening-push)",
+    };
   }
 
   if (shouldSendWeekendDigest(clock)) {
     jobs.weekendDigest = await sendWeekendDigest();
+    jobs.weekendPush = await sendWeekendDigestPush();
   } else {
     jobs.weekendDigest = {
       skipped: true,
       reason: "hors créneau vendredi matin Tahiti",
     };
+    jobs.weekendPush = { skipped: true, reason: "hors créneau vendredi matin Tahiti" };
   }
 
   const results = await aggregateAll();

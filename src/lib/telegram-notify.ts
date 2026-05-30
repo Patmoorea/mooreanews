@@ -6,6 +6,8 @@ import type { AggregationResult } from "@/lib/aggregator";
 import type { FacebookTokenHealth } from "@/lib/facebook-token";
 import type { ContentAuditReport } from "@/lib/site-content-audit";
 import { escapeHtml, sendTelegramNotification } from "@/lib/telegram";
+import { getMooreaDuJour } from "@/lib/moorea-du-jour";
+import { formatMorningBrief30s } from "@/lib/moorea-brief";
 
 function siteUrl(): string {
   return (
@@ -365,4 +367,49 @@ export async function notifyContentAuditOnly(
   ];
   const r = await sendTelegramNotification(lines.join("\n"));
   return r.ok ? { sent: true } : { sent: false, reason: r.error };
+}
+
+/** Digest public Telegram / WhatsApp — 1 message matin max (canal public si configuré). */
+export async function sendPublicMooreaBrief(): Promise<{
+  sent: boolean;
+  reason?: string;
+}> {
+  const publicChat =
+    process.env.TELEGRAM_PUBLIC_CHAT_ID?.trim() ??
+    process.env.TELEGRAM_CHAT_ID?.trim();
+  if (!process.env.TELEGRAM_BOT_TOKEN?.trim() || !publicChat) {
+    return { sent: false, reason: "Telegram non configuré" };
+  }
+
+  const digest = await getMooreaDuJour();
+  const brief = formatMorningBrief30s(digest);
+  const base = siteUrl();
+  const html = [
+    `<b>🌺 Moorea en 30 secondes</b>`,
+    escapeHtml(brief.body),
+    `\n<a href="${base}/">Ouvrir MooreaNews →</a>`,
+  ].join("\n");
+
+  try {
+    const url = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: publicChat,
+        text: html,
+        parse_mode: "HTML",
+        disable_web_page_preview: false,
+      }),
+    });
+    if (!res.ok) {
+      return { sent: false, reason: await res.text() };
+    }
+    return { sent: true };
+  } catch (e) {
+    return {
+      sent: false,
+      reason: e instanceof Error ? e.message : String(e),
+    };
+  }
 }

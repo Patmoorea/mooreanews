@@ -4,6 +4,7 @@ import { FerryCard } from "@/components/widgets/FerryCard";
 import { SunMoonCard } from "@/components/widgets/SunMoonCard";
 import { TidesCard } from "@/components/widgets/TidesCard";
 import { ForecastStrip } from "@/components/widgets/ForecastStrip";
+import { BeachSwimScores } from "@/components/widgets/BeachSwimScores";
 import { TropicalSection, TROPICAL_EMOJI } from "@/components/decor/TropicalDecor";
 import { RaiTahitiSpotlight } from "@/components/RaiTahitiSpotlight";
 
@@ -41,6 +42,10 @@ export function LiveDashboard() {
 
         <div className="mt-6">
           <ForecastStrip />
+        </div>
+
+        <div className="mt-6 grid gap-5 sm:gap-6 grid-cols-1">
+          <BeachSwimScores />
         </div>
 
         <div className="mt-8 max-w-2xl mx-auto">

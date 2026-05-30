@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Ship, ArrowRight, Clock } from "lucide-react";
+import { Ship, ArrowRight, Clock, Ticket } from "lucide-react";
 import type { NextDepartures } from "@/lib/ferries";
 import { formatMinutesUntil } from "@/lib/ferries";
+import { ferryBookingUrl } from "@/lib/constants";
 
 export function FerryCard() {
   const [data, setData] = useState<NextDepartures | null>(null);
@@ -131,10 +132,22 @@ function FerryDirection({
                 {d.company}
               </span>
             </div>
-            <span className="text-xs text-ocean-600 flex items-center gap-1 shrink-0">
-              <Clock size={12} />
-              {formatMinutesUntil(d.minutesUntil)}
-            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-xs text-ocean-600 flex items-center gap-1">
+                <Clock size={12} />
+                {formatMinutesUntil(d.minutesUntil)}
+              </span>
+              <a
+                href={ferryBookingUrl(d.company)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1 rounded-md text-ocean-600 hover:bg-ocean-100"
+                aria-label={`Réserver ${d.company}`}
+                title="Billetterie"
+              >
+                <Ticket size={14} />
+              </a>
+            </div>
           </li>
         ))}
       </ul>

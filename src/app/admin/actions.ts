@@ -528,9 +528,36 @@ export async function approveSubmission(id: string, formData: FormData) {
       .select("id")
       .single();
     if (created?.id) revalidatePath(`/annonces/${created.id}`);
-  } else if (sub.type === "signalement" || sub.type === "suggestion") {
-    // Pas de table cible automatique : la modération sert surtout à tracer
-    // la demande et à traiter manuellement si besoin.
+  } else if (sub.type === "signalement") {
+    const district =
+      sub.district && sub.district !== "Toute l'île" ? sub.district : null;
+    const details = [
+      sub.description,
+      sub.location ? `Lieu : ${sub.location}` : null,
+      sub.user_name ? `Signalé par : ${sub.user_name}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+    const { data: created } = await supabase
+      .from("alerts")
+      .insert({
+        type: "autre",
+        severity: "warning",
+        title: sub.title,
+        details,
+        district,
+        source_url: null,
+        active: true,
+        urgent: false,
+      })
+      .select("*")
+      .single();
+    if (created) {
+      await dispatchAlertNotifications(created);
+      revalidateAlertPublicPaths();
+    }
+  } else if (sub.type === "suggestion") {
+    /* suggestion sans publication auto */
   }
 
   const adminNotes = formData.get("admin_notes");

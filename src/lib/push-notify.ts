@@ -12,12 +12,30 @@ import {
 } from "@/lib/push-keys";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import type { AlertRow } from "@/lib/supabase/types";
+import { getMooreaDuJour } from "@/lib/moorea-du-jour";
+import {
+  formatEveningBrief,
+  formatMorningBrief30s,
+} from "@/lib/moorea-brief";
 
 export type PushSubscriptionInput = {
   endpoint: string;
   keys: { p256dh: string; auth: string };
   districts?: string[];
+  topics?: string[];
 };
+
+export type DigestTopic = "morning" | "evening" | "weekend";
+
+const DEFAULT_PUSH_TOPICS = ["alerts", "morning", "evening", "weekend"] as const;
+
+export function subscriptionWantsTopic(
+  topics: string[] | null | undefined,
+  topic: DigestTopic | "alerts",
+): boolean {
+  if (!topics?.length) return true;
+  return topics.includes(topic);
+}
 
 function vapidConfigured(): boolean {
   const publicKey = process.env.VAPID_PUBLIC_KEY?.trim();
@@ -83,6 +101,7 @@ export async function savePushSubscription(
   if (!admin) return { ok: false, error: "Supabase non configuré" };
 
   const districts = (input.districts ?? []).filter(Boolean);
+  const topics = (input.topics ?? [...DEFAULT_PUSH_TOPICS]).filter(Boolean);
   if (!isValidPushSubscriptionKeys(input.keys.p256dh, input.keys.auth)) {
     return {
       ok: false,
@@ -96,6 +115,7 @@ export async function savePushSubscription(
       p256dh: input.keys.p256dh,
       auth: input.keys.auth,
       districts,
+      topics,
       user_agent: userAgent ?? null,
       updated_at: new Date().toISOString(),
     },
@@ -157,6 +177,7 @@ export async function notifyAlertSubscribers(
 
     for (const row of pushRows ?? []) {
       if (!subscriptionMatchesAlert(row.districts ?? [], alert)) continue;
+      if (!subscriptionWantsTopic(row.topics, "alerts")) continue;
       if (!pushConfigured) break;
 
       if (!isValidPushSubscriptionKeys(row.p256dh, row.auth)) {
@@ -329,4 +350,106 @@ export async function sendTestPushNotification(): Promise<{
   }
 
   return { sent, errors };
+}
+
+async function sendDigestToTopic(
+  topic: DigestTopic,
+  payload: { title: string; body: string; url: string },
+): Promise<{ sent: number; errors: string[] }> {
+  const admin = getAdminSupabase();
+  if (!admin || !configureWebPush()) {
+    return { sent: 0, errors: ["Push non configuré"] };
+  }
+
+  await purgeInvalidPushSubscriptions();
+
+  const { data: rows } = await admin.from("push_subscriptions").select("*");
+  let sent = 0;
+  const errors: string[] = [];
+
+  for (const row of rows ?? []) {
+    if (!subscriptionWantsTopic(row.topics, topic)) continue;
+    if (!isValidPushSubscriptionKeys(row.p256dh, row.auth)) {
+      await deleteInvalidPushRow(admin, row.id);
+      continue;
+    }
+
+    try {
+      await webpush.sendNotification(
+        {
+          endpoint: row.endpoint,
+          keys: { p256dh: row.p256dh, auth: row.auth },
+        },
+        JSON.stringify({
+          title: payload.title,
+          body: payload.body,
+          url: payload.url,
+          tag: `digest-${topic}`,
+          urgent: false,
+        }),
+      );
+      sent += 1;
+    } catch (e) {
+      const msg = String(e);
+      if (/410|404|expired|unsubscribed|65 bytes/i.test(msg)) {
+        await deleteInvalidPushRow(admin, row.id);
+      } else {
+        errors.push(msg.slice(0, 120));
+      }
+    }
+  }
+
+  return { sent, errors };
+}
+
+/** Push matin « Moorea en 30 secondes » (~7h Tahiti via cron). */
+export async function sendMorningDigestPush(): Promise<{
+  sent: number;
+  errors: string[];
+}> {
+  const digest = await getMooreaDuJour();
+  const brief = formatMorningBrief30s(digest);
+  const base = SITE.url.replace(/\/$/, "");
+  return sendDigestToTopic("morning", {
+    title: brief.title,
+    body: brief.body,
+    url: `${base}/`,
+  });
+}
+
+/** Push « Ce soir à Moorea » (jeu–dim ~17h, cron externe ou fenêtre cron). */
+export async function sendEveningDigestPush(): Promise<{
+  sent: number;
+  errors: string[];
+}> {
+  const digest = await getMooreaDuJour();
+  const brief = formatEveningBrief(digest);
+  const base = SITE.url.replace(/\/$/, "");
+  return sendDigestToTopic("evening", {
+    title: brief.title,
+    body: brief.body,
+    url: `${base}/ce-soir`,
+  });
+}
+
+/** Push agenda week-end. */
+export async function sendWeekendDigestPush(): Promise<{
+  sent: number;
+  errors: string[];
+}> {
+  const digest = await getMooreaDuJour();
+  const n = digest.weekendEvents.length;
+  const base = SITE.url.replace(/\/$/, "");
+  const body =
+    n > 0
+      ? digest.weekendEvents
+          .slice(0, 3)
+          .map((e) => e.title)
+          .join(" · ")
+      : "Consultez l'agenda du week-end sur MooreaNews.";
+  return sendDigestToTopic("weekend", {
+    title: "🌴 Ce week-end à Moorea",
+    body: body.slice(0, 220),
+    url: `${base}/evenements`,
+  });
 }

@@ -102,6 +102,38 @@ export function Footer() {
             <ul className="mt-4 space-y-2">
               <li>
                 <Link
+                  href="/qui-sait-quoi"
+                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
+                >
+                  Qui sait quoi
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/mon-sejour"
+                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
+                >
+                  Mon séjour
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/ce-soir"
+                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
+                >
+                  Ce soir à Moorea
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/vigilance-cyclone"
+                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
+                >
+                  Vigilance cyclone
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/guides"
                   className="text-sm text-ocean-200/80 hover:text-white transition-colors"
                 >
