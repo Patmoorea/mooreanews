@@ -4,7 +4,6 @@ import {
   METEO_VIGILANCE_MOOREA_PAGE,
   METEO_VIGILANCE_PAGE,
   fetchMeteoVigilance,
-  PHENOMENON_LABELS,
 } from "@/lib/meteo-vigilance";
 import { syncMeteoVigilanceAlert } from "@/lib/meteo-vigilance-sync";
 import { Container } from "@/components/ui/Container";
@@ -65,8 +64,17 @@ export default async function VigilanceCyclonePage() {
           </p>
           {cycloneLevel > 0 && (
             <p className="mt-2 text-sm text-tiare-800">
-              {PHENOMENON_LABELS[9] ?? "Cyclone"} : niveau {cycloneLevel}
+              Alerte cyclonique : niveau {cycloneLevel}
             </p>
+          )}
+          {snapshot?.activePhenomena && snapshot.activePhenomena.length > 0 && (
+            <ul className="mt-4 space-y-1 text-sm text-ocean-800">
+              {snapshot.activePhenomena.map((p) => (
+                <li key={p.id}>
+                  <strong>{p.label}</strong> — vigilance {p.colorName}
+                </li>
+              ))}
+            </ul>
           )}
           <div className="mt-4 flex flex-wrap gap-3">
             <a

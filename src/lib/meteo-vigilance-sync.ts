@@ -4,6 +4,7 @@
 
 import {
   fetchMeteoVigilance,
+  METEO_VIGILANCE_MOOREA_PAGE,
   METEO_VIGILANCE_SOURCE_ID,
   vigilanceAlertTitle,
   vigilanceNeedsAlert,
@@ -27,7 +28,7 @@ async function findExistingVigilanceAlert() {
     .from("alerts")
     .select("*")
     .eq("type", "meteo")
-    .eq("source_url", METEO_VIGILANCE_SOURCE_ID)
+    .in("source_url", [METEO_VIGILANCE_SOURCE_ID, METEO_VIGILANCE_MOOREA_PAGE])
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -39,7 +40,10 @@ function snapshotFingerprint(snapshot: MeteoVigilanceSnapshot): string {
   const zones = snapshot.mooreaZones
     .map((z) => `${z.id}:${z.maxColorId}`)
     .join(",");
-  return `${snapshot.updateTime}|${snapshot.mooreaMaxColorId}|${snapshot.cycloneMaxColorId}|${zones}`;
+  const phen = snapshot.activePhenomena
+    .map((p) => `${p.id}:${p.maxColorId}`)
+    .join(",");
+  return `${snapshot.updateTime}|${snapshot.mooreaMaxColorId}|${snapshot.cycloneMaxColorId}|${zones}|${phen}`;
 }
 
 /** Met à jour ou désactive l'alerte vigilance officielle. */
@@ -86,14 +90,20 @@ export async function syncMeteoVigilanceAlert(): Promise<MeteoVigilanceSyncResul
 
   const title = vigilanceAlertTitle(snapshot);
   const fingerprint = snapshotFingerprint(snapshot);
-  const details = `${snapshot.details}\n\nRef. ${fingerprint}`;
+  const details = `${snapshot.details}\n<!--vigi-sync:${fingerprint}-->`;
+
+  function previousMooreaLevel(detailsText: string | null): number {
+    const m = detailsText?.match(/<!--vigi-sync:[^|]+\|(\d+)\|/);
+    return m ? Number(m[1]) || 0 : 0;
+  }
 
   if (existing) {
     const sameState =
       existing.active &&
       existing.title === title &&
       existing.urgent === snapshot.urgent &&
-      existing.details?.includes(String(snapshot.updateTime));
+      existing.details?.includes(`<!--vigi-sync:${fingerprint}-->`) &&
+      existing.ends_at === endsAt;
 
     if (sameState) {
       return {
@@ -110,7 +120,7 @@ export async function syncMeteoVigilanceAlert(): Promise<MeteoVigilanceSyncResul
         severity: snapshot.severity,
         title,
         details,
-        source_url: METEO_VIGILANCE_SOURCE_ID,
+        source_url: METEO_VIGILANCE_MOOREA_PAGE,
         starts_at: now,
         ends_at: endsAt,
         active: true,
@@ -127,8 +137,7 @@ export async function syncMeteoVigilanceAlert(): Promise<MeteoVigilanceSyncResul
 
     const wasInactive = !existing.active;
     const levelIncreased =
-      (existing.details?.match(/\|(\d+)\|/)?.[1] ?? "0") <
-      String(snapshot.mooreaMaxColorId);
+      snapshot.mooreaMaxColorId > previousMooreaLevel(existing.details);
 
     if (wasInactive || levelIncreased) {
       try {
@@ -154,7 +163,7 @@ export async function syncMeteoVigilanceAlert(): Promise<MeteoVigilanceSyncResul
       severity: snapshot.severity,
       title,
       details,
-      source_url: METEO_VIGILANCE_SOURCE_ID,
+      source_url: METEO_VIGILANCE_MOOREA_PAGE,
       starts_at: now,
       ends_at: endsAt,
       active: true,

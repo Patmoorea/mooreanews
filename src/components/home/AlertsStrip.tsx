@@ -3,6 +3,7 @@ import { ExternalLink, Siren } from "lucide-react";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
 import { expirePastAlerts } from "@/lib/alert-schedule";
 import { syncMeteoVigilanceAlert } from "@/lib/meteo-vigilance-sync";
+import { sanitizeAlertDetailsForDisplay } from "@/lib/meteo-vigilance";
 import { Container } from "@/components/ui/Container";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -72,7 +73,7 @@ export async function AlertsStrip() {
               </p>
               {a.details ? (
                 <p className="mt-2 text-xs text-ocean-600 line-clamp-2">
-                  {a.details}
+                  {sanitizeAlertDetailsForDisplay(a.details)}
                 </p>
               ) : null}
             </Link>
