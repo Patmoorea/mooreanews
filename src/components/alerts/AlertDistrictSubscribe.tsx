@@ -3,17 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bell, Mail, MapPin, Check } from "lucide-react";
 import { MOOREA_DISTRICTS } from "@/lib/constants";
+import {
+  isPushMarkedActive,
+  isPushSupported,
+  markPushActive,
+  subscribeToPushAlerts,
+} from "@/lib/push-client";
 
 const STORAGE_KEY = "mooreanews-alert-districts";
-
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const raw = atob(base64);
-  const arr = new Uint8Array(raw.length);
-  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
-  return arr;
-}
 
 export function AlertDistrictSubscribe({
   onDistrictsChange,
@@ -46,6 +43,14 @@ export function AlertDistrictSubscribe({
     onDistrictsChange?.(selected);
   }, [selected, onDistrictsChange]);
 
+  useEffect(() => {
+    if (!isPushMarkedActive() || !isPushSupported()) return;
+    const t = setTimeout(() => {
+      subscribeToPushAlerts(selected).catch(() => {});
+    }, 600);
+    return () => clearTimeout(t);
+  }, [selected]);
+
   const toggleDistrict = useCallback((d: string) => {
     setSelected((prev) => {
       const next = prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d];
@@ -64,48 +69,23 @@ export function AlertDistrictSubscribe({
   async function subscribePush() {
     setPushState("loading");
     setMessage("");
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    if (!isPushSupported()) {
       setPushState("unsupported");
       return;
     }
-    try {
-      const perm = await Notification.requestPermission();
-      if (perm !== "granted") {
-        setPushState("denied");
-        return;
-      }
-      const vapidRes = await fetch("/api/push/vapid");
-      const vapid = (await vapidRes.json()) as {
-        ok: boolean;
-        publicKey?: string;
-      };
-      if (!vapid.ok || !vapid.publicKey) {
-        setPushState("error");
-        setMessage("Notifications push non configurées sur le serveur.");
-        return;
-      }
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(
-          vapid.publicKey,
-        ) as BufferSource,
-      });
-      const json = sub.toJSON();
-      const res = await fetch("/api/push/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subscription: json,
-          districts: selected,
-        }),
-      });
-      if (!res.ok) throw new Error("subscribe_failed");
+    const result = await subscribeToPushAlerts(selected);
+    if (result.ok) {
       setPushState("ok");
       setMessage(`Notifications activées (${districtLabel}).`);
-    } catch {
+    } else if (result.reason === "denied") {
+      setPushState("denied");
+      markPushActive(false);
+    } else if (result.reason === "not_configured") {
       setPushState("error");
-      setMessage("Impossible d'activer les notifications push.");
+      setMessage(result.message ?? "Push non configuré sur le serveur.");
+    } else {
+      setPushState("error");
+      setMessage(result.message ?? "Impossible d'activer les notifications push.");
     }
   }
 

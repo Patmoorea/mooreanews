@@ -44,7 +44,14 @@ Dans **Supabase → SQL Editor**, exécutez :
 
 ## 4. Vérifier
 
-- Page `/alertes` → bloc « Alertes par quartier » → s’abonner
-- Admin → créer une alerte test → les abonnés reçoivent une notif (navigateur doit autoriser les notifications)
+```bash
+npm run check:push
+# ou
+curl -s https://www.mooreanews.com/api/push/status | jq
+```
 
-Si rien ne part : vérifiez les 3 variables Vercel + redéploiement + console navigateur (F12).
+- Page `/alertes` → bloc « Alertes par quartier » → **Activer notifications push**
+- Bandeau sur l'accueil (si pas encore abonné)
+- **Admin → Configuration production** → bouton **Envoyer notification test**
+
+Si rien ne part : vérifiez les 3 variables Vercel + redéploiement + `prod-setup-all.sql` exécuté.

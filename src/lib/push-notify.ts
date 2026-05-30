@@ -208,3 +208,71 @@ export async function notifyAlertSubscribers(
 export function isPushAvailable(): boolean {
   return vapidConfigured();
 }
+
+export async function getPushSubscriberCounts(): Promise<{
+  push: number;
+  email: number;
+  tableOk: boolean;
+}> {
+  const admin = getAdminSupabase();
+  if (!admin) return { push: 0, email: 0, tableOk: false };
+
+  const { error: pushErr, count: pushCount } = await admin
+    .from("push_subscriptions")
+    .select("id", { count: "exact", head: true });
+  const { count: emailCount } = await admin
+    .from("alert_email_subscriptions")
+    .select("id", { count: "exact", head: true });
+
+  return {
+    push: pushCount ?? 0,
+    email: emailCount ?? 0,
+    tableOk: !pushErr,
+  };
+}
+
+/** Notification test admin — tous les abonnés push. */
+export async function sendTestPushNotification(): Promise<{
+  sent: number;
+  errors: string[];
+}> {
+  const admin = getAdminSupabase();
+  if (!admin) return { sent: 0, errors: ["Supabase non configuré"] };
+  if (!configureWebPush()) {
+    return { sent: 0, errors: ["VAPID non configuré sur Vercel"] };
+  }
+
+  const payload = {
+    title: "🔔 Test MooreaNews",
+    body: "Les notifications push fonctionnent. Vous recevrez les alertes de votre quartier ici.",
+    url: `${SITE.url.replace(/\/$/, "")}/alertes`,
+    tag: "mooreanews-test",
+    urgent: false,
+  };
+
+  const { data: rows } = await admin.from("push_subscriptions").select("*");
+  let sent = 0;
+  const errors: string[] = [];
+
+  for (const row of rows ?? []) {
+    try {
+      await webpush.sendNotification(
+        {
+          endpoint: row.endpoint,
+          keys: { p256dh: row.p256dh, auth: row.auth },
+        },
+        JSON.stringify(payload),
+      );
+      sent += 1;
+    } catch (e) {
+      const msg = String(e);
+      if (/410|404|expired|unsubscribed/i.test(msg)) {
+        await admin.from("push_subscriptions").delete().eq("id", row.id);
+      } else {
+        errors.push(msg.slice(0, 120));
+      }
+    }
+  }
+
+  return { sent, errors };
+}

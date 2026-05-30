@@ -1,11 +1,20 @@
 import { CheckCircle2, Circle, XCircle, Wrench } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { PushAdminPanel } from "@/components/admin/PushAdminPanel";
 import { getProductionSetupStatus } from "@/lib/setup-status";
+import {
+  getPushSubscriberCounts,
+  getVapidPublicKey,
+} from "@/lib/push-notify";
 
 export const metadata = { title: "Configuration production" };
 
 export default async function AdminSetupPage() {
   const checks = await getProductionSetupStatus();
+  const pushCounts = await getPushSubscriberCounts();
+  const vapidOk = Boolean(
+    getVapidPublicKey() && process.env.VAPID_PRIVATE_KEY?.trim(),
+  );
   const required = checks.filter((c) => !c.optional);
   const requiredOk = required.filter((c) => c.ok).length;
   const optional = checks.filter((c) => c.optional);
@@ -46,6 +55,13 @@ export default async function AdminSetupPage() {
           un calcul local gratuit.
         </p>
       </div>
+
+      <PushAdminPanel
+        pushSubscribers={pushCounts.push}
+        emailSubscribers={pushCounts.email}
+        vapidOk={vapidOk}
+        tableOk={pushCounts.tableOk}
+      />
 
       <ul className="space-y-3">
         {checks.map((c) => (

@@ -9,6 +9,8 @@
     "lint": "eslint",
     "seed": "node scripts/seed.mjs",
     "check:live": "node scripts/check-live-services.mjs https://www.mooreanews.com",
+    "check:push": "node scripts/check-push.mjs https://www.mooreanews.com",
+    "push:keys": "web-push generate-vapid-keys",
     "veille": "node scripts/run-veille.mjs"
   },
   "dependencies": {

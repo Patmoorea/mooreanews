@@ -4,7 +4,10 @@
 
 import { ENV, SITE } from "@/lib/constants";
 import { getAdminSupabase } from "@/lib/supabase/admin";
-import { getVapidPublicKey } from "@/lib/push-notify";
+import {
+  getPushSubscriberCounts,
+  getVapidPublicKey,
+} from "@/lib/push-notify";
 
 export type SetupCheck = {
   id: string;
@@ -18,6 +21,7 @@ export type SetupCheck = {
 
 export async function getProductionSetupStatus(): Promise<SetupCheck[]> {
   const checks: SetupCheck[] = [];
+  const pushCounts = await getPushSubscriberCounts();
 
   checks.push({
     id: "supabase",
@@ -38,11 +42,22 @@ export async function getProductionSetupStatus(): Promise<SetupCheck[]> {
   checks.push({
     id: "vapid",
     label: "Push Web (VAPID)",
-    ok: Boolean(getVapidPublicKey() && process.env.VAPID_PRIVATE_KEY?.trim()),
-    detail: getVapidPublicKey()
-      ? "Clés VAPID présentes"
-      : "VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY manquantes",
-    action: "npx web-push generate-vapid-keys → Vercel",
+    ok: Boolean(
+      getVapidPublicKey() &&
+        process.env.VAPID_PRIVATE_KEY?.trim() &&
+        pushCounts.tableOk,
+    ),
+    detail: (() => {
+      if (!getVapidPublicKey()) {
+        return "VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY manquantes";
+      }
+      const counts = pushCounts;
+      if (!counts.tableOk) {
+        return "Clés VAPID OK — table push_subscriptions absente (SQL)";
+      }
+      return `Clés OK · ${counts.push} abonné(s) push · ${counts.email} email alertes`;
+    })(),
+    action: "npx web-push generate-vapid-keys → Vercel + prod-setup-all.sql",
   });
 
   checks.push({
