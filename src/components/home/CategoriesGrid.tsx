@@ -6,6 +6,7 @@ import {
   Utensils,
   Compass,
   Info,
+  Palmtree,
   type LucideIcon,
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
@@ -45,6 +46,14 @@ const CATS = [
     icon: Utensils,
     category: "restaurants" as CategorySlug,
     color: "from-orange-400 to-tiare-500",
+  },
+  {
+    href: "/visiteurs",
+    label: "Guide visiteurs",
+    description: "Hébergements, plages, ferries, carte",
+    icon: Palmtree,
+    category: "activites" as CategorySlug,
+    color: "from-lagon-400 to-ocean-700",
   },
   {
     href: "/activites",

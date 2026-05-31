@@ -5,6 +5,7 @@ import {
   Megaphone,
   CloudSun,
   Siren,
+  Palmtree,
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,7 @@ const LINKS = [
   { href: "#agenda", label: "Événements", icon: Calendar, primary: true },
   { href: "#annonces", label: "Annonces", icon: Megaphone, primary: true },
   { href: "/alertes", label: "Alertes", icon: Siren, primary: false },
+  { href: "/visiteurs", label: "Visiteurs", icon: Palmtree, primary: true },
   {
     href: "#en-direct",
     label: "Météo & ferries",
