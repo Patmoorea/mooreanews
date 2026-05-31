@@ -100,11 +100,6 @@ export function Footer() {
           {/* Plan du site (catégories) */}
           <div className="sm:col-span-2 lg:col-span-2">
             <h3 className="font-display text-lg text-white">Plan du site</h3>
-            <p className="mt-2 text-xs text-ocean-300/90">
-              <Link href="/#plan-du-site" className="hover:text-white underline">
-                Vue détaillée sur l&apos;accueil
-              </Link>
-            </p>
             <div className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-4">
               {SITE_DIRECTORY.map((category) => (
                 <div key={category.id}>

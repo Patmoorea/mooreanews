@@ -5,7 +5,6 @@ import { PushAlertBanner } from "@/components/pwa/PushAlertBanner";
 import { MooreaDuJour } from "@/components/home/MooreaDuJour";
 import { HomeSectionNav } from "@/components/home/HomeSectionNav";
 import { LiveDashboard } from "@/components/home/LiveDashboard";
-import { HomeSiteDirectory } from "@/components/home/HomeSiteDirectory";
 import { FeaturedArticles } from "@/components/home/FeaturedArticles";
 import { ExternalArticles } from "@/components/ExternalArticles";
 import { UpcomingEvents } from "@/components/home/UpcomingEvents";
@@ -29,7 +28,6 @@ export default function HomePage() {
       <AlertsStrip />
       <MooreaDuJour />
       <HomeSectionNav />
-      <HomeSiteDirectory />
       <LiveDashboard />
       <WeekendAgenda />
       <FeaturedArticles />
