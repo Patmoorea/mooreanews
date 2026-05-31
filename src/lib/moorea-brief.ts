@@ -3,8 +3,14 @@
  */
 
 import type { MooreaDuJour } from "@/lib/moorea-du-jour";
+import { humanEventTitle } from "@/lib/event-title";
 
-export function formatMorningBrief30s(d: MooreaDuJour): { title: string; body: string } {
+export function formatMorningBrief30s(d: MooreaDuJour): {
+  title: string;
+  body: string;
+  eventSlug?: string;
+  eventLabel?: string;
+} {
   const parts: string[] = [];
 
   const ferry = d.ferries.fromMoorea[0] ?? d.ferries.fromTahiti[0];
@@ -24,12 +30,17 @@ export function formatMorningBrief30s(d: MooreaDuJour): { title: string; body: s
 
   const ev = d.todayEvents[0] ?? d.weekendEvents[0];
   if (ev) {
-    parts.push(`📅 ${ev.title.slice(0, 40)}`);
+    parts.push(`📅 ${humanEventTitle(ev.title)}`);
   }
 
   const title = "🌺 Moorea en 30 secondes";
   const body = parts.join(" · ").slice(0, 220);
-  return { title, body };
+  return {
+    title,
+    body,
+    eventSlug: ev?.slug,
+    eventLabel: ev ? humanEventTitle(ev.title) : undefined,
+  };
 }
 
 export function formatEveningBrief(d: MooreaDuJour): { title: string; body: string } {
@@ -42,7 +53,7 @@ export function formatEveningBrief(d: MooreaDuJour): { title: string; body: stri
 
   const ev = d.todayEvents.find((e) => e.time && parseInt(e.time, 10) >= 17) ?? d.todayEvents[0];
   if (ev) {
-    parts.push(`📅 ${ev.title.slice(0, 35)}`);
+    parts.push(`📅 ${humanEventTitle(ev.title, "Agenda du soir")}`);
   }
 
   parts.push(`${d.weather.temp}°C ${d.weather.description.toLowerCase()}`);

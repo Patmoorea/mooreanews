@@ -213,6 +213,58 @@ async function resolveGraphPageId(
   return page.pageId;
 }
 
+const GRAPH_POST_FIELDS_FULL =
+  "id,message,permalink_url,created_time,full_picture,attachments{description,title,media_type,media{image{src}}}";
+const GRAPH_POST_FIELDS_MINIMAL =
+  "id,message,permalink_url,created_time,full_picture";
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Erreurs Meta souvent temporaires (500, rate limit, subcode 99). */
+function isTransientGraphError(status: number, body: string): boolean {
+  if (status === 429 || status >= 500) return true;
+  try {
+    const json = JSON.parse(body) as {
+      error?: { code?: number; error_subcode?: number; is_transient?: boolean };
+    };
+    const err = json.error;
+    if (!err) return false;
+    if (err.is_transient) return true;
+    if (err.code === 1 && (err.error_subcode === 99 || err.error_subcode === 33)) {
+      return true;
+    }
+    if (err.code === 2 || err.code === 4) return true;
+  } catch {
+    /* corps non JSON */
+  }
+  return false;
+}
+
+async function fetchGraphPagePostsOnce(
+  graphPageId: string,
+  token: string,
+  fields: string,
+): Promise<
+  { ok: true; posts: GraphPost[] } | { ok: false; status: number; body: string }
+> {
+  const apiUrl = new URL(
+    `https://graph.facebook.com/v21.0/${graphPageId}/posts`,
+  );
+  apiUrl.searchParams.set("fields", fields);
+  apiUrl.searchParams.set("limit", "15");
+  apiUrl.searchParams.set("access_token", token);
+
+  const res = await fetch(apiUrl.toString(), { cache: "no-store" });
+  const body = await res.text();
+  if (!res.ok) {
+    return { ok: false, status: res.status, body };
+  }
+  const json = JSON.parse(body) as { data?: GraphPost[] };
+  return { ok: true, posts: json.data ?? [] };
+}
+
 async function fetchPagePosts(
   page: FacebookPageWatch,
   token: string
@@ -222,24 +274,31 @@ async function fetchPagePosts(
     : page.id === "moorea-news"
       ? "me"
       : await resolveGraphPageId(page, token);
-  const fields =
-    "id,message,permalink_url,created_time,full_picture,attachments{description,title,media_type,media{image{src}}}";
-  const apiUrl = new URL(
-    `https://graph.facebook.com/v21.0/${graphPageId}/posts`
-  );
-  apiUrl.searchParams.set("fields", fields);
-  apiUrl.searchParams.set("limit", "15");
-  apiUrl.searchParams.set("access_token", token);
 
-  const res = await fetch(apiUrl.toString(), { cache: "no-store" });
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(
-      `Graph API ${page.name} (${graphPageId}): HTTP ${res.status} ${body.slice(0, 120)}`
-    );
+  const fieldVariants = [GRAPH_POST_FIELDS_FULL, GRAPH_POST_FIELDS_MINIMAL];
+  let lastFailure: { status: number; body: string } | null = null;
+
+  for (const fields of fieldVariants) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const result = await fetchGraphPagePostsOnce(graphPageId, token, fields);
+      if (result.ok) {
+        return result.posts.map(normalizeGraphPost);
+      }
+      lastFailure = { status: result.status, body: result.body };
+      if (!isTransientGraphError(result.status, result.body)) {
+        throw new Error(
+          `Graph API ${page.name} (${graphPageId}): HTTP ${result.status} ${result.body.slice(0, 120)}`,
+        );
+      }
+      if (attempt < 2) {
+        await sleep(1500 * (attempt + 1));
+      }
+    }
   }
-  const json = (await res.json()) as { data?: GraphPost[] };
-  return (json.data ?? []).map(normalizeGraphPost);
+
+  throw new Error(
+    `Graph API ${page.name} (${graphPageId}): HTTP ${lastFailure?.status ?? 0} ${(lastFailure?.body ?? "").slice(0, 120)}`,
+  );
 }
 
 async function fetchMeAccounts(userToken: string): Promise<MeAccountsPage[]> {

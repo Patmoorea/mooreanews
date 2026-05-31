@@ -251,10 +251,14 @@ export function classifyFacebookPost(
 }
 
 export function titleFromMessage(message: string, fallback: string): string {
-  const line =
-    message
-      .split("\n")
-      .map((l) => l.trim())
-      .find((l) => l.length > 3) ?? "";
-  return (line || fallback).slice(0, 200);
+  const lines = message
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 3);
+  for (const line of lines) {
+    if (/^https?:\/\//i.test(line)) continue;
+    if (/facebook\.com/i.test(line) && line.length < 150) continue;
+    return line.slice(0, 200);
+  }
+  return fallback;
 }

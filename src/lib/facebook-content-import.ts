@@ -23,6 +23,7 @@ import {
   titleFromMessage,
   hasRelativeWeekdayDate,
 } from "@/lib/facebook-post-parse";
+import { humanEventTitle } from "@/lib/event-title";
 
 export type FacebookContentImportResult = {
   eventsCreated: number;
@@ -133,9 +134,10 @@ async function importAsEvent(
 
   if (existing) return { ok: false, reason: "duplicate" };
 
-  const title =
-    titleFromMessage(message, `${config.pageName} — événement`) ||
-    `${config.pageName} — événement`;
+  const title = humanEventTitle(
+    titleFromMessage(message, `${config.pageName} — événement`),
+    `${config.pageName} — événement`,
+  );
   const refDay = post.created_time?.slice(0, 10);
   const date =
     parseDateFromMessage(message, refDay) ?? fallbackEventDate(post.created_time);

@@ -109,6 +109,8 @@ const FB_GENERIC_TITLE_RE =
 export function isFacebookJunkText(text: string): boolean {
   const t = text.trim();
   if (!t) return true;
+  if (/^https?:\/\//i.test(t)) return true;
+  if (/facebook\.com\/(share|share\/p)/i.test(t)) return true;
   if (FB_UNAVAILABLE_RE.test(t)) return true;
   if (FB_GENERIC_TITLE_RE.test(t) && t.length < 80) return true;
   return false;

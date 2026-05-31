@@ -31,14 +31,19 @@ const CRITICAL_ERROR_MARKERS = [
   "validating access token",
   "OAuthException",
   "Supabase not configured",
-  "Graph API MooreaNews",
   "Token manquant",
-  "facebook-pages: Error: Graph API MooreaNews",
 ];
 
-function truncate(text: string, max: number): string {
-  if (text.length <= max) return text;
-  return `${text.slice(0, max - 1)}…`;
+/** Erreur Meta temporaire — pas un jeton expiré. */
+function isTransientGraphApiError(error: string): boolean {
+  const lower = error.toLowerCase();
+  return (
+    /http 5\d{2}/i.test(error) ||
+    /error_subcode":99/.test(error) ||
+    /error_subcode":33/.test(error) ||
+    lower.includes("unknown error occurred") ||
+    lower.includes("is_transient\":true")
+  );
 }
 
 export function isCriticalVeilleError(error: string): boolean {
@@ -46,9 +51,17 @@ export function isCriticalVeilleError(error: string): boolean {
   if (KNOWN_OPTIONAL_ERROR_MARKERS.some((m) => error.includes(m))) {
     return false;
   }
+  if (isTransientGraphApiError(error)) {
+    return false;
+  }
   return CRITICAL_ERROR_MARKERS.some(
     (m) => lower.includes(m.toLowerCase()) || error.includes(m),
   );
+}
+
+function truncate(text: string, max: number): string {
+  if (text.length <= max) return text;
+  return `${text.slice(0, max - 1)}…`;
 }
 
 export function isMetaTokenError(error: string): boolean {
@@ -384,9 +397,17 @@ export async function sendPublicMooreaBrief(): Promise<{
   const digest = await getMooreaDuJour();
   const brief = formatMorningBrief30s(digest);
   const base = siteUrl();
+
+  let bodyLine = escapeHtml(brief.body);
+  if (brief.eventSlug && brief.eventLabel) {
+    const badPart = `📅 ${escapeHtml(brief.eventLabel)}`;
+    const linked = `📅 <a href="${base}/evenements/${encodeURIComponent(brief.eventSlug)}">${escapeHtml(brief.eventLabel)}</a>`;
+    bodyLine = bodyLine.replace(badPart, linked);
+  }
+
   const html = [
     `<b>🌺 Moorea en 30 secondes</b>`,
-    escapeHtml(brief.body),
+    bodyLine,
     `\n<a href="${base}/">Ouvrir MooreaNews →</a>`,
   ].join("\n");
 
