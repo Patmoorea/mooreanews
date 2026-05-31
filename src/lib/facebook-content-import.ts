@@ -40,6 +40,10 @@ function importEnabled(): boolean {
   return process.env.FACEBOOK_IMPORT_AS_ARTICLES === "true";
 }
 
+function eventsPublishedByDefault(): boolean {
+  return process.env.FACEBOOK_EVENTS_PUBLISHED === "true";
+}
+
 /** Brouillon par défaut — publier seulement si FACEBOOK_ARTICLES_PUBLISHED=true sur Vercel. */
 function publishedByDefault(): boolean {
   return process.env.FACEBOOK_ARTICLES_PUBLISHED === "true";
@@ -305,7 +309,7 @@ export async function importFacebookPostsAsContent(
     const kind = classifyFacebookPost(message, hasImage);
 
     if (kind === "event") {
-      const r = await importAsEvent(post, config, published);
+      const r = await importAsEvent(post, config, eventsPublishedByDefault());
       if (r.ok) {
         result.eventsCreated += 1;
         result.createdEvents.push({

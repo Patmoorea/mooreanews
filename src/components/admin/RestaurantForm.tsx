@@ -7,6 +7,7 @@ import {
   FormActions,
 } from "@/components/admin/AdminFormFields";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
+import { GooglePlaceIdSearch } from "@/components/admin/GooglePlaceIdSearch";
 import type { RestaurantRow } from "@/lib/supabase/types";
 
 export function RestaurantForm({
@@ -67,12 +68,9 @@ export function RestaurantForm({
         placeholder="Ex. Mar-Dim 11h-14h, 18h-22h"
         help="Texte informatif uniquement — le statut « ouvert » vient de Google ou du commerçant."
       />
-      <Field
-        name="google_place_id"
-        label="Google Place ID"
-        defaultValue={initial?.google_place_id ?? ""}
-        placeholder="ChIJ… (Google Maps → Partager → copier le lieu)"
-        help="Permet le statut ouvert en temps réel via Google Places API."
+      <GooglePlaceIdSearch
+        defaultPlaceId={initial?.google_place_id}
+        restaurantName={initial?.name}
       />
       <Field
         name="merchant_email"

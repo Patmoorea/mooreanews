@@ -4,6 +4,9 @@
  */
 
 import type { Departure } from "@/lib/ferries";
+import {
+  ferryStatusFromFirebaseCode,
+} from "@/lib/ferry-live-status";
 
 const AREMITI_DB =
   "https://aremiti-1d663-default-rtdb.europe-west1.firebasedatabase.app";
@@ -95,6 +98,9 @@ function tripToDeparture(
   if (trip.dateBegin != null && trip.dateBegin < Date.now() - 10 * 60 * 1000) {
     return null;
   }
+  const liveStatus = ferryStatusFromFirebaseCode(trip.status);
+  if (liveStatus === "cancelled") return null;
+
   const tripMin = Math.floor(trip.timeBegin / 60);
   if (tripMin < nowMin) return null;
 
@@ -103,6 +109,8 @@ function tripToDeparture(
     company,
     duration: company.includes("Vaeara") ? "50 min" : "30 min",
     minutesUntil: tripMin - nowMin,
+    liveStatus,
+    vessel: trip.vessel?.trim() || undefined,
   };
 }
 

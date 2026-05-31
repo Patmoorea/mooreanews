@@ -119,6 +119,8 @@ export type AccommodationRow = {
   lon: number | null;
   cover_url: string | null;
   merchant_email: string | null;
+  merchant_availability_status: "available" | "limited" | "contact" | "full" | null;
+  merchant_availability_updated_at: string | null;
   published: boolean;
   featured: boolean;
   premium_until: string | null;

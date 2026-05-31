@@ -7,7 +7,7 @@ import { importArticlesFromRssItems } from "@/lib/rss-article-import";
 import { facebookImportMaxAgeDays } from "@/lib/facebook-import-filters";
 import { aggregateWebWatch } from "@/lib/facebook-watch";
 import { fetchRssFeed, type RssItem } from "@/lib/rss-parser";
-import { RSS_SOURCES, type RssSource } from "@/lib/rss-sources";
+import { RSS_SOURCES, rssSourcesByPriority, type RssSource } from "@/lib/rss-sources";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getPublicSupabase } from "@/lib/supabase/server";
 
@@ -116,7 +116,8 @@ async function aggregateOne(source: RssSource): Promise<AggregationResult> {
 }
 
 export async function aggregateAll(): Promise<AggregationResult[]> {
-  const rss = await Promise.all(RSS_SOURCES.map(aggregateOne));
+  const sources = rssSourcesByPriority();
+  const rss = await Promise.all(sources.map(aggregateOne));
   const web = await aggregateWebWatch();
   return [...rss, ...web];
 }

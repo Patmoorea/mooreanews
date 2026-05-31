@@ -1,7 +1,7 @@
 import { ExternalLink, RefreshCw } from "lucide-react";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { RSS_SOURCES } from "@/lib/rss-sources";
+import { RSS_SOURCES, sortSourcesByPriority } from "@/lib/rss-sources";
 import {
   FACEBOOK_PAGE_WATCHES,
   FACEBOOK_WATCH_URLS,
@@ -50,16 +50,17 @@ export default async function AdminExternalPage() {
           </form>
         </div>
         <ul className="grid sm:grid-cols-2 gap-2">
-          {RSS_SOURCES.map((s) => (
+          {sortSourcesByPriority(RSS_SOURCES).map((s) => (
             <li
               key={s.id}
               className="flex items-center justify-between p-3 rounded-xl bg-ocean-50 text-sm"
             >
               <div>
                 <p className="font-medium text-ocean-900">{s.name}</p>
-                <p className="text-xs text-ocean-500 truncate max-w-xs">
-                  {s.url}
-                </p>
+              <p className="text-xs text-ocean-500 truncate max-w-xs">
+                {s.url}
+                {s.priority != null && s.priority <= 5 ? " · ★ officiel" : ""}
+              </p>
               </div>
               <a
                 href={s.homepage}

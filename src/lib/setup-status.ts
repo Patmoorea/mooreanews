@@ -4,6 +4,7 @@
 
 import { ENV, SITE } from "@/lib/constants";
 import { getAdminSupabase } from "@/lib/supabase/admin";
+import { googlePlacesConfigured } from "@/lib/google-places";
 import {
   getPushSubscriberCounts,
   getVapidPublicKey,
@@ -86,6 +87,17 @@ export async function getProductionSetupStatus(): Promise<SetupCheck[]> {
         : "Clés Stripe incomplètes — paiements désactivés",
     action:
       "STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY + webhook checkout.session.completed",
+  });
+
+  checks.push({
+    id: "google_places",
+    label: "Google Places (restos ouverts)",
+    ok: googlePlacesConfigured(),
+    optional: true,
+    detail: googlePlacesConfigured()
+      ? "GOOGLE_PLACES_API_KEY configurée — renseignez les Place ID en admin Restaurants"
+      : "Optionnel — sans clé, seule la déclaration commerçant (/commercant) fonctionne",
+    action: "GOOGLE_PLACES_API_KEY → docs/GOOGLE-PLACES-SETUP.md",
   });
 
   checks.push({

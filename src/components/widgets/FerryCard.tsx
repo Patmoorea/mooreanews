@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import { Ship, ArrowRight, Clock, Ticket } from "lucide-react";
 import type { NextDepartures } from "@/lib/ferries";
 import { formatMinutesUntil } from "@/lib/ferries";
+import {
+  ferryStatusClass,
+  ferryStatusLabel,
+  type FerryLiveStatus,
+} from "@/lib/ferry-live-status";
 import { ferryBookingUrl } from "@/lib/constants";
 
 export function FerryCard() {
@@ -109,7 +114,12 @@ function FerryDirection({
 }: {
   label: string;
   icon: React.ReactNode;
-  departures: { time: string; minutesUntil: number; company: string }[];
+  departures: {
+    time: string;
+    minutesUntil: number;
+    company: string;
+    liveStatus?: FerryLiveStatus | null;
+  }[];
 }) {
   return (
     <div className="rounded-2xl bg-gradient-to-br from-ocean-50 to-lagon-50 p-4 border border-ocean-100">
@@ -128,6 +138,13 @@ function FerryDirection({
           >
             <div className="min-w-0">
               <span className="font-bold text-ocean-900">{d.time}</span>
+              {d.liveStatus && d.liveStatus !== "on_time" && (
+                <span
+                  className={`ml-2 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${ferryStatusClass(d.liveStatus)}`}
+                >
+                  {ferryStatusLabel(d.liveStatus)}
+                </span>
+              )}
               <span className="block text-[10px] text-ocean-500 truncate">
                 {d.company}
               </span>

@@ -599,17 +599,22 @@ export async function approveSubmission(id: string, formData: FormData) {
     ]
       .filter(Boolean)
       .join("\n\n");
+    const descLower = `${sub.title} ${sub.description}`.toLowerCase();
+    const breaking =
+      /ferry|route|coupure|cyclone|méduse|meduse|urgent|annul/i.test(descLower);
+    const alertType =
+      /ferry/i.test(descLower) ? "ferry" : /route|coupure/i.test(descLower) ? "route" : "autre";
     const { data: created } = await supabase
       .from("alerts")
       .insert({
-        type: "autre",
-        severity: "warning",
+        type: alertType,
+        severity: breaking ? "alert" : "warning",
         title: sub.title,
         details,
         district,
         source_url: null,
         active: true,
-        urgent: false,
+        urgent: breaking,
       })
       .select("*")
       .single();

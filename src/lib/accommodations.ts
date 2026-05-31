@@ -7,6 +7,7 @@ import { getAnnouncements } from "@/lib/content";
 import type { Announcement } from "@/lib/content-types";
 import { dbListAccommodations } from "@/lib/supabase/queries";
 import type { AccommodationRow } from "@/lib/supabase/types";
+import { resolveAccommodationAvailability } from "@/lib/accommodation-availability";
 
 export type AccommodationType = "hotel" | "pension" | "fare" | "villa";
 
@@ -65,6 +66,12 @@ function isPremium(row: AccommodationRow): boolean {
 
 function fromRow(row: AccommodationRow): Accommodation {
   const premium = isPremium(row);
+  const { status } = resolveAccommodationAvailability({
+    slug: row.slug,
+    availabilityStatus: row.availability_status,
+    merchantAvailabilityStatus: row.merchant_availability_status,
+    merchantAvailabilityUpdatedAt: row.merchant_availability_updated_at,
+  });
   return {
     slug: row.slug,
     name: row.name,
@@ -76,7 +83,7 @@ function fromRow(row: AccommodationRow): Accommodation {
     priceHint: row.price_hint,
     lat: row.lat,
     lon: row.lon,
-    availabilityStatus: row.availability_status,
+    availabilityStatus: status,
     featured: row.featured || premium,
     premium,
     source: "directory",

@@ -145,3 +145,12 @@ alter table public.restaurants
 create index if not exists idx_restaurants_google_place
   on public.restaurants (google_place_id)
   where google_place_id is not null;
+
+-- 7) Hébergements — dispo déclarée par l'hébergeur
+alter table public.accommodations
+  add column if not exists merchant_availability_status text
+    check (
+      merchant_availability_status is null or
+      merchant_availability_status in ('available', 'limited', 'contact', 'full')
+    ),
+  add column if not exists merchant_availability_updated_at timestamptz;

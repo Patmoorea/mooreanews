@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { CommercantForm } from "@/components/commerce/CommercantForm";
 import { MerchantDeclareOpen } from "@/components/commerce/MerchantDeclareOpen";
+import { MerchantDeclareAccommodation } from "@/components/commerce/MerchantDeclareAccommodation";
 import { PremiumRestaurantButton } from "@/components/commerce/PremiumRestaurantButton";
 import { PremiumAccommodationButton } from "@/components/commerce/PremiumAccommodationButton";
 import { getRestaurants } from "@/lib/content";
@@ -65,6 +66,10 @@ export default async function CommercantPage({ searchParams }: Props) {
 
         <section className="mt-10">
           <MerchantDeclareOpen restaurants={declareRestaurants ?? []} />
+        </section>
+
+        <section className="mt-10">
+          <MerchantDeclareAccommodation accommodations={accommodations ?? []} />
         </section>
 
         <section className="mt-10">

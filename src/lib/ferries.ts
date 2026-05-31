@@ -6,6 +6,7 @@
 
 import bundledSchedules from "../../data/ferries-schedules.json";
 import { fetchFirebaseDepartures } from "@/lib/ferry-firebase";
+import type { FerryLiveStatus } from "@/lib/ferry-live-status";
 
 export type Direction = "Tahiti to Moorea" | "Moorea to Tahiti";
 export type DayKey =
@@ -22,6 +23,8 @@ export type Departure = {
   company: string;
   duration: string;
   minutesUntil: number;
+  liveStatus?: FerryLiveStatus | null;
+  vessel?: string;
 };
 
 export type NextDepartures = {
