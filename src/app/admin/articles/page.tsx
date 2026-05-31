@@ -4,7 +4,7 @@ import { getServerSupabase } from "@/lib/supabase/server";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminRowActions } from "@/components/admin/AdminRowActions";
 import { CleanupFacebookImportsButton } from "@/components/admin/CleanupFacebookImportsButton";
-import { countStaleFacebookImports } from "@/lib/facebook-import-cleanup";
+import { countStaleFacebookImports, countStaleFacebookEvents } from "@/lib/facebook-import-cleanup";
 import { formatDateShortFR } from "@/lib/utils";
 
 export const metadata = { title: "Articles" };
@@ -16,7 +16,8 @@ export default async function AdminArticlesPage() {
       ascending: false,
     })) ?? { data: [] };
 
-  const staleFacebookCount = await countStaleFacebookImports();
+  const staleFacebookCount =
+    (await countStaleFacebookImports()) + (await countStaleFacebookEvents());
 
   return (
     <div>

@@ -42,8 +42,8 @@ export function CleanupFacebookImportsButton({ count: initialCount }: Props) {
         {remaining > 1 ? "s" : ""} détectée{remaining > 1 ? "s" : ""}
       </p>
       <p className="mt-1 text-sm text-ocean-700">
-        Coquilles sans texte ni affiche, ou posts trop anciens. Le cron les
-        supprime aussi automatiquement.
+        Coquilles sans texte ni affiche, posts trop anciens, ou événements Facebook
+        avec date recalée (ex. « ce vendredi » d&apos;un post 2022).
       </p>
       <button
         type="button"

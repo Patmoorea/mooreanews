@@ -79,6 +79,41 @@ function toIsoDate(y: number, m: number, d: number): string | null {
   return `${y}-${pad2(m)}-${pad2(d)}`;
 }
 
+function referenceFromFallback(fallbackIso?: string): Date {
+  if (fallbackIso) {
+    const d = new Date(`${fallbackIso.slice(0, 10)}T12:00:00Z`);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  return new Date();
+}
+
+const WEEKDAYS = [
+  "dimanche",
+  "lundi",
+  "mardi",
+  "mercredi",
+  "jeudi",
+  "vendredi",
+  "samedi",
+] as const;
+
+/** « Ce vendredi », « samedi soir » sans date explicite (risque de réinterprétation chaque semaine). */
+export function hasRelativeWeekdayDate(text: string): boolean {
+  const norm = normalize(text);
+  const hasWeekday = WEEKDAYS.some((w) => norm.includes(w));
+  if (!hasWeekday) return false;
+
+  if (/\b(\d{1,2})[/.-](\d{1,2})[/.-](20\d{2})\b/.test(text)) return false;
+  if (
+    /\b(\d{1,2})\s+(janvier|février|fevrier|mars|avril|mai|juin|juillet|août|aout|septembre|octobre|novembre|décembre|decembre)(?:\s+(20\d{2}))\b/i.test(
+      text,
+    )
+  ) {
+    return false;
+  }
+  return true;
+}
+
 /** Cherche une date dans le texte (formats courants PF). */
 export function parseDateFromMessage(
   message: string,
@@ -103,38 +138,28 @@ export function parseDateFromMessage(
   if (dayMonth) {
     const monthKey = dayMonth[2].toLowerCase();
     const month = MONTHS[monthKey] ?? MONTHS[normalize(monthKey)];
-    const year = dayMonth[3]
-      ? Number(dayMonth[3])
-      : new Date().getFullYear();
+    const refYear = referenceFromFallback(fallbackIso).getFullYear();
+    const year = dayMonth[3] ? Number(dayMonth[3]) : refYear;
     if (month) {
       const iso = toIsoDate(year, month, Number(dayMonth[1]));
       if (iso) return iso;
     }
   }
 
-  const weekdays = [
-    "dimanche",
-    "lundi",
-    "mardi",
-    "mercredi",
-    "jeudi",
-    "vendredi",
-    "samedi",
-  ];
   const norm = normalize(text);
-  for (let i = 0; i < weekdays.length; i++) {
-    if (!norm.includes(weekdays[i])) continue;
-    const today = new Date();
-    const target = i === 0 ? 0 : i;
-    const current = today.getDay();
+  const ref = referenceFromFallback(fallbackIso);
+  for (let i = 0; i < WEEKDAYS.length; i++) {
+    if (!norm.includes(WEEKDAYS[i])) continue;
+    const target = i;
+    const current = ref.getDay();
     let delta = target - current;
     if (delta <= 0) delta += 7;
-    const d = new Date(today);
-    d.setDate(d.getDate() + delta);
+    const d = new Date(ref);
+    d.setDate(ref.getDate() + delta);
     return d.toISOString().slice(0, 10);
   }
 
-  return fallbackIso ?? null;
+  return fallbackIso?.slice(0, 10) ?? null;
 }
 
 /** Extrait une heure « 9h », « 18h30 », « 9:00 ». */

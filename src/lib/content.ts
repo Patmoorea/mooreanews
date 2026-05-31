@@ -33,6 +33,7 @@ import {
   normalizeInfoTitle,
 } from "@/lib/info-catalog";
 import { isClosedRestaurant } from "@/lib/closed-restaurants";
+import { isStaleFacebookEvent } from "@/lib/facebook-event-filters";
 import {
   isAnnouncementVisible,
 } from "@/lib/announcement-expiry";
@@ -82,7 +83,11 @@ export async function getArticleBySlug(
 
 export async function getEvents(): Promise<Event[]> {
   const db = await dbListEvents();
-  if (db) return db.map(eventFromRow);
+  if (db) {
+    return db
+      .filter((r) => !isStaleFacebookEvent(r))
+      .map(eventFromRow);
+  }
   return (eventsData as Event[])
     .slice()
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());

@@ -472,10 +472,11 @@ export async function deleteLegacyFacebookImports(): Promise<{
     );
   }
 
-  const { purgeStaleFacebookImports } = await import(
+  const { purgeStaleFacebookImports, purgeStaleFacebookEvents } = await import(
     "@/lib/facebook-import-cleanup"
   );
   const { deleted } = await purgeStaleFacebookImports();
+  const eventsCleanup = await purgeStaleFacebookEvents();
 
   const { data: externalRows } = await admin
     .from("external_articles")
@@ -493,8 +494,12 @@ export async function deleteLegacyFacebookImports(): Promise<{
   }
 
   revalidatePath("/admin/articles");
+  revalidatePath("/admin/events");
+  revalidatePath("/evenements");
   revalidateArticlePublicPaths();
-  return { deleted };
+  return {
+    deleted: deleted + eventsCleanup.unpublished + eventsCleanup.deleted,
+  };
 }
 
 /** @deprecated Utiliser deleteLegacyFacebookImports */

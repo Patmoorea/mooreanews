@@ -13,7 +13,7 @@ import {
   shouldSendMorningDigest,
   shouldSendWeekendDigest,
 } from "@/lib/cron-tahiti";
-import { purgeStaleFacebookImports } from "@/lib/facebook-import-cleanup";
+import { purgeStaleFacebookImports, purgeStaleFacebookEvents } from "@/lib/facebook-import-cleanup";
 import {
   checkFacebookTokenHealth,
   refreshFacebookUserTokenInProcess,
@@ -129,8 +129,11 @@ export async function runDailyCron(): Promise<DailyCronResult> {
 
   const facebookPurge = await purgeStaleFacebookImports();
   jobs.facebookPurge = facebookPurge;
-  if (facebookPurge.deleted > 0) {
+  const facebookEventsPurge = await purgeStaleFacebookEvents();
+  jobs.facebookEventsPurge = facebookEventsPurge;
+  if (facebookPurge.deleted > 0 || facebookEventsPurge.unpublished > 0) {
     revalidatePath("/actualites");
+    revalidatePath("/evenements");
     revalidatePath("/", "layout");
   }
 

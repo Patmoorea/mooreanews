@@ -21,6 +21,7 @@ import {
   parseLocationFromMessage,
   parseTimeFromMessage,
   titleFromMessage,
+  hasRelativeWeekdayDate,
 } from "@/lib/facebook-post-parse";
 
 export type FacebookContentImportResult = {
@@ -131,9 +132,13 @@ async function importAsEvent(
   const title =
     titleFromMessage(message, `${config.pageName} — événement`) ||
     `${config.pageName} — événement`;
+  const refDay = post.created_time?.slice(0, 10);
   const date =
-    parseDateFromMessage(message, post.created_time?.slice(0, 10)) ??
-    fallbackEventDate(post.created_time);
+    parseDateFromMessage(message, refDay) ?? fallbackEventDate(post.created_time);
+  const today = new Date().toISOString().slice(0, 10);
+  if (hasRelativeWeekdayDate(message) && date < today) {
+    return { ok: false, reason: "past_relative_event" };
+  }
   const startTime = parseTimeFromMessage(message);
   const district = parseDistrictFromMessage(message);
   const location = parseLocationFromMessage(message);

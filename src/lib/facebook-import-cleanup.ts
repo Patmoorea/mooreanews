@@ -3,6 +3,7 @@
  */
 
 import { isStaleFacebookImportRow } from "@/lib/facebook-import-filters";
+import { isStaleFacebookEvent } from "@/lib/facebook-event-filters";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 
 async function hideExternalArticlesForArticleSlug(slug: string): Promise<void> {
@@ -47,6 +48,54 @@ export async function purgeStaleFacebookImports(): Promise<{
   }
 
   return { deleted };
+}
+
+/** Dépublie ou supprime les événements Facebook avec date recalée (ex. post 2022 → vendredi 2026). */
+export async function purgeStaleFacebookEvents(): Promise<{
+  unpublished: number;
+  deleted: number;
+}> {
+  const admin = getAdminSupabase();
+  if (!admin) return { unpublished: 0, deleted: 0 };
+
+  const { data: rows } = await admin
+    .from("events")
+    .select("id, title, description, date, url, published, created_at")
+    .ilike("url", "%facebook.com%");
+
+  let unpublished = 0;
+  let deleted = 0;
+
+  for (const row of rows ?? []) {
+    if (!isStaleFacebookEvent(row)) continue;
+
+    if (row.published) {
+      const { error } = await admin
+        .from("events")
+        .update({ published: false })
+        .eq("id", row.id);
+      if (!error) unpublished += 1;
+      continue;
+    }
+
+    const { error } = await admin.from("events").delete().eq("id", row.id);
+    if (!error) deleted += 1;
+  }
+
+  return { unpublished, deleted };
+}
+
+export async function countStaleFacebookEvents(): Promise<number> {
+  const admin = getAdminSupabase();
+  if (!admin) return 0;
+
+  const { data: rows } = await admin
+    .from("events")
+    .select("id, title, description, date, url, published, created_at")
+    .eq("published", true)
+    .ilike("url", "%facebook.com%");
+
+  return (rows ?? []).filter((row) => isStaleFacebookEvent(row)).length;
 }
 
 /** Nombre d’imports Facebook à nettoyer (admin). */
