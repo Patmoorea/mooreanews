@@ -51,17 +51,16 @@ export const VIGILANCE_ZONE_LABELS: Record<string, string> = {
   "VIGI987-14-63": "Tahiti-Iti Te-Pari",
 };
 
+/** Phénomènes vigilance meteo.pf — Polynésie (≠ numérotation métropole). */
 export const PHENOMENON_LABELS: Record<number, string> = {
   1: "Vents violents",
   2: "Fortes pluies / inondations",
   3: "Orages",
-  4: "Houle / vagues-submersion",
-  5: "Canicule",
-  6: "Grand froid",
-  7: "Avalanches",
-  8: "Neige / verglas",
-  9: "Cyclone tropical",
+  9: "Vagues-submersion",
 };
+
+/** Alerte cyclone = filière séparée `alerte_cyclone` sur meteo.pf (pas le phénomène 9). */
+export const CYCLONE_ALERT_LABEL = "Cyclone tropical";
 
 type VigilanceColor = {
   id: number;
@@ -263,7 +262,7 @@ function buildDetails(
   if (snapshot.cycloneMaxColorId !== null && snapshot.cycloneMaxColorId >= 2) {
     lines.push("");
     lines.push(
-      `Suivi cyclone : niveau ${COLOR_NAMES[snapshot.cycloneMaxColorId] ?? snapshot.cycloneMaxColorId} — Infos Cyclones (Facebook officiel).`,
+      `${CYCLONE_ALERT_LABEL} (alerte dédiée) : niveau ${COLOR_NAMES[snapshot.cycloneMaxColorId] ?? snapshot.cycloneMaxColorId} — Infos Cyclones (Facebook officiel).`,
     );
   }
 
@@ -379,18 +378,22 @@ export async function fetchMeteoVigilance(): Promise<MeteoVigilanceSnapshot> {
 }
 
 export function vigilanceAlertTitle(snapshot: MeteoVigilanceSnapshot): string {
-  if (snapshot.cycloneMaxColorId !== null && snapshot.cycloneMaxColorId >= 4) {
-    return `Alerte cyclonique — ${snapshot.levelLabel}`;
-  }
   const color =
     snapshot.levelName.charAt(0).toUpperCase() + snapshot.levelName.slice(1);
-  const phen =
+
+  const vigilancePhen =
     snapshot.activePhenomena.length > 0
       ? snapshot.activePhenomena.map((p) => p.label).join(", ")
       : null;
-  if (phen) {
-    return `Vigilance ${color} — ${phen}`;
+
+  if (vigilancePhen) {
+    return `Vigilance ${color} — ${vigilancePhen}`;
   }
+
+  if (snapshot.cycloneMaxColorId !== null && snapshot.cycloneMaxColorId >= 2) {
+    return `Alerte ${CYCLONE_ALERT_LABEL.toLowerCase()} — ${snapshot.levelLabel}`;
+  }
+
   return `Vigilance météo ${color} — Tahiti & Moorea`;
 }
 

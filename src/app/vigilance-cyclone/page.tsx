@@ -4,7 +4,7 @@ import {
   METEO_VIGILANCE_MOOREA_PAGE,
   METEO_VIGILANCE_PAGE,
   fetchMeteoVigilance,
-  PHENOMENON_LABELS,
+  CYCLONE_ALERT_LABEL,
 } from "@/lib/meteo-vigilance";
 import { syncMeteoVigilanceAlert } from "@/lib/meteo-vigilance-sync";
 import { Container } from "@/components/ui/Container";
@@ -63,9 +63,14 @@ export default async function VigilanceCyclonePage() {
           <p className="mt-2 font-display text-3xl text-ocean-950">
             {mooreaLevel === 0 ? "Vert — pas de vigilance" : `Niveau ${mooreaLevel}`}
           </p>
-          {cycloneLevel > 0 && (
+          {cycloneLevel >= 2 && (
             <p className="mt-2 text-sm text-tiare-800">
-              {PHENOMENON_LABELS[9] ?? "Cyclone"} : niveau {cycloneLevel}
+              {CYCLONE_ALERT_LABEL} : niveau {cycloneLevel}
+            </p>
+          )}
+          {snapshot?.activePhenomena && snapshot.activePhenomena.length > 0 && (
+            <p className="mt-2 text-sm text-ocean-800">
+              {snapshot.activePhenomena.map((p) => p.label).join(" · ")}
             </p>
           )}
           <div className="mt-4 flex flex-wrap gap-3">
