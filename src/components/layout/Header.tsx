@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { SearchBar } from "@/components/layout/SearchBar";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { HeaderSiteMenu } from "@/components/layout/HeaderSiteMenu";
 import { Logo } from "@/components/ui/Logo";
 
 function isNavActive(pathname: string, href: string) {
@@ -114,6 +115,7 @@ export function Header() {
           >
             EN
           </Link>
+          <HeaderSiteMenu variant="desktop" />
         </div>
       </nav>
 
@@ -149,6 +151,7 @@ export function Header() {
             >
               English
             </Link>
+            <HeaderSiteMenu variant="mobile" onNavigate={() => setIsOpen(false)} />
             <div className="mt-2 pt-2 border-t border-ocean-100 flex flex-col gap-2">
               <ThemeToggle />
               <SearchBar variant="inline" />

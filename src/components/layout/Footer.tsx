@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Mail, MapPin } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { NAV_ITEMS, SITE, SOCIAL, USEFUL_LINKS } from "@/lib/constants";
+import { SITE_DIRECTORY } from "@/lib/site-directory";
 import { NewsletterForm } from "@/components/NewsletterForm";
 import { FacebookIcon, InstagramIcon } from "@/components/ui/SocialIcons";
 import { Logo } from "@/components/ui/Logo";
@@ -31,7 +32,7 @@ export function Footer() {
 
       {/* Bloc principal */}
       <Container className="py-12 sm:py-16">
-        <div className="grid gap-10 sm:gap-12 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-10 sm:gap-12 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div>
             <Link
@@ -96,171 +97,35 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Le site */}
-          <div>
-            <h3 className="font-display text-lg text-white">Le site</h3>
-            <ul className="mt-4 space-y-2">
-              <li>
-                <Link
-                  href="/assistant"
-                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
-                >
-                  Assistant Moorea
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/signalements"
-                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
-                >
-                  Signalements
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/hebergements"
-                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
-                >
-                  Hébergements
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/visiteurs"
-                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
-                >
-                  Visiteurs & tourisme
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/qui-sait-quoi"
-                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
-                >
-                  Qui sait quoi
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/mon-sejour"
-                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
-                >
-                  Mon séjour
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/ce-soir"
-                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
-                >
-                  Ce soir à Moorea
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/vigilance-cyclone"
-                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
-                >
-                  Vigilance cyclone
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/guides"
-                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
-                >
-                  Guides pratiques
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/app"
-                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
-                >
-                  App MooreaNews
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/commercant"
-                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
-                >
-                  Espace commerçant
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/telecharger"
-                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
-                >
-                  Télécharger l&apos;app
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/en"
-                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
-                >
-                  English
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/a-propos"
-                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
-                >
-                  À propos
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/partenaires"
-                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
-                >
-                  Annonceurs & partenaires
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/contact"
-                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
-                >
-                  Nous contacter
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/recherche"
-                  className="text-sm text-ocean-200/80 hover:text-white transition-colors"
-                >
-                  Recherche
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/soumettre"
-                  className="text-sm text-tiare-300 hover:text-tiare-200 transition-colors font-medium"
-                >
-                  + Publier une info
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/mentions-legales"
-                  className="text-sm text-ocean-300/70 hover:text-white transition-colors"
-                >
-                  Mentions légales
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/confidentialite"
-                  className="text-sm text-ocean-300/70 hover:text-white transition-colors"
-                >
-                  Confidentialité
-                </Link>
-              </li>
-            </ul>
+          {/* Plan du site (catégories) */}
+          <div className="sm:col-span-2 lg:col-span-2">
+            <h3 className="font-display text-lg text-white">Plan du site</h3>
+            <p className="mt-2 text-xs text-ocean-300/90">
+              <Link href="/#plan-du-site" className="hover:text-white underline">
+                Vue détaillée sur l&apos;accueil
+              </Link>
+            </p>
+            <div className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-4">
+              {SITE_DIRECTORY.map((category) => (
+                <div key={category.id}>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-ocean-400 mb-1.5">
+                    {category.title}
+                  </p>
+                  <ul className="space-y-1.5">
+                    {category.links.map((link) => (
+                      <li key={link.href}>
+                        <Link
+                          href={link.href}
+                          className="text-sm text-ocean-200/80 hover:text-white transition-colors"
+                        >
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Liens utiles */}
