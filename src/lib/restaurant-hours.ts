@@ -3,7 +3,7 @@
  * Pas de devinette à partir d'un parsing « ouvert maintenant ».
  */
 
-import { catalogOpeningHoursForName } from "@/lib/restaurant-catalog";
+import { catalogOpeningHoursForRestaurant } from "@/lib/restaurant-catalog";
 import {
   getPlaceOpeningHoursCached,
   googlePlacesConfigured,
@@ -11,13 +11,15 @@ import {
 import type { Restaurant } from "@/lib/content-types";
 
 export async function resolveRestaurantOpeningHours(
-  r: Pick<Restaurant, "name" | "openingHours" | "googlePlaceId">,
+  r: Pick<Restaurant, "name" | "openingHours" | "googlePlaceId"> & {
+    slug?: string;
+  },
 ): Promise<string | undefined> {
+  const fromCatalog = catalogOpeningHoursForRestaurant(r.name, r.slug);
+  if (fromCatalog) return fromCatalog;
+
   const fromDb = r.openingHours?.trim();
   if (fromDb) return fromDb;
-
-  const fromCatalog = catalogOpeningHoursForName(r.name);
-  if (fromCatalog) return fromCatalog;
 
   if (r.googlePlaceId && googlePlacesConfigured()) {
     const fromGoogle = await getPlaceOpeningHoursCached(r.googlePlaceId);
@@ -32,7 +34,12 @@ export async function enrichRestaurantsWithHours(
 ): Promise<Restaurant[]> {
   return Promise.all(
     restaurants.map(async (r) => {
-      const openingHours = await resolveRestaurantOpeningHours(r);
+      const openingHours = await resolveRestaurantOpeningHours({
+        name: r.name,
+        openingHours: r.openingHours,
+        googlePlaceId: r.googlePlaceId,
+        slug: r.slug,
+      });
       return openingHours && openingHours !== r.openingHours
         ? { ...r, openingHours }
         : r;

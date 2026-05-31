@@ -12,6 +12,14 @@ type Props = {
   required?: boolean;
 };
 
+function normalizeImageUrl(raw: string): string {
+  const t = raw.trim();
+  if (!t) return "";
+  if (/^https?:\/\//i.test(t)) return t;
+  if (t.startsWith("/")) return t;
+  return `/${t.replace(/^\/+/, "")}`;
+}
+
 /**
  * Téléverse une affiche puis remplit un champ caché (URL) pour le formulaire.
  */
@@ -23,7 +31,9 @@ export function PosterUploadField({
   uploadEndpoint = "/api/admin/upload",
   required = false,
 }: Props) {
-  const [url, setUrl] = useState(defaultValue?.trim() ?? "");
+  const [url, setUrl] = useState(
+    defaultValue?.trim() ? normalizeImageUrl(defaultValue) : "",
+  );
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
 
@@ -122,16 +132,21 @@ export function PosterUploadField({
 
       <label className="block">
         <span className="block text-xs text-ocean-600 mb-1">
-          Ou coller le lien de l’image (Facebook, etc.)
+          Ou coller le lien de l&apos;image (chemin local ou URL complète)
         </span>
         <input
-          type="url"
+          type="text"
+          inputMode="url"
           value={url}
           onChange={(e) => {
             setError("");
             setUrl(e.target.value);
           }}
-          placeholder="https://…"
+          onBlur={(e) => {
+            const normalized = normalizeImageUrl(e.target.value);
+            if (normalized !== e.target.value) setUrl(normalized);
+          }}
+          placeholder="/images/… ou https://…"
           className="w-full px-3 py-2.5 bg-white border border-ocean-200 rounded-lg text-sm text-ocean-900 focus:outline-none focus:border-lagon-500 focus:ring-2 focus:ring-lagon-200"
         />
       </label>

@@ -6,7 +6,7 @@
 
 import restaurantsData from "@/../data/restaurants.json";
 import type { Restaurant } from "@/lib/content-types";
-import { catalogOpeningHoursForName } from "@/lib/restaurant-catalog";
+import { catalogOpeningHoursForRestaurant } from "@/lib/restaurant-catalog";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 
 function restaurantToRow(r: Restaurant) {
@@ -120,7 +120,7 @@ export async function backfillRestaurantHoursFromCatalog(): Promise<{
   let updated = 0;
 
   for (const row of rows ?? []) {
-    const catalogHours = catalogOpeningHoursForName(row.name);
+    const catalogHours = catalogOpeningHoursForRestaurant(row.name, row.id);
     if (!catalogHours) continue;
     const current = (row.hours ?? "").trim();
     if (current === catalogHours) continue;

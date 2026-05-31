@@ -8,6 +8,7 @@ import {
 } from "@/components/admin/AdminFormFields";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { GooglePlaceIdSearch } from "@/components/admin/GooglePlaceIdSearch";
+import { catalogOpeningHoursForRestaurant } from "@/lib/restaurant-catalog";
 import type { RestaurantRow } from "@/lib/supabase/types";
 
 export function RestaurantForm({
@@ -17,6 +18,16 @@ export function RestaurantForm({
   action: (formData: FormData) => void | Promise<void>;
   initial?: RestaurantRow | null;
 }) {
+  const catalogHours = initial
+    ? catalogOpeningHoursForRestaurant(initial.name, initial.id)
+    : null;
+  const hoursDefault = catalogHours ?? initial?.hours ?? "";
+  const staleDbHours =
+    catalogHours &&
+    initial?.hours?.trim() &&
+    catalogHours !== initial.hours.trim()
+      ? initial.hours.trim()
+      : null;
   return (
     <form
       action={action}
@@ -64,9 +75,13 @@ export function RestaurantForm({
       <Field
         name="hours"
         label="Horaires (affichage fiche)"
-        defaultValue={initial?.hours}
+        defaultValue={hoursDefault}
         placeholder="Ex. Mar-Dim 11h-14h, 18h-22h"
-        help="Texte informatif uniquement — le statut « ouvert » vient de Google ou du commerçant."
+        help={
+          staleDbHours
+            ? `Catalogue appliqué (base avait « ${staleDbHours} »). Enregistrer pour écrire en Supabase. Le statut « ouvert » vient de Google ou du commerçant.`
+            : "Texte informatif uniquement — le statut « ouvert » vient de Google ou du commerçant."
+        }
       />
       <GooglePlaceIdSearch
         defaultPlaceId={initial?.google_place_id}

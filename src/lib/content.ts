@@ -37,7 +37,7 @@ import { isStaleFacebookEvent } from "@/lib/facebook-event-filters";
 import {
   isAnnouncementVisible,
 } from "@/lib/announcement-expiry";
-import { catalogOpeningHoursForName } from "@/lib/restaurant-catalog";
+import { catalogOpeningHoursForRestaurant } from "@/lib/restaurant-catalog";
 import { enrichRestaurantsWithHours } from "@/lib/restaurant-hours";
 import type { RestaurantOpenMeta } from "@/lib/restaurant-open-status";
 
@@ -332,8 +332,8 @@ function restaurantFromRow(r: RestaurantRow): Restaurant {
     phone: r.phone ?? undefined,
     website: r.url ?? undefined,
     openingHours:
+      catalogOpeningHoursForRestaurant(r.name, r.id) ||
       r.hours?.trim() ||
-      catalogOpeningHoursForName(r.name) ||
       undefined,
     image: r.cover_url ?? undefined,
     premium,

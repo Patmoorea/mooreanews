@@ -30,3 +30,13 @@ export function catalogOpeningHoursForName(name: string): string | null {
   const h = restaurantFromCatalogByName(name)?.openingHours?.trim();
   return h || null;
 }
+
+export function catalogOpeningHoursForRestaurant(
+  name: string,
+  slug?: string | null,
+): string | null {
+  return (
+    catalogOpeningHoursForName(name) ||
+    (slug ? restaurantFromCatalogBySlug(slug)?.openingHours?.trim() || null : null)
+  );
+}

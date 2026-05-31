@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getServerSupabase } from "@/lib/supabase/server";
-import { getMissingRestaurantsFromCatalog } from "@/lib/supabase/sync-restaurants";
+import { getMissingRestaurantsFromCatalog, backfillRestaurantHoursFromCatalog } from "@/lib/supabase/sync-restaurants";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminRowActions } from "@/components/admin/AdminRowActions";
 import { ImportRestaurantsBanner } from "@/components/admin/ImportRestaurantsBanner";
@@ -9,6 +9,8 @@ import { SyncRestaurantHoursButton } from "@/components/admin/SyncRestaurantHour
 export const metadata = { title: "Restaurants" };
 
 export default async function AdminRestaurantsPage() {
+  await backfillRestaurantHoursFromCatalog();
+
   const supabase = await getServerSupabase();
   const { data: rows } =
     (await supabase
