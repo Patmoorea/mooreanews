@@ -11,6 +11,8 @@ export type SiteLink = {
 
 export type SiteDirectoryCategory = {
   id: string;
+  /** Libellé court pour le menu principal */
+  navLabel: string;
   title: string;
   description: string;
   links: SiteLink[];
@@ -19,6 +21,7 @@ export type SiteDirectoryCategory = {
 export const SITE_DIRECTORY: SiteDirectoryCategory[] = [
   {
     id: "actualite",
+    navLabel: "Actualité",
     title: "Actualité & alertes",
     description: "L’info qui bouge sur l’île",
     links: [
@@ -51,6 +54,7 @@ export const SITE_DIRECTORY: SiteDirectoryCategory[] = [
   },
   {
     id: "sortir",
+    navLabel: "Sortir",
     title: "Sortir & manger",
     description: "Restaurants et loisirs",
     links: [
@@ -73,6 +77,7 @@ export const SITE_DIRECTORY: SiteDirectoryCategory[] = [
   },
   {
     id: "visiteurs",
+    navLabel: "Visiteurs",
     title: "Visiteurs & séjour",
     description: "Tourisme et hébergement",
     links: [
@@ -120,6 +125,7 @@ export const SITE_DIRECTORY: SiteDirectoryCategory[] = [
   },
   {
     id: "pratique",
+    navLabel: "Pratique",
     title: "Infos & services",
     description: "Utile au quotidien",
     links: [
@@ -152,6 +158,7 @@ export const SITE_DIRECTORY: SiteDirectoryCategory[] = [
   },
   {
     id: "participer",
+    navLabel: "Participer",
     title: "Participer",
     description: "Contribuer au site",
     links: [
@@ -179,6 +186,7 @@ export const SITE_DIRECTORY: SiteDirectoryCategory[] = [
   },
   {
     id: "site",
+    navLabel: "Plus",
     title: "MooreaNews",
     description: "Application & compte",
     links: [

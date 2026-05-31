@@ -1,25 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
-import { NAV_ITEMS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { SearchBar } from "@/components/layout/SearchBar";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { HeaderSiteMenu } from "@/components/layout/HeaderSiteMenu";
+import { MainNav } from "@/components/layout/MainNav";
 import { Logo } from "@/components/ui/Logo";
-
-function isNavActive(pathname: string, href: string) {
-  return href === "/" ? pathname === "/" : pathname.startsWith(href);
-}
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const pathname = usePathname();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 16);
@@ -37,7 +30,6 @@ export function Header() {
           : "bg-white/90 backdrop-blur-sm border-b border-ocean-100/60",
       )}
     >
-      {/* Ligne logo + actions (sans bannière image) */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-14 items-center justify-between gap-3">
           <Link
@@ -80,78 +72,19 @@ export function Header() {
         </div>
       </div>
 
-      {/* Menu complet — 2e ligne (tablette + desktop) */}
       <nav
         className="hidden md:block border-t border-ocean-100/80"
         aria-label="Navigation principale"
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-center gap-x-0.5 gap-y-1 py-2.5">
-          {NAV_ITEMS.map((item) => {
-            const active = isNavActive(pathname, item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "px-2.5 lg:px-3 py-1.5 text-[13px] lg:text-sm font-medium rounded-full transition-colors whitespace-nowrap",
-                  active
-                    ? "bg-lagon-100 text-ocean-900 ring-1 ring-lagon-300"
-                    : "text-ocean-800 hover:bg-lagon-100 hover:text-ocean-900",
-                )}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-          <Link
-            href="/telecharger"
-            className="px-2.5 lg:px-3 py-1.5 text-[13px] lg:text-sm font-medium rounded-full text-lagon-700 hover:bg-lagon-100 transition-colors whitespace-nowrap"
-          >
-            App
-          </Link>
-          <Link
-            href="/en"
-            className="px-2.5 lg:px-3 py-1.5 text-[13px] lg:text-sm font-medium rounded-full text-ocean-600 hover:bg-lagon-100 transition-colors whitespace-nowrap"
-          >
-            EN
-          </Link>
-          <HeaderSiteMenu variant="desktop" />
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-2.5">
+          <MainNav variant="desktop" />
         </div>
       </nav>
 
       {isOpen && (
         <div className="md:hidden relative z-[100] border-t border-ocean-100 bg-white shadow-lg">
-          <nav className="mx-auto max-w-7xl px-4 py-3 flex flex-col gap-1 max-h-[70vh] overflow-y-auto">
-            {NAV_ITEMS.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setIsOpen(false)}
-                className={cn(
-                  "px-4 py-3 rounded-xl text-base font-medium transition-colors",
-                  isNavActive(pathname, item.href)
-                    ? "bg-lagon-100 text-ocean-900"
-                    : "text-ocean-800 hover:bg-lagon-100",
-                )}
-              >
-                {item.label}
-              </Link>
-            ))}
-            <Link
-              href="/telecharger"
-              onClick={() => setIsOpen(false)}
-              className="px-4 py-3 rounded-xl text-base font-medium text-lagon-700 hover:bg-lagon-100"
-            >
-              Télécharger l&apos;app
-            </Link>
-            <Link
-              href="/en"
-              onClick={() => setIsOpen(false)}
-              className="px-4 py-3 rounded-xl text-base font-medium text-ocean-600 hover:bg-lagon-100"
-            >
-              English
-            </Link>
-            <HeaderSiteMenu variant="mobile" onNavigate={() => setIsOpen(false)} />
+          <nav className="mx-auto max-w-7xl px-4 py-3 flex flex-col gap-2 max-h-[70vh] overflow-y-auto">
+            <MainNav variant="mobile" onNavigate={() => setIsOpen(false)} />
             <div className="mt-2 pt-2 border-t border-ocean-100 flex flex-col gap-2">
               <ThemeToggle />
               <SearchBar variant="inline" />

@@ -6,7 +6,6 @@ import {
   CloudSun,
   Siren,
   Palmtree,
-  LayoutGrid,
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { cn } from "@/lib/utils";
@@ -21,13 +20,7 @@ const LINKS = [
   { href: "#agenda", label: "Événements", icon: Calendar, primary: true },
   { href: "#annonces", label: "Annonces", icon: Megaphone, primary: true },
   { href: "/alertes", label: "Alertes", icon: Siren, primary: false },
-  { href: "/visiteurs", label: "Visiteurs", icon: Palmtree, primary: true },
-  {
-    href: "#plan-du-site",
-    label: "Tout le site",
-    icon: LayoutGrid,
-    primary: true,
-  },
+  { href: "/visiteurs", label: "Visiteurs", icon: Palmtree, primary: false },
   {
     href: "#en-direct",
     label: "Météo & ferries",

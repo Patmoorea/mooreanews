@@ -1,8 +1,7 @@
-import Link from "next/link";
-import { ArrowRight, LayoutGrid } from "lucide-react";
+import { LayoutGrid } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { WaveDivider } from "@/components/decor/TropicalDecor";
-import { SITE_DIRECTORY } from "@/lib/site-directory";
+import { SiteDirectoryAccordion } from "@/components/home/SiteDirectoryAccordion";
 
 /** Plan du site complet — toutes les rubriques publiques depuis l’accueil. */
 export function HomeSiteDirectory() {
@@ -26,51 +25,11 @@ export function HomeSiteDirectory() {
             Toutes les pages MooreaNews
           </h2>
           <p className="mt-2 text-ocean-600 text-sm">
-            Classées par thème — accès direct sans chercher dans le footer.
+            Cliquez sur une rubrique pour voir les pages.
           </p>
         </div>
 
-        <div className="grid gap-6 sm:gap-8 md:grid-cols-2 xl:grid-cols-3">
-          {SITE_DIRECTORY.map((category) => (
-            <div
-              key={category.id}
-              className="rounded-2xl border border-ocean-100 bg-white shadow-sm overflow-hidden"
-            >
-              <div className="px-5 py-4 bg-gradient-to-r from-ocean-50 to-lagon-50/80 border-b border-ocean-100">
-                <h3 className="font-display text-lg text-ocean-950">
-                  {category.title}
-                </h3>
-                <p className="text-xs text-ocean-600 mt-0.5">
-                  {category.description}
-                </p>
-              </div>
-              <ul className="divide-y divide-ocean-50">
-                {category.links.map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="group flex items-start justify-between gap-3 px-5 py-3.5 hover:bg-lagon-50/80 transition-colors"
-                    >
-                      <span>
-                        <span className="block text-sm font-semibold text-ocean-900 group-hover:text-tiare-700">
-                          {link.label}
-                        </span>
-                        <span className="block text-xs text-ocean-500 mt-0.5">
-                          {link.description}
-                        </span>
-                      </span>
-                      <ArrowRight
-                        size={16}
-                        className="shrink-0 mt-0.5 text-ocean-300 group-hover:text-tiare-500 group-hover:translate-x-0.5 transition-all"
-                        aria-hidden
-                      />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
+        <SiteDirectoryAccordion />
       </Container>
     </section>
   );
