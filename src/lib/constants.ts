@@ -23,7 +23,7 @@ export const SITE = {
   motto: "Votre source d'information locale et fiable",
   description:
     "L'info de Moorea en Polynésie française : actualités locales, vie locale & société, tourisme & loisirs, événements & culture, infos pratiques. Météo, ferries et marées en temps réel.",
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://mooreanews.com",
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.mooreanews.com",
   locale: "fr_PF",
   timezone: "Pacific/Tahiti",
   email: SITE_EMAIL,
@@ -144,7 +144,7 @@ export const MOOREA_COMMUNITY_LINKS = [
   },
   {
     title: "RAI TAHITI — transport sanitaire (VSL)",
-    href: "https://raitahiti.com",
+    href: "https://www.raitahiti.com",
     description:
       "Ambulance conventionnée CPS, Moorea ↔ Tahiti, 7j/7 — 89 77 76 24 (Moorea).",
   },
@@ -197,7 +197,7 @@ export const MOOREA_ASSOCIATIONS = [
 export const RAI_TAHITI = {
   name: "RAI TAHITI",
   tagline: "Transport sanitaire VSL — Moorea & Tahiti",
-  siteUrl: "https://raitahiti.com",
+  siteUrl: "https://www.raitahiti.com",
   infoSlug: "rai-tahiti-vsl",
   infoPath: "/infos-pratiques/rai-tahiti-vsl",
   phoneMoorea: "89 77 76 24",
@@ -209,7 +209,7 @@ export const RAI_TAHITI = {
 export const USEFUL_LINKS = [
   {
     title: "RAI TAHITI — ambulance VSL",
-    href: "https://raitahiti.com",
+    href: "https://www.raitahiti.com",
     description: "Transport sanitaire Moorea ↔ Tahiti, 7j/7",
   },
   {

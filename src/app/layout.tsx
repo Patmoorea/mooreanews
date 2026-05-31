@@ -3,7 +3,14 @@ import { Inter, Marcellus } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import { SiteChrome } from "@/components/layout/SiteChrome";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { SITE } from "@/lib/constants";
+import {
+  getSiteOrigin,
+  googleSiteVerification,
+  bingSiteVerification,
+  webSiteJsonLd,
+} from "@/lib/seo";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -19,7 +26,7 @@ const marcellus = Marcellus({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE.url),
+  metadataBase: new URL(getSiteOrigin()),
   title: {
     default: `${SITE.name} — ${SITE.tagline}`,
     template: `%s — ${SITE.name}`,
@@ -27,26 +34,39 @@ export const metadata: Metadata = {
   description: SITE.description,
   keywords: [
     "Moorea",
+    "Moorea actualités",
     "Tahiti",
     "Polynésie française",
-    "actualités",
-    "événements",
-    "annonces",
-    "restaurants",
-    "ferries",
+    "actualités Moorea",
+    "événements Moorea",
+    "annonces Moorea",
+    "restaurants Moorea",
+    "hébergements Moorea",
+    "ferries Tahiti Moorea",
     "météo Moorea",
-    "Tiahura",
-    "Maharepa",
-    "Paopao",
-    "tourisme",
+    "tourisme Moorea",
+    "MooreaNews",
   ],
-  authors: [{ name: SITE.name }],
+  authors: [{ name: SITE.name, url: getSiteOrigin() }],
   creator: SITE.name,
   publisher: SITE.name,
+  alternates: {
+    canonical: "/",
+    languages: {
+      "fr-PF": getSiteOrigin(),
+      en: `${getSiteOrigin()}/en`,
+    },
+  },
+  verification: {
+    google: googleSiteVerification(),
+    other: bingSiteVerification()
+      ? { "msvalidate.01": bingSiteVerification()! }
+      : undefined,
+  },
   openGraph: {
     type: "website",
     locale: SITE.locale,
-    url: SITE.url,
+    url: getSiteOrigin(),
     siteName: SITE.name,
     title: `${SITE.name} — ${SITE.tagline}`,
     description: SITE.description,
@@ -86,6 +106,7 @@ export default function RootLayout({
       className={`${inter.variable} ${marcellus.variable} antialiased`}
     >
       <body className="min-h-screen flex flex-col bg-island-sky bg-palm-pattern text-ocean-950 dark:bg-ocean-950 dark:text-ocean-50">
+        <JsonLd data={webSiteJsonLd()} />
         <SiteChrome>{children}</SiteChrome>
         <Analytics />
       </body>
