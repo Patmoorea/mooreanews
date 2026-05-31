@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getServerSupabase } from "@/lib/supabase/server";
-import { getMissingAccommodationsFromCatalog } from "@/lib/supabase/sync-accommodations";
+import { listMissingAccommodationsFromJson } from "@/lib/supabase/sync-accommodations";
+import { isMissingSchemaError } from "@/lib/supabase/schema-errors";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminRowActions } from "@/components/admin/AdminRowActions";
 import { ImportAccommodationsBanner } from "@/components/admin/ImportAccommodationsBanner";
@@ -13,15 +14,18 @@ export const metadata = { title: "Hébergements" };
 
 export default async function AdminAccommodationsPage() {
   const supabase = await getServerSupabase();
-  const { data: rows } =
+  const { data: rows, error: listError } =
     (await supabase
       ?.from("accommodations")
       .select("*")
-      .order("display_order", { ascending: true })) ?? { data: [] };
+      .order("display_order", { ascending: true })) ?? { data: [], error: null };
 
-  const missing = getMissingAccommodationsFromCatalog(
-    (rows ?? []).map((r) => r.slug),
-  );
+  const tableMissing =
+    Boolean(listError) &&
+    isMissingSchemaError(listError!.message, "accommodations");
+
+  const { missing, tableMissing: missingProbe } =
+    await listMissingAccommodationsFromJson();
 
   return (
     <div>
@@ -31,7 +35,10 @@ export default async function AdminAccommodationsPage() {
         newHref="/admin/accommodations/new"
         newLabel="Nouvel hébergement"
       />
-      <ImportAccommodationsBanner missingNames={missing.map((m) => m.name)} />
+      <ImportAccommodationsBanner
+        missingNames={missing.map((m) => m.name)}
+        tableMissing={tableMissing || missingProbe}
+      />
       <div className="bg-white rounded-2xl border border-ocean-100 overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-ocean-50 text-xs uppercase text-ocean-600">

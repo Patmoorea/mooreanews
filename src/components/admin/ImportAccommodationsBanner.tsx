@@ -2,18 +2,25 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Download, Check, AlertCircle } from "lucide-react";
+import { Download, Check, AlertCircle, Database } from "lucide-react";
 import { importAccommodationsFromCatalog } from "@/app/admin/actions";
+import { ACCOMMODATIONS_TABLE_HINT } from "@/lib/supabase/schema-errors";
 
-type Props = { missingNames: string[] };
+type Props = {
+  missingNames: string[];
+  tableMissing?: boolean;
+};
 
-export function ImportAccommodationsBanner({ missingNames }: Props) {
+export function ImportAccommodationsBanner({
+  missingNames,
+  tableMissing = false,
+}: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState(false);
 
-  if (missingNames.length === 0 && !message) return null;
+  if (!tableMissing && missingNames.length === 0 && !message) return null;
 
   async function onImport() {
     setLoading(true);
@@ -34,10 +41,47 @@ export function ImportAccommodationsBanner({ missingNames }: Props) {
       }
     } catch {
       setError(true);
-      setMessage("Import impossible — exécutez supabase/accommodations.sql d'abord.");
+      setMessage(ACCOMMODATIONS_TABLE_HINT);
     } finally {
       setLoading(false);
     }
+  }
+
+  if (tableMissing) {
+    return (
+      <div className="mb-6 rounded-2xl border border-tiare-300 bg-tiare-50 p-5">
+        <p className="font-semibold text-ocean-900 flex items-center gap-2">
+          <Database size={18} className="text-tiare-600 shrink-0" />
+          Table Supabase manquante
+        </p>
+        <p className="mt-2 text-sm text-ocean-800">{ACCOMMODATIONS_TABLE_HINT}</p>
+        <ol className="mt-3 text-sm text-ocean-700 list-decimal list-inside space-y-1">
+          <li>
+            Ouvrir{" "}
+            <a
+              href="https://supabase.com/dashboard"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-lagon-700 underline font-medium"
+            >
+              Supabase → SQL Editor
+            </a>
+          </li>
+          <li>
+            Coller le contenu de{" "}
+            <code className="text-xs bg-white px-1.5 py-0.5 rounded border border-ocean-200">
+              supabase/accommodations.sql
+            </code>{" "}
+            (ou ré-exécuter{" "}
+            <code className="text-xs bg-white px-1.5 py-0.5 rounded border border-ocean-200">
+              supabase/prod-setup-all.sql
+            </code>
+            )
+          </li>
+          <li>Cliquer Run → recharger cette page → « Importer dans Supabase »</li>
+        </ol>
+      </div>
+    );
   }
 
   return (
@@ -59,7 +103,9 @@ export function ImportAccommodationsBanner({ missingNames }: Props) {
             disabled={loading}
             className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-br from-lagon-500 to-ocean-700 text-white text-sm font-semibold disabled:opacity-60"
           >
-            {loading ? "Import…" : (
+            {loading ? (
+              "Import…"
+            ) : (
               <>
                 <Download size={16} />
                 Importer dans Supabase

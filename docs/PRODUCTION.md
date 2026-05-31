@@ -20,7 +20,9 @@ Cette page a été ajoutée récemment. Un **404** signifie que **Vercel n’a p
 4. Cliquer **Run**
 5. Message **Success** attendu (pas d’erreur rouge)
 
-**Vérification :** Table Editor → tables `page_views`, `push_subscriptions`, `alert_email_subscriptions`, `commerce_payments` visibles.
+**Vérification :** Table Editor → tables `page_views`, `push_subscriptions`, `alert_email_subscriptions`, `commerce_payments`, **`accommodations`** visibles.
+
+> **Hébergements admin vide / erreur « schema cache » ?** Exécutez aussi `supabase/accommodations.sql` (déjà inclus dans `prod-setup-all.sql` depuis la mise à jour hébergements).
 
 ---
 

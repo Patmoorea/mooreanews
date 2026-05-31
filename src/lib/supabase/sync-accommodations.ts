@@ -4,6 +4,10 @@
 
 import accommodationsData from "@/../data/accommodations.json";
 import { getAdminSupabase } from "@/lib/supabase/admin";
+import {
+  ACCOMMODATIONS_TABLE_HINT,
+  isMissingSchemaError,
+} from "@/lib/supabase/schema-errors";
 import type { AccommodationRow } from "@/lib/supabase/types";
 
 type CatalogEntry = (typeof accommodationsData)[number];
@@ -47,7 +51,15 @@ export async function importMissingAccommodationsFromJson(): Promise<{
     return { imported: [], skipped: 0, error: "Supabase non configuré" };
   }
 
-  const { data: existing } = await admin.from("accommodations").select("slug");
+  const { data: existing, error: listError } = await admin
+    .from("accommodations")
+    .select("slug");
+  if (listError) {
+    if (isMissingSchemaError(listError.message, "accommodations")) {
+      return { imported: [], skipped: 0, error: ACCOMMODATIONS_TABLE_HINT };
+    }
+    return { imported: [], skipped: 0, error: listError.message };
+  }
   const missing = getMissingAccommodationsFromCatalog(
     (existing ?? []).map((r) => r.slug),
   );
@@ -72,13 +84,25 @@ export async function importMissingAccommodationsFromJson(): Promise<{
   return { imported, skipped: missing.length - imported.length };
 }
 
-export async function listMissingAccommodationsFromJson(): Promise<
-  CatalogEntry[]
-> {
+export async function listMissingAccommodationsFromJson(): Promise<{
+  missing: CatalogEntry[];
+  tableMissing: boolean;
+}> {
   const admin = getAdminSupabase();
-  if (!admin) return [];
-  const { data: existing } = await admin.from("accommodations").select("slug");
-  return getMissingAccommodationsFromCatalog(
-    (existing ?? []).map((r) => r.slug),
-  );
+  if (!admin) return { missing: [], tableMissing: false };
+  const { data: existing, error } = await admin
+    .from("accommodations")
+    .select("slug");
+  if (error) {
+    if (isMissingSchemaError(error.message, "accommodations")) {
+      return { missing: [], tableMissing: true };
+    }
+    return { missing: [], tableMissing: false };
+  }
+  return {
+    missing: getMissingAccommodationsFromCatalog(
+      (existing ?? []).map((r) => r.slug),
+    ),
+    tableMissing: false,
+  };
 }
