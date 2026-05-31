@@ -64,7 +64,8 @@ export function InfoForm({
         </p>
         <p className="text-xs text-ocean-600">
           Copiez latitude / longitude depuis Google Maps (clic droit sur le lieu)
-          pour afficher ce point sur la carte de l&apos;accueil.
+          pour afficher ce point sur la carte de l&apos;accueil. Utilisez un{" "}
+          <strong>point</strong> décimal (ex. -17.489132).
         </p>
         <div className="grid sm:grid-cols-2 gap-5">
           <Field

@@ -82,7 +82,7 @@ function parseFormPayload(
       .map((s) => s.trim())
       .filter(Boolean);
   const getNum = (k: string) => {
-    const v = get(k);
+    const v = get(k).replace(",", ".");
     return v ? Number(v) : null;
   };
 

@@ -12,6 +12,9 @@ type FieldProps = {
   defaultValue?: string | number | null;
   placeholder?: string;
   help?: string;
+  step?: string;
+  min?: string;
+  max?: string;
 };
 
 export function Field({
@@ -22,6 +25,9 @@ export function Field({
   placeholder,
   help,
   type = "text",
+  step,
+  min,
+  max,
 }: FieldProps & { type?: string }) {
   return (
     <label className="block">
@@ -35,6 +41,9 @@ export function Field({
         required={required}
         defaultValue={defaultValue ?? ""}
         placeholder={placeholder}
+        step={type === "number" ? (step ?? "any") : step}
+        min={min}
+        max={max}
         className={INPUT_CLASS}
       />
       {help && <span className="block mt-1 text-xs text-ocean-500">{help}</span>}
