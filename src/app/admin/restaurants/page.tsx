@@ -4,6 +4,7 @@ import { getMissingRestaurantsFromCatalog } from "@/lib/supabase/sync-restaurant
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminRowActions } from "@/components/admin/AdminRowActions";
 import { ImportRestaurantsBanner } from "@/components/admin/ImportRestaurantsBanner";
+import { SyncRestaurantHoursButton } from "@/components/admin/SyncRestaurantHoursButton";
 
 export const metadata = { title: "Restaurants" };
 
@@ -30,6 +31,7 @@ export default async function AdminRestaurantsPage() {
         newLabel="Nouveau restaurant"
       />
       <ImportRestaurantsBanner missingNames={missingNames} />
+      <SyncRestaurantHoursButton />
       <div className="bg-white rounded-2xl border border-ocean-100 overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-ocean-50 text-xs uppercase text-ocean-600">

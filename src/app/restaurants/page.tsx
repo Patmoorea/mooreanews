@@ -179,10 +179,15 @@ export default async function RestaurantsPage({
                         </a>
                       </p>
                     )}
-                    {r.openingHours && (
+                    {r.openingHours ? (
                       <p className="flex items-center gap-1.5">
                         <Clock size={12} />
                         {r.openingHours}
+                      </p>
+                    ) : (
+                      <p className="flex items-center gap-1.5 text-ocean-400 italic">
+                        <Clock size={12} />
+                        Horaires : appeler ou voir la fiche
                       </p>
                     )}
                   </div>

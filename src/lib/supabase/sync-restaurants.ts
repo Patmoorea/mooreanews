@@ -6,6 +6,7 @@
 
 import restaurantsData from "@/../data/restaurants.json";
 import type { Restaurant } from "@/lib/content-types";
+import { catalogOpeningHoursForName } from "@/lib/restaurant-catalog";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 
 function restaurantToRow(r: Restaurant) {
@@ -94,4 +95,46 @@ export async function importMissingRestaurantsFromJson(): Promise<{
     imported,
     skipped: jsonCount - missing.length,
   };
+}
+
+/** Recopie les horaires du catalogue JSON vers Supabase (match par nom). */
+export async function backfillRestaurantHoursFromCatalog(): Promise<{
+  updated: number;
+  names: string[];
+  error?: string;
+}> {
+  const supabase = getAdminSupabase();
+  if (!supabase) {
+    return { updated: 0, names: [], error: "Supabase non configuré" };
+  }
+
+  const { data: rows, error: listError } = await supabase
+    .from("restaurants")
+    .select("id, name, hours");
+
+  if (listError) {
+    return { updated: 0, names: [], error: listError.message };
+  }
+
+  const names: string[] = [];
+  let updated = 0;
+
+  for (const row of rows ?? []) {
+    const catalogHours = catalogOpeningHoursForName(row.name);
+    if (!catalogHours) continue;
+    const current = (row.hours ?? "").trim();
+    if (current === catalogHours) continue;
+
+    const { error } = await supabase
+      .from("restaurants")
+      .update({ hours: catalogHours })
+      .eq("id", row.id);
+
+    if (!error) {
+      updated += 1;
+      names.push(row.name);
+    }
+  }
+
+  return { updated, names };
 }

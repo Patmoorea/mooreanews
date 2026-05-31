@@ -37,6 +37,8 @@ import { isStaleFacebookEvent } from "@/lib/facebook-event-filters";
 import {
   isAnnouncementVisible,
 } from "@/lib/announcement-expiry";
+import { catalogOpeningHoursForName } from "@/lib/restaurant-catalog";
+import { enrichRestaurantsWithHours } from "@/lib/restaurant-hours";
 import type { RestaurantOpenMeta } from "@/lib/restaurant-open-status";
 
 import type {
@@ -150,19 +152,29 @@ export async function getAnnouncementBySlug(
 
 export async function getRestaurants(): Promise<Restaurant[]> {
   const db = await dbListRestaurants();
-  // En prod (Supabase configuré), la base est la seule source : une suppression
-  // admin ne doit pas être annulée par le fallback JSON.
   const list = db
     ? db.map(restaurantFromRow)
     : (restaurantsData as Restaurant[]);
-  return list.filter((r) => !isClosedRestaurant(r));
+  const open = list.filter((r) => !isClosedRestaurant(r));
+  return enrichRestaurantsWithHours(open);
 }
 
 export async function getRestaurantBySlug(
   slug: string,
 ): Promise<Restaurant | undefined> {
-  const all = await getRestaurants();
-  return all.find((r) => r.slug === slug);
+  const db = await dbListRestaurants();
+  if (db) {
+    const row = db.find((r) => r.id === slug);
+    if (row && !isClosedRestaurant({ name: row.name, slug: row.id })) {
+      const [enriched] = await enrichRestaurantsWithHours([restaurantFromRow(row)]);
+      return enriched;
+    }
+    return undefined;
+  }
+  const fromJson = (restaurantsData as Restaurant[]).find((r) => r.slug === slug);
+  if (!fromJson || isClosedRestaurant(fromJson)) return undefined;
+  const [enriched] = await enrichRestaurantsWithHours([fromJson]);
+  return enriched;
 }
 
 // =====================================================================
@@ -319,7 +331,10 @@ function restaurantFromRow(r: RestaurantRow): Restaurant {
     address: r.address,
     phone: r.phone ?? undefined,
     website: r.url ?? undefined,
-    openingHours: r.hours ?? undefined,
+    openingHours:
+      r.hours?.trim() ||
+      catalogOpeningHoursForName(r.name) ||
+      undefined,
     image: r.cover_url ?? undefined,
     premium,
     lat: r.lat ?? undefined,

@@ -659,6 +659,22 @@ export async function rejectSubmission(id: string, formData: FormData) {
 }
 
 /** Importe les restaurants du JSON qui ne sont pas encore en base (admin, 1 clic). */
+/** Recopie les horaires du catalogue JSON vers les fiches Supabase (match par nom). */
+export async function syncRestaurantHoursFromCatalog(): Promise<{
+  updated: number;
+  names: string[];
+}> {
+  await requireAdmin();
+  const { backfillRestaurantHoursFromCatalog } = await import(
+    "@/lib/supabase/sync-restaurants"
+  );
+  const result = await backfillRestaurantHoursFromCatalog();
+  if (result.error) throw new Error(result.error);
+  revalidatePath("/admin/restaurants");
+  revalidatePath("/restaurants");
+  return { updated: result.updated, names: result.names };
+}
+
 export async function importRestaurantsFromCatalog() {
   await requireAdmin();
   const result = await importMissingRestaurantsFromJson();

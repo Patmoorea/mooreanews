@@ -18,6 +18,44 @@ export function normalizePlaceId(raw: string): string {
   return t;
 }
 
+async function fetchPlaceOpeningHoursText(placeId: string): Promise<string | null> {
+  const key = process.env.GOOGLE_PLACES_API_KEY?.trim();
+  if (!key) return null;
+
+  const id = normalizePlaceId(placeId);
+  if (!id) return null;
+
+  try {
+    const res = await fetch(`${PLACES_BASE}/places/${encodeURIComponent(id)}`, {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": key,
+        "X-Goog-FieldMask": "regularOpeningHours.weekdayDescriptions",
+      },
+      next: { revalidate: 604800 },
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      regularOpeningHours?: { weekdayDescriptions?: string[] };
+    };
+    const lines = data.regularOpeningHours?.weekdayDescriptions;
+    if (!lines?.length) return null;
+    return lines.join(" · ");
+  } catch {
+    return null;
+  }
+}
+
+/** Horaires affichage (texte Google Maps) — cache 7 jours. */
+export function getPlaceOpeningHoursCached(placeId: string): Promise<string | null> {
+  const id = normalizePlaceId(placeId);
+  return unstable_cache(
+    () => fetchPlaceOpeningHoursText(id),
+    [`google-place-hours-${id}`],
+    { revalidate: 604800 },
+  )();
+}
+
 async function fetchPlaceOpenNow(placeId: string): Promise<boolean | null> {
   const key = process.env.GOOGLE_PLACES_API_KEY?.trim();
   if (!key) return null;
