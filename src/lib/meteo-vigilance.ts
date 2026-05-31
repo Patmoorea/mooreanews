@@ -11,8 +11,9 @@ export const METEO_VIGILANCE_MOOREA_PAGE =
   "https://meteo.pf/fr/vigilance/tahiti-moorea";
 export const METEO_VIGILANCE_SOURCE_ID = "meteo-vigilance-vigi987";
 export const INFOSCYCLONES_URL = "https://www.facebook.com/infoscyclones";
-export const METEO_VIGILANCE_MAP_URL =
-  "https://meteo.pf/fr/vigilance/tahiti-moorea/carte";
+/** Carte sur la page Tahiti–Moorea (/carte renvoie 404 côté Météo-France). */
+export const METEO_VIGILANCE_MAP_URL = METEO_VIGILANCE_MOOREA_PAGE;
+export const METEO_CYCLONE_PAGE = "https://meteo.pf/fr/cyclone";
 
 /** Zones Îles du Vent / Tahiti-Moorea (meteo.pf). */
 export const MOOREA_VIGILANCE_ZONE_IDS = [

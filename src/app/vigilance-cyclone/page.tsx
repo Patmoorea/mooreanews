@@ -3,6 +3,8 @@ import Link from "next/link";
 import {
   METEO_VIGILANCE_MOOREA_PAGE,
   METEO_VIGILANCE_PAGE,
+  METEO_CYCLONE_PAGE,
+  INFOSCYCLONES_URL,
   fetchMeteoVigilance,
   CYCLONE_ALERT_LABEL,
 } from "@/lib/meteo-vigilance";
@@ -25,7 +27,7 @@ const CHECKLIST = [
   "Documents et médicaments essentiels",
   "Sécuriser terrasse, vélos, objets légers",
   "Vérifier infos ferry et routes (MooreaNews Alertes)",
-  "Suivre infoscyclones.pf et meteo.pf",
+  "Suivre Infos Cyclones (Facebook) et meteo.pf",
 ];
 
 export default async function VigilanceCyclonePage() {
@@ -108,12 +110,22 @@ export default async function VigilanceCyclonePage() {
           <ul className="space-y-2 text-sm">
             <li>
               <a
-                href="https://www.infoscyclones.pf"
+                href={INFOSCYCLONES_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-lagon-700 font-semibold hover:underline"
               >
-                infoscyclones.pf
+                Infos Cyclones (Facebook officiel)
+              </a>
+            </li>
+            <li>
+              <a
+                href={METEO_CYCLONE_PAGE}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-lagon-700 font-semibold hover:underline"
+              >
+                meteo.pf — onglet Cyclone
               </a>
             </li>
             <li>

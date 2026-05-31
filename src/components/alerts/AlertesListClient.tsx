@@ -117,7 +117,7 @@ export function AlertesListClient({ alerts }: { alerts: AlertItem[] }) {
                           className="inline-flex items-center gap-1.5 rounded-full bg-lagon-600 px-4 py-2 text-xs font-semibold text-white hover:bg-lagon-700"
                         >
                           <ExternalLink size={12} />
-                          Carte vigilance (meteo.pf)
+                          Carte vigilance Tahiti–Moorea
                         </Link>
                         <Link
                           href={METEO_VIGILANCE_MOOREA_PAGE}
