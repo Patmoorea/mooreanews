@@ -25,6 +25,8 @@ export type FacebookPageImportConfig = {
   tag: string;
   /** Alertes ferry auto : uniquement posts page officielle (pas liens OG veille). */
   allowFerryAlerts?: boolean;
+  /** MooreaNews : publier tout le fil (affiche seule, sans légende, etc.). */
+  importAllFeedPosts?: boolean;
 };
 
 /** @deprecated Utiliser importFacebookPostsAsContent */

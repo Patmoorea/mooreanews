@@ -251,9 +251,13 @@ async function importAsArticle(
 
   if (existing) return { ok: false, reason: "duplicate" };
 
+  const hasImage = Boolean(post.full_picture?.trim());
+  const day = publishedAt.slice(0, 10);
   const title =
-    titleFromMessage(message, `${config.pageName} — publication`) ||
-    `${config.pageName} — publication`;
+    titleFromMessage(message, "") ||
+    (hasImage
+      ? `${config.pageName} — affiche du ${day}`
+      : `${config.pageName} — publication du ${day}`);
 
   const { error } = await supabase.from("articles").insert({
     slug,
@@ -304,10 +308,14 @@ export async function importFacebookPostsAsContent(
       message: raw.message ? cleanImportedText(raw.message) : raw.message,
     });
     const message = post.message?.trim() ?? "";
+    const filterOpts = config.importAllFeedPosts
+      ? { importAllFeedPosts: true as const }
+      : undefined;
     const freshness = shouldImportFacebookPost(
       message,
       post.created_time,
       post,
+      filterOpts,
     );
     if (!freshness.ok) {
       result.skippedStale += 1;
@@ -318,6 +326,7 @@ export async function importFacebookPostsAsContent(
     const target = routeFacebookImport(message, {
       sourceLabel: config.pageName,
       hasImage,
+      importAllFeedPosts: config.importAllFeedPosts,
     });
 
     if (target === "skip") {

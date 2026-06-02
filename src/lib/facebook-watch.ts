@@ -473,6 +473,7 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
             tag:
               page.id === "moorea-news" ? "moorea-news-fb" : "commune-moorea",
             allowFerryAlerts: true,
+            importAllFeedPosts: page.id === "moorea-news",
           },
         });
       }
@@ -482,6 +483,7 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
           message,
           post.created_time,
           post,
+          page.id === "moorea-news" ? { importAllFeedPosts: true } : undefined,
         );
         if (!freshness.ok) continue;
 

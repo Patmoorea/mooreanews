@@ -60,10 +60,17 @@ export type FacebookImportTarget =
 
 export function routeFacebookImport(
   message: string,
-  options?: { sourceLabel?: string; hasImage?: boolean },
+  options?: {
+    sourceLabel?: string;
+    hasImage?: boolean;
+    importAllFeedPosts?: boolean;
+  },
 ): FacebookImportTarget {
   const text = message.trim();
   if (!text || isFacebookPageBoilerplate(text)) {
+    if (options?.importAllFeedPosts || options?.hasImage) {
+      return "article";
+    }
     return "skip";
   }
 

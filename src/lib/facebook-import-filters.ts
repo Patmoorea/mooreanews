@@ -6,6 +6,11 @@ import type { FacebookPostForImport } from "@/lib/facebook-article-import";
 import { isFacebookPageBoilerplate } from "@/lib/ferry-notice-detect";
 import { parseDateFromMessage } from "@/lib/facebook-post-parse";
 
+export type FacebookImportFilterOptions = {
+  /** Page MooreaNews : tout ce qui est dans le fil (texte, affiche seule, etc.). */
+  importAllFeedPosts?: boolean;
+};
+
 const DEFAULT_MAX_AGE_DAYS = 60;
 
 export function facebookImportMaxAgeDays(): number {
@@ -63,14 +68,26 @@ export function contentReferencesFacebookStaleYear(text: string): boolean {
 export function shouldImportFacebookPost(
   message: string,
   createdTime?: string,
-  post?: Pick<FacebookPostForImport, "full_picture">,
+  post?: Pick<
+    FacebookPostForImport,
+    "message" | "full_picture" | "permalink_url"
+  >,
+  options?: FacebookImportFilterOptions,
 ): { ok: true; publishedAt: string } | { ok: false; reason: string } {
-  if (post && !facebookPostHasPublishableContent({ message, ...post })) {
+  if (
+    post &&
+    !facebookPostHasPublishableContent({ message, ...post }, options)
+  ) {
     return { ok: false, reason: "no_publishable_content" };
   }
 
   const corpus = message.trim();
-  if (isFacebookJunkText(corpus)) {
+  const hasImage = Boolean(post?.full_picture?.trim());
+  if (
+    corpus &&
+    isFacebookJunkText(corpus) &&
+    !(options?.importAllFeedPosts && hasImage)
+  ) {
     return { ok: false, reason: "facebook_content_unavailable" };
   }
   if (contentReferencesStaleYear(corpus)) {
@@ -160,17 +177,28 @@ export function isEmptyFacebookArticleShell(row: {
   return stripped.length < 15 && excerptLen < 15;
 }
 
-/** Post Graph API / OG : au moins un texte lisible ou une image. */
+/** Post Graph API / OG : texte, image ou (MooreaNews) toute entrée du fil. */
 export function facebookPostHasPublishableContent(
-  post: Pick<FacebookPostForImport, "message" | "full_picture">,
+  post: Pick<
+    FacebookPostForImport,
+    "message" | "full_picture" | "permalink_url"
+  >,
+  options?: FacebookImportFilterOptions,
 ): boolean {
-  const msg = post.message?.trim() ?? "";
-  if (isFacebookJunkText(msg)) return false;
   const pic = post.full_picture?.trim() ?? "";
+  const link = post.permalink_url?.trim() ?? "";
+  const msg = post.message?.trim() ?? "";
+
+  if (options?.importAllFeedPosts) {
+    return pic.length > 0 || link.length > 0 || msg.length > 0;
+  }
+
+  if (pic.length > 0) return true;
+  if (!msg) return false;
+  if (isFacebookJunkText(msg)) return false;
   if (msg.length >= 40) return true;
   if (msg.length >= 20 && pic.length > 0) return true;
   if (msg.length >= 8 && pic.length > 0) return true;
-  if (pic.length > 0) return true;
   return false;
 }
 
