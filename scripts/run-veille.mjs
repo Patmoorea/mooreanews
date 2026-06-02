@@ -49,7 +49,11 @@ if (!secret) {
   process.exit(1);
 }
 
-const url = `${base}/api/cron/aggregate?secret=${encodeURIComponent(secret)}`;
+const path =
+  process.argv[3] === "facebook"
+    ? "/api/cron/facebook"
+    : "/api/cron/aggregate";
+const url = `${base}${path}?secret=${encodeURIComponent(secret)}`;
 
 console.log(`Veille MooreaNews → ${url.replace(secret, "***")}\n`);
 

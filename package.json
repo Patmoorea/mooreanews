@@ -11,7 +11,8 @@
     "check:live": "node scripts/check-live-services.mjs https://www.mooreanews.com",
     "check:push": "node scripts/check-push.mjs https://www.mooreanews.com",
     "push:keys": "web-push generate-vapid-keys",
-    "veille": "node scripts/run-veille.mjs"
+    "veille": "node scripts/run-veille.mjs",
+    "facebook-backfill": "tsx scripts/run-facebook-backfill.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
