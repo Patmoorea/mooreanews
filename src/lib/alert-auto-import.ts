@@ -4,7 +4,8 @@
  */
 
 import {
-  isFacebookAlertJunk,
+  isFacebookPageBoilerplate,
+  isFerryPromoArticle,
   isFerryTransportNotice,
 } from "@/lib/ferry-notice-detect";
 import { MOOREA_KEYWORDS } from "@/lib/rss-sources";
@@ -136,7 +137,9 @@ function detectAlertFromItem(item: RssItem): DetectedAlert | null {
     if (!hit) continue;
     if (
       rule.type === "ferry" &&
-      (!isFerryTransportNotice(corpus) || isFacebookAlertJunk(corpus))
+      (!isFerryTransportNotice(corpus) ||
+        isFacebookPageBoilerplate(corpus) ||
+        isFerryPromoArticle(corpus))
     ) {
       continue;
     }

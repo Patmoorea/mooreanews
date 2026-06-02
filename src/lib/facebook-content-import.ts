@@ -14,7 +14,6 @@ import { fetchOpenGraph } from "@/lib/open-graph";
 import { cleanImportedText } from "@/lib/html-entities";
 import {
   announcementCategoryFromMessage,
-  classifyFacebookPost,
   eventCategoryFromMessage,
   parseDateFromMessage,
   parseDistrictFromMessage,
@@ -24,7 +23,11 @@ import {
   hasRelativeWeekdayDate,
 } from "@/lib/facebook-post-parse";
 import { humanEventTitle } from "@/lib/event-title";
-import { tryImportFacebookAlert } from "@/lib/facebook-alert-import";
+import {
+  tryImportFacebookAlert,
+  tryImportFacebookMeteoAlert,
+} from "@/lib/facebook-alert-import";
+import { routeFacebookImport } from "@/lib/facebook-content-route";
 
 export type FacebookContentImportResult = {
   eventsCreated: number;
@@ -311,8 +314,33 @@ export async function importFacebookPostsAsContent(
       continue;
     }
     const publishedAt = freshness.publishedAt;
+    const hasImage = Boolean(post.full_picture?.trim());
+    const target = routeFacebookImport(message, {
+      sourceLabel: config.pageName,
+      hasImage,
+    });
 
-    if (config.allowFerryAlerts !== false) {
+    if (target === "skip") {
+      result.skippedStale += 1;
+      continue;
+    }
+
+    if (target === "meteo_alert") {
+      const alert = await tryImportFacebookMeteoAlert({
+        message,
+        permalink: post.permalink_url,
+        imageUrl: post.full_picture,
+        sourceLabel: config.pageName,
+        fallbackTitle: `${config.pageName} — vigilance météo`,
+      });
+      if (alert.created && alert.title) {
+        result.alertsCreated += 1;
+        result.createdAlerts.push(alert.title);
+        continue;
+      }
+    }
+
+    if (target === "ferry_alert" && config.allowFerryAlerts !== false) {
       const alert = await tryImportFacebookAlert({
         message,
         permalink: post.permalink_url,
@@ -326,10 +354,7 @@ export async function importFacebookPostsAsContent(
       }
     }
 
-    const hasImage = Boolean(post.full_picture?.trim());
-    const kind = classifyFacebookPost(message, hasImage);
-
-    if (kind === "event") {
+    if (target === "event") {
       const r = await importAsEvent(post, config, eventsPublishedByDefault());
       if (r.ok) {
         result.eventsCreated += 1;
@@ -346,7 +371,7 @@ export async function importFacebookPostsAsContent(
       continue;
     }
 
-    if (kind === "announcement") {
+    if (target === "announcement") {
       const r = await importAsAnnouncement(post, config, published);
       if (r.ok) {
         result.announcementsCreated += 1;

@@ -1,11 +1,13 @@
 /**
- * Alerte ferry / transport depuis une publication Facebook (affiche ou texte).
+ * Alertes ferry / météo depuis publications Facebook (affiche ou texte).
  */
 
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import type { AlertSeverity, AlertType } from "@/lib/supabase/types";
+import { isCycloneMeteoNotice } from "@/lib/facebook-content-route";
 import {
-  isFacebookAlertJunk,
+  isFacebookPageBoilerplate,
+  isFerryPromoArticle,
   isFerryTransportNotice,
 } from "@/lib/ferry-notice-detect";
 import { titleFromMessage } from "@/lib/facebook-post-parse";
@@ -16,7 +18,65 @@ function autoAlertsEnabled(): boolean {
   return process.env.AUTO_ALERTS_FROM_VEILLE === "true";
 }
 
-/** Désactive les alertes ferry invalides ou expirées (faux positifs, promo FB). */
+async function insertFacebookAlert(opts: {
+  type: AlertType;
+  severity: AlertSeverity;
+  urgent: boolean;
+  title: string;
+  message: string;
+  sourceUrl: string;
+  imageUrl?: string;
+  durationHours: number;
+}): Promise<{ created: boolean; title?: string }> {
+  const admin = getAdminSupabase();
+  if (!admin) return { created: false };
+
+  const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+  const { data: existing } = await admin
+    .from("alerts")
+    .select("id")
+    .eq("source_url", opts.sourceUrl)
+    .gte("created_at", since)
+    .maybeSingle();
+
+  if (existing) return { created: false };
+
+  const endsAt = new Date(
+    Date.now() + opts.durationHours * 60 * 60 * 1000,
+  ).toISOString();
+  const details =
+    opts.message.slice(0, 500) +
+    (opts.imageUrl?.trim() ? `\n\nAffiche : ${opts.imageUrl.trim()}` : "");
+
+  const { data: inserted, error } = await admin
+    .from("alerts")
+    .insert({
+      type: opts.type,
+      severity: opts.severity,
+      title: opts.title.slice(0, 200),
+      details: details.trim() || null,
+      source_url: opts.sourceUrl,
+      starts_at: new Date().toISOString(),
+      ends_at: endsAt,
+      active: true,
+      urgent: opts.urgent,
+    })
+    .select("*")
+    .single();
+
+  if (error || !inserted) return { created: false };
+
+  try {
+    const { notifyAlertSubscribers } = await import("@/lib/push-notify");
+    await notifyAlertSubscribers(inserted);
+  } catch {
+    /* non bloquant */
+  }
+
+  return { created: true, title: inserted.title };
+}
+
+/** Désactive les alertes ferry invalides (coquille FB, promo, pas vraie coupure). */
 export async function deactivateFalseFerryAlerts(): Promise<number> {
   const admin = getAdminSupabase();
   if (!admin) return 0;
@@ -33,7 +93,9 @@ export async function deactivateFalseFerryAlerts(): Promise<number> {
     const corpus = `${row.title} ${row.details ?? ""}`;
     const expired = Boolean(row.ends_at && Date.parse(row.ends_at) <= now);
     const invalid =
-      isFacebookAlertJunk(corpus) || !isFerryTransportNotice(corpus);
+      isFacebookPageBoilerplate(corpus) ||
+      isFerryPromoArticle(corpus) ||
+      !isFerryTransportNotice(corpus);
     if (!expired && !invalid) continue;
     const { error } = await admin
       .from("alerts")
@@ -44,7 +106,7 @@ export async function deactivateFalseFerryAlerts(): Promise<number> {
   return n;
 }
 
-/** Crée une alerte ferry active si le texte correspond (sans doublon URL). */
+/** Alerte ferry (carénage, annulation, perturbation). */
 export async function tryImportFacebookAlert(opts: {
   message: string;
   permalink?: string;
@@ -60,61 +122,63 @@ export async function tryImportFacebookAlert(opts: {
     opts.permalink?.trim() || opts.imageUrl?.trim() || "";
   if (!sourceUrl) return { created: false };
 
-  const admin = getAdminSupabase();
-  if (!admin) return { created: false };
-
-  const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
-  const { data: existing } = await admin
-    .from("alerts")
-    .select("id")
-    .eq("source_url", sourceUrl)
-    .gte("created_at", since)
-    .maybeSingle();
-
-  if (existing) return { created: false };
-
   const title = titleFromMessage(
     message,
     opts.fallbackTitle ?? "Info ferry — Moorea",
   );
-  const endsAt = new Date(Date.now() + 36 * 60 * 60 * 1000).toISOString();
-  const details =
-    message.slice(0, 500) +
-    (opts.imageUrl?.trim()
-      ? `\n\nAffiche : ${opts.imageUrl.trim()}`
-      : "");
-
-  const type: AlertType = "ferry";
   const severity: AlertSeverity = /annul|indisponib|interruption|carenage|carénage/i.test(
     message,
   )
     ? "warning"
     : "info";
 
-  const { data: inserted, error } = await admin
-    .from("alerts")
-    .insert({
-      type,
-      severity,
-      title: title.slice(0, 200),
-      details: details.trim() || null,
-      source_url: sourceUrl,
-      starts_at: new Date().toISOString(),
-      ends_at: endsAt,
-      active: true,
-      urgent: severity === "warning",
-    })
-    .select("*")
-    .single();
+  return insertFacebookAlert({
+    type: "ferry",
+    severity,
+    urgent: severity === "warning",
+    title,
+    message,
+    sourceUrl,
+    imageUrl: opts.imageUrl,
+    durationHours: 36,
+  });
+}
 
-  if (error || !inserted) return { created: false };
+/** Alerte météo / cyclone depuis Facebook (Infos cyclones, bulletin…). */
+export async function tryImportFacebookMeteoAlert(opts: {
+  message: string;
+  permalink?: string;
+  imageUrl?: string;
+  sourceLabel?: string;
+  fallbackTitle?: string;
+}): Promise<{ created: boolean; title?: string }> {
+  if (!autoAlertsEnabled()) return { created: false };
 
-  try {
-    const { notifyAlertSubscribers } = await import("@/lib/push-notify");
-    await notifyAlertSubscribers(inserted);
-  } catch {
-    /* non bloquant */
+  const message = opts.message.trim();
+  if (!isCycloneMeteoNotice(message, opts.sourceLabel)) {
+    return { created: false };
   }
 
-  return { created: true, title: inserted.title };
+  const sourceUrl =
+    opts.permalink?.trim() || opts.imageUrl?.trim() || "";
+  if (!sourceUrl) return { created: false };
+
+  const title = titleFromMessage(
+    message,
+    opts.fallbackTitle ?? "Vigilance météo — Polynésie",
+  );
+  const urgent = /cyclone|tempete tropicale|tempête tropicale|alerte rouge/i.test(
+    message,
+  );
+
+  return insertFacebookAlert({
+    type: "meteo",
+    severity: urgent ? "alert" : "warning",
+    urgent,
+    title,
+    message,
+    sourceUrl,
+    imageUrl: opts.imageUrl,
+    durationHours: 48,
+  });
 }

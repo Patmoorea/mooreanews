@@ -3,7 +3,6 @@
  */
 
 import { MOOREA_DISTRICTS } from "@/lib/constants";
-import { isFerryTransportNotice } from "@/lib/ferry-notice-detect";
 
 export type FacebookPostKind = "event" | "announcement" | "article";
 
@@ -233,11 +232,6 @@ export function classifyFacebookPost(
 
   if (ANNOUNCEMENT_KEYWORDS.some((k) => n.includes(normalize(k)))) {
     return "announcement";
-  }
-
-  // Avis ferry officiel → alerte (pas événement agenda) ; pas « vente au débarcadère »
-  if (isFerryTransportNotice(message)) {
-    return "article";
   }
 
   const hasDate = parseDateFromMessage(message) !== null;

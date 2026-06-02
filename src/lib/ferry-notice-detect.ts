@@ -1,5 +1,5 @@
 /**
- * Détection stricte : avis officiel ferry / carénage — pas une vente « au débarcadère ».
+ * Détection ferry / coquilles Facebook / promos transport.
  */
 
 function normalize(text: string): string {
@@ -9,7 +9,44 @@ function normalize(text: string): string {
     .toLowerCase();
 }
 
-/** Vente, food truck, événement perso près du quai — pas une alerte ferry. */
+/** Coquille « 58 629 likes · talking about » — pas de publication à importer. */
+export function isFacebookPageBoilerplate(text: string): boolean {
+  const n = normalize(text);
+  if (!n.trim()) return true;
+  const hasLikes = /\d[\d\s,.]*\s*likes/.test(n);
+  const hasTalking = n.includes("talking about");
+  const hasFollow =
+    n.includes("people follow this") ||
+    n.includes("suivez l actualite") ||
+    n.includes("suivez l'actualite");
+  if (hasLikes && (hasTalking || hasFollow)) return true;
+  if (
+    n.includes("infos cyclones") &&
+    hasLikes &&
+    !n.includes("vigilance") &&
+    n.length < 220
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/** Promo / info commerciale transport — actualité, pas alerte ferry. */
+export function isFerryPromoArticle(message: string): boolean {
+  const n = normalize(message);
+  return (
+    n.includes("pass annuel") ||
+    n.includes("en illimite") ||
+    n.includes("en illimité") ||
+    n.includes("iles par la mer") ||
+    n.includes("îles par la mer") ||
+    (n.includes("forfait") && n.includes("ferry")) ||
+    (n.includes("tarif") &&
+      n.includes("traversee") &&
+      !/annul|indisponib|carenage|carénage/.test(n))
+  );
+}
+
 const NOT_FERRY_ALERT = [
   "choux",
   "a la creme",
@@ -41,7 +78,6 @@ const NOT_FERRY_ALERT = [
   "snack",
 ];
 
-/** Signal fort = alerte ferry légitime. */
 const STRONG_FERRY = [
   "carenage",
   "carénage",
@@ -71,31 +107,16 @@ const FERRY_COMPANIES =
 const DISRUPTION =
   /annul|retard|perturb|indisponib|interromp|carenage|carénage|suspend|reporte|reporté/i;
 
-/** Texte OG Facebook (page, promo) — jamais une alerte ferry. */
+/** @deprecated Utiliser isFacebookPageBoilerplate */
 export function isFacebookAlertJunk(text: string): boolean {
-  const n = normalize(text);
-  if (!n.trim()) return false;
-  return (
-    /\d+\s*likes/.test(n) ||
-    n.includes("talking about this") ||
-    n.includes("people follow this") ||
-    n.includes("suivez l actualite") ||
-    n.includes("suivez l'actualite") ||
-    n.includes("pass annuel") ||
-    n.includes("en illimite") ||
-    n.includes("en illimité") ||
-    n.includes("tarif preferentiel") ||
-    n.includes("billetterie") ||
-    (n.includes("infos cyclones") && !n.includes("vigilance")) ||
-    (n.includes("cyclonique") && n.includes("likes"))
-  );
+  return isFacebookPageBoilerplate(text);
 }
 
 export function isFerryTransportNotice(message: string): boolean {
   const n = normalize(message);
   if (!n.trim()) return false;
-
-  if (isFacebookAlertJunk(message)) return false;
+  if (isFacebookPageBoilerplate(message)) return false;
+  if (isFerryPromoArticle(message)) return false;
 
   if (NOT_FERRY_ALERT.some((k) => n.includes(normalize(k)))) {
     return false;

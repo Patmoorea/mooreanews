@@ -85,7 +85,6 @@ export async function importFacebookOgAsArticles(
         homepage: "https://www.facebook.com",
         authorLabel: `${label} (Facebook)`,
         tag: "facebook-og",
-        allowFerryAlerts: false,
       },
     );
 
