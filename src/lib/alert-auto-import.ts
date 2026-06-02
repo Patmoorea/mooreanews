@@ -3,6 +3,7 @@
  * Activé avec AUTO_ALERTS_FROM_VEILLE=true sur Vercel.
  */
 
+import { isFerryTransportNotice } from "@/lib/ferry-notice-detect";
 import { MOOREA_KEYWORDS } from "@/lib/rss-sources";
 import type { RssItem } from "@/lib/rss-parser";
 import { getAdminSupabase } from "@/lib/supabase/admin";
@@ -130,6 +131,7 @@ function detectAlertFromItem(item: RssItem): DetectedAlert | null {
   for (const rule of RULES) {
     const hit = rule.keywords.some((kw) => n.includes(normalize(kw)));
     if (!hit) continue;
+    if (rule.type === "ferry" && !isFerryTransportNotice(corpus)) continue;
     if (!rule.pfWide && !isMooreaRelevant(corpus)) continue;
 
     const endsAt = new Date(Date.now() + DEFAULT_DURATION_MS).toISOString();

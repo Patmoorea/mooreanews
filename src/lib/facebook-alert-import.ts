@@ -4,46 +4,37 @@
 
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import type { AlertSeverity, AlertType } from "@/lib/supabase/types";
+import { isFerryTransportNotice } from "@/lib/ferry-notice-detect";
 import { titleFromMessage } from "@/lib/facebook-post-parse";
 
-const FERRY_KEYWORDS = [
-  "ferry",
-  "traversee",
-  "traversée",
-  "carenage",
-  "carénage",
-  "navire",
-  "tauati",
-  "aremiti",
-  "vaearai",
-  "avatea",
-  "indisponible",
-  "perturbation",
-  "annulation",
-  "retard",
-  "debarcadere",
-  "débarcadère",
-  "interruption",
-  "quai",
-  "vaiare",
-  "papeete",
-];
-
-function normalize(text: string): string {
-  return text
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-}
-
-export function isFerryTransportNotice(message: string): boolean {
-  const n = normalize(message);
-  if (!n.trim()) return false;
-  return FERRY_KEYWORDS.some((k) => n.includes(normalize(k)));
-}
+export { isFerryTransportNotice } from "@/lib/ferry-notice-detect";
 
 function autoAlertsEnabled(): boolean {
   return process.env.AUTO_ALERTS_FROM_VEILLE === "true";
+}
+
+/** Désactive les alertes ferry créées par erreur (ex. vente au débarcadère). */
+export async function deactivateFalseFerryAlerts(): Promise<number> {
+  const admin = getAdminSupabase();
+  if (!admin) return 0;
+
+  const { data: rows } = await admin
+    .from("alerts")
+    .select("id, title, details")
+    .eq("type", "ferry")
+    .eq("active", true);
+
+  let n = 0;
+  for (const row of rows ?? []) {
+    const corpus = `${row.title} ${row.details ?? ""}`;
+    if (isFerryTransportNotice(corpus)) continue;
+    const { error } = await admin
+      .from("alerts")
+      .update({ active: false, updated_at: new Date().toISOString() })
+      .eq("id", row.id);
+    if (!error) n += 1;
+  }
+  return n;
 }
 
 /** Crée une alerte ferry active si le texte correspond (sans doublon URL). */

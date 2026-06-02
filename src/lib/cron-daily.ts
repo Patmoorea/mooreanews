@@ -13,6 +13,7 @@ import {
   shouldSendMorningDigest,
   shouldSendWeekendDigest,
 } from "@/lib/cron-tahiti";
+import { deactivateFalseFerryAlerts } from "@/lib/facebook-alert-import";
 import { purgeStaleFacebookImports, purgeStaleFacebookEvents } from "@/lib/facebook-import-cleanup";
 import {
   checkFacebookTokenHealth,
@@ -126,6 +127,13 @@ export async function runDailyCron(): Promise<DailyCronResult> {
     r.errors.map((e) => `${r.source}: ${e}`),
   );
   errors.push(...aggErrors);
+
+  const falseFerryAlerts = await deactivateFalseFerryAlerts();
+  jobs.falseFerryAlertsDeactivated = falseFerryAlerts;
+  if (falseFerryAlerts > 0) {
+    revalidatePath("/");
+    revalidatePath("/alertes");
+  }
 
   const facebookPurge = await purgeStaleFacebookImports();
   jobs.facebookPurge = facebookPurge;
