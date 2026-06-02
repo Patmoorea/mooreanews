@@ -4,7 +4,10 @@
 
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import type { AlertSeverity, AlertType } from "@/lib/supabase/types";
-import { isFerryTransportNotice } from "@/lib/ferry-notice-detect";
+import {
+  isFacebookAlertJunk,
+  isFerryTransportNotice,
+} from "@/lib/ferry-notice-detect";
 import { titleFromMessage } from "@/lib/facebook-post-parse";
 
 export { isFerryTransportNotice } from "@/lib/ferry-notice-detect";
@@ -13,21 +16,25 @@ function autoAlertsEnabled(): boolean {
   return process.env.AUTO_ALERTS_FROM_VEILLE === "true";
 }
 
-/** Désactive les alertes ferry créées par erreur (ex. vente au débarcadère). */
+/** Désactive les alertes ferry invalides ou expirées (faux positifs, promo FB). */
 export async function deactivateFalseFerryAlerts(): Promise<number> {
   const admin = getAdminSupabase();
   if (!admin) return 0;
 
   const { data: rows } = await admin
     .from("alerts")
-    .select("id, title, details")
+    .select("id, title, details, ends_at")
     .eq("type", "ferry")
     .eq("active", true);
 
+  const now = Date.now();
   let n = 0;
   for (const row of rows ?? []) {
     const corpus = `${row.title} ${row.details ?? ""}`;
-    if (isFerryTransportNotice(corpus)) continue;
+    const expired = Boolean(row.ends_at && Date.parse(row.ends_at) <= now);
+    const invalid =
+      isFacebookAlertJunk(corpus) || !isFerryTransportNotice(corpus);
+    if (!expired && !invalid) continue;
     const { error } = await admin
       .from("alerts")
       .update({ active: false, updated_at: new Date().toISOString() })
@@ -70,7 +77,7 @@ export async function tryImportFacebookAlert(opts: {
     message,
     opts.fallbackTitle ?? "Info ferry — Moorea",
   );
-  const endsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const endsAt = new Date(Date.now() + 36 * 60 * 60 * 1000).toISOString();
   const details =
     message.slice(0, 500) +
     (opts.imageUrl?.trim()

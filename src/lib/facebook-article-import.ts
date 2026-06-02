@@ -23,6 +23,8 @@ export type FacebookPageImportConfig = {
   homepage: string;
   authorLabel: string;
   tag: string;
+  /** Alertes ferry auto : uniquement posts page officielle (pas liens OG veille). */
+  allowFerryAlerts?: boolean;
 };
 
 /** @deprecated Utiliser importFacebookPostsAsContent */

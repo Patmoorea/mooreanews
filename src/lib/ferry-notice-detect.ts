@@ -71,9 +71,31 @@ const FERRY_COMPANIES =
 const DISRUPTION =
   /annul|retard|perturb|indisponib|interromp|carenage|carénage|suspend|reporte|reporté/i;
 
+/** Texte OG Facebook (page, promo) — jamais une alerte ferry. */
+export function isFacebookAlertJunk(text: string): boolean {
+  const n = normalize(text);
+  if (!n.trim()) return false;
+  return (
+    /\d+\s*likes/.test(n) ||
+    n.includes("talking about this") ||
+    n.includes("people follow this") ||
+    n.includes("suivez l actualite") ||
+    n.includes("suivez l'actualite") ||
+    n.includes("pass annuel") ||
+    n.includes("en illimite") ||
+    n.includes("en illimité") ||
+    n.includes("tarif preferentiel") ||
+    n.includes("billetterie") ||
+    (n.includes("infos cyclones") && !n.includes("vigilance")) ||
+    (n.includes("cyclonique") && n.includes("likes"))
+  );
+}
+
 export function isFerryTransportNotice(message: string): boolean {
   const n = normalize(message);
   if (!n.trim()) return false;
+
+  if (isFacebookAlertJunk(message)) return false;
 
   if (NOT_FERRY_ALERT.some((k) => n.includes(normalize(k)))) {
     return false;

@@ -443,6 +443,7 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
             authorLabel: `${page.name} (Facebook)`,
             tag:
               page.id === "moorea-news" ? "moorea-news-fb" : "commune-moorea",
+            allowFerryAlerts: true,
           },
         });
       }

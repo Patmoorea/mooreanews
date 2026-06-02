@@ -312,16 +312,18 @@ export async function importFacebookPostsAsContent(
     }
     const publishedAt = freshness.publishedAt;
 
-    const alert = await tryImportFacebookAlert({
-      message,
-      permalink: post.permalink_url,
-      imageUrl: post.full_picture,
-      fallbackTitle: `${config.pageName} — info ferry`,
-    });
-    if (alert.created && alert.title) {
-      result.alertsCreated += 1;
-      result.createdAlerts.push(alert.title);
-      continue;
+    if (config.allowFerryAlerts !== false) {
+      const alert = await tryImportFacebookAlert({
+        message,
+        permalink: post.permalink_url,
+        imageUrl: post.full_picture,
+        fallbackTitle: `${config.pageName} — info ferry`,
+      });
+      if (alert.created && alert.title) {
+        result.alertsCreated += 1;
+        result.createdAlerts.push(alert.title);
+        continue;
+      }
     }
 
     const hasImage = Boolean(post.full_picture?.trim());
