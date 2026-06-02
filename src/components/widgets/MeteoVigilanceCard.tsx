@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { ExternalLink, CloudLightning } from "lucide-react";
 import {
   fetchMeteoVigilance,
   METEO_VIGILANCE_MAP_URL,
-  vigilanceDisplayLevel,
-  vigilanceNeedsAlert,
+  vigilanceCardTitle,
+  vigilanceLocalLevel,
+  vigilanceNationalFootnote,
 } from "@/lib/meteo-vigilance";
 import { syncMeteoVigilanceAlert } from "@/lib/meteo-vigilance-sync";
 
@@ -63,9 +63,9 @@ export async function MeteoVigilanceCard() {
     );
   }
 
-  const level = vigilanceDisplayLevel(snapshot);
-  const style = LEVEL_STYLES[level] ?? LEVEL_STYLES[2];
-  const alertActive = vigilanceNeedsAlert(snapshot);
+  const level = vigilanceLocalLevel(snapshot);
+  const style = LEVEL_STYLES[level] ?? LEVEL_STYLES[1];
+  const nationalNote = vigilanceNationalFootnote(snapshot);
 
   return (
     <div
@@ -85,32 +85,25 @@ export async function MeteoVigilanceCard() {
         </span>
       </div>
       <p className="mt-3 font-semibold text-ocean-950 leading-snug">
-        {alertActive
-          ? snapshot.activePhenomena.length > 0
-            ? snapshot.activePhenomena.map((p) => p.label).join(" · ")
-            : level >= 2
-              ? `Vigilance ${snapshot.levelName} — ${snapshot.levelLabel}`
-              : "Vigilance en Polynésie"
-          : "Pas de vigilance particulière — Tahiti & Moorea"}
+        {vigilanceCardTitle(snapshot)}
       </p>
+      {nationalNote ? (
+        <p className="mt-2 text-xs text-ocean-700">{nationalNote}</p>
+      ) : null}
       <p className="mt-2 text-xs text-ocean-600">
-        Tahiti–Moorea : niveau {snapshot.mooreaMaxColorId} · Polynésie :{" "}
-        {snapshot.nationalMaxColorId}
+        Tahiti–Moorea : niveau {snapshot.mooreaMaxColorId}
+        {snapshot.nationalMaxColorId > snapshot.mooreaMaxColorId
+          ? ` · Polynésie : ${snapshot.nationalMaxColorId}`
+          : null}
       </p>
-      <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold">
-        <Link
-          href="/vigilance-cyclone"
-          className="text-tiare-600 hover:underline"
-        >
-          Mode cyclone →
-        </Link>
+      <div className="mt-4">
         <a
           href={METEO_VIGILANCE_MAP_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-ocean-700 hover:text-tiare-600"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-ocean-700 hover:text-tiare-600"
         >
-          Carte officielle
+          Carte officielle meteo.pf
           <ExternalLink size={12} />
         </a>
       </div>

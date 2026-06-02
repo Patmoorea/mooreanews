@@ -419,13 +419,55 @@ export function vigilanceNeedsAlert(snapshot: MeteoVigilanceSnapshot): boolean {
   return false;
 }
 
+/** Niveau pour la carte accueil (Tahiti–Moorea + phénomènes locaux + cyclone). */
+export function vigilanceLocalLevel(snapshot: MeteoVigilanceSnapshot): number {
+  const phenMax = snapshot.activePhenomena.reduce(
+    (m, p) => Math.max(m, p.colorId),
+    1,
+  );
+  let level = Math.max(snapshot.mooreaMaxColorId, phenMax);
+  if (snapshot.cycloneMaxColorId !== null && snapshot.cycloneMaxColorId >= 2) {
+    level = Math.max(level, snapshot.cycloneMaxColorId);
+  }
+  return level;
+}
+
+/** Titre court pour la carte météo accueil (priorité locale). */
+export function vigilanceCardTitle(snapshot: MeteoVigilanceSnapshot): string {
+  const local = vigilanceLocalLevel(snapshot);
+  const colorName = COLOR_NAMES[local] ?? "inconnue";
+  const color =
+    colorName.charAt(0).toUpperCase() + colorName.slice(1);
+  const meta = LEVEL_META[local] ?? LEVEL_META[1];
+
+  if (snapshot.activePhenomena.length > 0) {
+    return snapshot.activePhenomena.map((p) => p.label).join(" · ");
+  }
+  if (local >= 2) {
+    return `Vigilance ${color} — ${meta.label}`;
+  }
+  return "Pas de vigilance particulière — Tahiti & Moorea";
+}
+
+/** Note si vigilance ailleurs en Polynésie alors que Moorea est verte. */
+export function vigilanceNationalFootnote(
+  snapshot: MeteoVigilanceSnapshot,
+): string | null {
+  if (
+    snapshot.nationalMaxColorId >= 2 &&
+    snapshot.mooreaMaxColorId < 2 &&
+    snapshot.activePhenomena.length === 0 &&
+    (snapshot.cycloneMaxColorId ?? 1) < 2
+  ) {
+    const nat = COLOR_NAMES[snapshot.nationalMaxColorId] ?? "colorée";
+    return `Vigilance ${nat} sur d'autres archipels de Polynésie.`;
+  }
+  return null;
+}
+
 /** Niveau affiché sur l’accueil (0 = vert, 2 = jaune, …). */
 export function vigilanceDisplayLevel(snapshot: MeteoVigilanceSnapshot): number {
-  return Math.max(
-    snapshot.mooreaMaxColorId,
-    snapshot.nationalMaxColorId,
-    snapshot.cycloneMaxColorId ?? 1,
-  );
+  return vigilanceLocalLevel(snapshot);
 }
 
 /** Retire la balise technique de synchro avant affichage public. */
