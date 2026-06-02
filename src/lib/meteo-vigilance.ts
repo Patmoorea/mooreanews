@@ -395,15 +395,37 @@ export function vigilanceAlertTitle(snapshot: MeteoVigilanceSnapshot): string {
     return `Alerte ${CYCLONE_ALERT_LABEL.toLowerCase()} — ${snapshot.levelLabel}`;
   }
 
+  if (
+    snapshot.mooreaMaxColorId < 2 &&
+    snapshot.nationalMaxColorId >= 2
+  ) {
+    const nat =
+      COLOR_NAMES[snapshot.nationalMaxColorId]?.charAt(0).toUpperCase() +
+      (COLOR_NAMES[snapshot.nationalMaxColorId]?.slice(1) ?? "");
+    return `Vigilance ${nat} en Polynésie — Tahiti-Moorea verte`;
+  }
+
   return `Vigilance météo ${color} — Tahiti & Moorea`;
 }
 
+/** Alerte site si vigilance Tahiti–Moorea, Polynésie ou phénomène actif. */
 export function vigilanceNeedsAlert(snapshot: MeteoVigilanceSnapshot): boolean {
   if (snapshot.mooreaMaxColorId >= 2) return true;
-  if (snapshot.cycloneMaxColorId !== null && snapshot.cycloneMaxColorId >= 4) {
+  if (snapshot.activePhenomena.length > 0) return true;
+  if (snapshot.nationalMaxColorId >= 2) return true;
+  if (snapshot.cycloneMaxColorId !== null && snapshot.cycloneMaxColorId >= 2) {
     return true;
   }
   return false;
+}
+
+/** Niveau affiché sur l’accueil (0 = vert, 2 = jaune, …). */
+export function vigilanceDisplayLevel(snapshot: MeteoVigilanceSnapshot): number {
+  return Math.max(
+    snapshot.mooreaMaxColorId,
+    snapshot.nationalMaxColorId,
+    snapshot.cycloneMaxColorId ?? 1,
+  );
 }
 
 /** Retire la balise technique de synchro avant affichage public. */

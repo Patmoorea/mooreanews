@@ -248,14 +248,18 @@ async function fetchGraphPagePostsOnce(
   graphPageId: string,
   token: string,
   fields: string,
+  limit: number,
+  after?: string,
 ): Promise<
-  { ok: true; posts: GraphPost[] } | { ok: false; status: number; body: string }
+  | { ok: true; posts: GraphPost[]; next?: string }
+  | { ok: false; status: number; body: string }
 > {
   const apiUrl = new URL(
     `https://graph.facebook.com/v21.0/${graphPageId}/posts`,
   );
   apiUrl.searchParams.set("fields", fields);
-  apiUrl.searchParams.set("limit", "15");
+  apiUrl.searchParams.set("limit", String(limit));
+  if (after) apiUrl.searchParams.set("after", after);
   apiUrl.searchParams.set("access_token", token);
 
   const res = await fetch(apiUrl.toString(), { cache: "no-store" });
@@ -263,8 +267,15 @@ async function fetchGraphPagePostsOnce(
   if (!res.ok) {
     return { ok: false, status: res.status, body };
   }
-  const json = JSON.parse(body) as { data?: GraphPost[] };
-  return { ok: true, posts: json.data ?? [] };
+  const json = JSON.parse(body) as {
+    data?: GraphPost[];
+    paging?: { cursors?: { after?: string } };
+  };
+  return {
+    ok: true,
+    posts: json.data ?? [],
+    next: json.paging?.cursors?.after,
+  };
 }
 
 async function fetchPagePosts(
@@ -278,23 +289,41 @@ async function fetchPagePosts(
       : await resolveGraphPageId(page, token);
 
   const fieldVariants = [GRAPH_POST_FIELDS_FULL, GRAPH_POST_FIELDS_MINIMAL];
+  const pageLimit = page.id === "moorea-news" ? 25 : 15;
+  const maxPages = page.id === "moorea-news" ? 3 : 1;
   let lastFailure: { status: number; body: string } | null = null;
 
   for (const fields of fieldVariants) {
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const result = await fetchGraphPagePostsOnce(graphPageId, token, fields);
-      if (result.ok) {
-        return result.posts.map(normalizeGraphPost);
-      }
-      lastFailure = { status: result.status, body: result.body };
-      if (!isTransientGraphError(result.status, result.body)) {
-        throw new Error(
-          `Graph API ${page.name} (${graphPageId}): HTTP ${result.status} ${result.body.slice(0, 120)}`,
+    const collected: GraphPost[] = [];
+    let after: string | undefined;
+    for (let pageNum = 0; pageNum < maxPages; pageNum++) {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const result = await fetchGraphPagePostsOnce(
+          graphPageId,
+          token,
+          fields,
+          pageLimit,
+          after,
         );
+        if (result.ok) {
+          collected.push(...result.posts);
+          after = result.next;
+          break;
+        }
+        lastFailure = { status: result.status, body: result.body };
+        if (!isTransientGraphError(result.status, result.body)) {
+          throw new Error(
+            `Graph API ${page.name} (${graphPageId}): HTTP ${result.status} ${result.body.slice(0, 120)}`,
+          );
+        }
+        if (attempt < 2) {
+          await sleep(1500 * (attempt + 1));
+        }
       }
-      if (attempt < 2) {
-        await sleep(1500 * (attempt + 1));
-      }
+      if (!after) break;
+    }
+    if (collected.length > 0) {
+      return collected.map(normalizeGraphPost);
     }
   }
 
