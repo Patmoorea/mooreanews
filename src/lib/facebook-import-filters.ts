@@ -167,6 +167,8 @@ export function facebookPostHasPublishableContent(
   const pic = post.full_picture?.trim() ?? "";
   if (msg.length >= 40) return true;
   if (msg.length >= 20 && pic.length > 0) return true;
+  if (msg.length >= 8 && pic.length > 0) return true;
+  if (pic.length > 0) return true;
   return false;
 }
 

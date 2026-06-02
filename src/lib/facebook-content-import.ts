@@ -24,17 +24,20 @@ import {
   hasRelativeWeekdayDate,
 } from "@/lib/facebook-post-parse";
 import { humanEventTitle } from "@/lib/event-title";
+import { tryImportFacebookAlert } from "@/lib/facebook-alert-import";
 
 export type FacebookContentImportResult = {
   eventsCreated: number;
   announcementsCreated: number;
   articlesCreated: number;
+  alertsCreated: number;
   skipped: number;
   skippedStale: number;
   errors: string[];
   createdEvents: { title: string; id: string; date: string }[];
   createdArticles: { title: string; slug: string }[];
   createdAnnouncements: { title: string; id: string }[];
+  createdAlerts: string[];
 };
 
 function importEnabled(): boolean {
@@ -278,12 +281,14 @@ export async function importFacebookPostsAsContent(
     eventsCreated: 0,
     announcementsCreated: 0,
     articlesCreated: 0,
+    alertsCreated: 0,
     skipped: 0,
     skippedStale: 0,
     errors: [],
     createdEvents: [],
     createdArticles: [],
     createdAnnouncements: [],
+    createdAlerts: [],
   };
 
   if (!importEnabled()) return result;
@@ -306,6 +311,18 @@ export async function importFacebookPostsAsContent(
       continue;
     }
     const publishedAt = freshness.publishedAt;
+
+    const alert = await tryImportFacebookAlert({
+      message,
+      permalink: post.permalink_url,
+      imageUrl: post.full_picture,
+      fallbackTitle: `${config.pageName} — info ferry`,
+    });
+    if (alert.created && alert.title) {
+      result.alertsCreated += 1;
+      result.createdAlerts.push(alert.title);
+      continue;
+    }
 
     const hasImage = Boolean(post.full_picture?.trim());
     const kind = classifyFacebookPost(message, hasImage);

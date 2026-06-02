@@ -234,13 +234,32 @@ export function classifyFacebookPost(
     return "announcement";
   }
 
+  // Avis ferry / carénage → alerte (pas événement agenda)
+  if (
+    [
+      "ferry",
+      "traversee",
+      "traversée",
+      "carenage",
+      "carénage",
+      "navire",
+      "indisponible",
+      "perturbation",
+      "tauati",
+      "aremiti",
+    ].some((k) => n.includes(k))
+  ) {
+    return "article";
+  }
+
   const hasDate = parseDateFromMessage(message) !== null;
   const hasEventWord = EVENT_KEYWORDS.some((k) => n.includes(normalize(k)));
 
   if (
     hasImage &&
     message.trim().length > 0 &&
-    (hasDate || hasEventWord || message.trim().length < 400)
+    (hasDate || hasEventWord) &&
+    message.trim().length < 400
   ) {
     return "event";
   }

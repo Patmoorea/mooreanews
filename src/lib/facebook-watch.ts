@@ -181,6 +181,8 @@ export async function aggregateFacebookWatchUrls(): Promise<AggregationResult> {
   result.articlesCreated = imported.created;
   result.eventsCreated = imported.eventsCreated;
   result.announcementsCreated = imported.announcementsCreated;
+  result.alertsCreated = imported.alertsCreated;
+  result.createdAlerts = imported.createdAlerts;
   result.articlesSkipped = imported.skipped;
   result.createdArticles = imported.createdArticles;
   result.createdEvents = imported.createdEvents;
@@ -491,8 +493,16 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
       (result.eventsCreated ?? 0) + imported.eventsCreated;
     result.announcementsCreated =
       (result.announcementsCreated ?? 0) + imported.announcementsCreated;
+    result.alertsCreated =
+      (result.alertsCreated ?? 0) + imported.alertsCreated;
     result.articlesSkipped =
       (result.articlesSkipped ?? 0) + imported.skipped;
+    if (imported.createdAlerts.length > 0) {
+      result.createdAlerts = [
+        ...(result.createdAlerts ?? []),
+        ...imported.createdAlerts,
+      ];
+    }
     if (imported.createdArticles.length > 0) {
       result.createdArticles = [
         ...(result.createdArticles ?? []),

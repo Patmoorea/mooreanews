@@ -70,6 +70,13 @@ const RULES: {
       "annulation ferry",
       "retard ferry",
       "avatea",
+      "carénage",
+      "carenage",
+      "navire",
+      "indisponible",
+      "perturbation ferry",
+      "tauati",
+      "aremiti",
     ],
   },
   {

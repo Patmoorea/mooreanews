@@ -31,6 +31,10 @@ export const FACEBOOK_WATCH_URLS: { url: string; label: string }[] = [
     label: "Commune — publication photo",
   },
   {
+    url: "https://www.facebook.com/photo?fbid=1766032444737745&set=a.912762566731408",
+    label: "Ferry — carénage navire / perturbation traversées",
+  },
+  {
     url: "https://www.facebook.com/groups/461940821326616/permalink/2169618270558854/",
     label: "Groupe — publication récente",
   },

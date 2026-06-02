@@ -24,7 +24,9 @@ function hasPublishableContent(item: OgFacebookItem): boolean {
   const img = item.imageUrl?.trim() ?? "";
   if (isFacebookJunkText(text)) return false;
   if (text.length >= 40) return true;
-  return text.length >= 15 && img.length > 0;
+  if (text.length >= 15 && img.length > 0) return true;
+  if (img.length > 0 && !isFacebookJunkText(title)) return true;
+  return false;
 }
 
 function pageKeyFromLabel(label: string): string {
@@ -42,7 +44,9 @@ export async function importFacebookOgAsArticles(
   FacebookArticleImportResult & {
     eventsCreated: number;
     announcementsCreated: number;
+    alertsCreated: number;
     createdEvents: { title: string; id: string; date: string }[];
+    createdAlerts: string[];
   }
 > {
   const result = {
@@ -52,7 +56,9 @@ export async function importFacebookOgAsArticles(
     createdArticles: [] as { title: string; slug: string }[],
     eventsCreated: 0,
     announcementsCreated: 0,
+    alertsCreated: 0,
     createdEvents: [] as { title: string; id: string; date: string }[],
+    createdAlerts: [] as string[],
   };
 
   for (const item of items) {
@@ -86,6 +92,8 @@ export async function importFacebookOgAsArticles(
     result.skipped += imported.skipped + imported.skippedStale;
     result.eventsCreated += imported.eventsCreated;
     result.announcementsCreated += imported.announcementsCreated;
+    result.alertsCreated += imported.alertsCreated;
+    result.createdAlerts.push(...imported.createdAlerts);
     result.createdArticles.push(...imported.createdArticles);
     result.createdEvents.push(...imported.createdEvents);
     result.errors.push(...imported.errors);
