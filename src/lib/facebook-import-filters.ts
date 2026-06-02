@@ -3,6 +3,7 @@
  */
 
 import type { FacebookPostForImport } from "@/lib/facebook-article-import";
+import { isFacebookAlertJunk } from "@/lib/ferry-notice-detect";
 import { parseDateFromMessage } from "@/lib/facebook-post-parse";
 
 const DEFAULT_MAX_AGE_DAYS = 60;
@@ -112,6 +113,7 @@ export function isFacebookJunkText(text: string): boolean {
   if (/^https?:\/\//i.test(t)) return true;
   if (/facebook\.com\/(share|share\/p)/i.test(t)) return true;
   if (FB_UNAVAILABLE_RE.test(t)) return true;
+  if (isFacebookAlertJunk(t)) return true;
   if (FB_GENERIC_TITLE_RE.test(t) && t.length < 80) return true;
   return false;
 }
