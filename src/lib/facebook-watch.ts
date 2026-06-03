@@ -257,7 +257,8 @@ async function fetchPagePosts(
       : await resolveGraphPageId(page, token);
 
   const fieldVariants = [GRAPH_POST_FIELDS_FULL, GRAPH_POST_FIELDS_MINIMAL];
-  const pageLimit = page.id === "moorea-news" ? 30 : 15;
+  const pageLimit =
+    page.id === "moorea-news" ? 30 : page.id === "te-ito-rau" ? 20 : 15;
   const maxPages = page.id === "moorea-news" ? 3 : 1;
   const edges: Array<"posts" | "published_posts"> =
     page.id === "moorea-news" ? ["posts", "published_posts"] : ["posts"];
@@ -442,12 +443,20 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
         }
       }
 
-      const tokenForPage = pickTokenForPage({
+      let tokenForPage = pickTokenForPage({
         page,
         perPageTokenByIdOrUsername,
         fallbackPageToken:
-          perPageTokenByIdOrUsername.size > 0 ? undefined : fallbackPageToken,
+          page.id === "te-ito-rau"
+            ? undefined
+            : perPageTokenByIdOrUsername.size > 0
+              ? undefined
+              : fallbackPageToken,
       });
+      // Te Ito Rau : page tierce — le jeton MooreaNews ne suffit pas ; user token public.
+      if (page.id === "te-ito-rau" && userToken) {
+        tokenForPage = userToken;
+      }
       if (!tokenForPage) {
         if (!page.optional) {
           result.errors.push(`Token manquant pour ${page.pageId}`);
