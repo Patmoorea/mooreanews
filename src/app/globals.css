@@ -238,6 +238,12 @@ h3,
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+.animate-marquee-alert {
+  animation: marquee 28s linear infinite;
+}
+.animate-marquee-alert:hover {
+  animation-play-state: paused;
+}
 .animate-sway {
   animation: sway 8s ease-in-out infinite;
   transform-origin: bottom center;

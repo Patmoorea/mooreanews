@@ -19,6 +19,10 @@ export const FACEBOOK_WATCH_URLS: { url: string; label: string }[] = [
     label: "Commune de Moorea-Maiao (page)",
   },
   {
+    url: "https://www.facebook.com/profile.php?id=100088637945937",
+    label: "Te Ito Rau no Moorea Maiao — coupures électricité",
+  },
+  {
     url: "https://www.facebook.com/infoscyclones",
     label: "Météo-France — Infos cyclones Polynésie",
   },
@@ -61,6 +65,13 @@ export const FACEBOOK_PAGE_WATCHES: FacebookPageWatch[] = [
     pageId: "CommuneMooreaMaiao",
     name: "Commune de Moorea-Maiao",
     homepage: "https://www.facebook.com/CommuneMooreaMaiao",
+    optional: true,
+  },
+  {
+    id: "te-ito-rau",
+    pageId: "100088637945937",
+    name: "Te Ito Rau no Moorea Maiao",
+    homepage: "https://www.facebook.com/profile.php?id=100088637945937",
     optional: true,
   },
 ];

@@ -65,6 +65,7 @@ function detectDistrict(text: string): string | null {
     if (upper.includes(d.toUpperCase())) return d;
   }
   if (/TIAHURA/i.test(text)) return "Tiahura";
+  if (/GENDRON/i.test(text)) return "Tiahura";
   return null;
 }
 
@@ -100,9 +101,20 @@ function parseOutageFromText(corpus: string): {
 
   if (!day || !month || !year) return null;
 
-  const timeM = t.match(
+  let timeM = t.match(
     /de\s+(\d{1,2})h(\d{2})\s*(?:à|a)\s+(\d{1,2})h(\d{2})/i,
   );
+  if (!timeM) {
+    timeM = t.match(
+      /(?:heure d['']intervention|horaire)[^0-9]{0,20}(\d{1,2})h(\d{2})\s*(?:à|a|-|—)?\s*(\d{1,2})h(\d{2})/i,
+    );
+  }
+  if (!timeM) {
+    timeM = t.match(/(\d{1,2})h(\d{2})\s*(?:à|a)\s+(\d{1,2})h(\d{2})/i);
+  }
+  if (!timeM) {
+    timeM = t.match(/(\d{1,2})h(\d{2})\s+(\d{1,2})h(\d{2})/i);
+  }
   if (!timeM) return null;
 
   const sh = Number(timeM[1]);
@@ -188,7 +200,9 @@ export async function fetchOutagesFromArticles(): Promise<UtilityOutage[]> {
       startsAt: dates.startsAt,
       endsAt: dates.endsAt,
       sourceUrl: `/actualites/${row.slug}`,
-      source: "MooreaNews — actualités",
+      source: row.slug.startsWith("te-ito-rau-fb-")
+        ? "Te Ito Rau — Facebook"
+        : "MooreaNews — actualités",
     });
   }
 

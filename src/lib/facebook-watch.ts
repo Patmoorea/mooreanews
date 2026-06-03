@@ -456,21 +456,37 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
       }
       const posts = await fetchPagePosts(page, tokenForPage);
       result.fetched += posts.length;
-      if (page.id === "moorea-news" || page.id === "commune-moorea") {
+      if (
+        page.id === "moorea-news" ||
+        page.id === "commune-moorea" ||
+        page.id === "te-ito-rau"
+      ) {
+        const isMooreaNews = page.id === "moorea-news";
+        const isTeItoRau = page.id === "te-ito-rau";
         articleImports.push({
           posts,
           config: {
-            pageKey: page.id === "moorea-news" ? "mooreanews" : "commune",
+            pageKey: isMooreaNews
+              ? "mooreanews"
+              : isTeItoRau
+                ? "te-ito-rau"
+                : "commune",
             pageName: page.name,
             homepage: page.homepage,
             authorLabel: `${page.name} (Facebook)`,
-            tag:
-              page.id === "moorea-news" ? "moorea-news-fb" : "commune-moorea",
-            allowFerryAlerts: true,
-            importAllFeedPosts: page.id === "moorea-news",
+            tag: isMooreaNews
+              ? "moorea-news-fb"
+              : isTeItoRau
+                ? "te-ito-rau"
+                : "commune-moorea",
+            allowFerryAlerts: isMooreaNews,
+            importAllFeedPosts: isMooreaNews || isTeItoRau,
             pageAccessToken: tokenForPage,
-            graphPageId:
-              page.id === "moorea-news" ? "350029589936" : page.pageId,
+            graphPageId: isMooreaNews
+              ? "350029589936"
+              : isTeItoRau
+                ? "100088637945937"
+                : page.pageId,
           },
         });
       }
@@ -480,7 +496,9 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
           message,
           post.created_time,
           post,
-          page.id === "moorea-news" ? { importAllFeedPosts: true } : undefined,
+          page.id === "moorea-news" || page.id === "te-ito-rau"
+            ? { importAllFeedPosts: true }
+            : undefined,
         );
         if (!freshness.ok) continue;
 

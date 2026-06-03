@@ -7,12 +7,7 @@ import {
   Waves,
   Moon,
   ThermometerSun,
-  Zap,
-  Droplets,
-  Anchor,
 } from "lucide-react";
-import Link from "next/link";
-import type { HomeHighlight } from "@/lib/home-highlights";
 import type { WeatherSummary } from "@/lib/weather";
 import type { SunMoonData } from "@/lib/sun";
 import type { Departure, NextDepartures } from "@/lib/ferries";
@@ -21,29 +16,7 @@ import { formatMinutesUntil, nextDeparturesPerCompany } from "@/lib/ferries";
 type TickerItem = {
   icon: React.ReactNode;
   label: string;
-  href?: string;
-  highlight?: boolean;
 };
-
-function highlightIcon(kind: HomeHighlight["kind"]) {
-  switch (kind) {
-    case "coupure_edt":
-      return <Zap size={14} className="text-soleil-300" />;
-    case "coupure_eau":
-      return <Droplets size={14} className="text-lagon-300" />;
-    case "paquebot":
-      return <Anchor size={14} className="text-tipanier-300" />;
-  }
-}
-
-function highlightTickerItems(items: HomeHighlight[]): TickerItem[] {
-  return items.map((h) => ({
-    icon: highlightIcon(h.kind),
-    label: h.label,
-    href: h.href,
-    highlight: true,
-  }));
-}
 
 function shortCompany(name: string): string {
   if (/aremiti/i.test(name)) return "Aremiti";
@@ -63,7 +36,7 @@ function ferryTickerItems(
 }
 
 /**
- * Bandeau défilant : ferries en premier, défilement rapide (~18 s / cycle).
+ * Bandeau défilant : ferries, météo, marées — sans coupures ni paquebots.
  */
 export function Ticker() {
   const [items, setItems] = useState<TickerItem[]>([
@@ -78,23 +51,13 @@ export function Ticker() {
 
     async function load() {
       try {
-        const [weatherRes, sunRes, ferryRes, highlightsRes] = await Promise.all([
+        const [weatherRes, sunRes, ferryRes] = await Promise.all([
           fetch("/api/weather", { cache: "no-store" }).catch(() => null),
           fetch("/api/sun", { cache: "no-store" }).catch(() => null),
           fetch("/api/ferries", { cache: "no-store" }).catch(() => null),
-          fetch("/api/home-highlights", { cache: "no-store" }).catch(() => null),
         ]);
 
         const next: TickerItem[] = [];
-
-        if (highlightsRes?.ok) {
-          const { highlights } = (await highlightsRes.json()) as {
-            highlights: HomeHighlight[];
-          };
-          if (highlights?.length) {
-            next.push(...highlightTickerItems(highlights));
-          }
-        }
 
         next.push({
           icon: <Sun size={14} className="text-soleil-300" />,
@@ -157,36 +120,18 @@ export function Ticker() {
       className="relative z-30 overflow-hidden bg-gradient-to-r from-ocean-900 via-ocean-800 to-ocean-900 text-ocean-50 border-b border-ocean-700"
     >
       <div className="flex animate-marquee whitespace-nowrap py-2 will-change-transform">
-        {doubled.map((item, i) => {
-          const inner = (
-            <>
-              {item.icon}
-              {item.label}
-            </>
-          );
-          return (
-            <span
-              key={i}
-              className={`inline-flex items-center gap-2 px-4 sm:px-5 text-xs sm:text-sm font-medium shrink-0 ${
-                item.highlight ? "text-soleil-100" : ""
-              }`}
-            >
-              {item.href ? (
-                <Link
-                  href={item.href}
-                  className="inline-flex items-center gap-2 hover:text-white hover:underline underline-offset-2"
-                >
-                  {inner}
-                </Link>
-              ) : (
-                inner
-              )}
-              <span className="text-lagon-400/60 ml-1" aria-hidden>
-                •
-              </span>
+        {doubled.map((item, i) => (
+          <span
+            key={i}
+            className="inline-flex items-center gap-2 px-4 sm:px-5 text-xs sm:text-sm font-medium shrink-0"
+          >
+            {item.icon}
+            {item.label}
+            <span className="text-lagon-400/60 ml-1" aria-hidden>
+              •
             </span>
-          );
-        })}
+          </span>
+        ))}
       </div>
       <div className="absolute inset-y-0 left-0 w-8 sm:w-12 bg-gradient-to-r from-ocean-900 to-transparent pointer-events-none" />
       <div className="absolute inset-y-0 right-0 w-8 sm:w-12 bg-gradient-to-l from-ocean-900 to-transparent pointer-events-none" />
