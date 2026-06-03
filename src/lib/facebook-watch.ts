@@ -257,17 +257,19 @@ async function fetchPagePosts(
       : await resolveGraphPageId(page, token);
 
   const fieldVariants = [GRAPH_POST_FIELDS_FULL, GRAPH_POST_FIELDS_MINIMAL];
-  const pageLimit = page.id === "moorea-news" ? 50 : 15;
-  const maxPages = page.id === "moorea-news" ? 5 : 1;
+  const pageLimit = page.id === "moorea-news" ? 30 : 15;
+  const maxPages = page.id === "moorea-news" ? 3 : 1;
   const edges: Array<"posts" | "published_posts"> =
     page.id === "moorea-news" ? ["posts", "published_posts"] : ["posts"];
+  const maxPagesPublished = page.id === "moorea-news" ? 1 : 0;
   let lastFailure: { status: number; body: string } | null = null;
   const byId = new Map<string, GraphPost>();
 
   for (const edge of edges) {
     for (const fields of fieldVariants) {
       let after: string | undefined;
-      for (let pageNum = 0; pageNum < maxPages; pageNum++) {
+      const pagesForEdge = edge === "published_posts" ? maxPagesPublished : maxPages;
+      for (let pageNum = 0; pageNum < pagesForEdge; pageNum++) {
         let pageOk = false;
         for (let attempt = 0; attempt < 3; attempt++) {
           const result = await fetchGraphPagePostsOnce(

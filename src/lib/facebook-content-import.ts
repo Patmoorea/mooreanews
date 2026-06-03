@@ -303,8 +303,11 @@ export async function importFacebookPostsAsContent(
   if (!importEnabled()) return result;
 
   const published = publishedByDefault();
+  const maxNewPerRun = config.importAllFeedPosts ? 25 : posts.length;
+  let newImported = 0;
 
   for (const raw of posts) {
+    if (config.importAllFeedPosts && newImported >= maxNewPerRun) break;
     const slug = slugForPost(config.pageKey, raw.id);
     if (config.importAllFeedPosts) {
       const supabase = getAdminSupabase();
@@ -343,6 +346,7 @@ export async function importFacebookPostsAsContent(
       if (r.ok) {
         result.articlesCreated += 1;
         result.createdArticles.push({ title: r.title, slug: r.slug });
+        newImported += 1;
       } else if (r.reason === "duplicate") {
         result.skipped += 1;
       } else {
