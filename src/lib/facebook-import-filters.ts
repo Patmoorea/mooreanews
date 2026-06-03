@@ -134,6 +134,10 @@ const FB_SOURCE_FOOTER_RE =
 const FB_UNAVAILABLE_RE =
   /contenu n['’]est pas disponible|content isn['’]t available|not available right now|page not found|ce lien est peut[- ]être cassé/i;
 
+/** Faux texte renvoyé par l’API Graph à la place du vrai post (le lien public reste valide). */
+const FB_API_BOILERPLATE_RE =
+  /ce probl[eè]me vient g[eé]n[eé]ralement du fait que le propri[eé]taire|partag[eé] qu['’]avec un petit groupe|modified who could see|changed who could see|this content isn['’]t available|n['’]est plus disponible|ce lien peut ne plus/i;
+
 const FB_GENERIC_TITLE_RE =
   /^[^—]+ — publication$/i;
 
@@ -144,6 +148,7 @@ export function isFacebookJunkText(text: string): boolean {
   if (/^https?:\/\//i.test(t)) return true;
   if (/facebook\.com\/(share|share\/p)/i.test(t)) return true;
   if (FB_UNAVAILABLE_RE.test(t)) return true;
+  if (FB_API_BOILERPLATE_RE.test(t)) return true;
   if (isFacebookPageBoilerplate(t)) return true;
   if (FB_GENERIC_TITLE_RE.test(t) && t.length < 80) return true;
   return false;
@@ -212,6 +217,23 @@ export function facebookPostHasPublishableContent(
   if (msg.length >= 40) return true;
   if (msg.length >= 20 && pic.length > 0) return true;
   if (msg.length >= 8 && pic.length > 0) return true;
+  return false;
+}
+
+/** Article importé avec texte d’erreur API Meta au lieu du vrai contenu. */
+export function isFacebookArticleNeedsRepair(row: {
+  title: string;
+  excerpt: string | null;
+  body: string;
+  cover_url?: string | null;
+}): boolean {
+  if (isFacebookJunkText(row.title)) return true;
+  if (isFacebookJunkText(row.excerpt ?? "")) return true;
+  const core = facebookArticleBodyWithoutFooter(row.body);
+  if (isFacebookJunkText(core.split("\n")[0] ?? "")) return true;
+  if (!row.cover_url?.trim() && isFacebookJunkText(core.slice(0, 200))) {
+    return true;
+  }
   return false;
 }
 

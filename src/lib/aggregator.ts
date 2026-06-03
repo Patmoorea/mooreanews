@@ -18,6 +18,7 @@ export type AggregationResult = {
   inserted: number;
   errors: string[];
   articlesCreated?: number;
+  articlesRepaired?: number;
   articlesSkipped?: number;
   eventsCreated?: number;
   announcementsCreated?: number;

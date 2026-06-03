@@ -13,7 +13,8 @@ export async function GET(req: Request) {
   }
   const start = Date.now();
   const result = await aggregateFacebookPagesGraph();
-  const articles = result.articlesCreated ?? 0;
+  const articles =
+    (result.articlesCreated ?? 0) + (result.articlesRepaired ?? 0);
   if (articles > 0) {
     revalidatePath("/actualites");
     revalidatePath("/", "layout");

@@ -18,6 +18,7 @@ import { ShareButtons } from "@/components/ShareButtons";
 import { getEventBySlug, getEvents, getUpcomingEvents } from "@/lib/content";
 import { formatDateFR } from "@/lib/utils";
 import { SITE } from "@/lib/constants";
+import { buildEventJsonLd } from "@/lib/event-jsonld";
 import { PosterImage, hasPoster } from "@/components/PosterImage";
 
 type Props = {
@@ -306,41 +307,7 @@ export default async function EventDetailPage({ params }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Event",
-            name: event.title,
-            description: event.description,
-            startDate: event.time
-              ? `${event.date}T${event.time}:00`
-              : event.date,
-            endDate: event.endDate ?? event.date,
-            eventStatus: "https://schema.org/EventScheduled",
-            eventAttendanceMode:
-              "https://schema.org/OfflineEventAttendanceMode",
-            location: {
-              "@type": "Place",
-              name: event.location,
-              address: {
-                "@type": "PostalAddress",
-                addressLocality: event.district ?? "Moorea",
-                addressRegion: "Polynésie française",
-                addressCountry: "PF",
-              },
-            },
-            organizer: event.organizer
-              ? { "@type": "Organization", name: event.organizer }
-              : undefined,
-            offers: event.price
-              ? {
-                  "@type": "Offer",
-                  price: event.price,
-                  priceCurrency: "XPF",
-                  availability: "https://schema.org/InStock",
-                }
-              : undefined,
-            url: shareUrl,
-          }),
+          __html: JSON.stringify(buildEventJsonLd(event, shareUrl)),
         }}
       />
     </article>

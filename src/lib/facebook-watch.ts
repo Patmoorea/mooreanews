@@ -484,9 +484,11 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
         );
         if (!freshness.ok) continue;
 
+        const firstLine = message.split("\n")[0]?.trim().slice(0, 200) ?? "";
         const title =
-          message.split("\n")[0]?.trim().slice(0, 200) ||
-          `${page.name} — publication`;
+          firstLine && !isFacebookJunkText(firstLine)
+            ? firstLine
+            : `${page.name} — publication`;
         const link = post.permalink_url ?? `${page.homepage}/posts/${post.id}`;
         rows.push({
           source_id: `facebook-page-${page.id}`,
@@ -518,6 +520,8 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
     );
     result.articlesCreated =
       (result.articlesCreated ?? 0) + imported.articlesCreated;
+    result.articlesRepaired =
+      (result.articlesRepaired ?? 0) + (imported.articlesRepaired ?? 0);
     result.eventsCreated =
       (result.eventsCreated ?? 0) + imported.eventsCreated;
     result.announcementsCreated =

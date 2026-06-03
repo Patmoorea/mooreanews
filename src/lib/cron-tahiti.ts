@@ -40,17 +40,14 @@ export function getTahitiClock(now = new Date()): TahitiClock {
   };
 }
 
-/** Digest matin : entre 5h et 10h Tahiti. */
+/** Digest matin : 7h Tahiti (1×/jour — veille GitHub ~17h UTC). */
 export function shouldSendMorningDigest(clock: TahitiClock): boolean {
-  return clock.hour >= 5 && clock.hour < 10;
+  return clock.hour === 7;
 }
 
-/**
- * Digest week-end : vendredi matin Tahiti (cron unique Hobby).
- * Équivalent pratique au jeudi 17h si un seul passage/jour à ~6h vendredi.
- */
+/** Digest week-end : vendredi 7h Tahiti uniquement. */
 export function shouldSendWeekendDigest(clock: TahitiClock): boolean {
-  return clock.weekday === 5 && clock.hour >= 5 && clock.hour < 12;
+  return clock.weekday === 5 && clock.hour === 7;
 }
 
 /** Push « Ce soir à Moorea » : jeu–dim entre 16h et 20h Tahiti (cron externe recommandé). */

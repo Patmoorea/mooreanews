@@ -172,12 +172,18 @@ export async function enrichFacebookPostForImport(
   const pageId = options.pageId ?? "350029589936";
   let current = normalizeGraphPostRaw(post as GraphPostRaw);
 
-  if (token && (!current.full_picture || !current.message)) {
+  const messageIsJunk = isFacebookJunkText(current.message?.trim() ?? "");
+  const needsGraph =
+    Boolean(token) &&
+    (!current.full_picture || !current.message || messageIsJunk);
+
+  if (needsGraph && token) {
     const detailed = await fetchGraphPostById(post.id, token);
     if (detailed) {
+      const detailedJunk = isFacebookJunkText(detailed.message?.trim() ?? "");
       current = {
         ...current,
-        message: detailed.message ?? current.message,
+        message: detailedJunk ? undefined : detailed.message,
         full_picture: detailed.full_picture ?? current.full_picture,
         permalink_url: detailed.permalink_url ?? current.permalink_url,
         created_time: detailed.created_time ?? current.created_time,
@@ -185,14 +191,23 @@ export async function enrichFacebookPostForImport(
     }
   }
 
+  if (isFacebookJunkText(current.message?.trim() ?? "")) {
+    current = { ...current, message: undefined };
+  }
+
+  const stillNeedsOg =
+    Boolean(options.importAll) ||
+    messageIsJunk ||
+    !current.full_picture ||
+    !current.message;
+
   return enrichFromOpenGraph(
     {
       ...current,
       permalink_url: current.permalink_url ?? permalinkForPost(current, pageId),
     },
     pageId,
-    Boolean(options.importAll) &&
-      (!current.full_picture || !current.message),
+    stillNeedsOg,
   );
 }
 

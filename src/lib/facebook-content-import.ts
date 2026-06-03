@@ -6,7 +6,9 @@ import type { FacebookPostForImport } from "@/lib/facebook-article-import";
 import type { FacebookPageImportConfig } from "@/lib/facebook-article-import";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import {
+  isFacebookArticleNeedsRepair,
   isFacebookJunkText,
+  publishedAtFromFacebookPost,
   shouldImportFacebookPost,
 } from "@/lib/facebook-import-filters";
 import {
@@ -44,6 +46,7 @@ export type FacebookContentImportResult = {
   createdArticles: { title: string; slug: string }[];
   createdAnnouncements: { title: string; id: string }[];
   createdAlerts: string[];
+  articlesRepaired?: number;
 };
 
 function importEnabled(): boolean {
@@ -77,6 +80,23 @@ async function enrichPost(
     pageId: config.graphPageId ?? "350029589936",
     importAll: true,
   });
+}
+
+function articleTitleFromPost(
+  message: string,
+  config: FacebookPageImportConfig,
+  hasImage: boolean,
+  publishedAt: string,
+): string {
+  const clean = message.trim();
+  if (clean && !isFacebookJunkText(clean)) {
+    const fromMsg = titleFromMessage(clean, "");
+    if (fromMsg && !isFacebookJunkText(fromMsg)) return fromMsg;
+  }
+  const timeLabel = tahitiTimeLabel(publishedAt);
+  return hasImage
+    ? `${config.pageName} — affiche · ${timeLabel}`
+    : `${config.pageName} — publication · ${timeLabel}`;
 }
 
 function tahitiTimeLabel(iso: string): string {
@@ -249,11 +269,7 @@ async function importAsArticle(
 
   const hasImage = Boolean(post.full_picture?.trim());
   const timeLabel = tahitiTimeLabel(publishedAt);
-  const title =
-    titleFromMessage(message, "") ||
-    (hasImage
-      ? `${config.pageName} — affiche · ${timeLabel}`
-      : `${config.pageName} — publication · ${timeLabel}`);
+  const title = articleTitleFromPost(message, config, hasImage, publishedAt);
 
   const cover = sanitizeCoverUrl(post.full_picture);
 
@@ -279,6 +295,43 @@ async function importAsArticle(
 
   if (error || !data) return { ok: false, reason: error?.message ?? "insert failed" };
   return { ok: true, title, slug: data.slug };
+}
+
+async function repairFacebookArticle(
+  articleId: string,
+  slug: string,
+  post: FacebookPostForImport,
+  config: FacebookPageImportConfig,
+  publishedAt: string,
+): Promise<{ ok: true; title: string; slug: string } | { ok: false; reason: string }> {
+  const supabase = getAdminSupabase();
+  if (!supabase) return { ok: false, reason: "Supabase absent" };
+
+  const permalink = permalinkForPost(
+    { id: post.id, permalink_url: post.permalink_url },
+    config.graphPageId ?? "350029589936",
+  );
+  const message = post.message?.trim() ?? "";
+  const hasImage = Boolean(post.full_picture?.trim());
+  const title = articleTitleFromPost(message, config, hasImage, publishedAt);
+  const timeLabel = tahitiTimeLabel(publishedAt);
+  const cover = sanitizeCoverUrl(post.full_picture);
+
+  const { error } = await supabase
+    .from("articles")
+    .update({
+      title: title.slice(0, 500),
+      excerpt:
+        message.slice(0, 280) ||
+        `Publication Facebook ${config.pageName} · ${timeLabel}`,
+      body: buildBody(message, permalink, config.pageName),
+      cover_url: cover,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", articleId);
+
+  if (error) return { ok: false, reason: error.message };
+  return { ok: true, title, slug };
 }
 
 /** Route chaque post vers Événement / Annonce / Actualité. */
@@ -309,16 +362,50 @@ export async function importFacebookPostsAsContent(
   for (const raw of posts) {
     if (config.importAllFeedPosts && newImported >= maxNewPerRun) break;
     const slug = slugForPost(config.pageKey, raw.id);
+    const filterOpts = config.importAllFeedPosts
+      ? { importAllFeedPosts: true as const }
+      : undefined;
+    const publishedAt =
+      publishedAtFromFacebookPost(raw.created_time) ?? new Date().toISOString();
+
     if (config.importAllFeedPosts) {
       const supabase = getAdminSupabase();
       if (supabase) {
         const { data: existing } = await supabase
           .from("articles")
-          .select("id")
+          .select("id, slug, title, excerpt, body, cover_url")
           .eq("slug", slug)
           .maybeSingle();
-        if (existing) {
+        if (existing && !isFacebookArticleNeedsRepair(existing)) {
           result.skipped += 1;
+          continue;
+        }
+        if (existing && isFacebookArticleNeedsRepair(existing)) {
+          const post = await enrichPost(raw, config);
+          const freshness = shouldImportFacebookPost(
+            post.message?.trim() ?? "",
+            post.created_time,
+            post,
+            filterOpts,
+          );
+          if (!freshness.ok) {
+            result.skippedStale += 1;
+            continue;
+          }
+          const r = await repairFacebookArticle(
+            existing.id,
+            slug,
+            post,
+            config,
+            freshness.publishedAt,
+          );
+          if (r.ok) {
+            result.articlesRepaired = (result.articlesRepaired ?? 0) + 1;
+            result.createdArticles.push({ title: r.title, slug: r.slug });
+            newImported += 1;
+          } else {
+            result.errors.push(`repair ${post.id}: ${r.reason}`);
+          }
           continue;
         }
       }
@@ -326,9 +413,6 @@ export async function importFacebookPostsAsContent(
 
     const post = await enrichPost(raw, config);
     const message = post.message?.trim() ?? "";
-    const filterOpts = config.importAllFeedPosts
-      ? { importAllFeedPosts: true as const }
-      : undefined;
     const freshness = shouldImportFacebookPost(
       message,
       post.created_time,
@@ -339,10 +423,9 @@ export async function importFacebookPostsAsContent(
       result.skippedStale += 1;
       continue;
     }
-    const publishedAt = freshness.publishedAt;
 
     if (config.importAllFeedPosts) {
-      const r = await importAsArticle(post, config, published, publishedAt);
+      const r = await importAsArticle(post, config, published, freshness.publishedAt);
       if (r.ok) {
         result.articlesCreated += 1;
         result.createdArticles.push({ title: r.title, slug: r.slug });
