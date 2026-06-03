@@ -9,7 +9,6 @@ import {
   getLatestMooreaComparison,
   getMaritimeTrafficData,
   getDisplayYears,
-  getTrafficYears,
 } from "@/lib/maritime-traffic";
 
 export const metadata = {

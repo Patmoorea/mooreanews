@@ -8,7 +8,6 @@ import {
   getLatestMooreaComparison,
   getMaritimeTrafficData,
   getDisplayYears,
-  getTrafficYears,
   percentChange,
 } from "@/lib/maritime-traffic";
 
