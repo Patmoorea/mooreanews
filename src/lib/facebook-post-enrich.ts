@@ -96,6 +96,36 @@ export function permalinkForPost(
   return `https://www.facebook.com/${pageId}/posts/${numeric}`;
 }
 
+function isWeakOgText(text: string): boolean {
+  const t = text.trim();
+  if (!t || t.length < 12) return true;
+  if (/^facebook$/i.test(t)) return true;
+  if (/^mooreanews$/i.test(t)) return true;
+  return isFacebookJunkText(t);
+}
+
+/** Images via endpoint attachments (si full_picture absent). */
+async function fetchGraphAttachmentImage(
+  postId: string,
+  token: string,
+): Promise<string | null> {
+  const apiUrl = new URL(
+    `https://graph.facebook.com/v21.0/${postId}/attachments`,
+  );
+  apiUrl.searchParams.set(
+    "fields",
+    "media{image{src}},subattachments{data{media{image{src}}}}",
+  );
+  apiUrl.searchParams.set("access_token", token);
+
+  const res = await fetch(apiUrl.toString(), { cache: "no-store" });
+  if (!res.ok) return null;
+  const json = (await res.json()) as {
+    data?: GraphAttachment[];
+  };
+  return bestImageFromAttachments(json.data) || null;
+}
+
 /** Détail complet d’un post via Graph API (image + texte manquants sur /posts). */
 export async function fetchGraphPostById(
   postId: string,
@@ -109,7 +139,12 @@ export async function fetchGraphPostById(
   if (!res.ok) return null;
   const json = (await res.json()) as GraphPostRaw;
   if (!json?.id) return null;
-  return normalizeGraphPostRaw(json);
+  let post = normalizeGraphPostRaw(json);
+  if (!post.full_picture) {
+    const attImg = await fetchGraphAttachmentImage(postId, token);
+    if (attImg) post = { ...post, full_picture: attImg };
+  }
+  return post;
 }
 
 async function enrichFromOpenGraph(
@@ -138,7 +173,7 @@ async function enrichFromOpenGraph(
       );
       if (
         ogText &&
-        !isFacebookJunkText(ogText) &&
+        !isWeakOgText(ogText) &&
         (ogText.length > message.length || !message || isFacebookJunkText(message))
       ) {
         message = ogText;
@@ -175,7 +210,10 @@ export async function enrichFacebookPostForImport(
   const messageIsJunk = isFacebookJunkText(current.message?.trim() ?? "");
   const needsGraph =
     Boolean(token) &&
-    (!current.full_picture || !current.message || messageIsJunk);
+    (Boolean(options.importAll) ||
+      !current.full_picture ||
+      !current.message ||
+      messageIsJunk);
 
   if (needsGraph && token) {
     const detailed = await fetchGraphPostById(post.id, token);

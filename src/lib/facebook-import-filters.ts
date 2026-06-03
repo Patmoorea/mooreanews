@@ -151,6 +151,8 @@ export function isFacebookJunkText(text: string): boolean {
   if (FB_API_BOILERPLATE_RE.test(t)) return true;
   if (isFacebookPageBoilerplate(t)) return true;
   if (FB_GENERIC_TITLE_RE.test(t) && t.length < 80) return true;
+  if (/^facebook$/i.test(t)) return true;
+  if (/^mooreanews$/i.test(t) && t.length < 20) return true;
   return false;
 }
 
@@ -228,6 +230,7 @@ export function isFacebookArticleNeedsRepair(row: {
   cover_url?: string | null;
 }): boolean {
   if (isFacebookJunkText(row.title)) return true;
+  if (/^facebook$/i.test(row.title.trim())) return true;
   if (isFacebookJunkText(row.excerpt ?? "")) return true;
   const core = facebookArticleBodyWithoutFooter(row.body);
   if (isFacebookJunkText(core.split("\n")[0] ?? "")) return true;
