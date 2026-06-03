@@ -8,6 +8,7 @@ import {
   formatTrafficNumber,
   getLatestMooreaComparison,
   getMaritimeTrafficData,
+  getDisplayYears,
   getTrafficYears,
 } from "@/lib/maritime-traffic";
 
@@ -42,7 +43,7 @@ function ChangeBadge({
 
 export default async function TraficFerryPage() {
   const data = getMaritimeTrafficData();
-  const years = getTrafficYears().slice(0, 2);
+  const years = getDisplayYears(2);
   const { current, previous } = getLatestMooreaComparison();
   const freshness = await checkDpamStatsFreshness().catch(() => null);
 
@@ -285,7 +286,7 @@ export default async function TraficFerryPage() {
                       vals[0] != null &&
                       vals[1] != null ? (
                         <td className="py-3 px-2 text-right">
-                          <ChangeBadge current={vals[0]} previous={vals[1]} />
+                          <ChangeBadge current={vals[1]} previous={vals[0]} />
                         </td>
                       ) : null}
                     </tr>

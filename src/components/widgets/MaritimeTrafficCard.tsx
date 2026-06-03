@@ -7,6 +7,7 @@ import {
   formatTrafficNumber,
   getLatestMooreaComparison,
   getMaritimeTrafficData,
+  getDisplayYears,
   getTrafficYears,
   percentChange,
 } from "@/lib/maritime-traffic";
@@ -66,7 +67,7 @@ export function MaritimeTrafficCard() {
 
       <p className="mt-3 text-xs text-ocean-500">
         Source {data.sources.dpam.label} ·{" "}
-        {getTrafficYears().slice(0, 2).join(" & ")}
+        {getDisplayYears(2).join(" · ")}
       </p>
     </div>
   );

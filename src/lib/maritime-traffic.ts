@@ -74,12 +74,19 @@ export function getMaritimeTrafficData(): MaritimeTrafficData {
   return DATA;
 }
 
-/** Années disponibles (tri décroissant). */
+/** Années disponibles (tri décroissant — dernière année en premier). */
 export function getTrafficYears(): number[] {
   return Object.keys(DATA.mooreaLine.years)
     .map(Number)
     .filter(Number.isFinite)
     .sort((a, b) => b - a);
+}
+
+/** Années pour affichage tableaux : ancien → récent (ex. 2024, 2025). */
+export function getDisplayYears(limit = 2): number[] {
+  return getTrafficYears()
+    .slice(0, limit)
+    .sort((a, b) => a - b);
 }
 
 /** Deux dernières années avec données Moorea. */
