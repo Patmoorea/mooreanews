@@ -172,7 +172,7 @@ export async function enrichFacebookPostForImport(
   const pageId = options.pageId ?? "350029589936";
   let current = normalizeGraphPostRaw(post as GraphPostRaw);
 
-  if (token) {
+  if (token && (!current.full_picture || !current.message)) {
     const detailed = await fetchGraphPostById(post.id, token);
     if (detailed) {
       current = {
@@ -191,7 +191,8 @@ export async function enrichFacebookPostForImport(
       permalink_url: current.permalink_url ?? permalinkForPost(current, pageId),
     },
     pageId,
-    Boolean(options.importAll),
+    Boolean(options.importAll) &&
+      (!current.full_picture || !current.message),
   );
 }
 

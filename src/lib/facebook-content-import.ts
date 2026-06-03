@@ -305,6 +305,22 @@ export async function importFacebookPostsAsContent(
   const published = publishedByDefault();
 
   for (const raw of posts) {
+    const slug = slugForPost(config.pageKey, raw.id);
+    if (config.importAllFeedPosts) {
+      const supabase = getAdminSupabase();
+      if (supabase) {
+        const { data: existing } = await supabase
+          .from("articles")
+          .select("id")
+          .eq("slug", slug)
+          .maybeSingle();
+        if (existing) {
+          result.skipped += 1;
+          continue;
+        }
+      }
+    }
+
     const post = await enrichPost(raw, config);
     const message = post.message?.trim() ?? "";
     const filterOpts = config.importAllFeedPosts
