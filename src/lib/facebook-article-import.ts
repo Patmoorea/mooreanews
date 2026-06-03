@@ -27,6 +27,9 @@ export type FacebookPageImportConfig = {
   allowFerryAlerts?: boolean;
   /** MooreaNews : publier tout le fil (affiche seule, sans légende, etc.). */
   importAllFeedPosts?: boolean;
+  /** Jeton page Meta pour enrichissement post-by-id. */
+  pageAccessToken?: string;
+  graphPageId?: string;
 };
 
 /** @deprecated Utiliser importFacebookPostsAsContent */

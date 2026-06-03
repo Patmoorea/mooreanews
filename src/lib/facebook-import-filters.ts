@@ -70,10 +70,24 @@ export function shouldImportFacebookPost(
   createdTime?: string,
   post?: Pick<
     FacebookPostForImport,
-    "message" | "full_picture" | "permalink_url"
+    "id" | "message" | "full_picture" | "permalink_url" | "created_time"
   >,
   options?: FacebookImportFilterOptions,
 ): { ok: true; publishedAt: string } | { ok: false; reason: string } {
+  if (options?.importAllFeedPosts) {
+    const publishedAt = publishedAtFromFacebookPost(createdTime);
+    if (!publishedAt) {
+      return { ok: false, reason: "missing_created_time" };
+    }
+    if (!isRecentFacebookPost(createdTime)) {
+      return { ok: false, reason: "post_too_old" };
+    }
+    if (!post?.id?.trim()) {
+      return { ok: false, reason: "missing_post_id" };
+    }
+    return { ok: true, publishedAt };
+  }
+
   if (
     post &&
     !facebookPostHasPublishableContent({ message, ...post }, options)
@@ -181,17 +195,16 @@ export function isEmptyFacebookArticleShell(row: {
 export function facebookPostHasPublishableContent(
   post: Pick<
     FacebookPostForImport,
-    "message" | "full_picture" | "permalink_url"
+    "id" | "message" | "full_picture" | "permalink_url" | "created_time"
   >,
   options?: FacebookImportFilterOptions,
 ): boolean {
-  const pic = post.full_picture?.trim() ?? "";
-  const link = post.permalink_url?.trim() ?? "";
-  const msg = post.message?.trim() ?? "";
-
   if (options?.importAllFeedPosts) {
-    return pic.length > 0 || link.length > 0 || msg.length > 0;
+    return Boolean(post.id?.trim() && post.created_time?.trim());
   }
+
+  const pic = post.full_picture?.trim() ?? "";
+  const msg = post.message?.trim() ?? "";
 
   if (pic.length > 0) return true;
   if (!msg) return false;

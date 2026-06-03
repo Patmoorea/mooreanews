@@ -12,6 +12,11 @@ import {
   isFacebookJunkText,
   shouldImportFacebookPost,
 } from "@/lib/facebook-import-filters";
+import {
+  GRAPH_POST_DETAIL_FIELDS,
+  normalizeGraphPostRaw,
+  type GraphPostRaw,
+} from "@/lib/facebook-post-enrich";
 import { refreshFacebookUserTokenInProcess } from "@/lib/facebook-token";
 import { importFacebookOgAsArticles } from "@/lib/og-article-import";
 import {
@@ -28,47 +33,10 @@ function labelForFacebookUrl(url: string): string {
   );
 }
 
-type GraphPost = {
-  id: string;
-  message?: string;
-  permalink_url?: string;
-  created_time?: string;
-  full_picture?: string;
-  attachments?: {
-    data?: Array<{
-      description?: string;
-      title?: string;
-      media_type?: string;
-      media?: { image?: { src?: string } };
-    }>;
-  };
-};
+type GraphPost = GraphPostRaw;
 
 function normalizeGraphPost(raw: GraphPost): GraphPost {
-  let message = cleanImportedText(raw.message?.trim() ?? "");
-  let full_picture = raw.full_picture?.trim() ?? "";
-
-  for (const att of raw.attachments?.data ?? []) {
-    const attImage = att.media?.image?.src?.trim() ?? "";
-    if (attImage && (!full_picture || attImage.length > full_picture.length)) {
-      full_picture = attImage;
-    }
-    const extra = [att.title, att.description]
-      .map((s) => cleanImportedText(s?.trim() ?? ""))
-      .filter((s) => s.length > 0)
-      .join("\n");
-    if (extra && !message.includes(extra)) {
-      message = message ? `${message}\n\n${extra}` : extra;
-    }
-  }
-
-  return {
-    id: raw.id,
-    permalink_url: raw.permalink_url,
-    created_time: raw.created_time,
-    message: message || undefined,
-    full_picture: full_picture || undefined,
-  };
+  return normalizeGraphPostRaw(raw) as GraphPost;
 }
 
 type MeAccountsPage = {
@@ -215,8 +183,7 @@ async function resolveGraphPageId(
   return page.pageId;
 }
 
-const GRAPH_POST_FIELDS_FULL =
-  "id,message,permalink_url,created_time,full_picture,attachments{description,title,media_type,media{image{src}}}";
+const GRAPH_POST_FIELDS_FULL = GRAPH_POST_DETAIL_FIELDS;
 const GRAPH_POST_FIELDS_MINIMAL =
   "id,message,permalink_url,created_time,full_picture";
 
@@ -250,12 +217,13 @@ async function fetchGraphPagePostsOnce(
   fields: string,
   limit: number,
   after?: string,
+  edge: "posts" | "published_posts" = "posts",
 ): Promise<
   | { ok: true; posts: GraphPost[]; next?: string }
   | { ok: false; status: number; body: string }
 > {
   const apiUrl = new URL(
-    `https://graph.facebook.com/v21.0/${graphPageId}/posts`,
+    `https://graph.facebook.com/v21.0/${graphPageId}/${edge}`,
   );
   apiUrl.searchParams.set("fields", fields);
   apiUrl.searchParams.set("limit", String(limit));
@@ -285,46 +253,70 @@ async function fetchPagePosts(
   const graphPageId = /^\d+$/.test(page.pageId)
     ? page.pageId
     : page.id === "moorea-news"
-      ? "me"
+      ? "350029589936"
       : await resolveGraphPageId(page, token);
 
   const fieldVariants = [GRAPH_POST_FIELDS_FULL, GRAPH_POST_FIELDS_MINIMAL];
-  const pageLimit = page.id === "moorea-news" ? 25 : 15;
-  const maxPages = page.id === "moorea-news" ? 3 : 1;
+  const pageLimit = page.id === "moorea-news" ? 50 : 15;
+  const maxPages = page.id === "moorea-news" ? 5 : 1;
+  const edges: Array<"posts" | "published_posts"> =
+    page.id === "moorea-news" ? ["posts", "published_posts"] : ["posts"];
   let lastFailure: { status: number; body: string } | null = null;
+  const byId = new Map<string, GraphPost>();
 
-  for (const fields of fieldVariants) {
-    const collected: GraphPost[] = [];
-    let after: string | undefined;
-    for (let pageNum = 0; pageNum < maxPages; pageNum++) {
-      for (let attempt = 0; attempt < 3; attempt++) {
-        const result = await fetchGraphPagePostsOnce(
-          graphPageId,
-          token,
-          fields,
-          pageLimit,
-          after,
-        );
-        if (result.ok) {
-          collected.push(...result.posts);
-          after = result.next;
-          break;
-        }
-        lastFailure = { status: result.status, body: result.body };
-        if (!isTransientGraphError(result.status, result.body)) {
-          throw new Error(
-            `Graph API ${page.name} (${graphPageId}): HTTP ${result.status} ${result.body.slice(0, 120)}`,
+  for (const edge of edges) {
+    for (const fields of fieldVariants) {
+      let after: string | undefined;
+      for (let pageNum = 0; pageNum < maxPages; pageNum++) {
+        let pageOk = false;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          const result = await fetchGraphPagePostsOnce(
+            graphPageId,
+            token,
+            fields,
+            pageLimit,
+            after,
+            edge,
           );
+          if (result.ok) {
+            for (const p of result.posts) {
+              const norm = normalizeGraphPost(p);
+              const prev = byId.get(norm.id);
+              if (
+                !prev ||
+                (norm.full_picture && !prev.full_picture) ||
+                ((norm.message?.length ?? 0) > (prev.message?.length ?? 0))
+              ) {
+                byId.set(norm.id, norm);
+              }
+            }
+            after = result.next;
+            pageOk = true;
+            break;
+          }
+          lastFailure = { status: result.status, body: result.body };
+          if (!isTransientGraphError(result.status, result.body)) {
+            if (edge === "published_posts") break;
+            throw new Error(
+              `Graph API ${page.name} (${graphPageId}/${edge}): HTTP ${result.status} ${result.body.slice(0, 120)}`,
+            );
+          }
+          if (attempt < 2) {
+            await sleep(1500 * (attempt + 1));
+          }
         }
-        if (attempt < 2) {
-          await sleep(1500 * (attempt + 1));
-        }
+        if (!pageOk || !after) break;
       }
-      if (!after) break;
+      if (byId.size > 0 && fields === GRAPH_POST_FIELDS_FULL) break;
     }
-    if (collected.length > 0) {
-      return collected.map(normalizeGraphPost);
-    }
+  }
+
+  if (byId.size > 0) {
+    return [...byId.values()].sort((a, b) => {
+      const ta = Date.parse(a.created_time ?? "") || 0;
+      const tb = Date.parse(b.created_time ?? "") || 0;
+      return tb - ta;
+    });
   }
 
   throw new Error(
@@ -474,6 +466,9 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
               page.id === "moorea-news" ? "moorea-news-fb" : "commune-moorea",
             allowFerryAlerts: true,
             importAllFeedPosts: page.id === "moorea-news",
+            pageAccessToken: tokenForPage,
+            graphPageId:
+              page.id === "moorea-news" ? "350029589936" : page.pageId,
           },
         });
       }

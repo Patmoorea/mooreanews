@@ -6,11 +6,14 @@ import type { FacebookPostForImport } from "@/lib/facebook-article-import";
 import type { FacebookPageImportConfig } from "@/lib/facebook-article-import";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import {
-  facebookPostHasPublishableContent,
   isFacebookJunkText,
   shouldImportFacebookPost,
 } from "@/lib/facebook-import-filters";
-import { fetchOpenGraph } from "@/lib/open-graph";
+import {
+  enrichFacebookPostForImport,
+  permalinkForPost,
+  sanitizeCoverUrl,
+} from "@/lib/facebook-post-enrich";
 import { cleanImportedText } from "@/lib/html-entities";
 import {
   announcementCategoryFromMessage,
@@ -56,42 +59,34 @@ function publishedByDefault(): boolean {
   return process.env.FACEBOOK_ARTICLES_PUBLISHED === "true";
 }
 
-async function enrichPostFromOpenGraph(
+async function enrichPost(
   post: FacebookPostForImport,
+  config: FacebookPageImportConfig,
 ): Promise<FacebookPostForImport> {
-  let message = cleanImportedText(post.message?.trim() ?? "");
-  let full_picture = post.full_picture?.trim() ?? "";
-  const url = post.permalink_url?.trim();
-
-  if (url) {
-    try {
-      const og = await fetchOpenGraph(url);
-      if (og) {
-        const ogText = cleanImportedText(
-          og.description?.trim() || og.title?.trim() || "",
-        );
-        if (
-          ogText &&
-          !isFacebookJunkText(ogText) &&
-          (ogText.length > message.length || !message)
-        ) {
-          message = ogText;
-        }
-        const ogImage = og.imageUrl?.trim();
-        if (ogImage?.startsWith("http")) {
-          full_picture = ogImage;
-        }
-      }
-    } catch {
-      // silencieux
-    }
-  }
-
-  return {
+  const cleaned = {
     ...post,
-    message: message || undefined,
-    full_picture: full_picture || undefined,
+    message: post.message ? cleanImportedText(post.message) : post.message,
   };
+  if (!config.importAllFeedPosts) {
+    return enrichFacebookPostForImport(cleaned, config.pageAccessToken, {
+      pageId: config.graphPageId,
+      importAll: false,
+    });
+  }
+  return enrichFacebookPostForImport(cleaned, config.pageAccessToken, {
+    pageId: config.graphPageId ?? "350029589936",
+    importAll: true,
+  });
+}
+
+function tahitiTimeLabel(iso: string): string {
+  return new Date(iso).toLocaleString("fr-FR", {
+    timeZone: "Pacific/Tahiti",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function slugForPost(pageKey: string, postId: string): string {
@@ -237,9 +232,10 @@ async function importAsArticle(
   const supabase = getAdminSupabase();
   if (!supabase) return { ok: false, reason: "Supabase absent" };
 
-  const permalink =
-    post.permalink_url ??
-    `${config.homepage.replace(/\/$/, "")}/posts/${post.id}`;
+  const permalink = permalinkForPost(
+    { id: post.id, permalink_url: post.permalink_url },
+    config.graphPageId ?? "350029589936",
+  );
   const message = post.message?.trim() ?? "";
   const slug = slugForPost(config.pageKey, post.id);
 
@@ -252,31 +248,37 @@ async function importAsArticle(
   if (existing) return { ok: false, reason: "duplicate" };
 
   const hasImage = Boolean(post.full_picture?.trim());
-  const day = publishedAt.slice(0, 10);
+  const timeLabel = tahitiTimeLabel(publishedAt);
   const title =
     titleFromMessage(message, "") ||
     (hasImage
-      ? `${config.pageName} — affiche du ${day}`
-      : `${config.pageName} — publication du ${day}`);
+      ? `${config.pageName} — affiche · ${timeLabel}`
+      : `${config.pageName} — publication · ${timeLabel}`);
 
-  const { error } = await supabase.from("articles").insert({
-    slug,
-    title,
-    excerpt:
-      message.slice(0, 280) ||
-      `Publication repérée sur la page Facebook ${config.pageName}.`,
-    body: buildBody(message, permalink, config.pageName),
-    category: "actualites",
-    tags: ["facebook-import", config.tag],
-    cover_url: post.full_picture?.trim() || null,
-    author: config.authorLabel,
-    featured: false,
-    published,
-    published_at: publishedAt,
-  });
+  const cover = sanitizeCoverUrl(post.full_picture);
 
-  if (error) return { ok: false, reason: error.message };
-  return { ok: true, title, slug };
+  const { data, error } = await supabase
+    .from("articles")
+    .insert({
+      slug,
+      title: title.slice(0, 500),
+      excerpt:
+        message.slice(0, 280) ||
+        `Publication Facebook ${config.pageName} · ${timeLabel}`,
+      body: buildBody(message, permalink, config.pageName),
+      category: "actualites",
+      tags: ["facebook-import", config.tag],
+      cover_url: cover,
+      author: config.authorLabel,
+      featured: false,
+      published,
+      published_at: publishedAt,
+    })
+    .select("slug")
+    .single();
+
+  if (error || !data) return { ok: false, reason: error?.message ?? "insert failed" };
+  return { ok: true, title, slug: data.slug };
 }
 
 /** Route chaque post vers Événement / Annonce / Actualité. */
@@ -303,10 +305,7 @@ export async function importFacebookPostsAsContent(
   const published = publishedByDefault();
 
   for (const raw of posts) {
-    const post = await enrichPostFromOpenGraph({
-      ...raw,
-      message: raw.message ? cleanImportedText(raw.message) : raw.message,
-    });
+    const post = await enrichPost(raw, config);
     const message = post.message?.trim() ?? "";
     const filterOpts = config.importAllFeedPosts
       ? { importAllFeedPosts: true as const }
@@ -322,6 +321,20 @@ export async function importFacebookPostsAsContent(
       continue;
     }
     const publishedAt = freshness.publishedAt;
+
+    if (config.importAllFeedPosts) {
+      const r = await importAsArticle(post, config, published, publishedAt);
+      if (r.ok) {
+        result.articlesCreated += 1;
+        result.createdArticles.push({ title: r.title, slug: r.slug });
+      } else if (r.reason === "duplicate") {
+        result.skipped += 1;
+      } else {
+        result.errors.push(`article ${post.id}: ${r.reason}`);
+      }
+      continue;
+    }
+
     const hasImage = Boolean(post.full_picture?.trim());
     const target = routeFacebookImport(message, {
       sourceLabel: config.pageName,
