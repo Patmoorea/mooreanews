@@ -23,9 +23,9 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
+      <AlertsStrip />
       <Hero />
       <PushAlertBanner />
-      <AlertsStrip />
       <MooreaDuJour />
       <HomeSectionNav />
       <LiveDashboard />

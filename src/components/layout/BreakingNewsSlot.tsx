@@ -18,7 +18,14 @@ export function BreakingNewsSlot() {
         const res = await fetch("/api/alerts", { cache: "no-store" });
         if (!res.ok) return;
         const json = (await res.json()) as ApiResponse;
-        const top = (json.alerts ?? []).find((a) => a.urgent && a.active) ?? null;
+        const active = (json.alerts ?? []).filter((a) => a.active);
+        const top =
+          active.find((a) => a.urgent) ??
+          active.find(
+            (a) => a.type === "coupure_edt" || a.type === "coupure_eau",
+          ) ??
+          active.find((a) => a.type === "meteo" || a.type === "ferry") ??
+          null;
         if (!cancelled) setUrgent(top);
       } catch {
         // ignore
@@ -34,16 +41,30 @@ export function BreakingNewsSlot() {
 
   if (dismissed || !urgent) return null;
 
+  const isOutage =
+    urgent.type === "coupure_edt" || urgent.type === "coupure_eau";
+  const badge = isOutage
+    ? "⚡ Coupure — important"
+    : urgent.urgent
+      ? "Breaking news"
+      : "Info importante";
+
   return (
-    <div className="relative bg-gradient-to-r from-tiare-600 via-couchant to-soleil-500 text-white">
-      <div className="mx-auto max-w-7xl px-4 py-2.5 pr-12">
+    <div
+      className={`relative text-white ${
+        isOutage
+          ? "bg-gradient-to-r from-red-700 via-orange-600 to-red-700"
+          : "bg-gradient-to-r from-tiare-600 via-couchant to-soleil-500"
+      }`}
+    >
+      <div className="mx-auto max-w-7xl px-4 py-3 pr-12">
         <Link
-          href="/alertes"
-          className="flex items-center justify-center gap-2 text-sm font-semibold hover:opacity-95"
+          href={isOutage ? "/coupures" : "/alertes"}
+          className="flex items-center justify-center gap-2 text-sm sm:text-base font-semibold hover:opacity-95"
         >
-          <Siren size={18} />
-          <span className="uppercase tracking-widest text-[11px] bg-white/20 px-2 py-0.5 rounded-full">
-            Breaking news
+          <Siren size={18} className={isOutage ? "animate-pulse" : ""} />
+          <span className="uppercase tracking-widest text-[11px] bg-white/20 px-2 py-0.5 rounded-full shrink-0">
+            {badge}
           </span>
           <span className="truncate max-w-[72ch]">{urgent.title}</span>
         </Link>

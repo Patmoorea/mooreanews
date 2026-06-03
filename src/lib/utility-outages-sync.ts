@@ -56,6 +56,14 @@ async function listSyncedAlerts(): Promise<AlertRow[]> {
 
 function alertPayload(outage: UtilityOutage, now: string) {
   const fp = outageSyncFingerprint(outage);
+  const today = new Date().toLocaleDateString("en-CA", {
+    timeZone: "Pacific/Tahiti",
+  });
+  const outageDay = new Date(outage.startsAt).toLocaleDateString("en-CA", {
+    timeZone: "Pacific/Tahiti",
+  });
+  const isToday = today === outageDay;
+
   return {
     type: outage.kind,
     severity: "warning" as const,
@@ -66,7 +74,7 @@ function alertPayload(outage: UtilityOutage, now: string) {
     starts_at: null,
     ends_at: outage.endsAt,
     active: true,
-    urgent: false,
+    urgent: isToday,
     updated_at: now,
   };
 }

@@ -7,6 +7,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Ticker } from "@/components/widgets/Ticker";
 import { ServiceHighlightsTicker } from "@/components/widgets/ServiceHighlightsTicker";
+import { CriticalOutagesBanner } from "@/components/widgets/CriticalOutagesBanner";
 import { FerryStickyBar } from "@/components/widgets/FerryStickyBar";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
@@ -37,6 +38,7 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
       <InfoBannerSlot />
       <BreakingNewsSlot />
       <Header />
+      <CriticalOutagesBanner />
       <ServiceHighlightsTicker />
       <Ticker />
       <main className="flex-1 pb-16 md:pb-0">{children}</main>

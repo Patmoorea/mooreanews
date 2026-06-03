@@ -7,6 +7,7 @@ import {
   Siren,
   CloudSun,
   Ship,
+  Zap,
   ArrowRight,
   Plus,
   type LucideIcon,
@@ -51,6 +52,13 @@ const UTILITIES: {
     sub: "Temps réel",
     icon: Siren,
     accent: "from-couchant/40 to-tiare-600/25",
+  },
+  {
+    href: "/coupures",
+    label: "Coupures",
+    sub: "Électricité & eau",
+    icon: Zap,
+    accent: "from-orange-400/40 to-red-600/30",
   },
   {
     href: "/#en-direct",

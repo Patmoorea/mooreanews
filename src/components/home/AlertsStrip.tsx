@@ -6,8 +6,8 @@ import { syncMeteoVigilanceAlert } from "@/lib/meteo-vigilance-sync";
 import { Container } from "@/components/ui/Container";
 
 const TYPE_LABEL: Record<string, string> = {
-  coupure_eau: "🚰 Eau",
-  coupure_edt: "⚡ EDT",
+  coupure_eau: "🚰 Coupure d'eau",
+  coupure_edt: "⚡ Coupure électricité",
   route: "🚧 Route",
   houle: "🌊 Houle",
   ferry: "⛴ Ferry",
@@ -15,12 +15,23 @@ const TYPE_LABEL: Record<string, string> = {
   autre: "ℹ️ Info",
 };
 
+function alertSortPriority(type: string, urgent: boolean): number {
+  if (type === "coupure_edt" || type === "coupure_eau") return 0;
+  if (urgent) return 1;
+  if (type === "meteo" || type === "ferry" || type === "houle") return 2;
+  return 3;
+}
+
 export async function AlertsStrip() {
   await Promise.all([expirePastAlerts(), syncMeteoVigilanceAlert()]);
   const rows = (await dbListActiveAlerts()) ?? [];
-  const urgent = rows.filter((a) => a.urgent).slice(0, 2);
-  const rest = rows.filter((a) => !a.urgent).slice(0, 4 - urgent.length);
-  const items = [...urgent, ...rest].slice(0, 4);
+  const sorted = [...rows].sort(
+    (a, b) =>
+      alertSortPriority(a.type, a.urgent) -
+        alertSortPriority(b.type, b.urgent) ||
+      Number(b.urgent) - Number(a.urgent),
+  );
+  const items = sorted.slice(0, 4);
 
   if (items.length === 0) return null;
 
@@ -34,7 +45,7 @@ export async function AlertsStrip() {
               Alertes
             </span>
             <h2 className="mt-3 font-display text-2xl sm:text-3xl text-ocean-950">
-              Ce qui se passe maintenant
+              Infos importantes — coupures, météo, ferry
             </h2>
           </div>
           <Link
@@ -47,36 +58,63 @@ export async function AlertsStrip() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {items.map((a) => (
+          {items.map((a, index) => {
+            const isOutage =
+              a.type === "coupure_edt" || a.type === "coupure_eau";
+            const featured = isOutage && index === 0;
+            const href = isOutage ? "/coupures" : "/alertes";
+
+            return (
             <Link
               key={a.id}
-              href="/alertes"
-              className={`group block rounded-2xl border p-4 transition-all hover:-translate-y-0.5 ${
-                a.urgent
-                  ? "bg-gradient-to-br from-tiare-50 to-soleil-50 border-tiare-200 shadow-[var(--shadow-sunset)]"
-                  : "bg-white border-ocean-100 shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)]"
+              href={href}
+              className={`group block rounded-2xl border p-4 sm:p-5 transition-all hover:-translate-y-0.5 ${
+                featured
+                  ? "sm:col-span-2 bg-gradient-to-br from-red-50 via-orange-50 to-amber-50 border-orange-300 ring-2 ring-orange-400/50 shadow-lg shadow-orange-200/40"
+                  : isOutage
+                    ? "bg-gradient-to-br from-amber-50 to-orange-50 border-orange-200 shadow-[var(--shadow-sunset)]"
+                    : a.urgent
+                      ? "bg-gradient-to-br from-tiare-50 to-soleil-50 border-tiare-200 shadow-[var(--shadow-sunset)]"
+                      : "bg-white border-ocean-100 shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)]"
               }`}
             >
               <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-[10px] uppercase tracking-widest text-ocean-600 font-semibold">
+                <span
+                  className={`text-[10px] uppercase tracking-widest font-bold ${
+                    isOutage ? "text-orange-800" : "text-ocean-600"
+                  }`}
+                >
                   {TYPE_LABEL[a.type] ?? a.type}
                 </span>
-                {a.urgent ? (
+                {featured ? (
+                  <span className="text-[10px] uppercase tracking-widest bg-red-600 text-white px-2 py-0.5 rounded-full animate-pulse">
+                    Important
+                  </span>
+                ) : a.urgent ? (
                   <span className="text-[10px] uppercase tracking-widest bg-tiare-600 text-white px-2 py-0.5 rounded-full">
-                    Breaking
+                    Urgent
                   </span>
                 ) : null}
               </div>
-              <p className="font-semibold text-ocean-900 leading-snug line-clamp-3 group-hover:text-tiare-700 transition-colors">
+              <p
+                className={`font-semibold text-ocean-900 leading-snug group-hover:text-tiare-700 transition-colors ${
+                  featured ? "text-base sm:text-lg line-clamp-4" : "line-clamp-3"
+                }`}
+              >
                 {a.title}
               </p>
               {a.details ? (
-                <p className="mt-2 text-xs text-ocean-600 line-clamp-2">
-                  {a.details}
+                <p
+                  className={`mt-2 text-ocean-600 line-clamp-2 ${
+                    featured ? "text-sm" : "text-xs"
+                  }`}
+                >
+                  {a.details.replace(/<!--outage-sync:[^>]+-->/, "").trim()}
                 </p>
               ) : null}
             </Link>
-          ))}
+            );
+          })}
         </div>
 
         <div className="mt-8 flex justify-center sm:hidden">
