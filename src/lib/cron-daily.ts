@@ -27,6 +27,8 @@ import {
   sendWeekendDigestPush,
 } from "@/lib/push-notify";
 import { syncMeteoVigilanceAlert } from "@/lib/meteo-vigilance-sync";
+import { syncUtilityOutages } from "@/lib/utility-outages-sync";
+import { checkDpamStatsFreshness } from "@/lib/maritime-traffic";
 import { auditPublicContent } from "@/lib/site-content-audit";
 import { notifyVeilleReport, sendPublicMooreaBrief } from "@/lib/telegram-notify";
 import { sendWeekendDigest } from "@/lib/weekend-digest";
@@ -68,6 +70,25 @@ export async function runDailyCron(): Promise<DailyCronResult> {
       revalidatePath("/", "layout");
     }
   }
+
+  jobs.utilityOutages = await syncUtilityOutages();
+  const utilitySync = jobs.utilityOutages as {
+    created?: number;
+    updated?: number;
+    cleared?: number;
+  };
+  if (
+    (utilitySync.created ?? 0) > 0 ||
+    (utilitySync.updated ?? 0) > 0 ||
+    (utilitySync.cleared ?? 0) > 0
+  ) {
+    revalidatePath("/alertes");
+    revalidatePath("/coupures");
+    revalidatePath("/", "layout");
+  }
+
+  jobs.dpamStatsFreshness = await checkDpamStatsFreshness();
+  revalidatePath("/trafic-ferry");
 
   if (shouldSendMorningDigest(clock)) {
     jobs.morningDigest = await sendMorningDigest();

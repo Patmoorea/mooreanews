@@ -1,6 +1,9 @@
 import { Container } from "@/components/ui/Container";
 import { WeatherCard } from "@/components/widgets/WeatherCard";
 import { FerryCard } from "@/components/widgets/FerryCard";
+import { CruiseShipsCard } from "@/components/widgets/CruiseShipsCard";
+import { UtilityOutagesCard } from "@/components/widgets/UtilityOutagesCard";
+import { MaritimeTrafficCard } from "@/components/widgets/MaritimeTrafficCard";
 import { SunMoonCard } from "@/components/widgets/SunMoonCard";
 import { TidesCard } from "@/components/widgets/TidesCard";
 import { ForecastStrip } from "@/components/widgets/ForecastStrip";
@@ -38,6 +41,15 @@ export function LiveDashboard() {
           <TidesCard />
           <div className="sm:col-span-2 lg:col-span-1">
             <FerryCard />
+          </div>
+          <div className="sm:col-span-2 lg:col-span-1">
+            <CruiseShipsCard />
+          </div>
+          <div className="sm:col-span-2 lg:col-span-1">
+            <UtilityOutagesCard />
+          </div>
+          <div className="sm:col-span-2 lg:col-span-1">
+            <MaritimeTrafficCard />
           </div>
         </div>
 

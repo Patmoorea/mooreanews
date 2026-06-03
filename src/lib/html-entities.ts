@@ -11,6 +11,10 @@ export function decodeHtmlEntities(s: string): string {
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
     .replace(/&apos;/g, "'")
+    .replace(/&rsquo;/g, "'")
+    .replace(/&lsquo;/g, "'")
+    .replace(/&ndash;/g, "–")
+    .replace(/&mdash;/g, "—")
     .replace(/&nbsp;/g, " ");
 
   out = out.replace(/&#x([0-9a-fA-F]+);/g, (_, hex: string) => {

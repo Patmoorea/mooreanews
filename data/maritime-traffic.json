@@ -1,0 +1,93 @@
+{
+  "updatedAt": "2026-06-03",
+  "sources": {
+    "dpam": {
+      "label": "Direction polynésienne des affaires maritimes (DPAM)",
+      "page": "https://www.service-public.pf/dpam/statistiques-maritimes-interinsulaires/",
+      "pdfs": {
+        "2024": "https://www.service-public.pf/dpam/wp-content/uploads/sites/20/2025/08/Statistiques-2024.pdf",
+        "2025": "https://www.service-public.pf/dpam/wp-content/uploads/sites/20/2026/04/Statistiques-2025.pdf"
+      }
+    },
+    "ispfTourism": {
+      "label": "ISPF / Tahiti Tourisme",
+      "page": "https://tahititourisme.org/nos-ressources/statistiques-marches/chiffres-cles-etudes-et-statistiques/"
+    }
+  },
+  "mooreaLine": {
+    "label": "Ligne Tahiti (Papeete) ↔ Moorea (Vaiare)",
+    "note": "Passagers comptabilisés aller + retour (manifestes armateurs). Les deux catamarans Aremiti sont distingués dans le récapitulatif DPAM.",
+    "years": {
+      "2024": {
+        "totalPassengers": 1868177,
+        "mooreaMaiao": 1868174,
+        "maiaoOnly": 3,
+        "vessels": [
+          { "name": "Aremiti 5", "passengers": 378966, "outbound": 198682, "inbound": 180284 },
+          { "name": "Aremiti 6", "passengers": 494114, "outbound": 245957, "inbound": 248157 },
+          { "name": "Tauati Ferry", "passengers": 489988, "outbound": 240810, "inbound": 249178 },
+          { "name": "Terevau", "passengers": 125762, "outbound": 63828, "inbound": 61934 },
+          { "name": "Vaeara'i", "passengers": 379344, "outbound": 188150, "inbound": 191194 }
+        ]
+      },
+      "2025": {
+        "totalPassengers": 2023253,
+        "mooreaMaiao": 2023253,
+        "maiaoOnly": 3295,
+        "vessels": [
+          { "name": "Aremiti 5", "passengers": 587699, "outbound": 316053, "inbound": 271646 },
+          { "name": "Aremiti 6", "passengers": 399942, "outbound": 190526, "inbound": 209416 },
+          { "name": "Tauati Ferry", "passengers": 438419, "outbound": 217908, "inbound": 220511 },
+          { "name": "Terevau", "passengers": 176172, "outbound": 90159, "inbound": 86013 },
+          { "name": "Vaeara'i", "passengers": 421021, "outbound": 212787, "inbound": 208234 }
+        ]
+      }
+    }
+  },
+  "polynesiaMaritime": {
+    "label": "Transport maritime inter-insulaire — Polynésie française",
+    "note": "Total passagers tous archipels (hors croisières internationales comptées séparément).",
+    "years": {
+      "2024": {
+        "totalPassengers": 1937465,
+        "archipelagos": {
+          "ilesDuVent": 1868177,
+          "ilesSousLeVent": 64006,
+          "australes": 1190,
+          "marquises": 2971,
+          "tuamotuGambier": 946,
+          "croisiereTournee": 175
+        }
+      },
+      "2025": {
+        "totalPassengers": 2096342,
+        "archipelagos": {
+          "ilesDuVent": 2023253,
+          "ilesSousLeVent": 66504,
+          "australes": 1157,
+          "marquises": 3602,
+          "tuamotuGambier": 1778,
+          "croisiereTournee": 48
+        }
+      }
+    }
+  },
+  "tourism": {
+    "label": "Tourisme en Polynésie française",
+    "note": "Fréquentation touristique ISPF (hébergement terrestre + croisière). Visiteurs = touristes + transit et autres catégories.",
+    "years": {
+      "2024": {
+        "tourists": 263766,
+        "cruisePassengers": 52111,
+        "landTourists": 211655,
+        "visitors": 326632
+      },
+      "2025": {
+        "tourists": 281227,
+        "cruisePassengers": 53941,
+        "landTourists": 227286,
+        "visitors": 351289
+      }
+    }
+  }
+}

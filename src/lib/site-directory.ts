@@ -102,9 +102,24 @@ export const SITE_DIRECTORY: SiteDirectoryCategory[] = [
         description: "Contenus permanents",
       },
       {
+        href: "/trafic-ferry",
+        label: "Trafic ferry Tahiti–Moorea",
+        description: "Statistiques DPAM par navire",
+      },
+      {
         href: "/guides/ferry-tahiti-moorea",
         label: "Ferry Tahiti ↔ Moorea",
         description: "Compagnies et conseils",
+      },
+      {
+        href: "/coupures",
+        label: "Coupures EDT & eau",
+        description: "Travaux programmés Moorea",
+      },
+      {
+        href: "/paquebots",
+        label: "Paquebots & escales",
+        description: "Calendrier Port de Papeete",
       },
       {
         href: "/guides/48h-moorea",

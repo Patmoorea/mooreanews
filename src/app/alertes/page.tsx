@@ -6,6 +6,7 @@ import { dbListActiveAlerts } from "@/lib/supabase/queries";
 import { expirePastAlerts } from "@/lib/alert-schedule";
 import { expireStaleAnnouncements } from "@/lib/announcement-expiry";
 import { syncMeteoVigilanceAlert } from "@/lib/meteo-vigilance-sync";
+import { syncUtilityOutages } from "@/lib/utility-outages-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,7 @@ export default async function AlertesPage() {
   await Promise.all([
     expirePastAlerts(),
     syncMeteoVigilanceAlert(),
+    syncUtilityOutages(),
     expireStaleAnnouncements(),
   ]);
   const rows = (await dbListActiveAlerts()) ?? [];
