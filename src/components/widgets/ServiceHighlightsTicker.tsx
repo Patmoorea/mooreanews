@@ -66,7 +66,7 @@ export function ServiceHighlightsTicker() {
           <HighlightRow item={items[0]} />
         </div>
       ) : (
-        <MarqueeTrack speed={28} itemCount={items.length} className="sm:pl-24" trackClassName="py-2">
+        <MarqueeTrack speed={16} reverse itemCount={items.length} className="sm:pl-24" trackClassName="py-2">
           {items.map((item) => (
             <span
               key={item.id}

@@ -12,8 +12,10 @@ type MarqueeTrackProps = {
   children: ReactNode;
   /** Nombre d’éléments — défile si > 1 */
   itemCount?: number;
-  /** Vitesse (px/s) */
+  /** Vitesse (px/s) — plus bas = plus lent */
   speed?: number;
+  /** Sens inverse (droite → gauche visuellement inversé) */
+  reverse?: boolean;
   className?: string;
   trackClassName?: string;
 };
@@ -25,6 +27,7 @@ export function MarqueeTrack({
   children,
   itemCount = 2,
   speed = 30,
+  reverse = false,
   className = "",
   trackClassName = "",
 }: MarqueeTrackProps) {
@@ -74,7 +77,7 @@ export function MarqueeTrack({
 
   const trackStyle: CSSProperties = {
     ["--marquee-duration" as string]: `${durationSec}s`,
-    animation: `marquee-scroll ${durationSec}s linear infinite`,
+    animation: `marquee-scroll ${durationSec}s linear infinite${reverse ? " reverse" : ""}`,
   };
 
   return (
