@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Anchor } from "lucide-react";
+import { MarqueeTrack } from "@/components/widgets/MarqueeTrack";
 import type { HomeHighlight } from "@/lib/home-highlights";
 
 function HighlightRow({ item }: { item: HomeHighlight }) {
@@ -17,7 +18,7 @@ function HighlightRow({ item }: { item: HomeHighlight }) {
   );
 }
 
-/** Bandeau secondaire : paquebots croisière uniquement (coupures = CriticalOutagesBanner). */
+/** Bandeau secondaire : paquebots croisière uniquement. */
 export function ServiceHighlightsTicker() {
   const [items, setItems] = useState<HomeHighlight[]>([]);
 
@@ -65,10 +66,10 @@ export function ServiceHighlightsTicker() {
           <HighlightRow item={items[0]} />
         </div>
       ) : (
-        <div className="flex animate-marquee-alert whitespace-nowrap py-2 sm:pl-24 will-change-transform">
-          {[...items, ...items].map((item, i) => (
+        <MarqueeTrack speed={28} className="sm:pl-24" trackClassName="py-2">
+          {items.map((item) => (
             <span
-              key={`${item.id}-${i}`}
+              key={item.id}
               className="inline-flex items-center gap-2 px-4 sm:px-5 text-xs sm:text-sm font-medium shrink-0"
             >
               <HighlightRow item={item} />
@@ -77,7 +78,7 @@ export function ServiceHighlightsTicker() {
               </span>
             </span>
           ))}
-        </div>
+        </MarqueeTrack>
       )}
       {!single && (
         <>

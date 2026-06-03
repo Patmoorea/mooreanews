@@ -8,6 +8,7 @@ import {
   Moon,
   ThermometerSun,
 } from "lucide-react";
+import { MarqueeTrack } from "@/components/widgets/MarqueeTrack";
 import type { WeatherSummary } from "@/lib/weather";
 import type { SunMoonData } from "@/lib/sun";
 import type { Departure, NextDepartures } from "@/lib/ferries";
@@ -33,6 +34,18 @@ function ferryTickerItems(
     icon: <Ship size={14} className="text-lagon-300" />,
     label: `${label} : ${d.time} ${shortCompany(d.company)} (${formatMinutesUntil(d.minutesUntil)})`,
   }));
+}
+
+function TickerSegment({ item }: { item: TickerItem }) {
+  return (
+    <span className="inline-flex items-center gap-2 px-4 sm:px-5 text-xs sm:text-sm font-medium shrink-0">
+      {item.icon}
+      {item.label}
+      <span className="text-lagon-400/60 ml-1" aria-hidden>
+        •
+      </span>
+    </span>
+  );
 }
 
 /**
@@ -111,28 +124,17 @@ export function Ticker() {
     };
   }, []);
 
-  const doubled = [...items, ...items];
-
   return (
     <div
       role="region"
       aria-label="Informations en temps réel"
       className="relative z-30 overflow-hidden bg-gradient-to-r from-ocean-900 via-ocean-800 to-ocean-900 text-ocean-50 border-b border-ocean-700"
     >
-      <div className="flex animate-marquee whitespace-nowrap py-2 will-change-transform">
-        {doubled.map((item, i) => (
-          <span
-            key={i}
-            className="inline-flex items-center gap-2 px-4 sm:px-5 text-xs sm:text-sm font-medium shrink-0"
-          >
-            {item.icon}
-            {item.label}
-            <span className="text-lagon-400/60 ml-1" aria-hidden>
-              •
-            </span>
-          </span>
+      <MarqueeTrack speed={30} trackClassName="py-2">
+        {items.map((item, i) => (
+          <TickerSegment key={`${item.label}-${i}`} item={item} />
         ))}
-      </div>
+      </MarqueeTrack>
       <div className="absolute inset-y-0 left-0 w-8 sm:w-12 bg-gradient-to-r from-ocean-900 to-transparent pointer-events-none" />
       <div className="absolute inset-y-0 right-0 w-8 sm:w-12 bg-gradient-to-l from-ocean-900 to-transparent pointer-events-none" />
     </div>

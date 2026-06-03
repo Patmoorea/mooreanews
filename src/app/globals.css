@@ -238,10 +238,23 @@ h3,
 .animate-marquee:hover {
   animation-play-state: paused;
 }
-.animate-marquee-alert {
-  animation: marquee 28s linear infinite;
+
+/* Durée dynamique via --marquee-duration (MarqueeTrack) */
+@keyframes marquee-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
 }
-.animate-marquee-alert:hover {
+
+.marquee-track {
+  animation: marquee-scroll var(--marquee-duration, 48s) linear infinite;
+  will-change: transform;
+}
+
+.marquee-track:hover {
   animation-play-state: paused;
 }
 .animate-sway {
