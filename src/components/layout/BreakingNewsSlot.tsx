@@ -7,6 +7,10 @@ import type { AlertRow } from "@/lib/supabase/types";
 
 type ApiResponse = { ok: boolean; alerts: AlertRow[] };
 
+function isOutageType(type: string) {
+  return type === "coupure_edt" || type === "coupure_eau";
+}
+
 export function BreakingNewsSlot() {
   const [dismissed, setDismissed] = useState(false);
   const [urgent, setUrgent] = useState<AlertRow | null>(null);
@@ -20,11 +24,9 @@ export function BreakingNewsSlot() {
         const json = (await res.json()) as ApiResponse;
         const active = (json.alerts ?? []).filter((a) => a.active);
         const top =
-          active.find((a) => a.urgent) ??
-          active.find(
-            (a) => a.type === "coupure_edt" || a.type === "coupure_eau",
-          ) ??
-          active.find((a) => a.type === "meteo" || a.type === "ferry") ??
+          active.find((a) => a.urgent && !isOutageType(a.type)) ??
+          active.find((a) => a.type === "meteo") ??
+          active.find((a) => a.type === "ferry" || a.type === "houle") ??
           null;
         if (!cancelled) setUrgent(top);
       } catch {
@@ -41,8 +43,7 @@ export function BreakingNewsSlot() {
 
   if (dismissed || !urgent) return null;
 
-  const isOutage =
-    urgent.type === "coupure_edt" || urgent.type === "coupure_eau";
+  const isOutage = isOutageType(urgent.type);
   const badge = isOutage
     ? "⚡ Coupure — important"
     : urgent.urgent

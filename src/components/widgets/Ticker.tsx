@@ -130,7 +130,7 @@ export function Ticker() {
       aria-label="Informations en temps réel"
       className="relative z-30 overflow-hidden bg-gradient-to-r from-ocean-900 via-ocean-800 to-ocean-900 text-ocean-50 border-b border-ocean-700"
     >
-      <MarqueeTrack speed={30} trackClassName="py-2">
+      <MarqueeTrack speed={30} itemCount={items.length} trackClassName="py-2">
         {items.map((item, i) => (
           <TickerSegment key={`${item.label}-${i}`} item={item} />
         ))}

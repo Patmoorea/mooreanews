@@ -10,68 +10,72 @@ import {
 
 type MarqueeTrackProps = {
   children: ReactNode;
-  /** Vitesse de défilement (px/s) — plus bas = plus lent et lisible */
+  /** Nombre d’éléments — défile si > 1 */
+  itemCount?: number;
+  /** Vitesse (px/s) */
   speed?: number;
   className?: string;
   trackClassName?: string;
 };
 
 /**
- * Bandeau défilant : durée calculée sur la largeur réelle du contenu
- * pour laisser le temps de lire toutes les annonces avant la boucle.
+ * Bandeau défilant — durée proportionnelle à la largeur du contenu.
  */
 export function MarqueeTrack({
   children,
-  speed = 32,
+  itemCount = 2,
+  speed = 30,
   className = "",
   trackClassName = "",
 }: MarqueeTrackProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const setRef = useRef<HTMLDivElement>(null);
-  const [durationSec, setDurationSec] = useState<number | null>(null);
-  const [staticView, setStaticView] = useState(false);
+  const [durationSec, setDurationSec] = useState(
+    () => Math.max(itemCount * 10, 35),
+  );
+
+  const shouldScroll = itemCount > 1;
 
   useEffect(() => {
+    if (!shouldScroll) return;
+
     const setEl = setRef.current;
     const wrapEl = wrapRef.current;
     if (!setEl || !wrapEl) return;
 
     const measure = () => {
-      const contentW = setEl.offsetWidth;
-      const viewW = wrapEl.clientWidth;
+      const contentW = setEl.scrollWidth || setEl.offsetWidth;
       if (contentW <= 0) return;
-
-      if (contentW <= viewW + 8) {
-        setStaticView(true);
-        setDurationSec(null);
-        return;
-      }
-
-      setStaticView(false);
-      const sec = Math.max(contentW / speed, 20);
-      setDurationSec(sec);
+      setDurationSec(Math.max(contentW / speed, Math.max(itemCount * 8, 28)));
     };
 
     measure();
+    const t1 = window.setTimeout(measure, 100);
+    const t2 = window.setTimeout(measure, 500);
     const ro = new ResizeObserver(measure);
     ro.observe(setEl);
     ro.observe(wrapEl);
-    return () => ro.disconnect();
-  }, [children, speed]);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      ro.disconnect();
+    };
+  }, [children, speed, itemCount, shouldScroll]);
 
-  const trackStyle: CSSProperties | undefined = durationSec
-    ? ({ "--marquee-duration": `${durationSec}s` } as CSSProperties)
-    : undefined;
-
-  if (staticView) {
+  if (!shouldScroll) {
     return (
-      <div ref={wrapRef} className={`overflow-hidden ${className}`}>
+      <div className={`overflow-hidden ${className}`}>
         <div className={`flex justify-center whitespace-nowrap ${trackClassName}`}>
           {children}
         </div>
       </div>
     );
   }
+
+  const trackStyle: CSSProperties = {
+    ["--marquee-duration" as string]: `${durationSec}s`,
+    animation: `marquee-scroll ${durationSec}s linear infinite`,
+  };
 
   return (
     <div ref={wrapRef} className={`overflow-hidden ${className}`}>

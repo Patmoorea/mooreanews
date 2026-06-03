@@ -7,7 +7,6 @@ import {
   Siren,
   CloudSun,
   Ship,
-  Zap,
   ArrowRight,
   Plus,
   type LucideIcon,
@@ -16,6 +15,7 @@ import { Container } from "@/components/ui/Container";
 import { SITE } from "@/lib/constants";
 import { WaveDivider, TROPICAL_EMOJI } from "@/components/decor/TropicalDecor";
 import { HeroWeatherPill } from "@/components/home/HeroWeatherPill";
+import { OutageSticker } from "@/components/home/OutageSticker";
 import { cn } from "@/lib/utils";
 
 const UTILITIES: {
@@ -52,13 +52,6 @@ const UTILITIES: {
     sub: "Temps réel",
     icon: Siren,
     accent: "from-couchant/40 to-tiare-600/25",
-  },
-  {
-    href: "/coupures",
-    label: "Coupures",
-    sub: "Électricité & eau",
-    icon: Zap,
-    accent: "from-orange-400/40 to-red-600/30",
   },
   {
     href: "/#en-direct",
@@ -112,6 +105,7 @@ export function Hero() {
                 Ia ora na
               </span>
               <HeroWeatherPill />
+              <OutageSticker />
             </div>
 
             <h1 className="mt-5 font-display text-3xl sm:text-4xl lg:text-5xl text-center lg:text-left text-balance leading-[1.08] text-white drop-shadow-sm">
