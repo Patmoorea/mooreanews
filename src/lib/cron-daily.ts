@@ -32,6 +32,7 @@ import { checkDpamStatsFreshness } from "@/lib/maritime-traffic";
 import { auditPublicContent } from "@/lib/site-content-audit";
 import { notifyVeilleReport, sendPublicMooreaBrief } from "@/lib/telegram-notify";
 import { sendWeekendDigest } from "@/lib/weekend-digest";
+import { syncSefiMooreaOpportunities } from "@/lib/sefi-sync";
 
 export type DailyCronResult = {
   ok: boolean;
@@ -102,6 +103,18 @@ export async function runDailyCron(): Promise<DailyCronResult> {
     };
     jobs.weekendPush = { skipped: true, reason: "hors créneau vendredi matin Tahiti" };
   }
+
+  const sefiSync = await syncSefiMooreaOpportunities();
+  jobs.sefiEmploi = sefiSync;
+  if (
+    sefiSync.jobsUpserted > 0 ||
+    sefiSync.trainingsUpserted > 0 ||
+    sefiSync.jobsHidden > 0 ||
+    sefiSync.trainingsHidden > 0
+  ) {
+    revalidatePath("/emploi-formation");
+  }
+  errors.push(...sefiSync.errors);
 
   const results = await aggregateAll();
   jobs.aggregate = {

@@ -150,6 +150,11 @@ export const SITE_DIRECTORY: SiteDirectoryCategory[] = [
         description: "Mairie, hôpital, urgences",
       },
       {
+        href: "/emploi-formation",
+        label: "Emploi & formation",
+        description: "Offres SEFI Moorea, màj quotidienne",
+      },
+      {
         href: "/assistant",
         label: "Assistant Moorea",
         description: "Réponses FAQ locales",

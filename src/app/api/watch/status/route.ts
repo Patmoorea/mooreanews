@@ -45,6 +45,8 @@ export async function GET() {
       "facebook-watch",
       "facebook-pages",
       "web-watch",
+      "sefi-offres-moorea",
+      "sefi-formation-moorea",
     ],
     refreshSchedule: {
       veilleRssFacebook:

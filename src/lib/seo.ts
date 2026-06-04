@@ -115,6 +115,7 @@ export const STATIC_SITEMAP_PATHS: {
   { path: "/visiteurs/pack-hebergeur", priority: 0.5, freq: "monthly" },
   { path: "/vigilance-cyclone", priority: 0.85, freq: "daily" },
   { path: "/infos-pratiques", priority: 0.8, freq: "weekly" },
+  { path: "/emploi-formation", priority: 0.85, freq: "daily" },
   { path: "/assistant", priority: 0.7, freq: "monthly" },
   { path: "/signalements", priority: 0.65, freq: "monthly" },
   { path: "/qui-sait-quoi", priority: 0.65, freq: "weekly" },
