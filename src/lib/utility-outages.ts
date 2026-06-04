@@ -2,14 +2,21 @@
  * Coupures programmées EDT (électricité) et Polynésienne des Eaux — Moorea.
  */
 
-import { fetchOutagesFromArticles } from "@/lib/outage-article-import";
-import { fetchOutagesFromLiveVeille } from "@/lib/outage-external-import";
-import {
-  extraTeItoRauPostUrlsFromEnv,
-  fetchOutagesFromExtraFacebookUrls,
-  fetchOutagesFromFacebookFeeds,
-} from "@/lib/outage-facebook-feed";
 import { cleanImportedText } from "@/lib/html-entities";
+import type {
+  UtilityOutage,
+  UtilityOutagesResult,
+} from "@/lib/utility-outages-shared";
+
+export type {
+  UtilityOutageKind,
+  UtilityOutage,
+  UtilityOutagesResult,
+} from "@/lib/utility-outages-shared";
+export {
+  formatOutageWindow,
+  outageSyncFingerprint,
+} from "@/lib/utility-outages-shared";
 
 export const EDT_OUTAGES_PAGE =
   "https://www.edt.pf/particulier/mes-infos-coupures";
@@ -28,29 +35,6 @@ export const EDT_MOOREA_COMMUNES = new Set([
   "TEAVARO TEMAE",
   "MAIAO",
 ]);
-
-export type UtilityOutageKind = "coupure_edt" | "coupure_eau";
-
-export type UtilityOutage = {
-  id: string;
-  kind: UtilityOutageKind;
-  title: string;
-  details: string | null;
-  district: string | null;
-  commune: string | null;
-  area: string | null;
-  startsAt: string;
-  endsAt: string;
-  sourceUrl: string;
-  source: string;
-};
-
-export type UtilityOutagesResult = {
-  fetchedAt: string;
-  edt: UtilityOutage[];
-  water: UtilityOutage[];
-  all: UtilityOutage[];
-};
 
 const FETCH_HEADERS = {
   Accept: "text/html,text/csv,application/json",
@@ -421,6 +405,20 @@ export async function getUtilityOutages(): Promise<UtilityOutagesResult> {
   }
 
   const [
+    { fetchOutagesFromArticles },
+    { fetchOutagesFromLiveVeille },
+    {
+      extraTeItoRauPostUrlsFromEnv,
+      fetchOutagesFromExtraFacebookUrls,
+      fetchOutagesFromFacebookFeeds,
+    },
+  ] = await Promise.all([
+    import("@/lib/outage-article-import"),
+    import("@/lib/outage-external-import"),
+    import("@/lib/outage-facebook-feed"),
+  ]);
+
+  const [
     edtRaw,
     water,
     fromArticles,
@@ -488,26 +486,4 @@ export async function getUtilityOutages(): Promise<UtilityOutagesResult> {
 
   cache = { at: Date.now(), data };
   return data;
-}
-
-export function formatOutageWindow(startIso: string, endIso: string): string {
-  const opts: Intl.DateTimeFormatOptions = {
-    timeZone: "Pacific/Tahiti",
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  };
-  const start = new Date(startIso).toLocaleString("fr-FR", opts);
-  const end = new Date(endIso).toLocaleString("fr-FR", {
-    timeZone: "Pacific/Tahiti",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  return `${start} → ${end}`;
-}
-
-export function outageSyncFingerprint(outage: UtilityOutage): string {
-  return outage.id;
 }

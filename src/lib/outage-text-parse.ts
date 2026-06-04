@@ -4,7 +4,7 @@
 
 import { cleanImportedText } from "@/lib/html-entities";
 import { MOOREA_DISTRICTS } from "@/lib/constants";
-import type { UtilityOutage, UtilityOutageKind } from "@/lib/utility-outages";
+import type { UtilityOutage, UtilityOutageKind } from "@/lib/utility-outages-shared";
 
 const FRENCH_MONTHS: Record<string, number> = {
   janvier: 1,

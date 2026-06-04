@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Droplets, Zap } from "lucide-react";
-import type { UtilityOutagesResult } from "@/lib/utility-outages";
-import { formatOutageWindow } from "@/lib/utility-outages";
+import type { UtilityOutagesResult } from "@/lib/utility-outages-shared";
+import { formatOutageWindow } from "@/lib/utility-outages-shared";
 
 export function UtilityOutagesCard() {
   const [data, setData] = useState<UtilityOutagesResult | null>(null);
