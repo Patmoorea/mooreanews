@@ -12,12 +12,12 @@ import {
   SEFI_SITE_BASE,
   SEFI_TRAINING_SOURCE_ID,
   SEFI_TRAINING_SOURCE_NAME,
-} from "@/lib/sefi-sources";
-
-const FETCH_HEADERS = {
-  "User-Agent": "MooreaNews/1.0 (+https://www.mooreanews.com; veille-emploi-moorea)",
-  Accept: "text/html,application/xhtml+xml",
-};
+} from "@/lib/employment-sources";
+import {
+  fetchEmploymentHtml,
+  hideStaleEmploymentRows,
+  upsertEmploymentRows,
+} from "@/lib/employment-sync-shared";
 
 export type SefiSyncResult = {
   jobsFetched: number;
@@ -44,13 +44,6 @@ export type ParsedSefiTraining = {
   excerpt: string;
   publishedAt: string;
 };
-
-function decodeHtml(buffer: ArrayBuffer, contentType: string | null): string {
-  if (contentType?.toLowerCase().includes("utf-8")) {
-    return new TextDecoder("utf-8").decode(buffer);
-  }
-  return new TextDecoder("iso-8859-1").decode(buffer);
-}
 
 function parseFrDateToIso(dmy: string): string {
   const m = dmy.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
@@ -149,88 +142,7 @@ export function parseSefiTrainingLinksHtml(html: string): ParsedSefiTraining[] {
   return trainings;
 }
 
-async function fetchHtml(url: string): Promise<string> {
-  const res = await fetch(url, {
-    headers: FETCH_HEADERS,
-    next: { revalidate: 0 },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status} pour ${url}`);
-  return decodeHtml(
-    await res.arrayBuffer(),
-    res.headers.get("content-type"),
-  );
-}
-
-async function hideStale(
-  sourceId: string,
-  activeExternalIds: string[],
-): Promise<number> {
-  const supabase = getAdminSupabase();
-  if (!supabase) return 0;
-
-  const { data: existing } = await supabase
-    .from("external_articles")
-    .select("external_id")
-    .eq("source_id", sourceId)
-    .eq("hidden", false);
-
-  if (!existing?.length) return 0;
-
-  const active = new Set(activeExternalIds);
-  const toHide = existing
-    .map((r) => r.external_id)
-    .filter((id) => !active.has(id));
-
-  if (toHide.length === 0) return 0;
-
-  const { error } = await supabase
-    .from("external_articles")
-    .update({ hidden: true })
-    .eq("source_id", sourceId)
-    .in("external_id", toHide);
-
-  if (error) throw new Error(error.message);
-  return toHide.length;
-}
-
-async function upsertRows(
-  sourceId: string,
-  sourceName: string,
-  rows: {
-    external_id: string;
-    url: string;
-    title: string;
-    excerpt: string | null;
-    published_at: string;
-  }[],
-): Promise<number> {
-  const supabase = getAdminSupabase();
-  if (!supabase) return 0;
-  if (rows.length === 0) return 0;
-
-  const payload = rows.map((r) => ({
-    source_id: sourceId,
-    source_name: sourceName,
-    external_id: r.external_id,
-    url: r.url,
-    title: r.title.slice(0, 500),
-    excerpt: r.excerpt?.slice(0, 500) ?? null,
-    image_url: null,
-    author: sourceName,
-    published_at: r.published_at,
-    hidden: false,
-    fetched_at: new Date().toISOString(),
-  }));
-
-  const { error, count } = await supabase
-    .from("external_articles")
-    .upsert(payload, { onConflict: "source_id,external_id", count: "exact" });
-
-  if (error) throw new Error(error.message);
-  return count ?? payload.length;
-}
-
-/** Synchronisation quotidienne (cron). */
+/** Synchronisation SEFI (emploi privé + formations). */
 export async function syncSefiMooreaOpportunities(): Promise<SefiSyncResult> {
   const result: SefiSyncResult = {
     jobsFetched: 0,
@@ -249,10 +161,10 @@ export async function syncSefiMooreaOpportunities(): Promise<SefiSyncResult> {
   }
 
   try {
-    const jobsHtml = await fetchHtml(SEFI_MOOREA_JOBS_SEARCH_URL);
+    const jobsHtml = await fetchEmploymentHtml(SEFI_MOOREA_JOBS_SEARCH_URL);
     const jobs = parseSefiJobSearchHtml(jobsHtml);
     result.jobsFetched = jobs.length;
-    result.jobsUpserted = await upsertRows(
+    result.jobsUpserted = await upsertEmploymentRows(
       SEFI_JOBS_SOURCE_ID,
       SEFI_JOBS_SOURCE_NAME,
       jobs.map((j) => ({
@@ -264,7 +176,7 @@ export async function syncSefiMooreaOpportunities(): Promise<SefiSyncResult> {
       })),
     );
     if (jobs.length > 0) {
-      result.jobsHidden = await hideStale(
+      result.jobsHidden = await hideStaleEmploymentRows(
         SEFI_JOBS_SOURCE_ID,
         jobs.map((j) => j.externalId),
       );
@@ -278,7 +190,7 @@ export async function syncSefiMooreaOpportunities(): Promise<SefiSyncResult> {
     const allTrainings: ParsedSefiTraining[] = [];
     const seen = new Set<string>();
     for (const pageUrl of pages) {
-      const html = await fetchHtml(pageUrl);
+      const html = await fetchEmploymentHtml(pageUrl);
       for (const t of parseSefiTrainingLinksHtml(html)) {
         if (seen.has(t.externalId)) continue;
         seen.add(t.externalId);
@@ -286,7 +198,7 @@ export async function syncSefiMooreaOpportunities(): Promise<SefiSyncResult> {
       }
     }
     result.trainingsFetched = allTrainings.length;
-    result.trainingsUpserted = await upsertRows(
+    result.trainingsUpserted = await upsertEmploymentRows(
       SEFI_TRAINING_SOURCE_ID,
       SEFI_TRAINING_SOURCE_NAME,
       allTrainings.map((t) => ({
@@ -298,7 +210,7 @@ export async function syncSefiMooreaOpportunities(): Promise<SefiSyncResult> {
       })),
     );
     if (allTrainings.length > 0) {
-      result.trainingsHidden = await hideStale(
+      result.trainingsHidden = await hideStaleEmploymentRows(
         SEFI_TRAINING_SOURCE_ID,
         allTrainings.map((t) => t.externalId),
       );

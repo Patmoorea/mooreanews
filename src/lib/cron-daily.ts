@@ -32,7 +32,7 @@ import { checkDpamStatsFreshness } from "@/lib/maritime-traffic";
 import { auditPublicContent } from "@/lib/site-content-audit";
 import { notifyVeilleReport, sendPublicMooreaBrief } from "@/lib/telegram-notify";
 import { sendWeekendDigest } from "@/lib/weekend-digest";
-import { syncSefiMooreaOpportunities } from "@/lib/sefi-sync";
+import { syncEmploymentMoorea } from "@/lib/employment-sync";
 
 export type DailyCronResult = {
   ok: boolean;
@@ -104,17 +104,18 @@ export async function runDailyCron(): Promise<DailyCronResult> {
     jobs.weekendPush = { skipped: true, reason: "hors créneau vendredi matin Tahiti" };
   }
 
-  const sefiSync = await syncSefiMooreaOpportunities();
-  jobs.sefiEmploi = sefiSync;
-  if (
-    sefiSync.jobsUpserted > 0 ||
-    sefiSync.trainingsUpserted > 0 ||
-    sefiSync.jobsHidden > 0 ||
-    sefiSync.trainingsHidden > 0
-  ) {
+  const employmentSync = await syncEmploymentMoorea();
+  jobs.emploiFormation = employmentSync;
+  const empChanged =
+    employmentSync.sefi.jobsUpserted > 0 ||
+    employmentSync.sefi.trainingsUpserted > 0 ||
+    employmentSync.aravihi.upserted > 0 ||
+    employmentSync.cgf.upserted > 0 ||
+    employmentSync.commune.upserted > 0;
+  if (empChanged) {
     revalidatePath("/emploi-formation");
   }
-  errors.push(...sefiSync.errors);
+  errors.push(...employmentSync.errors);
 
   const results = await aggregateAll();
   jobs.aggregate = {

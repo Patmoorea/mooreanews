@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   Briefcase,
+  Building2,
   ExternalLink,
   GraduationCap,
   MapPin,
@@ -9,45 +10,60 @@ import {
   Mail,
   Clock,
   RefreshCw,
+  Landmark,
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/Badge";
 import {
-  getSefiLastSyncAt,
+  getAravihiMooreaJobs,
+  getCgfMooreaJobs,
+  getCommuneEmploymentPosts,
+  getEmploymentLastSyncAt,
   getSefiMooreaJobs,
   getSefiMooreaTrainings,
-} from "@/lib/sefi-listings";
+  type EmploymentListing,
+} from "@/lib/employment-listings";
 import {
+  ARAVIHI_MOOREA_SEARCH_URL,
+  CGF_OFFERS_URL,
+  COMMUNE_RECRUTE_URL,
+  EMPLOYMENT_EXTERNAL_LINKS,
   SEFI_MOOREA_ANTENNE,
   SEFI_MOOREA_JOBS_SEARCH_URL,
   SEFI_PUBLIC_JOB_SEARCH_URL,
-  SEFI_SITE_BASE,
-} from "@/lib/sefi-sources";
+} from "@/lib/employment-sources";
 import { formatDateShortFR, timeAgo } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Emploi & formation — Moorea",
   description:
-    "Offres d'emploi et formations SEFI à Moorea : veille quotidienne sur services.sefi.pf et actualités formation.",
+    "Offres SEFI, Aravihi, CGF, commune et formations à Moorea — mise à jour quotidienne.",
   alternates: { canonical: "/emploi-formation" },
 };
 
 export const dynamic = "force-dynamic";
 
 export default async function EmploiFormationPage() {
-  const [jobs, trainings, lastSync] = await Promise.all([
-    getSefiMooreaJobs(),
-    getSefiMooreaTrainings(),
-    getSefiLastSyncAt(),
-  ]);
+  const [sefiJobs, aravihiJobs, cgfJobs, communePosts, trainings, lastSync] =
+    await Promise.all([
+      getSefiMooreaJobs(),
+      getAravihiMooreaJobs(),
+      getCgfMooreaJobs(),
+      getCommuneEmploymentPosts(),
+      getSefiMooreaTrainings(),
+      getEmploymentLastSyncAt(),
+    ]);
+
+  const totalJobs =
+    sefiJobs.length + aravihiJobs.length + cgfJobs.length + communePosts.length;
 
   return (
     <>
       <PageHeader
-        badge="SEFI · Moorea"
+        badge="Moorea · Quotidien"
         title="Emploi & formation"
-        description="Offres d'emploi et dispositifs de formation recensés pour l'île — mise à jour automatique chaque jour depuis le SEFI."
+        description="Offres et formations recensées pour l'île — SEFI, administration du Pays, communes et sources officielles."
         variant="ocean"
       />
 
@@ -56,24 +72,17 @@ export default async function EmploiFormationPage() {
           <span className="inline-flex items-center gap-2">
             <RefreshCw size={14} aria-hidden />
             {lastSync
-              ? `Dernière synchronisation : ${timeAgo(lastSync)}`
-              : "Synchronisation en attente (cron quotidien)"}
+              ? `Dernière synchro : ${timeAgo(lastSync)}`
+              : "Synchro quotidienne (cron) en attente"}
           </span>
           <span className="text-ocean-300">·</span>
           <span>
-            Source officielle :{" "}
-            <a
-              href={SEFI_SITE_BASE}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-tiare-600 font-semibold hover:underline"
-            >
-              sefi.pf
-            </a>
+            {totalJobs} offre{totalJobs !== 1 ? "s" : ""} indexée
+            {totalJobs !== 1 ? "s" : ""} · {trainings.length} formation
+            {trainings.length !== 1 ? "s" : ""}
           </span>
         </div>
 
-        {/* Antenne */}
         <section className="rounded-3xl border border-ocean-100 bg-gradient-to-br from-lagon-50 to-white p-6 sm:p-8 shadow-[var(--shadow-soft)]">
           <h2 className="font-display text-2xl text-ocean-950 flex items-center gap-2">
             <MapPin size={22} className="text-lagon-600" aria-hidden />
@@ -104,71 +113,64 @@ export default async function EmploiFormationPage() {
               {SEFI_MOOREA_ANTENNE.hours}
             </li>
           </ul>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <a
-              href={SEFI_PUBLIC_JOB_SEARCH_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-ocean-900 text-white text-sm font-semibold hover:bg-ocean-800 transition-colors"
-            >
-              Rechercher sur SEFI
-              <ExternalLink size={14} />
-            </a>
-            <a
-              href={SEFI_MOOREA_JOBS_SEARCH_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-ocean-200 text-ocean-800 text-sm font-semibold hover:border-tiare-300 transition-colors"
-            >
-              Offres île Moorea (lien direct)
-              <ExternalLink size={14} />
-            </a>
-          </div>
         </section>
 
-        {/* Offres */}
-        <section id="offres">
-          <div className="flex items-end justify-between gap-4 mb-6">
-            <div>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tiare-100 text-tiare-800 text-xs font-semibold uppercase tracking-widest">
-                <Briefcase size={12} />
-                Emploi
-              </span>
-              <h2 className="mt-2 font-display text-2xl sm:text-3xl text-ocean-950">
-                Offres à Moorea
-              </h2>
-              <p className="mt-1 text-sm text-ocean-600">
-                {jobs.length} offre{jobs.length !== 1 ? "s" : ""} recensée
-                {jobs.length !== 1 ? "s" : ""} — critère île MOOREA (SEFI).
-              </p>
-            </div>
-          </div>
+        <JobSection
+          id="sefi"
+          icon={Briefcase}
+          badgeLabel="SEFI"
+          badgeVariant="tiare"
+          title="Emploi — secteur privé (SEFI)"
+          description="Offres sur l'île MOOREA via services.sefi.pf."
+          items={sefiJobs}
+          emptyMessage="Aucune offre SEFI en base pour l'instant."
+          emptyHref={SEFI_MOOREA_JOBS_SEARCH_URL}
+          emptyLinkLabel="Voir les offres Moorea sur SEFI"
+          ctaLabel="SEFI"
+        />
 
-          {jobs.length === 0 ? (
-            <EmptyBlock
-              message="Aucune offre en base pour l'instant. La prochaine synchronisation quotidienne importera les postes publiés sur services.sefi.pf."
-              href={SEFI_MOOREA_JOBS_SEARCH_URL}
-              linkLabel="Voir les offres Moorea sur SEFI"
-            />
-          ) : (
-            <ul className="grid gap-4 sm:grid-cols-2">
-              {jobs.map((job) => (
-                <li key={job.id}>
-                  <ListingCard
-                    href={job.url}
-                    title={job.title}
-                    excerpt={job.excerpt}
-                    date={job.publishedAt}
-                    badge="Offre"
-                    badgeVariant="tiare"
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        <JobSection
+          id="aravihi"
+          icon={Landmark}
+          badgeLabel="Aravihi"
+          badgeVariant="ocean"
+          title="Emploi — administration du Pays"
+          description="Fonction publique de la Polynésie française (Moorea)."
+          items={aravihiJobs}
+          emptyMessage="Aucune offre Aravihi indexée pour l'instant."
+          emptyHref={ARAVIHI_MOOREA_SEARCH_URL}
+          emptyLinkLabel="Toutes les offres Moorea sur Aravihi"
+          ctaLabel="Aravihi"
+        />
 
-        {/* Formations */}
+        <JobSection
+          id="cgf"
+          icon={Building2}
+          badgeLabel="CGF"
+          badgeVariant="lagon"
+          title="Emploi — communes & EPA (CGF)"
+          description="Moorea-Maiao, Te Ito Rau no Moorea-Maiao."
+          items={cgfJobs}
+          emptyMessage="Aucune offre CGF Moorea publiée pour le moment sur cgf.pf."
+          emptyHref={CGF_OFFERS_URL}
+          emptyLinkLabel="Parcourir toutes les offres CGF"
+          ctaLabel="CGF"
+        />
+
+        <JobSection
+          id="commune"
+          icon={Building2}
+          badgeLabel="Commune"
+          badgeVariant="soleil"
+          title="Commune de Moorea-Maiao"
+          description="Actualités et avis liés au recrutement communal (flux RSS)."
+          items={communePosts}
+          emptyMessage="Pas d'annonce emploi récente dans le flux communal."
+          emptyHref={COMMUNE_RECRUTE_URL}
+          emptyLinkLabel="Page « La commune recrute »"
+          ctaLabel="Commune"
+        />
+
         <section id="formations">
           <div className="mb-6">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-lagon-100 text-lagon-800 text-xs font-semibold uppercase tracking-widest">
@@ -186,34 +188,73 @@ export default async function EmploiFormationPage() {
           {trainings.length === 0 ? (
             <EmptyBlock
               message="Aucune formation Moorea indexée pour le moment."
-              href={`${SEFI_SITE_BASE}/actualites/`}
-              linkLabel="Actualités SEFI"
+              href={SEFI_PUBLIC_JOB_SEARCH_URL}
+              linkLabel="Portail SEFI"
             />
           ) : (
             <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {trainings.map((t) => (
                 <li key={t.id}>
-                  <ListingCard
-                    href={t.url}
-                    title={t.title}
-                    excerpt={t.excerpt}
-                    date={t.publishedAt}
-                    badge="Formation"
-                    badgeVariant="lagon"
-                  />
+                  <ListingCard item={t} ctaLabel="SEFI" />
                 </li>
               ))}
             </ul>
           )}
         </section>
 
+        <section className="rounded-3xl border border-ocean-100 bg-white p-6 sm:p-8">
+          <h2 className="font-display text-xl text-ocean-950">
+            Toutes les sources officielles
+          </h2>
+          <p className="mt-2 text-sm text-ocean-600">
+            Liens utiles complémentaires (consultation directe sur les sites
+            sources).
+          </p>
+          <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+            {EMPLOYMENT_EXTERNAL_LINKS.map((link) => (
+              <li key={link.href}>
+                {"internal" in link && link.internal ? (
+                  <Link
+                    href={link.href}
+                    className="flex flex-col p-4 rounded-2xl border border-ocean-100 hover:border-tiare-300 hover:shadow-sm transition-all h-full"
+                  >
+                    <span className="font-semibold text-ocean-900">
+                      {link.title}
+                    </span>
+                    <span className="mt-1 text-sm text-ocean-600">
+                      {link.description}
+                    </span>
+                  </Link>
+                ) : (
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col p-4 rounded-2xl border border-ocean-100 hover:border-tiare-300 hover:shadow-sm transition-all h-full group"
+                  >
+                    <span className="font-semibold text-ocean-900 group-hover:text-tiare-600 flex items-center gap-2">
+                      {link.title}
+                      <ExternalLink size={14} className="shrink-0" />
+                    </span>
+                    <span className="mt-1 text-sm text-ocean-600">
+                      {link.description}
+                    </span>
+                  </a>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+
         <p className="text-xs text-ocean-500 max-w-3xl">
-          MooreaNews reprend les titres et liens publics du{" "}
-          <strong>Service de l&apos;emploi, de la formation et de l&apos;insertion professionnelles</strong>{" "}
-          (SEFI). Pour postuler ou vous inscrire, utilisez toujours le site officiel SEFI.
-          Les annonces locales restent aussi disponibles dans{" "}
-          <Link href="/annonces" className="text-tiare-600 font-semibold hover:underline">
-            les petites annonces
+          MooreaNews agrège des informations publiques (SEFI, Aravihi, CGF,
+          commune). Pour candidater, utilisez toujours le site officiel de
+          l&apos;employeur. Annonces locales :{" "}
+          <Link
+            href="/annonces"
+            className="text-tiare-600 font-semibold hover:underline"
+          >
+            petites annonces
           </Link>
           .
         </p>
@@ -222,42 +263,100 @@ export default async function EmploiFormationPage() {
   );
 }
 
-function ListingCard({
-  href,
-  title,
-  excerpt,
-  date,
-  badge,
+function JobSection({
+  id,
+  icon: Icon,
+  badgeLabel,
   badgeVariant,
+  title,
+  description,
+  items,
+  emptyMessage,
+  emptyHref,
+  emptyLinkLabel,
+  ctaLabel,
 }: {
-  href: string;
+  id: string;
+  icon: typeof Briefcase;
+  badgeLabel: string;
+  badgeVariant: "tiare" | "lagon" | "ocean" | "soleil";
   title: string;
-  excerpt: string | null;
-  date: string;
-  badge: string;
-  badgeVariant: "tiare" | "lagon";
+  description: string;
+  items: EmploymentListing[];
+  emptyMessage: string;
+  emptyHref: string;
+  emptyLinkLabel: string;
+  ctaLabel: string;
+}) {
+  return (
+    <section id={id}>
+      <div className="mb-6">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-ocean-100 text-ocean-800 text-xs font-semibold uppercase tracking-widest">
+          <Icon size={12} />
+          {badgeLabel}
+        </span>
+        <h2 className="mt-2 font-display text-2xl sm:text-3xl text-ocean-950">
+          {title}
+        </h2>
+        <p className="mt-1 text-sm text-ocean-600">
+          {description}{" "}
+          <span className="font-medium">
+            ({items.length} sur MooreaNews)
+          </span>
+        </p>
+      </div>
+
+      {items.length === 0 ? (
+        <EmptyBlock
+          message={emptyMessage}
+          href={emptyHref}
+          linkLabel={emptyLinkLabel}
+        />
+      ) : (
+        <ul className="grid gap-4 sm:grid-cols-2">
+          {items.map((job) => (
+            <li key={job.id}>
+              <ListingCard item={job} ctaLabel={ctaLabel} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function ListingCard({
+  item,
+  ctaLabel,
+}: {
+  item: EmploymentListing;
+  ctaLabel: string;
 }) {
   return (
     <a
-      href={href}
+      href={item.url}
       target="_blank"
       rel="noopener noreferrer"
       className="group flex flex-col h-full p-5 bg-white rounded-2xl border border-ocean-100 hover:border-tiare-300 hover:shadow-[var(--shadow-tropical)] transition-all"
     >
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <Badge variant={badgeVariant}>{badge}</Badge>
+      <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+        <Badge variant="neutral" className="text-[10px]">
+          {item.sourceName}
+        </Badge>
         <time className="text-[10px] text-ocean-500">
-          {formatDateShortFR(date)}
+          {formatDateShortFR(item.publishedAt)}
         </time>
       </div>
       <h3 className="font-display text-lg text-ocean-900 leading-snug group-hover:text-tiare-600 transition-colors flex-1">
-        {title}
+        {item.title}
       </h3>
-      {excerpt ? (
-        <p className="mt-2 text-sm text-ocean-600 line-clamp-2">{excerpt}</p>
+      {item.excerpt ? (
+        <p className="mt-2 text-sm text-ocean-600 line-clamp-2">
+          {item.excerpt}
+        </p>
       ) : null}
       <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-lagon-700">
-        Voir sur SEFI
+        Voir sur {ctaLabel}
         <ExternalLink size={12} />
       </span>
     </a>

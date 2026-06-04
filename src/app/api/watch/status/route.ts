@@ -47,6 +47,9 @@ export async function GET() {
       "web-watch",
       "sefi-offres-moorea",
       "sefi-formation-moorea",
+      "aravihi-emploi-moorea",
+      "cgf-emploi-moorea",
+      "commune-emploi-moorea",
     ],
     refreshSchedule: {
       veilleRssFacebook:
