@@ -71,22 +71,6 @@ export async function runDailyCron(): Promise<DailyCronResult> {
     }
   }
 
-  jobs.utilityOutages = await syncUtilityOutages();
-  const utilitySync = jobs.utilityOutages as {
-    created?: number;
-    updated?: number;
-    cleared?: number;
-  };
-  if (
-    (utilitySync.created ?? 0) > 0 ||
-    (utilitySync.updated ?? 0) > 0 ||
-    (utilitySync.cleared ?? 0) > 0
-  ) {
-    revalidatePath("/alertes");
-    revalidatePath("/coupures");
-    revalidatePath("/", "layout");
-  }
-
   jobs.dpamStatsFreshness = await checkDpamStatsFreshness();
   revalidatePath("/trafic-ferry");
 
@@ -141,6 +125,22 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   );
   if (articlesCreated > 0) {
     revalidatePath("/actualites");
+    revalidatePath("/", "layout");
+  }
+
+  jobs.utilityOutages = await syncUtilityOutages();
+  const utilitySync = jobs.utilityOutages as {
+    created?: number;
+    updated?: number;
+    cleared?: number;
+  };
+  if (
+    (utilitySync.created ?? 0) > 0 ||
+    (utilitySync.updated ?? 0) > 0 ||
+    (utilitySync.cleared ?? 0) > 0
+  ) {
+    revalidatePath("/alertes");
+    revalidatePath("/coupures");
     revalidatePath("/", "layout");
   }
 
@@ -210,6 +210,8 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   const blockingErrors = errors.filter(
     (e) =>
       !e.includes("CommuneMooreaMaiao") &&
+      !e.includes("Te Ito Rau") &&
+      !e.includes("100088637945937") &&
       !e.includes("tntv.pf") &&
       !e.includes("pas de métadonnées OG"),
   );

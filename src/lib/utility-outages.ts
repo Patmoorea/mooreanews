@@ -3,6 +3,12 @@
  */
 
 import { fetchOutagesFromArticles } from "@/lib/outage-article-import";
+import { fetchOutagesFromLiveVeille } from "@/lib/outage-external-import";
+import {
+  extraTeItoRauPostUrlsFromEnv,
+  fetchOutagesFromExtraFacebookUrls,
+  fetchOutagesFromFacebookFeeds,
+} from "@/lib/outage-facebook-feed";
 import { cleanImportedText } from "@/lib/html-entities";
 
 export const EDT_OUTAGES_PAGE =
@@ -351,16 +357,31 @@ function isMooreaWaterPost(title: string): boolean {
 }
 
 async function fetchPdeMooreaOutages(): Promise<UtilityOutage[]> {
-  const url = `${PDE_API}?search=${encodeURIComponent("moorea coupure")}&per_page=40&_fields=id,title,link,date`;
-  const res = await fetch(url, { headers: FETCH_HEADERS, cache: "no-store" });
-  if (!res.ok) throw new Error(`PDE API HTTP ${res.status}`);
-  const posts = (await res.json()) as WpPost[];
+  const searches = ["moorea coupure", "moorea eau", "MOOREA –"];
+  const seen = new Set<number>();
+  const allPosts: WpPost[] = [];
+
+  for (const q of searches) {
+    const url = `${PDE_API}?search=${encodeURIComponent(q)}&per_page=25&_fields=id,title,link,date`;
+    const res = await fetch(url, { headers: FETCH_HEADERS, cache: "no-store" });
+    if (!res.ok) continue;
+    const posts = (await res.json()) as WpPost[];
+    for (const post of posts) {
+      if (seen.has(post.id)) continue;
+      seen.add(post.id);
+      allPosts.push(post);
+    }
+  }
+
+  if (allPosts.length === 0) {
+    throw new Error("PDE API: aucun résultat");
+  }
 
   const horizon = Date.now() + 120 * 24 * 60 * 60 * 1000;
   const cutoff = Date.now() - 48 * 60 * 60 * 1000;
   const outages: UtilityOutage[] = [];
 
-  for (const post of posts) {
+  for (const post of allPosts) {
     const rawTitle = post.title.rendered;
     if (!isMooreaWaterPost(rawTitle)) continue;
 
@@ -399,13 +420,30 @@ export async function getUtilityOutages(): Promise<UtilityOutagesResult> {
     return cache.data;
   }
 
-  const [edtRaw, water, fromArticles] = await Promise.all([
+  const [
+    edtRaw,
+    water,
+    fromArticles,
+    fromLiveVeille,
+    fbFeed,
+    fromExtraFb,
+  ] = await Promise.all([
     fetchEdtCsv().catch(() => ""),
     fetchPdeMooreaOutages().catch(() => [] as UtilityOutage[]),
     fetchOutagesFromArticles().catch(() => [] as UtilityOutage[]),
+    fetchOutagesFromLiveVeille().catch(() => [] as UtilityOutage[]),
+    fetchOutagesFromFacebookFeeds().catch(() => ({
+      outages: [] as UtilityOutage[],
+      errors: [] as string[],
+      postsImported: 0,
+    })),
+    fetchOutagesFromExtraFacebookUrls(extraTeItoRauPostUrlsFromEnv()).catch(
+      () => [] as UtilityOutage[],
+    ),
   ]);
 
   const edt = edtRaw ? parseEdtCsv(edtRaw) : [];
+  const fbOutages = fbFeed.outages;
   const cutoff = Date.now() - 24 * 60 * 60 * 1000;
 
   const mergeUnique = (rows: UtilityOutage[]) => {
@@ -422,11 +460,22 @@ export async function getUtilityOutages(): Promise<UtilityOutagesResult> {
       .filter((o) => Date.parse(o.endsAt) >= cutoff)
       .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
 
-  const edtUp = upcoming([...edt, ...fromArticles.filter((o) => o.kind === "coupure_edt")]);
-  const waterUp = upcoming([
-    ...water,
-    ...fromArticles.filter((o) => o.kind === "coupure_eau"),
-  ]);
+  const supplementalEdt = [
+    ...fromArticles,
+    ...fromLiveVeille,
+    ...fbOutages,
+    ...fromExtraFb,
+  ].filter((o) => o.kind === "coupure_edt");
+
+  const supplementalWater = [
+    ...fromArticles,
+    ...fromLiveVeille,
+    ...fbOutages,
+    ...fromExtraFb,
+  ].filter((o) => o.kind === "coupure_eau");
+
+  const edtUp = upcoming([...edt, ...supplementalEdt]);
+  const waterUp = upcoming([...water, ...supplementalWater]);
 
   const data: UtilityOutagesResult = {
     fetchedAt: new Date().toISOString(),

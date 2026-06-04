@@ -81,6 +81,15 @@ export const RSS_SOURCES: RssSource[] = [
     priority: 60,
   },
   {
+    id: "google-news-coupures-moorea",
+    name: "Google Actualités (coupures Moorea)",
+    url: "https://news.google.com/rss/search?q=coupure+%C3%A9lectricit%C3%A9+OR+coupure+eau+Moorea+Maiao&hl=fr&gl=PF&ceid=PF:fr",
+    homepage: "https://news.google.com",
+    keywords: ["coupure", "électricité", "electricite", "eau", "moorea"],
+    acceptAll: false,
+    priority: 85,
+  },
+  {
     id: "google-news-moorea",
     name: "Google Actualités (Moorea)",
     url: "https://news.google.com/rss/search?q=Moorea+Maiao+Polyn%C3%A9sie&hl=fr&gl=PF&ceid=PF:fr",

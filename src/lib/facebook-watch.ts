@@ -18,6 +18,7 @@ import {
   type GraphPostRaw,
 } from "@/lib/facebook-post-enrich";
 import { refreshFacebookUserTokenInProcess } from "@/lib/facebook-token";
+import { fetchFacebookPagePostsForWatch } from "@/lib/outage-facebook-feed";
 import { importFacebookOgAsArticles } from "@/lib/og-article-import";
 import {
   allFacebookWatchUrls,
@@ -463,7 +464,13 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
         }
         continue;
       }
-      const posts = await fetchPagePosts(page, tokenForPage);
+      const posts =
+        page.id === "te-ito-rau"
+          ? await fetchFacebookPagePostsForWatch(page, tokenForPage)
+          : await fetchPagePosts(page, tokenForPage);
+      if (page.id === "te-ito-rau" && posts.length === 0) {
+        continue;
+      }
       result.fetched += posts.length;
       if (
         page.id === "moorea-news" ||
