@@ -111,7 +111,8 @@ export async function runDailyCron(): Promise<DailyCronResult> {
     employmentSync.sefi.trainingsUpserted > 0 ||
     employmentSync.aravihi.upserted > 0 ||
     employmentSync.cgf.upserted > 0 ||
-    employmentSync.commune.upserted > 0;
+    employmentSync.commune.upserted > 0 ||
+    employmentSync.expiredHidden > 0;
   if (empChanged) {
     revalidatePath("/emploi-formation");
   }

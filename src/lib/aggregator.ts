@@ -8,6 +8,7 @@ import { facebookImportMaxAgeDays } from "@/lib/facebook-import-filters";
 import { aggregateWebWatch } from "@/lib/facebook-watch";
 import { fetchRssFeed, type RssItem } from "@/lib/rss-parser";
 import { RSS_SOURCES, rssSourcesByPriority, type RssSource } from "@/lib/rss-sources";
+import { ALL_EMPLOYMENT_SOURCE_IDS } from "@/lib/employment-sources";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getPublicSupabase } from "@/lib/supabase/server";
 
@@ -138,6 +139,11 @@ export async function listExternalArticles(limit = 20) {
     .from("external_articles")
     .select("*")
     .eq("hidden", false)
+    .not(
+      "source_id",
+      "in",
+      `(${ALL_EMPLOYMENT_SOURCE_IDS.map((id) => `"${id}"`).join(",")})`,
+    )
     .gte("published_at", cutoff)
     .order("published_at", { ascending: false })
     .limit(limit);

@@ -11,6 +11,7 @@ import {
   isFacebookJunkText,
 } from "@/lib/facebook-import-filters";
 import { getAdminSupabase } from "@/lib/supabase/admin";
+import { ALL_EMPLOYMENT_SOURCE_IDS } from "@/lib/employment-sources";
 
 export type ContentAuditFinding = {
   kind: "article" | "event" | "announcement" | "external";
@@ -212,11 +213,18 @@ export async function auditPublicContent(): Promise<ContentAuditReport | null> {
 
   const { data: external } = await admin
     .from("external_articles")
-    .select("id, title, excerpt, hidden, published_at")
+    .select("id, title, excerpt, hidden, published_at, source_id")
     .eq("hidden", false)
     .limit(200);
 
   for (const x of external ?? []) {
+    if (
+      ALL_EMPLOYMENT_SOURCE_IDS.includes(
+        x.source_id as (typeof ALL_EMPLOYMENT_SOURCE_IDS)[number],
+      )
+    ) {
+      continue;
+    }
     const corpus = `${x.title} ${x.excerpt ?? ""}`;
     if (contentReferencesFacebookStaleYear(corpus)) {
       findings.push({

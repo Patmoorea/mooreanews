@@ -5,6 +5,7 @@
 import { syncAravihiMooreaJobs } from "@/lib/aravihi-employment-sync";
 import { syncCgfMooreaJobs } from "@/lib/cgf-employment-sync";
 import { syncCommuneEmploymentRss } from "@/lib/commune-employment-sync";
+import { hideExpiredEmploymentArticles } from "@/lib/employment-sync-shared";
 import { syncSefiMooreaOpportunities } from "@/lib/sefi-sync";
 
 export type EmploymentSyncResult = {
@@ -12,6 +13,7 @@ export type EmploymentSyncResult = {
   aravihi: { fetched: number; upserted: number; hidden: number };
   cgf: { fetched: number; upserted: number; hidden: number };
   commune: { fetched: number; upserted: number; hidden: number };
+  expiredHidden: number;
   errors: string[];
 };
 
@@ -43,5 +45,12 @@ export async function syncEmploymentMoorea(): Promise<EmploymentSyncResult> {
     errors.push(`commune: ${String(e)}`);
   }
 
-  return { sefi, aravihi, cgf, commune, errors };
+  let expiredHidden = 0;
+  try {
+    expiredHidden = await hideExpiredEmploymentArticles();
+  } catch (e) {
+    errors.push(`expired: ${String(e)}`);
+  }
+
+  return { sefi, aravihi, cgf, commune, expiredHidden, errors };
 }

@@ -1,4 +1,6 @@
 import { getAdminSupabase } from "@/lib/supabase/admin";
+import { ALL_EMPLOYMENT_SOURCE_IDS } from "@/lib/employment-sources";
+import { isExpiredEmploymentListing } from "@/lib/employment-filters";
 
 export type EmploymentRow = {
   external_id: string;
@@ -27,7 +29,12 @@ export async function upsertEmploymentRows(
     image_url: null,
     author: sourceName,
     published_at: r.published_at,
-    hidden: false,
+    hidden: isExpiredEmploymentListing({
+      external_id: r.external_id,
+      title: r.title,
+      excerpt: r.excerpt,
+      published_at: r.published_at,
+    }),
     fetched_at: new Date().toISOString(),
   }));
 
@@ -69,6 +76,41 @@ export async function hideStaleEmploymentRows(
 
   if (error) throw new Error(error.message);
   return toHide.length;
+}
+
+/** Masque les offres expirées (réf. CGF 2024, date limite dépassée…). */
+export async function hideExpiredEmploymentArticles(): Promise<number> {
+  const supabase = getAdminSupabase();
+  if (!supabase) return 0;
+
+  const { data: rows } = await supabase
+    .from("external_articles")
+    .select("id, external_id, title, excerpt, published_at")
+    .in("source_id", [...ALL_EMPLOYMENT_SOURCE_IDS])
+    .eq("hidden", false);
+
+  if (!rows?.length) return 0;
+
+  const ids = rows
+    .filter((r) =>
+      isExpiredEmploymentListing({
+        external_id: r.external_id,
+        title: r.title,
+        excerpt: r.excerpt,
+        published_at: r.published_at,
+      }),
+    )
+    .map((r) => r.id);
+
+  if (ids.length === 0) return 0;
+
+  const { error } = await supabase
+    .from("external_articles")
+    .update({ hidden: true })
+    .in("id", ids);
+
+  if (error) throw new Error(error.message);
+  return ids.length;
 }
 
 export async function fetchEmploymentHtml(url: string): Promise<string> {
