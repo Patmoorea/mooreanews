@@ -56,6 +56,21 @@ export function resolveCoverImage(options: {
   return null;
 }
 
+/** Affiches Facebook / imports OG — afficher entières (object-contain), pas recadrées. */
+export function isPosterStyleCover(options: {
+  image?: string | null;
+  slug?: string;
+}): boolean {
+  const slug = options.slug ?? "";
+  if (/-fb-|facebook-og|te-ito-rau/i.test(slug)) return true;
+  const img = options.image?.toLowerCase() ?? "";
+  return (
+    img.includes("fbcdn.net") ||
+    img.includes("lookaside.fbsbx.com") ||
+    img.includes("facebook.com")
+  );
+}
+
 /** Normalise un titre pour recherche (minuscules, sans accents). */
 export function normalizeTitleKey(title: string): string {
   return title

@@ -116,10 +116,11 @@ export default async function ArticlePage({ params }: Props) {
           alt={article.title}
           category={article.category}
           slug={article.slug}
-          className="aspect-[16/8] -mt-4 sm:-mt-8 rounded-3xl shadow-[var(--shadow-tropical)]"
+          className="-mt-4 sm:-mt-8 rounded-3xl shadow-[var(--shadow-tropical)]"
           sizes="(max-width: 1200px) 100vw, 1200px"
           priority
           overlay={false}
+          fit="contain"
         />
       </Container>
 
@@ -162,7 +163,7 @@ export default async function ArticlePage({ params }: Props) {
                     alt={a.title}
                     category={a.category}
                     slug={a.slug}
-                    className="aspect-[16/10]"
+                    className="aspect-[4/5] sm:aspect-[3/4] bg-ocean-50"
                   />
                   <div className="p-5">
                     <Badge variant="lagon">{a.category}</Badge>
