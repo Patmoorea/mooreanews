@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Calendar, User } from "lucide-react";
-import { ContentCoverImage } from "@/components/ContentCoverImage";
+import { PublicationCard } from "@/components/PublicationCard";
 import { Badge } from "@/components/ui/Badge";
 import type { Article } from "@/lib/content-types";
 import { formatDateShortFR, truncate } from "@/lib/utils";
@@ -70,46 +70,34 @@ export function ArticlesFilter({ articles }: Props) {
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((a) => (
-            <Link
+            <PublicationCard
               key={a.slug}
               href={`/actualites/${a.slug}`}
-              className="group bg-white rounded-2xl border border-ocean-100 overflow-hidden shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:-translate-y-1 transition-all block"
+              title={a.title}
+              image={a.image}
+              imageAlt={`Affiche — ${a.title}`}
             >
-              <ContentCoverImage
-                src={a.image}
-                alt={a.title}
-                category={a.category}
-                slug={a.slug}
-                className="aspect-[16/10]"
-              >
-                {a.featured && (
-                  <div className="absolute top-3 left-3 z-10">
-                    <Badge variant="tiare">À la une</Badge>
-                  </div>
-                )}
-              </ContentCoverImage>
-              <div className="p-5">
-                <div className="flex items-center gap-2 text-xs text-ocean-500 mb-2">
-                  <Badge variant="lagon">{a.category}</Badge>
-                  <span className="flex items-center gap-1">
-                    <Calendar size={12} />
-                    {formatDateShortFR(a.publishedAt)}
-                  </span>
-                </div>
-                <h2 className="font-display text-xl text-ocean-900 leading-tight group-hover:text-tiare-600 transition-colors">
-                  {a.title}
-                </h2>
-                <p className="mt-2 text-sm text-ocean-600">
-                  {truncate(a.excerpt, 160)}
-                </p>
-                {a.author && (
-                  <p className="mt-3 text-xs text-ocean-500 flex items-center gap-1">
-                    <User size={12} />
-                    {a.author}
-                  </p>
-                )}
+              <div className="flex items-center gap-2 text-xs text-ocean-500 mb-2 flex-wrap">
+                {a.featured ? <Badge variant="tiare">À la une</Badge> : null}
+                <Badge variant="lagon">{a.category}</Badge>
+                <span className="flex items-center gap-1">
+                  <Calendar size={12} />
+                  {formatDateShortFR(a.publishedAt)}
+                </span>
               </div>
-            </Link>
+              <h2 className="font-display text-xl text-ocean-900 leading-tight group-hover:text-tiare-600 transition-colors">
+                {a.title}
+              </h2>
+              <p className="mt-2 text-sm text-ocean-600 line-clamp-3">
+                {truncate(a.excerpt, 160)}
+              </p>
+              {a.author && (
+                <p className="mt-3 text-xs text-ocean-500 flex items-center gap-1">
+                  <User size={12} />
+                  {a.author}
+                </p>
+              )}
+            </PublicationCard>
           ))}
         </div>
       )}

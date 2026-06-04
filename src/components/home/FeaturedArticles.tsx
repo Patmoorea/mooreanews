@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { ArrowRight, Calendar, User } from "lucide-react";
 import { ContentCoverImage } from "@/components/ContentCoverImage";
+import { PosterImage, hasPoster } from "@/components/PosterImage";
+import { PublicationCard } from "@/components/PublicationCard";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { getFeaturedArticles, getArticles } from "@/lib/content";
+import type { Article } from "@/lib/content-types";
 import { formatDateShortFR, timeAgo, truncate } from "@/lib/utils";
 
 export async function FeaturedArticles() {
@@ -63,19 +66,30 @@ export async function FeaturedArticles() {
                 idx === 0 ? "lg:row-span-2" : ""
               }`}
             >
-              <ContentCoverImage
-                src={a.image}
-                alt={a.title}
-                category={a.category}
-                slug={a.slug}
-                className="aspect-[16/10]"
-                priority={idx === 0}
-                sizes="(max-width: 1024px) 100vw, 66vw"
-              >
-                <div className="absolute top-4 left-4 z-10">
-                  <Badge variant="tiare">À la une</Badge>
-                </div>
-              </ContentCoverImage>
+              {hasPoster(a.image) ? (
+                <PosterImage
+                  src={a.image!}
+                  alt={`Affiche — ${a.title}`}
+                  className={`w-full rounded-none border-0 border-b border-ocean-100 ${
+                    idx === 0
+                      ? "aspect-[3/4] max-h-[min(70vh,520px)]"
+                      : "aspect-[3/4] max-h-52"
+                  }`}
+                />
+              ) : (
+                <ContentCoverImage
+                  src={a.image}
+                  alt={a.title}
+                  category={a.category}
+                  slug={a.slug}
+                  className="aspect-[16/10]"
+                  priority={idx === 0}
+                  sizes="(max-width: 1024px) 100vw, 66vw"
+                />
+              )}
+              <div className="absolute top-4 left-4 z-10">
+                <Badge variant="tiare">À la une</Badge>
+              </div>
               <div className="p-6 sm:p-7">
                 <div className="flex items-center gap-3 text-xs text-ocean-500">
                   <span className="flex items-center gap-1">
@@ -107,26 +121,44 @@ export async function FeaturedArticles() {
             }
           >
             {(hasFeatured ? recent.slice(featured.length) : recent).map((a) => (
-              <Link
-                href={`/actualites/${a.slug}`}
-                key={a.slug}
-                className="group bg-white border border-ocean-100 rounded-2xl p-5 hover:border-tiare-300 transition-colors block"
-              >
-                <div className="flex items-center gap-2 text-xs text-ocean-500 mb-1">
-                  <Badge variant="lagon">{a.category}</Badge>
-                  <span>{timeAgo(a.publishedAt)}</span>
-                </div>
-                <h4 className="font-display text-lg text-ocean-900 group-hover:text-tiare-600 transition-colors">
-                  {a.title}
-                </h4>
-                <p className="mt-1 text-sm text-ocean-600">
-                  {truncate(a.excerpt, 110)}
-                </p>
-              </Link>
+              <ArticleHomeCard key={a.slug} article={a} compact={hasFeatured} />
             ))}
           </div>
         </div>
       </Container>
     </section>
+  );
+}
+
+function ArticleHomeCard({
+  article: a,
+  compact,
+}: {
+  article: Article;
+  compact?: boolean;
+}) {
+  return (
+    <PublicationCard
+      href={`/actualites/${a.slug}`}
+      title={a.title}
+      image={a.image}
+      imageAlt={`Affiche — ${a.title}`}
+      className="hover:border-tiare-300"
+    >
+      <div className="flex items-center gap-2 text-xs text-ocean-500 mb-1">
+        <Badge variant="lagon">{a.category}</Badge>
+        <span>{timeAgo(a.publishedAt)}</span>
+      </div>
+      <h4
+        className={`font-display text-ocean-900 group-hover:text-tiare-600 transition-colors ${
+          compact ? "text-lg" : "text-lg sm:text-xl"
+        }`}
+      >
+        {a.title}
+      </h4>
+      <p className="mt-1 text-sm text-ocean-600 line-clamp-2">
+        {truncate(a.excerpt, compact ? 110 : 140)}
+      </p>
+    </PublicationCard>
   );
 }
