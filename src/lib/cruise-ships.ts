@@ -181,6 +181,18 @@ export async function getCruiseShipSchedule(): Promise<CruiseScheduleResult> {
   return data;
 }
 
+/** Libellé port pour l’affichage (données source en majuscules). */
+export function formatCruisePort(port: string): string {
+  const p = port.toUpperCase();
+  if (p === "PAPEETE") return "Papeete (Tahiti)";
+  if (p === "UTUROA") return "Uturoa (Raiatea)";
+  return port;
+}
+
+/** Moorea n’apparaît pas dans le calendrier « PAQUEBOT » du Port de Papeete. */
+export const CRUISE_MOOREA_NOTICE =
+  "Les très gros paquebots de croisière n’accostent pas à Moorea : pas de quai profond dédié. Les passagers vont souvent à Moorea en excursion depuis Papeete (ferry ou organisateur). Les escales « paquebot » listées ici sont Papeete et Uturoa (Raiatea).";
+
 export function formatCruiseDateTime(iso: string): string {
   return new Date(iso).toLocaleString("fr-FR", {
     timeZone: "Pacific/Tahiti",

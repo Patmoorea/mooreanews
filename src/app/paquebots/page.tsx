@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { ExternalLink, Anchor, Ship } from "lucide-react";
 import {
+  CRUISE_MOOREA_NOTICE,
   CRUISE_SOURCE_URL,
   formatCruiseDateTime,
+  formatCruisePort,
   getCruiseShipSchedule,
   type CruiseShipCall,
 } from "@/lib/cruise-ships";
@@ -61,7 +63,7 @@ function CallTable({
                 {c.departure || "—"}
               </td>
               <td className="py-3 px-2 text-ocean-700">
-                <span className="block font-medium">{c.port}</span>
+                <span className="block font-medium">{formatCruisePort(c.port)}</span>
                 <span className="text-xs text-ocean-500">
                   {[c.quay, c.berth].filter(Boolean).join(" · ") || "—"}
                 </span>
@@ -95,18 +97,29 @@ export default async function PaquebotsPage() {
         variant="ocean"
       />
       <Container className="py-12 space-y-10">
-        <div className="rounded-2xl border border-lagon-200 bg-lagon-50/80 p-5 text-sm text-ocean-800 leading-relaxed">
-          <p className="flex items-start gap-2">
-            <Anchor size={18} className="shrink-0 mt-0.5 text-lagon-700" />
-            <span>
-              Les <strong>grands paquebots internationaux</strong> accostent
-              principalement à <strong>Papeete</strong>. Les passagers rejoignent
-              souvent <strong>Moorea en excursion</strong> depuis Tahiti. Les
-              escales directes sur d&apos;autres îles (ex. Uturoa) sont listées
-              ci-dessous.
-            </span>
+        <div className="rounded-2xl border border-soleil-200 bg-soleil-50/90 p-5 text-sm text-ocean-900 leading-relaxed">
+          <p className="flex items-start gap-2 font-semibold">
+            <Anchor size={18} className="shrink-0 mt-0.5 text-soleil-700" />
+            Moorea et les paquebots de croisière
           </p>
+          <p className="mt-2">{CRUISE_MOOREA_NOTICE}</p>
         </div>
+
+        {schedule && !error ? (
+          <div className="flex flex-wrap gap-3">
+            <StatChip
+              label="Papeete"
+              value={schedule.papeete.length}
+              hint="escales à venir"
+            />
+            <StatChip
+              label="Uturoa (Raiatea)"
+              value={schedule.otherPorts.length}
+              hint="escales à venir"
+            />
+            <StatChip label="Moorea" value={0} hint="pas dans les prévisions PAQUEBOT" />
+          </div>
+        ) : null}
 
         {error ? (
           <div className="rounded-2xl border border-tiare-200 bg-tiare-50 p-6 text-ocean-800">
@@ -124,45 +137,70 @@ export default async function PaquebotsPage() {
           </div>
         ) : schedule ? (
           <>
-            <section className="rounded-3xl border border-ocean-100 bg-white p-6 shadow-[var(--shadow-soft)]">
-              <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
-                <div>
-                  <h2 className="font-display text-2xl text-ocean-950 flex items-center gap-2">
-                    <Ship size={22} />
-                    Papeete — Tahiti
-                  </h2>
-                  <p className="text-sm text-ocean-600 mt-1">
-                    {schedule.papeete.length} escale(s) paquebot à venir · port
-                    le plus proche de Moorea
-                  </p>
-                </div>
-                {schedule.updatedLabel ? (
-                  <p className="text-xs text-ocean-500">
-                    Source mise à jour : {schedule.updatedLabel}
-                  </p>
-                ) : null}
-              </div>
-              <CallTable
-                calls={schedule.papeete.slice(0, 40)}
-                empty="Aucune escale paquebot prévue à Papeete dans la période affichée."
-              />
-            </section>
+            {schedule.updatedLabel ? (
+              <p className="text-xs text-ocean-500 text-center">
+                Source mise à jour : {schedule.updatedLabel}
+              </p>
+            ) : null}
 
             {schedule.otherPorts.length > 0 ? (
-              <section className="rounded-3xl border border-ocean-100 bg-white p-6 shadow-[var(--shadow-soft)]">
-                <h2 className="font-display text-2xl text-ocean-950 mb-2">
-                  Autres îles de Polynésie
+              <section
+                id="uturoa"
+                className="rounded-3xl border border-tipanier-100 bg-white p-6 shadow-[var(--shadow-soft)]"
+              >
+                <h2 className="font-display text-2xl text-ocean-950 flex items-center gap-2">
+                  <Ship size={22} className="text-tipanier-600" />
+                  Uturoa — Raiatea
                 </h2>
-                <p className="text-sm text-ocean-600 mb-6">
-                  {schedule.otherPorts.length} escale(s) hors Papeete (Uturoa,
-                  etc.)
+                <p className="text-sm text-ocean-600 mt-1 mb-6">
+                  {schedule.otherPorts.length} escale(s) paquebot (îles Sous-le-Vent,
+                  hors Tahiti).
                 </p>
                 <CallTable
-                  calls={schedule.otherPorts.slice(0, 30)}
-                  empty="Aucune autre escale paquebot listée."
+                  calls={schedule.otherPorts.slice(0, 25)}
+                  empty="Aucune escale à Uturoa."
                 />
+                {schedule.otherPorts.length > 25 ? (
+                  <p className="text-xs text-ocean-500 mt-3 text-center">
+                    + {schedule.otherPorts.length - 25} autres escales — voir{" "}
+                    <a
+                      href={CRUISE_SOURCE_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-tiare-600 hover:underline"
+                    >
+                      portdepapeete.pf
+                    </a>
+                  </p>
+                ) : null}
               </section>
             ) : null}
+
+            <section
+              id="papeete"
+              className="rounded-3xl border border-ocean-100 bg-white p-6 shadow-[var(--shadow-soft)]"
+            >
+              <div className="mb-6">
+                <h2 className="font-display text-2xl text-ocean-950 flex items-center gap-2">
+                  <Ship size={22} />
+                  Papeete — Tahiti
+                </h2>
+                <p className="text-sm text-ocean-600 mt-1">
+                  {schedule.papeete.length} escale(s) · point de départ habituel
+                  des excursions vers Moorea
+                </p>
+              </div>
+              <CallTable
+                calls={schedule.papeete.slice(0, 25)}
+                empty="Aucune escale paquebot prévue à Papeete."
+              />
+              {schedule.papeete.length > 25 ? (
+                <p className="text-xs text-ocean-500 mt-3 text-center">
+                  + {schedule.papeete.length - 25} escales Papeete sur la source
+                  officielle
+                </p>
+              ) : null}
+            </section>
 
             <p className="text-xs text-ocean-500 text-center">
               Données :{" "}
@@ -190,5 +228,23 @@ export default async function PaquebotsPage() {
         </p>
       </Container>
     </>
+  );
+}
+
+function StatChip({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: number;
+  hint: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-ocean-100 bg-white px-4 py-3 min-w-[140px] shadow-sm">
+      <p className="text-2xl font-display text-ocean-950">{value}</p>
+      <p className="text-sm font-semibold text-ocean-800">{label}</p>
+      <p className="text-xs text-ocean-500">{hint}</p>
+    </div>
   );
 }

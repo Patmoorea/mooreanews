@@ -22,7 +22,9 @@ export function CruiseShipsCard() {
     };
   }, []);
 
-  const next = data?.papeete.slice(0, 3) ?? [];
+  const next = [...(data?.papeete.slice(0, 2) ?? []), ...(data?.otherPorts.slice(0, 1) ?? [])]
+    .sort((a, b) => Date.parse(a.movementAt) - Date.parse(b.movementAt))
+    .slice(0, 3);
 
   return (
     <div className="rounded-2xl border border-ocean-100 bg-white p-5 shadow-[var(--shadow-soft)] h-full">
@@ -34,7 +36,7 @@ export function CruiseShipsCard() {
               Paquebots
             </span>
             <p className="text-sm font-display text-ocean-950 leading-tight">
-              Escales Papeete
+              Papeete & Raiatea
             </p>
           </div>
         </div>
@@ -64,9 +66,8 @@ export function CruiseShipsCard() {
               <div>
                 <p className="font-semibold text-ocean-950">{c.shipName}</p>
                 <p className="text-xs text-ocean-600">
+                  {c.port === "UTUROA" ? "Uturoa · " : c.port === "PAPEETE" ? "Papeete · " : ""}
                   {formatCruiseDateTime(c.movementAt)}
-                  {c.arrival ? ` · arr. ${c.arrival}` : ""}
-                  {c.departure ? ` · dep. ${c.departure}` : ""}
                 </p>
               </div>
             </li>
