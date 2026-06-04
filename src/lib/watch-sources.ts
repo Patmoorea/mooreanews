@@ -67,14 +67,16 @@ export const FACEBOOK_PAGE_WATCHES: FacebookPageWatch[] = [
     homepage: "https://www.facebook.com/CommuneMooreaMaiao",
     optional: true,
   },
-  {
-    id: "te-ito-rau",
-    pageId: "100088637945937",
-    name: "Te Ito Rau no Moorea Maiao",
-    homepage: "https://www.facebook.com/profile.php?id=100088637945937",
-    optional: true,
-  },
 ];
+
+/** Te Ito Rau — hors veille facebook-pages (Meta 400 sur /posts). Coupures : outage-facebook-feed + OG. */
+export const TE_ITO_RAU_FACEBOOK_PAGE: FacebookPageWatch = {
+  id: "te-ito-rau",
+  pageId: "100088637945937",
+  name: "Te Ito Rau no Moorea Maiao",
+  homepage: "https://www.facebook.com/profile.php?id=100088637945937",
+  optional: true,
+};
 
 export function extraFacebookWatchUrlsFromEnv(): string[] {
   const raw = process.env.FACEBOOK_WATCH_URLS ?? "";

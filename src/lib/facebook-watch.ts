@@ -18,7 +18,6 @@ import {
   type GraphPostRaw,
 } from "@/lib/facebook-post-enrich";
 import { refreshFacebookUserTokenInProcess } from "@/lib/facebook-token";
-import { fetchFacebookPagePostsForWatch } from "@/lib/outage-facebook-feed";
 import { importFacebookOgAsArticles } from "@/lib/og-article-import";
 import {
   allFacebookWatchUrls,
@@ -251,11 +250,6 @@ async function fetchPagePosts(
   page: FacebookPageWatch,
   token: string
 ): Promise<GraphPost[]> {
-  /** Te Ito Rau : jamais /{id}/posts direct (Meta 400) — flux outage-facebook-feed. */
-  if (page.id === "te-ito-rau") {
-    return fetchFacebookPagePostsForWatch(page, token);
-  }
-
   const graphPageId = /^\d+$/.test(page.pageId)
     ? page.pageId
     : page.id === "moorea-news"
@@ -264,7 +258,7 @@ async function fetchPagePosts(
 
   const fieldVariants = [GRAPH_POST_FIELDS_FULL, GRAPH_POST_FIELDS_MINIMAL];
   const pageLimit =
-    page.id === "moorea-news" ? 30 : page.id === "te-ito-rau" ? 20 : 15;
+    page.id === "moorea-news" ? 30 : 15;
   const maxPages = page.id === "moorea-news" ? 3 : 1;
   const edges: Array<"posts" | "published_posts"> =
     page.id === "moorea-news" ? ["posts", "published_posts"] : ["posts"];
@@ -434,11 +428,12 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
     config: Parameters<typeof importFacebookPostsAsContent>[1];
   }[] = [];
 
-  const teItoPage = FACEBOOK_PAGE_WATCHES.find((p) => p.id === "te-ito-rau");
+  const teItoRauGraphNoise = (msg: string) =>
+    msg.includes("Te Ito Rau") ||
+    msg.includes("100088637945937") ||
+    /unsupported get request/i.test(msg);
 
   for (const page of FACEBOOK_PAGE_WATCHES) {
-    if (page.id === "te-ito-rau") continue;
-
     try {
       if (userToken && !perPageTokenByIdOrUsername.has(page.pageId)) {
         const viaUser = await fetchPageAccessTokenViaUserToken(
@@ -457,16 +452,10 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
         page,
         perPageTokenByIdOrUsername,
         fallbackPageToken:
-          page.id === "te-ito-rau"
+          perPageTokenByIdOrUsername.size > 0
             ? undefined
-            : perPageTokenByIdOrUsername.size > 0
-              ? undefined
-              : fallbackPageToken,
+            : fallbackPageToken,
       });
-      // Te Ito Rau : page tierce — le jeton MooreaNews ne suffit pas ; user token public.
-      if (page.id === "te-ito-rau" && userToken) {
-        tokenForPage = userToken;
-      }
       if (!tokenForPage) {
         if (!page.optional) {
           result.errors.push(`Token manquant pour ${page.pageId}`);
@@ -477,35 +466,21 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
       result.fetched += posts.length;
       if (
         page.id === "moorea-news" ||
-        page.id === "commune-moorea" ||
-        page.id === "te-ito-rau"
+        page.id === "commune-moorea"
       ) {
         const isMooreaNews = page.id === "moorea-news";
-        const isTeItoRau = page.id === "te-ito-rau";
         articleImports.push({
           posts,
           config: {
-            pageKey: isMooreaNews
-              ? "mooreanews"
-              : isTeItoRau
-                ? "te-ito-rau"
-                : "commune",
+            pageKey: isMooreaNews ? "mooreanews" : "commune",
             pageName: page.name,
             homepage: page.homepage,
             authorLabel: `${page.name} (Facebook)`,
-            tag: isMooreaNews
-              ? "moorea-news-fb"
-              : isTeItoRau
-                ? "te-ito-rau"
-                : "commune-moorea",
+            tag: isMooreaNews ? "moorea-news-fb" : "commune-moorea",
             allowFerryAlerts: isMooreaNews,
-            importAllFeedPosts: isMooreaNews || isTeItoRau,
+            importAllFeedPosts: isMooreaNews,
             pageAccessToken: tokenForPage,
-            graphPageId: isMooreaNews
-              ? "350029589936"
-              : isTeItoRau
-                ? "100088637945937"
-                : page.pageId,
+            graphPageId: isMooreaNews ? "350029589936" : page.pageId,
           },
         });
       }
@@ -515,7 +490,7 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
           message,
           post.created_time,
           post,
-          page.id === "moorea-news" || page.id === "te-ito-rau"
+          page.id === "moorea-news"
             ? { importAllFeedPosts: true }
             : undefined,
         );
@@ -541,75 +516,9 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
       }
     } catch (e) {
       const msg = String(e);
-      if (!msg.includes("Te Ito Rau") && !msg.includes("100088637945937")) {
+      if (!teItoRauGraphNoise(msg)) {
         result.errors.push(msg);
       }
-    }
-  }
-
-  if (teItoPage) {
-    try {
-      let teToken = userToken;
-      if (teToken) {
-        const viaUser = await fetchPageAccessTokenViaUserToken(
-          teToken,
-          teItoPage.pageId,
-        );
-        if (viaUser) teToken = viaUser;
-      }
-      if (!teToken) teToken = fallbackPageToken;
-      if (teToken) {
-        const posts = await fetchFacebookPagePostsForWatch(teItoPage, teToken);
-        result.fetched += posts.length;
-        if (posts.length > 0) {
-          articleImports.push({
-            posts,
-            config: {
-              pageKey: "te-ito-rau",
-              pageName: teItoPage.name,
-              homepage: teItoPage.homepage,
-              authorLabel: `${teItoPage.name} (Facebook)`,
-              tag: "te-ito-rau",
-              allowFerryAlerts: false,
-              importAllFeedPosts: true,
-              pageAccessToken: teToken,
-              graphPageId: teItoPage.homepage,
-            },
-          });
-          for (const post of posts) {
-            const message = post.message?.trim() ?? "";
-            const freshness = shouldImportFacebookPost(
-              message,
-              post.created_time,
-              post,
-              { importAllFeedPosts: true },
-            );
-            if (!freshness.ok) continue;
-
-            const firstLine = message.split("\n")[0]?.trim().slice(0, 200) ?? "";
-            const title =
-              firstLine && !isFacebookJunkText(firstLine)
-                ? firstLine
-                : `${teItoPage.name} — publication`;
-            const link =
-              post.permalink_url ??
-              `${teItoPage.homepage}/posts/${post.id}`;
-            rows.push({
-              source_id: "facebook-page-te-ito-rau",
-              source_name: teItoPage.name,
-              external_id: `fb-graph-${post.id}`,
-              url: link,
-              title,
-              excerpt: message.slice(0, 400) || null,
-              image_url: post.full_picture ?? null,
-              published_at: freshness.publishedAt,
-            });
-            result.matched += 1;
-          }
-        }
-      }
-    } catch {
-      /* Te Ito Rau optionnel — coupures via MooreaNews / PDE / EDT */
     }
   }
 
@@ -655,9 +564,13 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
       ];
     }
     for (const err of imported.errors) {
-      result.errors.push(err);
+      if (!teItoRauGraphNoise(err)) {
+        result.errors.push(err);
+      }
     }
   }
+
+  result.errors = result.errors.filter((e) => !teItoRauGraphNoise(e));
 
   return result;
 }

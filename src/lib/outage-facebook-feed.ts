@@ -17,8 +17,14 @@ import {
 import type { UtilityOutage } from "@/lib/utility-outages";
 import {
   FACEBOOK_PAGE_WATCHES,
+  TE_ITO_RAU_FACEBOOK_PAGE,
   type FacebookPageWatch,
 } from "@/lib/watch-sources";
+
+const OUTAGE_FACEBOOK_PAGES: FacebookPageWatch[] = [
+  ...FACEBOOK_PAGE_WATCHES,
+  TE_ITO_RAU_FACEBOOK_PAGE,
+];
 
 const GRAPH_VERSION = "v21.0";
 const GRAPH_POST_FIELDS =
@@ -252,7 +258,7 @@ export async function fetchOutagesFromFacebookFeeds(): Promise<{
     token: string;
   }[] = [];
 
-  for (const page of FACEBOOK_PAGE_WATCHES) {
+  for (const page of OUTAGE_FACEBOOK_PAGES) {
     const token = await pickTokenForPage(
       page,
       userToken,
