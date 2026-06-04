@@ -18,7 +18,6 @@ export async function GET(req: Request) {
   if (articles > 0) {
     revalidatePath("/actualites");
     revalidatePath("/coupures");
-    revalidatePath("/paquebots");
     revalidatePath("/", "layout");
   }
   return NextResponse.json({

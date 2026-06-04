@@ -110,7 +110,7 @@ export const STATIC_SITEMAP_PATHS: {
   { path: "/mon-sejour", priority: 0.8, freq: "daily" },
   { path: "/guides", priority: 0.75, freq: "monthly" },
   { path: "/guides/ferry-tahiti-moorea", priority: 0.75, freq: "monthly" },
-  { path: "/paquebots", priority: 0.8, freq: "daily" },
+  { path: "/paquebots", priority: 0.8, freq: "monthly" },
   { path: "/guides/48h-moorea", priority: 0.75, freq: "monthly" },
   { path: "/visiteurs/pack-hebergeur", priority: 0.5, freq: "monthly" },
   { path: "/vigilance-cyclone", priority: 0.85, freq: "daily" },

@@ -67,7 +67,11 @@ export function BreakingNewsSlot() {
           <span className="uppercase tracking-widest text-[11px] bg-white/20 px-2 py-0.5 rounded-full shrink-0">
             {badge}
           </span>
-          <span className="truncate max-w-[72ch]">{urgent.title}</span>
+          <span className="truncate max-w-[min(72ch,90vw)]">
+            {urgent.type === "meteo" && urgent.details
+              ? urgent.details.split("\n")[0]?.trim() || urgent.title
+              : urgent.title}
+          </span>
         </Link>
       </div>
       <button

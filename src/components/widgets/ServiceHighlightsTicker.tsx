@@ -40,10 +40,8 @@ export function ServiceHighlightsTicker() {
     }
 
     load();
-    const id = setInterval(load, 5 * 60 * 1000);
     return () => {
       cancelled = true;
-      clearInterval(id);
     };
   }, []);
 

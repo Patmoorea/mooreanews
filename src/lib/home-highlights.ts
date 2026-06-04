@@ -2,7 +2,10 @@
  * Annonces prioritaires pour le bandeau d’accueil (ticker).
  */
 
-import { getCruiseShipSchedule } from "@/lib/cruise-ships";
+import {
+  filterUpcomingMooreaVisits,
+  getMooreaCruiseSchedule,
+} from "@/lib/moorea-cruise-schedule";
 import { getUtilityOutages, type UtilityOutage } from "@/lib/utility-outages";
 
 export type HomeHighlight = {
@@ -73,9 +76,9 @@ export async function getHomeHighlights(): Promise<HomeHighlight[]> {
   const horizon = now + HORIZON_MS;
   const highlights: HomeHighlight[] = [];
 
-  const [outages, cruises] = await Promise.all([
+  const [outages, mooreaCruises] = await Promise.all([
     getUtilityOutages().catch(() => null),
-    getCruiseShipSchedule().catch(() => null),
+    getMooreaCruiseSchedule().catch(() => null),
   ]);
 
   if (outages) {
@@ -87,29 +90,22 @@ export async function getHomeHighlights(): Promise<HomeHighlight[]> {
     }
   }
 
-  if (cruises) {
-    const byShipDay = new Map<string, (typeof cruises.papeete)[number]>();
-    for (const c of cruises.papeete) {
-      const t = Date.parse(c.movementAt);
-      if (t < now - 6 * 60 * 60 * 1000 || t > horizon) continue;
-      const key = `${c.shipName.toUpperCase()}-${tahitiDateKey(c.movementAt)}`;
-      const prev = byShipDay.get(key);
-      if (!prev || (c.arrival && !prev.arrival)) {
-        byShipDay.set(key, c);
-      }
-    }
+  if (mooreaCruises) {
+    for (const v of filterUpcomingMooreaVisits(mooreaCruises.visits, now)) {
+      const t = Date.parse(v.visitAt);
+      if (t > horizon) continue;
 
-    for (const c of byShipDay.values()) {
-      const day = relativeDayLabel(c.movementAt);
-      const arr = c.arrival ? ` · ${c.arrival.replace(/\s+/g, " ").trim()}` : "";
+      const day = relativeDayLabel(v.visitAt);
+      const times =
+        v.timeLabel && v.timeLabel.length > 0 ? ` · ${v.timeLabel}` : "";
 
       highlights.push({
-        id: c.id,
+        id: v.id,
         kind: "paquebot",
-        label: `Paquebot ${c.shipName} à Papeete ${day}${arr} — excursions Moorea`,
-        href: "/paquebots",
+        label: `Paquebot ${v.shipName} — Moorea ${day}${times}`,
+        href: "/paquebots#moorea",
         priority: day === "demain" ? 20 : 25,
-        at: c.movementAt,
+        at: v.visitAt,
       });
     }
   }

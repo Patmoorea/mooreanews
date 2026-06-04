@@ -3,18 +3,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Anchor, Ship } from "lucide-react";
-import type { CruiseScheduleResult } from "@/lib/cruise-ships";
+import type { MooreaCruiseScheduleResult } from "@/lib/moorea-cruise-schedule";
 import { formatCruiseDateTime } from "@/lib/cruise-ships";
 
 export function CruiseShipsCard() {
-  const [data, setData] = useState<CruiseScheduleResult | null>(null);
+  const [data, setData] = useState<MooreaCruiseScheduleResult | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/cruise-ships")
-      .then((r) => r.json() as Promise<CruiseScheduleResult>)
+    fetch("/api/moorea-cruise-ships")
+      .then((r) => r.json() as Promise<MooreaCruiseScheduleResult>)
       .then((d) => {
-        if (!cancelled && d.papeete) setData(d);
+        if (!cancelled && d.visits) setData(d);
       })
       .catch(() => {});
     return () => {
@@ -22,8 +22,9 @@ export function CruiseShipsCard() {
     };
   }, []);
 
-  const next = [...(data?.papeete.slice(0, 2) ?? []), ...(data?.otherPorts.slice(0, 1) ?? [])]
-    .sort((a, b) => Date.parse(a.movementAt) - Date.parse(b.movementAt))
+  const now = Date.now();
+  const next = (data?.visits ?? [])
+    .filter((v) => Date.parse(v.visitAt) >= now - 3600000)
     .slice(0, 3);
 
   return (
@@ -36,7 +37,7 @@ export function CruiseShipsCard() {
               Paquebots
             </span>
             <p className="text-sm font-display text-ocean-950 leading-tight">
-              Papeete & Raiatea
+              Moorea
             </p>
           </div>
         </div>
@@ -57,17 +58,17 @@ export function CruiseShipsCard() {
         </p>
       ) : (
         <ul className="mt-4 space-y-3">
-          {next.map((c) => (
+          {next.map((v) => (
             <li
-              key={c.id}
+              key={v.id}
               className="flex items-start gap-2 text-sm border-b border-ocean-50 pb-2 last:border-0 last:pb-0"
             >
               <Ship size={14} className="text-lagon-600 mt-0.5 shrink-0" />
               <div>
-                <p className="font-semibold text-ocean-950">{c.shipName}</p>
+                <p className="font-semibold text-ocean-950">{v.shipName}</p>
                 <p className="text-xs text-ocean-600">
-                  {c.port === "UTUROA" ? "Uturoa · " : c.port === "PAPEETE" ? "Papeete · " : ""}
-                  {formatCruiseDateTime(c.movementAt)}
+                  Moorea · {formatCruiseDateTime(v.visitAt)}
+                  {v.timeLabel ? ` · ${v.timeLabel}` : ""}
                 </p>
               </div>
             </li>

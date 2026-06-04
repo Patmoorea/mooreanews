@@ -3,6 +3,11 @@
  * Source : https://www.portdepapeete.pf/prevision-des-bateaux/previsions/
  */
 
+import { unstable_cache } from "next/cache";
+import { CRUISE_SCHEDULE_REVALIDATE_SEC } from "@/lib/moorea-cruise-schedule";
+
+export { CRUISE_SCHEDULE_REVALIDATE_SEC };
+
 const PORT_SCHEDULE_URL =
   "https://www.portdepapeete.pf/prevision-des-bateaux/previsions/";
 
@@ -23,8 +28,6 @@ export type CruiseShipCall = {
   voyageNumber: string | null;
   agent: string;
   lengthM: number | null;
-  /** Papeete = port d’accueil principal (excursions vers Moorea). */
-  gatewayForMoorea: boolean;
 };
 
 export type CruiseScheduleResult = {
@@ -87,7 +90,6 @@ function parseRow(cellsHtml: string[]): CruiseShipCall | null {
     voyageNumber: texts[9] || null,
     agent: texts[10] ?? "",
     lengthM: Number.isFinite(lengthM!) ? lengthM : null,
-    gatewayForMoorea: port === "PAPEETE",
   };
 }
 
@@ -129,22 +131,14 @@ function extractUpdatedLabel(html: string): string | null {
   return m?.[1] ?? null;
 }
 
-const CACHE_MS = 6 * 60 * 60 * 1000;
-let cache: { at: number; data: CruiseScheduleResult } | null = null;
-
-export async function getCruiseShipSchedule(): Promise<CruiseScheduleResult> {
-  if (cache && Date.now() - cache.at < CACHE_MS) {
-    return cache.data;
-  }
-
+async function fetchCruiseScheduleFromPort(): Promise<CruiseScheduleResult> {
   const res = await fetch(PORT_SCHEDULE_URL, {
     headers: {
       Accept: "text/html",
       "User-Agent":
         "MooreaNews/1.0 (+https://www.mooreanews.com; cruise schedule widget)",
     },
-    cache: "no-store",
-    next: { revalidate: 21600 },
+    next: { revalidate: CRUISE_SCHEDULE_REVALIDATE_SEC },
   });
 
   if (!res.ok) {
@@ -167,7 +161,7 @@ export async function getCruiseShipSchedule(): Promise<CruiseScheduleResult> {
   const papeete = upcoming.filter((c) => c.port === "PAPEETE");
   const otherPorts = upcoming.filter((c) => c.port !== "PAPEETE");
 
-  const data: CruiseScheduleResult = {
+  return {
     fetchedAt: new Date().toISOString(),
     source: CRUISE_SOURCE_LABEL,
     sourceUrl: CRUISE_SOURCE_URL,
@@ -176,9 +170,16 @@ export async function getCruiseShipSchedule(): Promise<CruiseScheduleResult> {
     all: upcoming,
     updatedLabel: extractUpdatedLabel(html),
   };
+}
 
-  cache = { at: Date.now(), data };
-  return data;
+const loadCruiseScheduleCached = unstable_cache(
+  fetchCruiseScheduleFromPort,
+  ["cruise-ship-schedule-port-papeete"],
+  { revalidate: CRUISE_SCHEDULE_REVALIDATE_SEC, tags: ["cruise-ships"] },
+);
+
+export async function getCruiseShipSchedule(): Promise<CruiseScheduleResult> {
+  return loadCruiseScheduleCached();
 }
 
 /** Libellé port pour l’affichage (données source en majuscules). */
@@ -189,9 +190,24 @@ export function formatCruisePort(port: string): string {
   return port;
 }
 
-/** Moorea n’apparaît pas dans le calendrier « PAQUEBOT » du Port de Papeete. */
-export const CRUISE_MOOREA_NOTICE =
-  "Les très gros paquebots de croisière n’accostent pas à Moorea : pas de quai profond dédié. Les passagers vont souvent à Moorea en excursion depuis Papeete (ferry ou organisateur). Les escales « paquebot » listées ici sont Papeete et Uturoa (Raiatea).";
+/**
+ * Limite de la source affichée — pas une affirmation sur la réalité à Moorea.
+ * Les mouillages paquebots (baies de Cook et d’Opunohu) sont gérés par la capitainerie
+ * du Port autonome de Papeete mais ne figurent pas dans ce tableau public « PAQUEBOT ».
+ */
+export const CRUISE_SOURCE_LIMIT_NOTICE =
+  "Agenda Moorea : Tahiti Cruise Club (escales des 7 prochains jours, données publiques) croisé avec le calendrier mensuel CruiseTimetables.com. Le tableau Port de Papeete ci-dessous liste les mouvements à quai (Papeete, Uturoa), distincts des mouillages à Moorea.";
+
+export function formatCruiseFetchedAt(iso: string): string {
+  return new Date(iso).toLocaleString("fr-FR", {
+    timeZone: "Pacific/Tahiti",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export function formatCruiseDateTime(iso: string): string {
   return new Date(iso).toLocaleString("fr-FR", {

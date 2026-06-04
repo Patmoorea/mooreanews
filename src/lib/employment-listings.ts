@@ -5,6 +5,7 @@ import {
   ARAVIHI_JOBS_SOURCE_ID,
   CGF_JOBS_SOURCE_ID,
   COMMUNE_EMPLOI_SOURCE_ID,
+  EMPLOYMENT_JOB_SOURCE_IDS,
   SEFI_JOBS_SOURCE_ID,
   SEFI_TRAINING_SOURCE_ID,
 } from "@/lib/employment-sources";
@@ -95,4 +96,42 @@ export async function getEmploymentLastSyncAt(): Promise<string | null> {
     .maybeSingle();
 
   return data?.fetched_at ?? null;
+}
+
+/** Offres récentes pour pastille / bandeau d’accueil (emploi Moorea). */
+export async function getRecentMooreaJobOffers(
+  limit = 8,
+  maxAgeDays = 30,
+): Promise<EmploymentListing[]> {
+  const supabase = getPublicSupabase() ?? getAdminSupabase();
+  if (!supabase) return [];
+
+  const cutoff = new Date(
+    Date.now() - maxAgeDays * 24 * 60 * 60 * 1000,
+  ).toISOString();
+
+  const { data, error } = await supabase
+    .from("external_articles")
+    .select(
+      "id, source_id, source_name, external_id, title, excerpt, url, published_at, fetched_at",
+    )
+    .in("source_id", [...EMPLOYMENT_JOB_SOURCE_IDS])
+    .eq("hidden", false)
+    .gte("published_at", cutoff)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+
+  return data.map((r) => ({
+    id: r.id,
+    sourceId: r.source_id,
+    sourceName: r.source_name,
+    externalId: r.external_id,
+    title: r.title,
+    excerpt: r.excerpt,
+    url: r.url,
+    publishedAt: r.published_at,
+    fetchedAt: r.fetched_at,
+  }));
 }

@@ -16,6 +16,7 @@ import { SITE } from "@/lib/constants";
 import { WaveDivider, TROPICAL_EMOJI } from "@/components/decor/TropicalDecor";
 import { HeroWeatherPill } from "@/components/home/HeroWeatherPill";
 import { OutageSticker } from "@/components/home/OutageSticker";
+import { EmploymentSticker } from "@/components/home/EmploymentSticker";
 import { cn } from "@/lib/utils";
 
 const UTILITIES: {
@@ -106,6 +107,7 @@ export function Hero() {
               </span>
               <HeroWeatherPill />
               <OutageSticker />
+              <EmploymentSticker />
             </div>
 
             <h1 className="mt-5 font-display text-3xl sm:text-4xl lg:text-5xl text-center lg:text-left text-balance leading-[1.08] text-white drop-shadow-sm">

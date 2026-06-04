@@ -85,9 +85,11 @@ export async function MeteoVigilanceCard() {
         </span>
       </div>
       <p className="mt-3 font-semibold text-ocean-950 leading-snug">
-        {vigilanceCardTitle(snapshot)}
+        {snapshot.activePhenomena.length > 0
+          ? snapshot.publicSummary
+          : vigilanceCardTitle(snapshot)}
       </p>
-      {nationalNote ? (
+      {nationalNote && snapshot.activePhenomena.length === 0 ? (
         <p className="mt-2 text-xs text-ocean-700">{nationalNote}</p>
       ) : null}
       <p className="mt-2 text-xs text-ocean-600">

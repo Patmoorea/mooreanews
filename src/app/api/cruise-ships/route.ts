@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
-import { getCruiseShipSchedule } from "@/lib/cruise-ships";
+import {
+  CRUISE_SCHEDULE_REVALIDATE_SEC,
+  getCruiseShipSchedule,
+} from "@/lib/cruise-ships";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 2592000;
 
 export async function GET() {
   try {
     const data = await getCruiseShipSchedule();
     return NextResponse.json(data, {
       headers: {
-        "Cache-Control": "public, max-age=300, s-maxage=21600, stale-while-revalidate=86400",
+        "Cache-Control": `public, max-age=${CRUISE_SCHEDULE_REVALIDATE_SEC}, s-maxage=${CRUISE_SCHEDULE_REVALIDATE_SEC}`,
       },
     });
   } catch (e) {

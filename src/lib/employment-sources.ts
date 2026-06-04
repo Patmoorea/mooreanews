@@ -22,6 +22,14 @@ export const ALL_EMPLOYMENT_SOURCE_IDS = [
   COMMUNE_EMPLOI_SOURCE_ID,
 ] as const;
 
+/** Offres d'emploi uniquement (hors formations SEFI). */
+export const EMPLOYMENT_JOB_SOURCE_IDS = [
+  SEFI_JOBS_SOURCE_ID,
+  ARAVIHI_JOBS_SOURCE_ID,
+  CGF_JOBS_SOURCE_ID,
+  COMMUNE_EMPLOI_SOURCE_ID,
+] as const;
+
 export const SEFI_SERVICES_BASE = "https://services.sefi.pf";
 export const SEFI_SITE_BASE = "https://sefi.pf";
 
