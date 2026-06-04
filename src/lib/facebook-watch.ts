@@ -251,6 +251,11 @@ async function fetchPagePosts(
   page: FacebookPageWatch,
   token: string
 ): Promise<GraphPost[]> {
+  /** Te Ito Rau : jamais /{id}/posts direct (Meta 400) — flux outage-facebook-feed. */
+  if (page.id === "te-ito-rau") {
+    return fetchFacebookPagePostsForWatch(page, token);
+  }
+
   const graphPageId = /^\d+$/.test(page.pageId)
     ? page.pageId
     : page.id === "moorea-news"
@@ -429,7 +434,11 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
     config: Parameters<typeof importFacebookPostsAsContent>[1];
   }[] = [];
 
+  const teItoPage = FACEBOOK_PAGE_WATCHES.find((p) => p.id === "te-ito-rau");
+
   for (const page of FACEBOOK_PAGE_WATCHES) {
+    if (page.id === "te-ito-rau") continue;
+
     try {
       if (userToken && !perPageTokenByIdOrUsername.has(page.pageId)) {
         const viaUser = await fetchPageAccessTokenViaUserToken(
@@ -464,13 +473,7 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
         }
         continue;
       }
-      const posts =
-        page.id === "te-ito-rau"
-          ? await fetchFacebookPagePostsForWatch(page, tokenForPage)
-          : await fetchPagePosts(page, tokenForPage);
-      if (page.id === "te-ito-rau" && posts.length === 0) {
-        continue;
-      }
+      const posts = await fetchPagePosts(page, tokenForPage);
       result.fetched += posts.length;
       if (
         page.id === "moorea-news" ||
@@ -537,7 +540,76 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
         result.matched += 1;
       }
     } catch (e) {
-      result.errors.push(String(e));
+      const msg = String(e);
+      if (!msg.includes("Te Ito Rau") && !msg.includes("100088637945937")) {
+        result.errors.push(msg);
+      }
+    }
+  }
+
+  if (teItoPage) {
+    try {
+      let teToken = userToken;
+      if (teToken) {
+        const viaUser = await fetchPageAccessTokenViaUserToken(
+          teToken,
+          teItoPage.pageId,
+        );
+        if (viaUser) teToken = viaUser;
+      }
+      if (!teToken) teToken = fallbackPageToken;
+      if (teToken) {
+        const posts = await fetchFacebookPagePostsForWatch(teItoPage, teToken);
+        result.fetched += posts.length;
+        if (posts.length > 0) {
+          articleImports.push({
+            posts,
+            config: {
+              pageKey: "te-ito-rau",
+              pageName: teItoPage.name,
+              homepage: teItoPage.homepage,
+              authorLabel: `${teItoPage.name} (Facebook)`,
+              tag: "te-ito-rau",
+              allowFerryAlerts: false,
+              importAllFeedPosts: true,
+              pageAccessToken: teToken,
+              graphPageId: teItoPage.homepage,
+            },
+          });
+          for (const post of posts) {
+            const message = post.message?.trim() ?? "";
+            const freshness = shouldImportFacebookPost(
+              message,
+              post.created_time,
+              post,
+              { importAllFeedPosts: true },
+            );
+            if (!freshness.ok) continue;
+
+            const firstLine = message.split("\n")[0]?.trim().slice(0, 200) ?? "";
+            const title =
+              firstLine && !isFacebookJunkText(firstLine)
+                ? firstLine
+                : `${teItoPage.name} — publication`;
+            const link =
+              post.permalink_url ??
+              `${teItoPage.homepage}/posts/${post.id}`;
+            rows.push({
+              source_id: "facebook-page-te-ito-rau",
+              source_name: teItoPage.name,
+              external_id: `fb-graph-${post.id}`,
+              url: link,
+              title,
+              excerpt: message.slice(0, 400) || null,
+              image_url: post.full_picture ?? null,
+              published_at: freshness.publishedAt,
+            });
+            result.matched += 1;
+          }
+        }
+      }
+    } catch {
+      /* Te Ito Rau optionnel — coupures via MooreaNews / PDE / EDT */
     }
   }
 

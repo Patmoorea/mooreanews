@@ -73,10 +73,20 @@ export function isMetaTokenError(error: string): boolean {
   );
 }
 
+function isTeItoRauGraphNoise(error: string): boolean {
+  return (
+    error.includes("Te Ito Rau") ||
+    error.includes("100088637945937") ||
+    /unsupported get request.*100088637945937/i.test(error)
+  );
+}
+
 function formatErrors(errors: string[]): string {
   if (errors.length === 0) return "";
-  const critical = errors.filter(isCriticalVeilleError);
-  const optional = errors.filter(
+  const filtered = errors.filter((e) => !isTeItoRauGraphNoise(e));
+  if (filtered.length === 0) return "";
+  const critical = filtered.filter(isCriticalVeilleError);
+  const optional = filtered.filter(
     (e) => !isCriticalVeilleError(e) && !critical.includes(e),
   );
 
