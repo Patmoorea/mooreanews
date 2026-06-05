@@ -5,6 +5,7 @@
 import type { AggregationResult } from "@/lib/aggregator";
 import { externalIdFromFacebookUrl, isFacebookUrl } from "@/lib/facebook-url";
 import { fetchOpenGraph } from "@/lib/open-graph";
+import { upsertExternalArticleRows } from "@/lib/external-articles-upsert";
 import { cleanImportedText } from "@/lib/html-entities";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { importFacebookPostsAsContent } from "@/lib/facebook-content-import";
@@ -56,18 +57,9 @@ async function upsertFacebookRows(
     excerpt: string | null;
     image_url: string | null;
     published_at: string;
-  }[]
-): Promise<number> {
-  if (rows.length === 0) return 0;
-  const supabase = getAdminSupabase();
-  if (!supabase) return 0;
-
-  const { error, count } = await supabase
-    .from("external_articles")
-    .upsert(rows, { onConflict: "source_id,external_id", count: "exact" });
-
-  if (error) throw new Error(error.message);
-  return count ?? rows.length;
+  }[],
+): Promise<{ inserted: number; errors: string[] }> {
+  return upsertExternalArticleRows(rows);
 }
 
 /** Sonde les URLs Facebook listées dans watch-sources (+ env). */
@@ -139,11 +131,9 @@ export async function aggregateFacebookWatchUrls(): Promise<AggregationResult> {
     }
   }
 
-  try {
-    result.inserted = await upsertFacebookRows(rows);
-  } catch (e) {
-    result.errors.push(String(e));
-  }
+  const upserted = await upsertFacebookRows(rows);
+  result.inserted = upserted.inserted;
+  result.errors.push(...upserted.errors);
 
   const imported = await importFacebookOgAsArticles(ogForImport);
   result.articlesCreated = imported.created;
@@ -485,7 +475,7 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
         });
       }
       for (const post of posts) {
-        const message = post.message?.trim() ?? "";
+        const message = cleanImportedText(post.message?.trim() ?? "");
         const freshness = shouldImportFacebookPost(
           message,
           post.created_time,
@@ -522,11 +512,9 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
     }
   }
 
-  try {
-    result.inserted = await upsertFacebookRows(rows);
-  } catch (e) {
-    result.errors.push(String(e));
-  }
+  const upserted = await upsertFacebookRows(rows);
+  result.inserted = upserted.inserted;
+  result.errors.push(...upserted.errors);
 
   for (const batch of articleImports) {
     const imported = await importFacebookPostsAsContent(

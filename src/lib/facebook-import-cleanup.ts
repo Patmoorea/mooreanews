@@ -25,7 +25,7 @@ export async function purgeStaleFacebookImports(): Promise<{
   const { data: tagged } = await admin
     .from("articles")
     .select("id, slug, title, excerpt, body, tags, published_at, cover_url")
-    .contains("tags", ["facebook-import"]);
+    .filter("tags", "cs", "{facebook-import}");
 
   const { data: bySlug } = await admin
     .from("articles")
@@ -106,7 +106,7 @@ export async function countStaleFacebookImports(): Promise<number> {
   const { data: tagged } = await admin
     .from("articles")
     .select("id, slug, title, excerpt, body, tags, published_at, cover_url")
-    .contains("tags", ["facebook-import"]);
+    .filter("tags", "cs", "{facebook-import}");
 
   const { data: bySlug } = await admin
     .from("articles")
