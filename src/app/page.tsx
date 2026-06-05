@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Hero } from "@/components/home/Hero";
+import { SafetyCampaignSlot } from "@/components/home/SafetyCampaignSlot";
 import { PushAlertBanner } from "@/components/pwa/PushAlertBanner";
 import { MooreaDuJour } from "@/components/home/MooreaDuJour";
 import { HomeSectionNav } from "@/components/home/HomeSectionNav";
@@ -23,6 +24,7 @@ export default function HomePage() {
   return (
     <>
       <Hero />
+      <SafetyCampaignSlot />
       <PushAlertBanner />
       <MooreaDuJour />
       <HomeSectionNav />
