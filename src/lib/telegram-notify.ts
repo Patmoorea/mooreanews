@@ -6,6 +6,7 @@ import type { AggregationResult } from "@/lib/aggregator";
 import type { FacebookTokenHealth } from "@/lib/facebook-token";
 import type { ContentAuditReport } from "@/lib/site-content-audit";
 import { escapeHtml, sendTelegramNotification } from "@/lib/telegram";
+import { isOptionalVeilleWarning } from "@/lib/feed-errors";
 import { getMooreaDuJour } from "@/lib/moorea-du-jour";
 import { formatMorningBrief30s } from "@/lib/moorea-brief";
 
@@ -83,7 +84,9 @@ function isTeItoRauGraphNoise(error: string): boolean {
 
 function formatErrors(errors: string[]): string {
   if (errors.length === 0) return "";
-  const filtered = errors.filter((e) => !isTeItoRauGraphNoise(e));
+  const filtered = errors.filter(
+    (e) => !isTeItoRauGraphNoise(e) && !isOptionalVeilleWarning(e),
+  );
   if (filtered.length === 0) return "";
   const critical = filtered.filter(isCriticalVeilleError);
   const optional = filtered.filter(

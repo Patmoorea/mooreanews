@@ -17,6 +17,8 @@ export type RssSource = {
   acceptAll?: boolean;
   /** Si true, le cron crée aussi une fiche dans Actualités (table articles). */
   autoPublishAsArticles?: boolean;
+  /** Flux parfois hors ligne (522, etc.) — pas d’alerte Telegram. */
+  optional?: boolean;
   /** Logo ou favicon de la source. */
   iconUrl?: string;
 };
@@ -71,6 +73,7 @@ export const RSS_SOURCES: RssSource[] = [
     homepage: "https://la1ere.francetvinfo.fr/polynesie",
     keywords: MOOREA_KEYWORDS,
     priority: 70,
+    optional: true,
   },
   {
     id: "presidence-pf",
@@ -79,6 +82,7 @@ export const RSS_SOURCES: RssSource[] = [
     homepage: "https://www.presidence.pf",
     keywords: MOOREA_KEYWORDS,
     priority: 60,
+    optional: true,
   },
   {
     id: "google-news-coupures-moorea",

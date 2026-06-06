@@ -19,16 +19,38 @@ export type ExternalArticleUpsertRow = {
   fetched_at?: string;
 };
 
+type NormalizedRow = ReturnType<typeof normalizeRow>;
+
+function stripLoneSurrogates(value: string): string {
+  let out = "";
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i);
+    if (code >= 0xd800 && code <= 0xdbff) {
+      const next = value.charCodeAt(i + 1);
+      if (next >= 0xdc00 && next <= 0xdfff) {
+        out += value[i] + value[i + 1];
+        i++;
+      }
+      continue;
+    }
+    if (code >= 0xdc00 && code <= 0xdfff) continue;
+    out += value[i];
+  }
+  return out;
+}
+
 function sanitizeText(
   value: string | null | undefined,
   maxLen: number,
 ): string | null {
   if (value == null) return null;
-  const cleaned = cleanImportedText(value)
-    .replace(/^\uFEFF/, "")
-    .replace(/\u0000/g, "")
-    .replace(/[\u0001-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, " ")
-    .trim();
+  const cleaned = stripLoneSurrogates(
+    cleanImportedText(value)
+      .replace(/^\uFEFF/, "")
+      .replace(/\u0000/g, "")
+      .replace(/[\u0001-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, " ")
+      .trim(),
+  );
   if (!cleaned) return null;
   return cleaned.slice(0, maxLen);
 }
@@ -36,7 +58,14 @@ function sanitizeText(
 function sanitizeUrl(url: string | null | undefined): string | null {
   const u = url?.trim();
   if (!u?.startsWith("http")) return null;
-  return u.length > 2048 ? u.slice(0, 2048) : u;
+  const safe = stripLoneSurrogates(u);
+  return safe.length > 2048 ? safe.slice(0, 2048) : safe;
+}
+
+function normalizePublishedAt(value: string): string {
+  const ms = Date.parse(value);
+  if (!Number.isNaN(ms)) return new Date(ms).toISOString();
+  return new Date().toISOString();
 }
 
 function normalizeRow(row: ExternalArticleUpsertRow) {
@@ -44,20 +73,66 @@ function normalizeRow(row: ExternalArticleUpsertRow) {
     sanitizeText(row.title, 500) ?? row.source_name.slice(0, 500);
   return {
     source_id: row.source_id.slice(0, 120),
-    source_name: sanitizeText(row.source_name, 200) ?? row.source_name.slice(0, 200),
+    source_name:
+      sanitizeText(row.source_name, 200) ?? row.source_name.slice(0, 200),
     external_id: row.external_id.slice(0, 240),
-    url: sanitizeUrl(row.url) ?? row.url.slice(0, 2048),
+    url: sanitizeUrl(row.url) ?? stripLoneSurrogates(row.url).slice(0, 2048),
     title,
     excerpt: sanitizeText(row.excerpt, 500),
     image_url: sanitizeUrl(row.image_url),
     author: row.author ? sanitizeText(row.author, 200) : null,
-    published_at: row.published_at,
+    published_at: normalizePublishedAt(row.published_at),
     hidden: row.hidden ?? false,
     fetched_at: row.fetched_at ?? new Date().toISOString(),
   };
 }
 
+function minimalRow(row: NormalizedRow): NormalizedRow {
+  return {
+    ...row,
+    title: sanitizeText(row.title, 200) ?? row.source_name.slice(0, 200),
+    excerpt: null,
+    image_url: null,
+    author: null,
+  };
+}
+
+function isJsonUpsertError(message: string): boolean {
+  return /empty or invalid json|invalid input syntax for type json/i.test(
+    message,
+  );
+}
+
 const CHUNK_SIZE = 12;
+
+async function upsertOne(
+  supabase: NonNullable<ReturnType<typeof getAdminSupabase>>,
+  row: NormalizedRow,
+): Promise<{ ok: true; count: number } | { ok: false; message: string }> {
+  const attempt = async (
+    payload: NormalizedRow,
+  ): Promise<{ error: string } | { count: number }> => {
+    const { error, count } = await supabase
+      .from("external_articles")
+      .upsert(payload, { onConflict: "source_id,external_id" });
+    if (error) return { error: error.message };
+    return { count: count ?? 1 };
+  };
+
+  const first = await attempt(row);
+  if (!("error" in first)) {
+    return { ok: true, count: first.count };
+  }
+  if (!isJsonUpsertError(first.error)) {
+    return { ok: false, message: first.error };
+  }
+
+  const second = await attempt(minimalRow(row));
+  if (!("error" in second)) {
+    return { ok: true, count: second.count };
+  }
+  return { ok: false, message: second.error };
+}
 
 /** Upsert par lots ; repli ligne par ligne si un lot échoue. */
 export async function upsertExternalArticleRows(
@@ -82,14 +157,12 @@ export async function upsertExternalArticleRows(
     }
 
     for (const row of chunk) {
-      const { error: rowErr, count: rowCount } = await supabase
-        .from("external_articles")
-        .upsert(row, { onConflict: "source_id,external_id" });
-      if (!rowErr) {
-        inserted += rowCount ?? 1;
+      const result = await upsertOne(supabase, row);
+      if (result.ok) {
+        inserted += result.count;
       } else {
         errors.push(
-          `${row.source_id}/${row.external_id}: ${rowErr.message}`,
+          `${row.source_id}/${row.external_id}: ${result.message}`,
         );
       }
     }

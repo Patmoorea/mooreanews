@@ -7,6 +7,7 @@ import { importArticlesFromRssItems } from "@/lib/rss-article-import";
 import { facebookImportMaxAgeDays } from "@/lib/facebook-import-filters";
 import { aggregateWebWatch } from "@/lib/facebook-watch";
 import { fetchRssFeed, type RssItem } from "@/lib/rss-parser";
+import { isTransientFeedError } from "@/lib/feed-errors";
 import { RSS_SOURCES, rssSourcesByPriority, type RssSource } from "@/lib/rss-sources";
 import { ALL_EMPLOYMENT_SOURCE_IDS } from "@/lib/employment-sources";
 import { getAdminSupabase } from "@/lib/supabase/admin";
@@ -56,7 +57,10 @@ async function aggregateOne(source: RssSource): Promise<AggregationResult> {
   try {
     items = await fetchRssFeed(source.url, { fresh: true });
   } catch (e) {
-    result.errors.push(String(e));
+    const msg = String(e);
+    if (!source.optional || !isTransientFeedError(msg)) {
+      result.errors.push(msg);
+    }
     return result;
   }
   result.fetched = items.length;

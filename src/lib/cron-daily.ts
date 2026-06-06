@@ -228,7 +228,8 @@ export async function runDailyCron(): Promise<DailyCronResult> {
       !e.includes("Te Ito Rau") &&
       !e.includes("100088637945937") &&
       !e.includes("tntv.pf") &&
-      !e.includes("pas de métadonnées OG"),
+      !e.includes("pas de métadonnées OG") &&
+      !e.includes("presidence.pf"),
   );
 
   return {
