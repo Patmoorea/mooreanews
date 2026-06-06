@@ -15,9 +15,6 @@ export function isOptionalVeilleWarning(error: string): boolean {
   return (
     lower.includes("presidence.pf") ||
     lower.includes("polynesie-1ere") ||
-    lower.includes("la1ere.francetvinfo.fr") ||
-    /facebook-page-[^/]+\/fb-graph-[^:]+: empty or invalid json/i.test(
-      error,
-    )
+    lower.includes("la1ere.francetvinfo.fr")
   );
 }
