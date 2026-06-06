@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
-import { listFaqByCategory } from "@/lib/faq";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { listFaqByCategory, listFaqEntries } from "@/lib/faq";
+import { faqPageJsonLd } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -14,10 +16,21 @@ export const metadata: Metadata = {
 };
 
 export default async function QuiSaitQuoiPage() {
-  const groups = await listFaqByCategory();
+  const [groups, allEntries] = await Promise.all([
+    listFaqByCategory(),
+    listFaqEntries(),
+  ]);
 
   return (
     <>
+      <JsonLd
+        data={faqPageJsonLd(
+          allEntries.map((e) => ({
+            question: e.question,
+            answer: e.answer,
+          })),
+        )}
+      />
       <PageHeader
         badge="Curaté"
         title="Qui sait quoi"

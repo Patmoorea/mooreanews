@@ -24,6 +24,14 @@ export function Footer() {
                 Recevez le brief matinal (ferries, alertes, météo) et le récap
                 hebdo des actus et bons plans de l&apos;île.
               </p>
+              <p className="mt-3 text-sm">
+                <Link
+                  href="/feed.xml"
+                  className="text-lagon-300 hover:text-white font-medium underline-offset-2 hover:underline"
+                >
+                  Flux RSS actualités
+                </Link>
+              </p>
             </div>
             <NewsletterForm />
           </div>

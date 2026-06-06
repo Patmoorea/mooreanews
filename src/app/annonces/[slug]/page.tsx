@@ -8,6 +8,7 @@ import { ShareButtons } from "@/components/ShareButtons";
 import { getAnnouncementBySlug, getAnnouncements } from "@/lib/content";
 import { ANNOUNCEMENT_TYPE_LABELS } from "@/lib/content-labels";
 import { SITE } from "@/lib/constants";
+import { buildPageShareMetadata } from "@/lib/seo";
 import { timeAgo } from "@/lib/utils";
 import { BoostAnnouncementButton } from "@/components/commerce/BoostAnnouncementButton";
 import { hasPoster, PosterImage } from "@/components/PosterImage";
@@ -27,18 +28,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const item = await getAnnouncementBySlug(slug);
   if (!item) return { title: "Annonce introuvable" };
-  return {
+  return buildPageShareMetadata({
     title: item.title,
     description: item.body.slice(0, 160),
-    alternates: { canonical: `/annonces/${item.slug}` },
-    openGraph: {
-      title: item.title,
-      description: item.body.slice(0, 160),
-      ...(ogImageUrl(item)
-        ? { images: [{ url: ogImageUrl(item)!, alt: item.title }] }
-        : {}),
-    },
-  };
+    path: `/annonces/${item.slug}`,
+    imageUrl: ogImageUrl(item),
+  });
 }
 
 export default async function AnnonceDetailPage({ params }: Props) {

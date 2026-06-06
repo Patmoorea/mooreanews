@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Hero } from "@/components/home/Hero";
 import { SafetyCampaignSlot } from "@/components/home/SafetyCampaignSlot";
 import { PushAlertBanner } from "@/components/pwa/PushAlertBanner";
+import { HomeNewsletterBand } from "@/components/home/HomeNewsletterBand";
 import { MooreaDuJour } from "@/components/home/MooreaDuJour";
 import { HomeSectionNav } from "@/components/home/HomeSectionNav";
 import { LiveDashboard } from "@/components/home/LiveDashboard";
@@ -14,10 +15,19 @@ import { InteractiveMap } from "@/components/home/InteractiveMap";
 import { CommunityCTA } from "@/components/home/CommunityCTA";
 import { SITE } from "@/lib/constants";
 
-export const dynamic = "force-dynamic";
+/** Cache ISR — meilleur TTFB pour Google et visiteurs (données live rafraîchies côté API). */
+export const revalidate = 300;
 
 export const metadata: Metadata = {
-  alternates: { canonical: "/" },
+  title: `${SITE.name} — Actualités, ferry & événements à Moorea`,
+  description:
+    "L'info locale de Moorea en temps réel : actualités, agenda, annonces, ferries Tahiti–Moorea, alertes coupures et météo. Gratuit.",
+  alternates: {
+    canonical: "/",
+    types: {
+      "application/rss+xml": "/feed.xml",
+    },
+  },
 };
 
 export default function HomePage() {
@@ -27,6 +37,7 @@ export default function HomePage() {
       <SafetyCampaignSlot />
       <PushAlertBanner />
       <MooreaDuJour />
+      <HomeNewsletterBand />
       <HomeSectionNav />
       <LiveDashboard />
       <WeekendAgenda />
@@ -36,25 +47,6 @@ export default function HomePage() {
       <ExternalArticles limit={6} />
       <InteractiveMap />
       <CommunityCTA />
-
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            name: SITE.name,
-            url: SITE.url,
-            description: SITE.description,
-            inLanguage: "fr-PF",
-            potentialAction: {
-              "@type": "SearchAction",
-              target: `${SITE.url}/recherche?q={search_term_string}`,
-              "query-input": "required name=search_term_string",
-            },
-          }),
-        }}
-      />
     </>
   );
 }

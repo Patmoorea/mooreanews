@@ -15,6 +15,7 @@ import { ShareButtons } from "@/components/ShareButtons";
 import { getActivities, getActivityBySlug } from "@/lib/content";
 import { ACTIVITY_CATEGORY_LABELS } from "@/lib/content-labels";
 import { SITE } from "@/lib/constants";
+import { buildPageShareMetadata } from "@/lib/seo";
 import { PosterImage, hasPoster } from "@/components/PosterImage";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -28,12 +29,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const item = await getActivityBySlug(slug);
   if (!item) return { title: "Activité introuvable" };
-  return {
+  return buildPageShareMetadata({
     title: `${item.name} — Activité à Moorea`,
     description: item.description,
-    alternates: { canonical: `/activites/${item.slug}` },
-    openGraph: { title: item.name, description: item.description },
-  };
+    path: `/activites/${item.slug}`,
+    imageUrl: hasPoster(item.image) ? item.image : undefined,
+  });
 }
 
 export default async function ActiviteDetailPage({ params }: Props) {

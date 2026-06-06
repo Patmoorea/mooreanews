@@ -9,6 +9,7 @@ import {
   Ship,
   ArrowRight,
   Plus,
+  Smartphone,
   type LucideIcon,
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
@@ -68,6 +69,13 @@ const UTILITIES: {
     icon: Ship,
     accent: "from-lagon-300/25 to-ocean-600/25",
   },
+  {
+    href: "/telecharger",
+    label: "App",
+    sub: "Android gratuit",
+    icon: Smartphone,
+    accent: "from-ocean-500/30 to-lagon-400/20",
+  },
 ];
 
 export function Hero() {
@@ -125,7 +133,7 @@ export function Hero() {
             </p>
 
             {/* Boutons utilitaires */}
-            <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+            <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {UTILITIES.map((item) => {
                 const Icon = item.icon;
                 return (

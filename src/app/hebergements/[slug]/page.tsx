@@ -3,11 +3,17 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MapPin, Phone, ExternalLink, ArrowLeft } from "lucide-react";
 import { Container } from "@/components/ui/Container";
+import { ShareButtons } from "@/components/ShareButtons";
 import {
   accommodationTypeLabel,
   availabilityLabel,
   getAccommodationBySlug,
 } from "@/lib/accommodations";
+import { SITE } from "@/lib/constants";
+import {
+  buildPageShareMetadata,
+  lodgingBusinessJsonLd,
+} from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -17,17 +23,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const acc = await getAccommodationBySlug(slug);
   if (!acc) return { title: "Hébergement" };
-  return {
+  return buildPageShareMetadata({
     title: `${acc.name} — Hébergement Moorea`,
     description: acc.description,
-    alternates: { canonical: `/hebergements/${slug}` },
-  };
+    path: `/hebergements/${slug}`,
+    imageUrl: acc.coverUrl,
+  });
 }
 
 export default async function HebergementDetailPage({ params }: Props) {
   const { slug } = await params;
   const acc = await getAccommodationBySlug(slug);
   if (!acc) notFound();
+
+  const shareUrl = `${SITE.url}/hebergements/${acc.slug}`;
 
   return (
     <Container className="py-12 sm:py-16 max-w-3xl">
@@ -86,6 +95,14 @@ export default async function HebergementDetailPage({ params }: Props) {
         )}
       </div>
 
+      <div className="mt-10 pt-8 border-t border-ocean-100">
+        <ShareButtons
+          url={shareUrl}
+          title={acc.name}
+          description={acc.description}
+        />
+      </div>
+
       <p className="mt-10 text-sm text-ocean-500">
         Planifiez votre séjour :{" "}
         <Link href="/mon-sejour" className="text-lagon-700 font-semibold hover:underline">
@@ -96,6 +113,23 @@ export default async function HebergementDetailPage({ params }: Props) {
           Guide visiteurs
         </Link>
       </p>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            lodgingBusinessJsonLd({
+              name: acc.name,
+              description: acc.description,
+              slug: acc.slug,
+              district: acc.district,
+              website: acc.website,
+              telephone: acc.contact,
+              imageUrl: acc.coverUrl,
+            }),
+          ),
+        }}
+      />
     </Container>
   );
 }

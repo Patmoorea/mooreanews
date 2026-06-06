@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Marcellus } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { SiteChrome } from "@/components/layout/SiteChrome";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -56,6 +57,9 @@ export const metadata: Metadata = {
       "fr-PF": getSiteOrigin(),
       en: `${getSiteOrigin()}/en`,
     },
+    types: {
+      "application/rss+xml": "/feed.xml",
+    },
   },
   verification: {
     google: googleSiteVerification(),
@@ -109,6 +113,7 @@ export default function RootLayout({
         <JsonLd data={webSiteJsonLd()} />
         <SiteChrome>{children}</SiteChrome>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

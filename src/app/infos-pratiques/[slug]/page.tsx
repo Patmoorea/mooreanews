@@ -18,6 +18,7 @@ import {
 } from "@/lib/content";
 import { INFO_CATEGORY_LABELS } from "@/lib/content-labels";
 import { SITE } from "@/lib/constants";
+import { buildPageShareMetadata } from "@/lib/seo";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -33,12 +34,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const item = await getInfoPratiqueBySlug(slug);
   if (!item) return { title: "Fiche introuvable" };
-  return {
+  return buildPageShareMetadata({
     title: `${item.title} — Info pratique Moorea`,
     description: item.description,
-    alternates: { canonical: `/infos-pratiques/${item.slug}` },
-    openGraph: { title: item.title, description: item.description },
-  };
+    path: `/infos-pratiques/${item.slug}`,
+    imageUrl: item.image,
+  });
 }
 
 export default async function InfoPratiqueDetailPage({ params }: Props) {

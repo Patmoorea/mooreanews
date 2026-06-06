@@ -16,6 +16,7 @@ import { ShareButtons } from "@/components/ShareButtons";
 import { RestaurantPriceLevel } from "@/components/RestaurantPriceLevel";
 import { getRestaurantPriceLevelDisplay } from "@/lib/content-labels";
 import { getRestaurantBySlug, getRestaurants, restaurantToOpenMeta } from "@/lib/content";
+import { buildPageShareMetadata } from "@/lib/seo";
 import {
   resolveRestaurantOpenStatus,
   openStatusLabel,
@@ -35,16 +36,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const restaurant = await getRestaurantBySlug(slug);
   if (!restaurant) return { title: "Restaurant introuvable" };
-  return {
+  return buildPageShareMetadata({
     title: `${restaurant.name} — Restaurant à ${restaurant.district}`,
     description: restaurant.description,
-    alternates: { canonical: `/restaurants/${restaurant.slug}` },
-    openGraph: {
-      title: restaurant.name,
-      description: restaurant.description,
-      type: "website",
-    },
-  };
+    path: `/restaurants/${restaurant.slug}`,
+    imageUrl: restaurant.image,
+  });
 }
 
 export default async function RestaurantDetailPage({ params }: Props) {

@@ -6,6 +6,7 @@ import { ContentCoverImage } from "@/components/ContentCoverImage";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { resolveCoverImage } from "@/lib/cover-image";
+import { buildPageShareMetadata, toAbsoluteMediaUrl } from "@/lib/seo";
 import { ShareButtons } from "@/components/ShareButtons";
 import { getArticleBySlug, getArticles } from "@/lib/content";
 import { formatDateFR } from "@/lib/utils";
@@ -31,20 +32,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     category: article.category,
     slug: article.slug,
   });
-  return {
+  return buildPageShareMetadata({
     title: article.title,
     description: article.excerpt,
-    alternates: { canonical: `/actualites/${article.slug}` },
-    openGraph: {
-      title: article.title,
-      description: article.excerpt,
-      type: "article",
-      publishedTime: article.publishedAt,
-      authors: article.author ? [article.author] : undefined,
-      tags: article.tags,
-      ...(cover ? { images: [{ url: cover, alt: article.title }] } : {}),
-    },
-  };
+    path: `/actualites/${article.slug}`,
+    imageUrl: cover,
+    type: "article",
+    publishedTime: article.publishedAt,
+    authors: article.author ? [article.author] : undefined,
+    tags: article.tags,
+  });
 }
 
 export default async function ArticlePage({ params }: Props) {
@@ -58,6 +55,13 @@ export default async function ArticlePage({ params }: Props) {
     .slice(0, 3);
 
   const shareUrl = `${SITE.url}/actualites/${article.slug}`;
+
+  const cover = resolveCoverImage({
+    image: article.image,
+    category: article.category,
+    slug: article.slug,
+  });
+  const absCover = toAbsoluteMediaUrl(cover);
 
   return (
     <article>
@@ -191,6 +195,7 @@ export default async function ArticlePage({ params }: Props) {
             headline: article.title,
             description: article.excerpt,
             datePublished: article.publishedAt,
+            ...(absCover ? { image: [absCover] } : {}),
             author: article.author
               ? { "@type": "Person", name: article.author }
               : undefined,

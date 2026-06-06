@@ -19,6 +19,7 @@ import { getEventBySlug, getEvents, getUpcomingEvents } from "@/lib/content";
 import { formatDateFR } from "@/lib/utils";
 import { SITE } from "@/lib/constants";
 import { buildEventJsonLd } from "@/lib/event-jsonld";
+import { buildPageShareMetadata } from "@/lib/seo";
 import { PosterImage, hasPoster } from "@/components/PosterImage";
 
 type Props = {
@@ -35,17 +36,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const event = await getEventBySlug(slug);
   if (!event) return { title: "Événement introuvable" };
   const ogImage = hasPoster(event.image) ? event.image!.trim() : undefined;
-  return {
+  return buildPageShareMetadata({
     title: event.title,
     description: event.description,
-    alternates: { canonical: `/evenements/${event.slug}` },
-    openGraph: {
-      title: event.title,
-      description: event.description,
-      type: "article",
-      ...(ogImage ? { images: [{ url: ogImage, alt: event.title }] } : {}),
-    },
-  };
+    path: `/evenements/${event.slug}`,
+    imageUrl: ogImage,
+    type: "article",
+  });
 }
 
 const CATEGORY_VARIANTS = {
