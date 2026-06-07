@@ -25,17 +25,26 @@ export async function GET(req: Request) {
     });
   }
 
-  const result = await syncHealthOnCall({ fullWeekendPipeline: true });
+  try {
+    const result = await syncHealthOnCall({ fullWeekendPipeline: true });
 
-  revalidatePath("/sante-garde");
-  revalidatePath("/actualites");
-  revalidatePath("/", "layout");
+    revalidatePath("/sante-garde");
+    revalidatePath("/actualites");
+    revalidatePath("/", "layout");
 
-  return NextResponse.json({
-    tahiti: clock.label,
-    forced: force,
-    ...result,
-  });
+    return NextResponse.json({
+      tahiti: clock.label,
+      forced: force,
+      ...result,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[garde-weekend cron]", message);
+    return NextResponse.json(
+      { ok: false, error: message.slice(0, 500), tahiti: clock.label, forced: force },
+      { status: 500 },
+    );
+  }
 }
 
 export const POST = GET;

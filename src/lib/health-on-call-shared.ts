@@ -24,4 +24,6 @@ export type HealthOnCallData = {
   onDutyDoctor: OnCallDuty | null;
   dspContacts: DspContact[];
   sources: { label: string; href: string }[];
+  posterImageUrl?: string | null;
+  articleHref?: string | null;
 };

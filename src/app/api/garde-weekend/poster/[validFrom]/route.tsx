@@ -22,8 +22,14 @@ export async function GET(
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
-  return new ImageResponse(
-    GardeWeekendPosterElement({ snap }),
-    GARDE_WEEKEND_POSTER_SIZE,
-  );
+  try {
+    return new ImageResponse(
+      GardeWeekendPosterElement({ snap }),
+      GARDE_WEEKEND_POSTER_SIZE,
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[garde-poster]", message);
+    return NextResponse.json({ error: message.slice(0, 280) }, { status: 500 });
+  }
 }

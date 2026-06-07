@@ -8,6 +8,7 @@ import {
   getGardeMooreaForNow,
 } from "@/lib/garde-moorea-data";
 import { syncGardeMooreaFromCommune, type GardeSyncOptions } from "@/lib/garde-moorea-auto";
+import { getGardeWeekendHighlight } from "@/lib/garde-weekend-public";
 import {
   formatTahitiDay,
   isHealthOnCallPeriod,
@@ -62,6 +63,7 @@ export async function getHealthOnCallUncached(now = new Date()): Promise<HealthO
 
   try {
     const garde = await getGardeMooreaForNow(now);
+    const highlight = await getGardeWeekendHighlight(now);
 
     const data: HealthOnCallData = {
       generatedAt: now.toISOString(),
@@ -76,6 +78,8 @@ export async function getHealthOnCallUncached(now = new Date()): Promise<HealthO
         { label: "DSP garde — 40 47 01 44", href: "tel:+68940470144" },
         { label: "Commune Moorea-Maiao", href: COMMUNE_FB },
       ],
+      posterImageUrl: garde.posterImageUrl ?? null,
+      articleHref: highlight?.href ?? null,
     };
 
     dataCache = { at: Date.now(), data };
@@ -105,6 +109,10 @@ export async function syncHealthOnCall(
   ocrUsed: boolean;
   posterGenerated: boolean;
   ocrError?: string;
+  articleCreated?: boolean;
+  articleUpdated?: boolean;
+  articleError?: string;
+  posterUrl?: string | null;
 }> {
   clearHealthOnCallCache();
   const synced = await syncGardeMooreaFromCommune(options);
@@ -118,5 +126,9 @@ export async function syncHealthOnCall(
     ocrUsed: synced.ocrUsed,
     posterGenerated: synced.posterGenerated,
     ocrError: synced.ocrError,
+    articleCreated: synced.articleCreated,
+    articleUpdated: synced.articleUpdated,
+    articleError: synced.articleError,
+    posterUrl: synced.posterUrl,
   };
 }

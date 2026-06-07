@@ -4,6 +4,7 @@
 
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import type { GardeMooreaSnapshot } from "@/lib/garde-moorea-auto";
+import { resolveGardePosterPublicUrl } from "@/lib/garde-poster-url";
 
 export function gardeArticleSlug(validFrom: string): string {
   return `garde-moorea-${validFrom}`;
@@ -89,17 +90,22 @@ export function buildGardeArticleBody(snap: GardeMooreaSnapshot): string {
 
 export async function upsertGardeWeekendArticle(
   snap: GardeMooreaSnapshot,
-): Promise<{ slug: string; created: boolean; updated: boolean }> {
+): Promise<{
+  slug: string;
+  created: boolean;
+  updated: boolean;
+  error?: string;
+}> {
   const slug = gardeArticleSlug(snap.validFrom);
   const supabase = getAdminSupabase();
   if (!supabase) {
-    return { slug, created: false, updated: false };
+    return { slug, created: false, updated: false, error: "supabase_admin_missing" };
   }
 
   const title = buildGardeArticleTitle(snap).slice(0, 200);
   const excerpt = buildGardeArticleExcerpt(snap).slice(0, 280);
   const body = buildGardeArticleBody(snap);
-  const coverUrl = snap.posterImageUrl?.trim() || null;
+  const coverUrl = resolveGardePosterPublicUrl(snap.posterImageUrl);
   const publishedAt = `${snap.validFrom}T06:00:00.000Z`;
 
   const { data: existing } = await supabase
@@ -124,14 +130,29 @@ export async function upsertGardeWeekendArticle(
 
   if (existing) {
     const { error } = await supabase.from("articles").update(row).eq("slug", slug);
-    return { slug, created: false, updated: !error };
+    return {
+      slug,
+      created: false,
+      updated: !error,
+      error: error?.message,
+    };
   }
 
   const { error } = await supabase.from("articles").insert(row);
   if (error?.code === "23505") {
     const { error: updateErr } = await supabase.from("articles").update(row).eq("slug", slug);
-    return { slug, created: false, updated: !updateErr };
+    return {
+      slug,
+      created: false,
+      updated: !updateErr,
+      error: updateErr?.message,
+    };
   }
 
-  return { slug, created: !error, updated: false };
+  return {
+    slug,
+    created: !error,
+    updated: false,
+    error: error?.message,
+  };
 }

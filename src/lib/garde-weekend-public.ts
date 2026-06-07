@@ -2,13 +2,13 @@
  * Données publiques garde week-end (pastille accueil, ticker).
  */
 
-import {
-  readGardeMooreaFromCache,
-  type GardeMooreaSnapshot,
-} from "@/lib/garde-moorea-auto";
+import type { GardeMooreaSnapshot } from "@/lib/garde-moorea-auto";
 import { getArticleBySlug } from "@/lib/content";
 import { gardeArticleSlug } from "@/lib/garde-weekend-article";
-import { isGardeWeekActive, readGardeFileSnapshot } from "@/lib/garde-moorea-data";
+import {
+  isGardeWeekActive,
+  resolveGardeWeekendSnapshot,
+} from "@/lib/garde-moorea-data";
 import { tahitiParts } from "@/lib/tahiti-holidays";
 
 export type GardeWeekendHighlight = {
@@ -66,21 +66,10 @@ function snapshotHasContent(snap: GardeMooreaSnapshot): boolean {
   );
 }
 
-async function resolveSnapshot(): Promise<GardeMooreaSnapshot | null> {
-  const [cached, file] = await Promise.all([
-    readGardeMooreaFromCache(),
-    readGardeFileSnapshot(),
-  ]);
-
-  if (cached && snapshotHasContent(cached)) return cached;
-  if (file && snapshotHasContent(file)) return file;
-  return cached ?? file;
-}
-
 export async function getGardeWeekendHighlight(
   now = new Date(),
 ): Promise<GardeWeekendHighlight | null> {
-  const snap = await resolveSnapshot();
+  const snap = await resolveGardeWeekendSnapshot();
   if (!snap || !snapshotHasContent(snap)) return null;
 
   if (!isGardeWeekActive(now, snap.validFrom, snap.validTo)) {

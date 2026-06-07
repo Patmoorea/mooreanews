@@ -1,5 +1,6 @@
 /**
- * Affiche garde week-end — design MooreaNews (next/og).
+ * Affiche garde week-end — design MooreaNews (next/og / Satori).
+ * Chaque <div> multi-enfants doit avoir display:flex explicite.
  */
 
 import type { GardeMooreaSnapshot } from "@/lib/garde-moorea-auto";
@@ -47,7 +48,7 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
           >
             M
           </div>
-          <div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
             <div style={{ fontSize: 32, fontWeight: 900 }}>MooreaNews</div>
             <div style={{ fontSize: 14, letterSpacing: 3, opacity: 0.9 }}>
               GARDE WEEK-END · MOOREA
@@ -67,6 +68,8 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
               background: "rgba(255,255,255,0.95)",
               color: "#082F49",
               borderLeft: "6px solid #f59e0b",
+              display: "flex",
+              flexDirection: "column",
             }}
           >
             <div style={{ fontSize: 18, fontWeight: 800, color: "#0e7490" }}>
@@ -81,10 +84,13 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
               </div>
             )}
             {(snap.doctorHours?.saturday || snap.doctorHours?.sunday) && (
-              <div style={{ fontSize: 16, marginTop: 8, color: "#0e7490" }}>
-                {snap.doctorHours.saturday && `Sam. ${snap.doctorHours.saturday}`}
-                {snap.doctorHours.saturday && snap.doctorHours.sunday && " · "}
-                {snap.doctorHours.sunday && `Dim. ${snap.doctorHours.sunday}`}
+              <div style={{ fontSize: 16, marginTop: 8, color: "#0e7490", display: "flex" }}>
+                {[
+                  snap.doctorHours.saturday && `Sam. ${snap.doctorHours.saturday}`,
+                  snap.doctorHours.sunday && `Dim. ${snap.doctorHours.sunday}`,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </div>
             )}
             {snap.doctor.phone && snap.doctor.phone !== "—" && (
@@ -107,14 +113,22 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
                   background: "rgba(255,255,255,0.9)",
                   color: "#082F49",
                   fontSize: 15,
+                  display: "flex",
+                  flexDirection: "column",
                 }}
               >
-                <strong>{p.district}</strong>
-                {p.phone ? ` · ${p.phone}` : ""}
-                <div style={{ color: "#475569", marginTop: 4 }}>
-                  {p.saturday && `sam. ${p.saturday}`}
-                  {p.saturday && p.sunday && " · "}
-                  {p.sunday && `dim. ${p.sunday}`}
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <div style={{ display: "flex" }}>
+                    {`${p.district}${p.phone ? ` · ${p.phone}` : ""}`}
+                  </div>
+                  <div style={{ color: "#475569", marginTop: 4, display: "flex" }}>
+                    {[
+                      p.saturday && `sam. ${p.saturday}`,
+                      p.sunday && `dim. ${p.sunday}`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </div>
                 </div>
               </div>
             ))}

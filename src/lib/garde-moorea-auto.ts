@@ -247,9 +247,26 @@ export async function writeGardeMooreaCache(snap: GardeMooreaSnapshot): Promise<
 }
 
 async function resolveSnapshotForSync(): Promise<GardeMooreaSnapshot | null> {
-  const live = await fetchLiveGardeMooreaSnapshot();
-  if (live) return live;
-  return readGardeFileSnapshot();
+  const [live, file] = await Promise.all([
+    fetchLiveGardeMooreaSnapshot().catch(() => null),
+    readGardeFileSnapshot(),
+  ]);
+
+  const now = new Date();
+
+  if (file && isGardeWeekActive(now, file.validFrom, file.validTo)) {
+    return {
+      ...file,
+      communePosterUrl:
+        live?.communePosterUrl ??
+        file.communePosterUrl ??
+        (file.posterImageUrl?.startsWith("http") ? file.posterImageUrl : null),
+      sourceUrl: live?.sourceUrl ?? file.sourceUrl,
+      syncedAt: new Date().toISOString(),
+    };
+  }
+
+  return live ?? file;
 }
 
 async function enrichFromCommuneImage(
@@ -294,8 +311,29 @@ export async function syncGardeMooreaFromCommune(
   ocrUsed: boolean;
   posterGenerated: boolean;
   ocrError?: string;
+  articleCreated?: boolean;
+  articleUpdated?: boolean;
+  articleError?: string;
+  posterUrl?: string | null;
 }> {
-  let snap = await resolveSnapshotForSync();
+  let snap: GardeMooreaSnapshot | null = null;
+  try {
+    snap = await resolveSnapshotForSync();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return {
+      ok: false,
+      found: false,
+      pharmacy: null,
+      doctor: null,
+      weekend: null,
+      articleSlug: null,
+      ocrUsed: false,
+      posterGenerated: false,
+      ocrError: msg.slice(0, 200),
+    };
+  }
+
   if (!snap) {
     return {
       ok: true,
@@ -349,6 +387,10 @@ export async function syncGardeMooreaFromCommune(
     ocrUsed: enriched.ocrUsed,
     posterGenerated: Boolean(snap.posterImageUrl),
     ocrError: enriched.ocrError,
+    articleCreated: article.created,
+    articleUpdated: article.updated,
+    articleError: article.error,
+    posterUrl: snap.posterImageUrl ?? null,
   };
 }
 

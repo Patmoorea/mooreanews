@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Cross, Phone, Pill, Stethoscope } from "lucide-react";
 import type { HealthOnCallData, OnCallDuty } from "@/lib/health-on-call-shared";
 
@@ -112,6 +113,37 @@ export function HealthOnCallPanel({ data, variant = "page" }: Props) {
           <OnDutyCard kind="pharmacy" duty={data.onDutyPharmacy} />
           <OnDutyCard kind="doctor" duty={data.onDutyDoctor} />
         </div>
+
+        {data.posterImageUrl && (
+          <div className="mt-8">
+            <h2 className="font-display text-xl text-ocean-950 mb-3">
+              Affiche garde week-end
+            </h2>
+            <a
+              href={data.posterImageUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block rounded-2xl overflow-hidden border border-ocean-200 shadow-md max-w-md"
+            >
+              <Image
+                src={data.posterImageUrl}
+                alt={`Affiche garde week-end Moorea — ${data.weekendLabel ?? ""}`}
+                width={540}
+                height={675}
+                className="w-full h-auto"
+                unoptimized={data.posterImageUrl.includes("/api/garde-weekend/poster/")}
+              />
+            </a>
+            {data.articleHref && (
+              <Link
+                href={data.articleHref}
+                className="mt-3 inline-flex text-sm font-semibold text-tiare-700 hover:text-tiare-800"
+              >
+                Voir l&apos;article garde week-end
+              </Link>
+            )}
+          </div>
+        )}
 
         <p className="mt-4 text-xs text-ocean-500">
           En cas d&apos;urgence : SAMU{" "}

@@ -6,6 +6,7 @@ import { readFile } from "fs/promises";
 import path from "path";
 import { resolveGardeMooreaAuto, readGardeMooreaFromCache, type GardeMooreaSnapshot } from "@/lib/garde-moorea-auto";
 import { gardeArticleSlug } from "@/lib/garde-weekend-article";
+import { resolveGardePosterPublicUrl } from "@/lib/garde-poster-url";
 import { tahitiDateKey, tahitiParts } from "@/lib/tahiti-holidays";
 import type { OnCallDuty } from "@/lib/health-on-call-shared";
 
@@ -165,6 +166,26 @@ export async function readGardeFileSnapshot(): Promise<GardeMooreaSnapshot | nul
   return fileToSnapshot(file);
 }
 
+function snapshotHasContent(snap: GardeMooreaSnapshot): boolean {
+  return Boolean(
+    snap.doctor?.name ||
+      snap.pharmacy?.name ||
+      snap.posterImageUrl ||
+      (snap.pharmacyHours && snap.pharmacyHours.length > 0),
+  );
+}
+
+export async function resolveGardeWeekendSnapshot(): Promise<GardeMooreaSnapshot | null> {
+  const [cached, file] = await Promise.all([
+    readGardeMooreaFromCache(),
+    readGardeFileSnapshot(),
+  ]);
+
+  if (cached && snapshotHasContent(cached)) return cached;
+  if (file && snapshotHasContent(file)) return file;
+  return cached ?? file;
+}
+
 /** Snapshot pour affiche dynamique /api/garde-weekend/poster/[validFrom] */
 export async function resolveGardeSnapshotForPoster(
   validFrom: string,
@@ -203,9 +224,18 @@ export async function getGardeMooreaForNow(now = new Date()): Promise<{
   pharmacy: OnCallDuty | null;
   doctor: OnCallDuty | null;
   weekendLabel: string | null;
+  posterImageUrl: string | null;
 }> {
   const auto = await resolveGardeMooreaAuto(now);
-  if (auto.pharmacy || auto.doctor) return auto;
+  const snap = await resolveGardeWeekendSnapshot();
+  const posterImageUrl = resolveGardePosterPublicUrl(
+    snap?.posterImageUrl ?? snap?.communePosterUrl,
+  );
 
-  return fromFile(now);
+  if (auto.pharmacy || auto.doctor) {
+    return { ...auto, posterImageUrl };
+  }
+
+  const file = await fromFile(now);
+  return { ...file, posterImageUrl };
 }
