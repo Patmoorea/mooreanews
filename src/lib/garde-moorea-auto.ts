@@ -221,18 +221,9 @@ export async function resolveGardeMooreaAuto(now = new Date()): Promise<{
   doctor: OnCallDuty | null;
   weekendLabel: string | null;
 }> {
-  let snap: GardeMooreaSnapshot | null = null;
-
-  try {
-    snap = await getCachedLiveGarde();
-  } catch {
-    snap = await fetchLiveGardeMooreaSnapshot();
-  }
-
-  if (!snap) {
-    snap = await readGardeMooreaFromCache();
-  }
-
+  // Ne jamais appeler Facebook sur une requête utilisateur (timeout Vercel).
+  // La veille live est réservée au cron : syncGardeMooreaFromCommune().
+  const snap = await readGardeMooreaFromCache();
   if (!snap) {
     return { pharmacy: null, doctor: null, weekendLabel: null };
   }

@@ -40,28 +40,51 @@ function buildPeriodLabel(d: Date, weekendLabel: string | null): string {
   return formatTahitiDay(d);
 }
 
-export async function getHealthOnCallUncached(now = new Date()): Promise<HealthOnCallData> {
-  if (dataCache && Date.now() - dataCache.at < CACHE_MS) return dataCache.data;
-
-  const garde = await getGardeMooreaForNow(now);
-
-  const data: HealthOnCallData = {
+function buildEmptyHealthData(now: Date): HealthOnCallData {
+  return {
     generatedAt: now.toISOString(),
-    periodLabel: buildPeriodLabel(now, garde.weekendLabel),
+    periodLabel: buildPeriodLabel(now, null),
     showProminent: isHealthOnCallPeriod(now),
     holidayLabel: tahitiHolidayLabel(now),
-    weekendLabel: garde.weekendLabel,
-    onDutyPharmacy: garde.pharmacy,
-    onDutyDoctor: garde.doctor,
+    weekendLabel: null,
+    onDutyPharmacy: null,
+    onDutyDoctor: null,
     dspContacts: [...DSP_GARDE_PHONES],
     sources: [
       { label: "DSP garde — 40 47 01 44", href: "tel:+68940470144" },
       { label: "Commune Moorea-Maiao", href: COMMUNE_FB },
     ],
   };
+}
 
-  dataCache = { at: Date.now(), data };
-  return data;
+export async function getHealthOnCallUncached(now = new Date()): Promise<HealthOnCallData> {
+  if (dataCache && Date.now() - dataCache.at < CACHE_MS) return dataCache.data;
+
+  try {
+    const garde = await getGardeMooreaForNow(now);
+
+    const data: HealthOnCallData = {
+      generatedAt: now.toISOString(),
+      periodLabel: buildPeriodLabel(now, garde.weekendLabel),
+      showProminent: isHealthOnCallPeriod(now),
+      holidayLabel: tahitiHolidayLabel(now),
+      weekendLabel: garde.weekendLabel,
+      onDutyPharmacy: garde.pharmacy,
+      onDutyDoctor: garde.doctor,
+      dspContacts: [...DSP_GARDE_PHONES],
+      sources: [
+        { label: "DSP garde — 40 47 01 44", href: "tel:+68940470144" },
+        { label: "Commune Moorea-Maiao", href: COMMUNE_FB },
+      ],
+    };
+
+    dataCache = { at: Date.now(), data };
+    return data;
+  } catch {
+    const data = buildEmptyHealthData(now);
+    dataCache = { at: Date.now(), data };
+    return data;
+  }
 }
 
 export const getHealthOnCall = cache(getHealthOnCallUncached);
