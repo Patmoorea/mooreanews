@@ -27,8 +27,15 @@ jobs:
             exit 1
           fi
           url="https://www.mooreanews.com/api/cron/aggregate?secret=${CRON_SECRET}"
-          code=$(curl -sS -o /tmp/veille.json -w "%{http_code}" "$url")
+          code=$(curl -sS -o /tmp/veille.json -w "%{http_code}" --max-time 280 "$url")
           echo "HTTP ${code}"
-          head -c 3000 /tmp/veille.json
+          cat /tmp/veille.json | head -c 4000
           echo ""
-          test "$code" = "200" || exit 1
+          if [ "$code" != "200" ]; then
+            echo "Échec HTTP ${code}"
+            exit 1
+          fi
+          if grep -q '"error":"unauthorized"' /tmp/veille.json 2>/dev/null; then
+            echo "CRON_SECRET incorrect (unauthorized)"
+            exit 1
+          fi

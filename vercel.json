@@ -16,6 +16,10 @@
       "memory": 1024,
       "maxDuration": 300,
       "includeFiles": "node_modules/tesseract.js-core/**"
+    },
+    "src/app/api/cron/aggregate/route.ts": {
+      "memory": 1024,
+      "maxDuration": 300
     }
   }
 }

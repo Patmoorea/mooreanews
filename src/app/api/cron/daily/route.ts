@@ -15,8 +15,14 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const result = await runDailyCron();
-  return NextResponse.json(result);
+  try {
+    const result = await runDailyCron();
+    return NextResponse.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[cron/daily]", message);
+    return NextResponse.json({ ok: false, error: message.slice(0, 500) }, { status: 500 });
+  }
 }
 
 export const POST = GET;
