@@ -4,6 +4,22 @@ const CANONICAL_HOST = "www.mooreanews.com";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["tesseract.js"],
+  outputFileTracingIncludes: {
+    "/api/cron/garde-weekend": [
+      "./node_modules/tesseract.js-core/**/*.wasm",
+      "./node_modules/tesseract.js-core/**/*.wasm.js",
+      "./node_modules/tesseract.js/dist/**",
+      "./node_modules/tesseract.js/src/worker-script/**",
+      "./data/ocr/**",
+    ],
+    "/api/cron/daily": [
+      "./node_modules/tesseract.js-core/**/*.wasm",
+      "./node_modules/tesseract.js-core/**/*.wasm.js",
+      "./node_modules/tesseract.js/dist/**",
+      "./node_modules/tesseract.js/src/worker-script/**",
+      "./data/ocr/**",
+    ],
+  },
   async redirects() {
     return [
       {

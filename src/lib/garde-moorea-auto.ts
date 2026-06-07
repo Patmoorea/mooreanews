@@ -255,7 +255,7 @@ async function resolveSnapshotForSync(): Promise<GardeMooreaSnapshot | null> {
 async function enrichFromCommuneImage(
   snap: GardeMooreaSnapshot,
   runOcr: boolean,
-): Promise<{ snap: GardeMooreaSnapshot; ocrUsed: boolean }> {
+): Promise<{ snap: GardeMooreaSnapshot; ocrUsed: boolean; ocrError?: string }> {
   const imageUrl = snap.communePosterUrl ?? null;
   if (!runOcr || !imageUrl) return { snap, ocrUsed: false };
 
@@ -266,11 +266,13 @@ async function enrichFromCommuneImage(
 
   if (!needsOcr) return { snap, ocrUsed: false };
 
-  const ocrText = await ocrGardePosterImage(imageUrl);
-  if (!ocrText) return { snap, ocrUsed: false };
+  const ocr = await ocrGardePosterImage(imageUrl);
+  if (!ocr.ok || !ocr.text) {
+    return { snap, ocrUsed: false, ocrError: ocr.error ?? "ocr vide" };
+  }
 
   return {
-    snap: mergeGardeOcrIntoSnapshot(snap, ocrText),
+    snap: mergeGardeOcrIntoSnapshot(snap, ocr.text),
     ocrUsed: true,
   };
 }
@@ -291,6 +293,7 @@ export async function syncGardeMooreaFromCommune(
   articleSlug: string | null;
   ocrUsed: boolean;
   posterGenerated: boolean;
+  ocrError?: string;
 }> {
   let snap = await resolveSnapshotForSync();
   if (!snap) {
@@ -345,6 +348,7 @@ export async function syncGardeMooreaFromCommune(
     articleSlug: snap.articleSlug ?? gardeArticleSlug(snap.validFrom),
     ocrUsed: enriched.ocrUsed,
     posterGenerated: Boolean(snap.posterImageUrl),
+    ocrError: enriched.ocrError,
   };
 }
 

@@ -5,5 +5,17 @@
       "path": "/api/cron/daily",
       "schedule": "5 16 * * *"
     }
-  ]
+  ],
+  "functions": {
+    "src/app/api/cron/garde-weekend/route.ts": {
+      "memory": 1024,
+      "maxDuration": 300,
+      "includeFiles": "node_modules/tesseract.js-core/**"
+    },
+    "src/app/api/cron/daily/route.ts": {
+      "memory": 1024,
+      "maxDuration": 300,
+      "includeFiles": "node_modules/tesseract.js-core/**"
+    }
+  }
 }

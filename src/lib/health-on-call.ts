@@ -104,6 +104,7 @@ export async function syncHealthOnCall(
   articleSlug: string | null;
   ocrUsed: boolean;
   posterGenerated: boolean;
+  ocrError?: string;
 }> {
   clearHealthOnCallCache();
   const synced = await syncGardeMooreaFromCommune(options);
@@ -116,5 +117,6 @@ export async function syncHealthOnCall(
     articleSlug: synced.articleSlug,
     ocrUsed: synced.ocrUsed,
     posterGenerated: synced.posterGenerated,
+    ocrError: synced.ocrError,
   };
 }
