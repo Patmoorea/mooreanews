@@ -10,6 +10,7 @@ import {
   ArrowRight,
   Plus,
   Smartphone,
+  Stethoscope,
   type LucideIcon,
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
@@ -75,6 +76,13 @@ const UTILITIES: {
     sub: "Android gratuit",
     icon: Smartphone,
     accent: "from-ocean-500/30 to-lagon-400/20",
+  },
+  {
+    href: "/sante-garde",
+    label: "Garde",
+    sub: "WE & fériés",
+    icon: Stethoscope,
+    accent: "from-tiare-400/30 to-tiare-600/25",
   },
 ];
 

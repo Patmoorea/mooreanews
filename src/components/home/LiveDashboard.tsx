@@ -11,6 +11,7 @@ import { BeachSwimScores } from "@/components/widgets/BeachSwimScores";
 import { MeteoVigilanceCard } from "@/components/widgets/MeteoVigilanceCard";
 import { TropicalSection, TROPICAL_EMOJI } from "@/components/decor/TropicalDecor";
 import { RaiTahitiSpotlight } from "@/components/RaiTahitiSpotlight";
+import { HealthOnCallCompact } from "@/components/health/HealthOnCallCompact";
 
 export function LiveDashboard() {
   return (
@@ -62,7 +63,8 @@ export function LiveDashboard() {
           <BeachSwimScores />
         </div>
 
-        <div className="mt-8 max-w-2xl mx-auto">
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 max-w-4xl mx-auto">
+          <HealthOnCallCompact />
           <RaiTahitiSpotlight variant="compact" />
         </div>
       </Container>

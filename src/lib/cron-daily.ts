@@ -28,6 +28,7 @@ import {
 } from "@/lib/push-notify";
 import { syncMeteoVigilanceAlert } from "@/lib/meteo-vigilance-sync";
 import { syncUtilityOutages } from "@/lib/utility-outages-sync";
+import { syncHealthOnCall } from "@/lib/health-on-call";
 import { checkDpamStatsFreshness } from "@/lib/maritime-traffic";
 import { auditPublicContent } from "@/lib/site-content-audit";
 import { notifyVeilleReport, sendPublicMooreaBrief } from "@/lib/telegram-notify";
@@ -144,6 +145,8 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   }
 
   jobs.utilityOutages = await syncUtilityOutages();
+  jobs.healthOnCall = await syncHealthOnCall();
+  revalidatePath("/sante-garde");
   const utilitySync = jobs.utilityOutages as {
     created?: number;
     updated?: number;

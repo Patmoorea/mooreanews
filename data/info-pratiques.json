@@ -92,6 +92,33 @@
     "website": "https://www.polynesienne-des-eaux.pf"
   },
   {
+    "slug": "pharmacie-afareaitu",
+    "title": "Pharmacie Moorea-Afareaitu",
+    "description": "Pharmacie principale côté montagne. Ouverte le dimanche et jours fériés le matin (7h30–11h30).",
+    "category": "sante",
+    "address": "PK 8,7 côté montagne, Afareaitu",
+    "phone": "40 56 35 47",
+    "hours": "Lun–ven 6h30–18h30 · sam 7h30–13h30 · dim & fériés 7h30–11h30"
+  },
+  {
+    "slug": "pharmacie-tran-paopao",
+    "title": "Pharmacie Tran — Paopao",
+    "description": "Pharmacie du nord de l'île. Horaires week-end : samedi matin.",
+    "category": "sante",
+    "address": "PK 6,5, Paopao",
+    "phone": "40 55 20 75",
+    "hours": "Lun–ven 7h–18h · sam 7h–12h30"
+  },
+  {
+    "slug": "pharmacie-haapiti",
+    "title": "Pharmacie Moorea Haapiti",
+    "description": "Pharmacie côté ouest (Tiahura). Samedi matin.",
+    "category": "sante",
+    "address": "Tiahura, Haapiti",
+    "phone": "40 56 41 16",
+    "hours": "Lun–ven 7h–18h · sam 7h–12h30"
+  },
+  {
     "slug": "ecole-primaire-paopao",
     "title": "École primaire publique de Pao Pao",
     "description": "École publique du district de Pao Pao. Maternelle et élémentaire.",

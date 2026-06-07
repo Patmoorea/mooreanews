@@ -6,11 +6,12 @@ import {
   filterUpcomingMooreaVisits,
   getMooreaCruiseSchedule,
 } from "@/lib/moorea-cruise-schedule";
+import { getHealthOnCall } from "@/lib/health-on-call";
 import { getUtilityOutages, type UtilityOutage } from "@/lib/utility-outages";
 
 export type HomeHighlight = {
   id: string;
-  kind: "coupure_edt" | "coupure_eau" | "paquebot";
+  kind: "coupure_edt" | "coupure_eau" | "paquebot" | "sante_garde";
   label: string;
   href: string;
   priority: number;
@@ -76,10 +77,35 @@ export async function getHomeHighlights(): Promise<HomeHighlight[]> {
   const horizon = now + HORIZON_MS;
   const highlights: HomeHighlight[] = [];
 
-  const [outages, mooreaCruises] = await Promise.all([
+  const [outages, mooreaCruises, healthOnCall] = await Promise.all([
     getUtilityOutages().catch(() => null),
     getMooreaCruiseSchedule().catch(() => null),
+    getHealthOnCall().catch(() => null),
   ]);
+
+  if (healthOnCall?.showProminent) {
+    const parts: string[] = [];
+    if (healthOnCall.onDutyPharmacy) {
+      parts.push(`Pharmacie : ${healthOnCall.onDutyPharmacy.name}`);
+    }
+    if (healthOnCall.onDutyDoctor) {
+      parts.push(`Médecin : ${healthOnCall.onDutyDoctor.name}`);
+    }
+    const label =
+      parts.length > 0
+        ? parts.join(" · ")
+        : healthOnCall.officialDoctorSchedule
+          ? "Garde Moorea — planning officiel COPPF"
+          : "Garde Moorea — DSP 40 47 01 44";
+    highlights.push({
+      id: "health-on-call",
+      kind: "sante_garde",
+      label,
+      href: "/sante-garde",
+      priority: 5,
+      at: new Date().toISOString(),
+    });
+  }
 
   if (outages) {
     for (const o of outages.all) {

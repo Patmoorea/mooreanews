@@ -24,6 +24,10 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.presidence.pf" },
       { protocol: "https", hostname: "**.radio1.pf" },
       { protocol: "https", hostname: "**.supabase.co" },
+      { protocol: "https", hostname: "www.tntvnews.pf" },
+      { protocol: "https", hostname: "**.tntvnews.pf" },
+      { protocol: "https", hostname: "www.ordre-pharmaciens-polynesie.com" },
+      { protocol: "https", hostname: "**.ordre-pharmaciens-polynesie.com" },
     ],
   },
 };

@@ -609,6 +609,57 @@ export async function listMooreaNewsGraphPosts(): Promise<
   return fetchPagePosts(page, token);
 }
 
+/** Derniers posts Facebook Commune de Moorea-Maiao (garde, actualités). */
+export async function listCommuneMooreaGraphPosts(): Promise<
+  Array<{
+    id: string;
+    created_time?: string;
+    message?: string;
+    permalink_url?: string;
+  }>
+> {
+  let fallbackPageToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim();
+  let userToken = process.env.FACEBOOK_USER_ACCESS_TOKEN?.trim();
+  if (!fallbackPageToken && !userToken) return [];
+
+  const page = FACEBOOK_PAGE_WATCHES.find((p) => p.id === "commune-moorea");
+  if (!page) return [];
+
+  const perPageTokenByIdOrUsername = new Map<string, string>();
+  if (userToken) {
+    const refreshed = await refreshFacebookUserTokenInProcess();
+    if (refreshed.token) userToken = refreshed.token;
+    try {
+      for (const acc of await fetchMeAccounts(userToken)) {
+        if (acc.access_token && acc.id) {
+          perPageTokenByIdOrUsername.set(acc.id, acc.access_token);
+        }
+        if (acc.access_token && acc.username) {
+          perPageTokenByIdOrUsername.set(acc.username.toLowerCase(), acc.access_token);
+        }
+      }
+    } catch {
+      /* me/accounts optionnel */
+    }
+  }
+
+  const token = pickTokenForPage({
+    page,
+    perPageTokenByIdOrUsername,
+    fallbackPageToken:
+      perPageTokenByIdOrUsername.size > 0 ? undefined : fallbackPageToken,
+  });
+  if (!token) return [];
+
+  const posts = await fetchPagePosts(page, token);
+  return posts.map((p) => ({
+    id: p.id,
+    created_time: p.created_time,
+    message: p.message,
+    permalink_url: p.permalink_url,
+  }));
+}
+
 export async function aggregateWebWatch(): Promise<AggregationResult[]> {
   const { aggregateWebPagesWatch } = await import("@/lib/web-watch");
   return Promise.all([
