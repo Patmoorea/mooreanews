@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { MapPin, Phone, Calendar } from "lucide-react";
 import { Container } from "@/components/ui/Container";
@@ -6,18 +5,19 @@ import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/PageHeader";
 import { PublicationCard } from "@/components/PublicationCard";
 import { getAnnouncements } from "@/lib/content";
+import { listingPageMetadata } from "@/lib/seo";
 import { expireStaleAnnouncements } from "@/lib/announcement-expiry";
 import { ANNOUNCEMENT_TYPE_LABELS } from "@/lib/content-labels";
 import { timeAgo } from "@/lib/utils";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
-export const metadata: Metadata = {
+export const metadata = listingPageMetadata({
   title: "Annonces — Moorea",
   description:
     "Petites annonces de Moorea avec affiches : vente, location, emploi, services.",
-  alternates: { canonical: "/annonces" },
-};
+  path: "/annonces",
+});
 
 export default async function AnnoncesPage() {
   await expireStaleAnnouncements();

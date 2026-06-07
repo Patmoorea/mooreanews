@@ -6,11 +6,11 @@ import { ContentCoverImage } from "@/components/ContentCoverImage";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { resolveCoverImage } from "@/lib/cover-image";
-import { buildPageShareMetadata, toAbsoluteMediaUrl } from "@/lib/seo";
 import { ShareButtons } from "@/components/ShareButtons";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { getArticleBySlug, getArticles } from "@/lib/content";
 import { formatDateFR } from "@/lib/utils";
-import { SITE } from "@/lib/constants";
+import { newsArticleJsonLd, absoluteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -32,16 +32,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     category: article.category,
     slug: article.slug,
   });
-  return buildPageShareMetadata({
+  return {
     title: article.title,
     description: article.excerpt,
-    path: `/actualites/${article.slug}`,
-    imageUrl: cover,
-    type: "article",
-    publishedTime: article.publishedAt,
-    authors: article.author ? [article.author] : undefined,
-    tags: article.tags,
-  });
+    alternates: { canonical: `/actualites/${article.slug}` },
+    openGraph: {
+      title: article.title,
+      description: article.excerpt,
+      type: "article",
+      publishedTime: article.publishedAt,
+      authors: article.author ? [article.author] : undefined,
+      tags: article.tags,
+      ...(cover ? { images: [{ url: cover, alt: article.title }] } : {}),
+    },
+  };
 }
 
 export default async function ArticlePage({ params }: Props) {
@@ -54,14 +58,12 @@ export default async function ArticlePage({ params }: Props) {
     .filter((a) => a.slug !== article.slug && a.category === article.category)
     .slice(0, 3);
 
-  const shareUrl = `${SITE.url}/actualites/${article.slug}`;
-
-  const cover = resolveCoverImage({
+  const shareUrl = absoluteUrl(`/actualites/${article.slug}`);
+  const coverForLd = resolveCoverImage({
     image: article.image,
     category: article.category,
     slug: article.slug,
   });
-  const absCover = toAbsoluteMediaUrl(cover);
 
   return (
     <article>
@@ -186,31 +188,17 @@ export default async function ArticlePage({ params }: Props) {
       )}
 
       {/* JSON-LD Article */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "NewsArticle",
-            headline: article.title,
-            description: article.excerpt,
-            datePublished: article.publishedAt,
-            ...(absCover ? { image: [absCover] } : {}),
-            author: article.author
-              ? { "@type": "Person", name: article.author }
-              : undefined,
-            publisher: {
-              "@type": "Organization",
-              name: SITE.name,
-              logo: { "@type": "ImageObject", url: `${SITE.url}${SITE.logo}` },
-            },
-            mainEntityOfPage: {
-              "@type": "WebPage",
-              "@id": shareUrl,
-            },
-            keywords: article.tags?.join(", "),
-          }),
-        }}
+      <JsonLd
+        data={newsArticleJsonLd({
+          title: article.title,
+          excerpt: article.excerpt,
+          body: article.body,
+          slug: article.slug,
+          publishedAt: article.publishedAt,
+          author: article.author,
+          tags: article.tags,
+          imageUrl: coverForLd,
+        })}
       />
     </article>
   );

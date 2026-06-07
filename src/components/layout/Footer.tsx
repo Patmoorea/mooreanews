@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { Mail, MapPin } from "lucide-react";
 import { Container } from "@/components/ui/Container";
-import { NAV_ITEMS, SITE, SOCIAL, USEFUL_LINKS } from "@/lib/constants";
+import { NAV_ITEMS, SITE, SOCIAL, USEFUL_LINKS, whatsappHref } from "@/lib/constants";
 import { SITE_DIRECTORY } from "@/lib/site-directory";
 import { NewsletterForm } from "@/components/NewsletterForm";
-import { FacebookIcon, InstagramIcon } from "@/components/ui/SocialIcons";
+import { FacebookIcon, InstagramIcon, WhatsAppIcon } from "@/components/ui/SocialIcons";
 import { Logo } from "@/components/ui/Logo";
 import { WaveDivider } from "@/components/decor/TropicalDecor";
 
@@ -23,14 +23,6 @@ export function Footer() {
               <p className="mt-3 text-ocean-200/90 max-w-md">
                 Recevez le brief matinal (ferries, alertes, météo) et le récap
                 hebdo des actus et bons plans de l&apos;île.
-              </p>
-              <p className="mt-3 text-sm">
-                <Link
-                  href="/feed.xml"
-                  className="text-lagon-300 hover:text-white font-medium underline-offset-2 hover:underline"
-                >
-                  Flux RSS actualités
-                </Link>
               </p>
             </div>
             <NewsletterForm />
@@ -77,6 +69,15 @@ export function Footer() {
                 className="w-9 h-9 rounded-full bg-ocean-800 hover:bg-tiare-500 text-white flex items-center justify-center transition-colors"
               >
                 <InstagramIcon size={18} />
+              </a>
+              <a
+                href={whatsappHref("Bonjour MooreaNews")}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="WhatsApp"
+                className="w-9 h-9 rounded-full bg-ocean-800 hover:bg-[#25D366] text-white flex items-center justify-center transition-colors"
+              >
+                <WhatsAppIcon size={18} />
               </a>
               <a
                 href={`mailto:${SITE.email}`}
@@ -176,10 +177,13 @@ export function Footer() {
       <div className="border-t border-ocean-800/60">
         <Container className="py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-ocean-300/70">
           <span>{SITE.copyright}</span>
-          <span>
-            Fait avec{" "}
-            <span className="text-tiare-400">♥</span> à Moorea, sous le soleil
-            de Polynésie.
+          <span className="flex items-center gap-3">
+            <Link href="/en" className="hover:text-white transition-colors">
+              English guide
+            </Link>
+            <Link href="/telecharger" className="hover:text-white transition-colors">
+              App mobile
+            </Link>
           </span>
         </Container>
       </div>

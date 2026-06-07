@@ -36,6 +36,7 @@ export const metadata: Metadata = {
   keywords: [
     "Moorea",
     "Moorea actualités",
+    "Moorea news",
     "Tahiti",
     "Polynésie française",
     "actualités Moorea",
@@ -44,8 +45,10 @@ export const metadata: Metadata = {
     "restaurants Moorea",
     "hébergements Moorea",
     "ferries Tahiti Moorea",
+    "horaires ferry Moorea",
     "météo Moorea",
     "tourisme Moorea",
+    "que faire Moorea",
     "MooreaNews",
   ],
   authors: [{ name: SITE.name, url: getSiteOrigin() }],
@@ -58,7 +61,7 @@ export const metadata: Metadata = {
       en: `${getSiteOrigin()}/en`,
     },
     types: {
-      "application/rss+xml": "/feed.xml",
+      "application/rss+xml": "/actualites/feed.xml",
     },
   },
   verification: {

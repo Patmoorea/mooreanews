@@ -59,6 +59,13 @@ export function Header() {
             >
               + Publier
             </Link>
+            <Link
+              href="/en"
+              className="hidden lg:inline-flex items-center px-2.5 py-1.5 rounded-full border border-ocean-200 text-xs font-semibold text-ocean-700 hover:bg-ocean-50"
+              title="Moorea guide in English"
+            >
+              EN
+            </Link>
             <button
               type="button"
               onClick={() => setIsOpen((v) => !v)}

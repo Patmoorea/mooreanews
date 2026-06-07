@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { MapPin, Tag, Clock, User, ArrowRight } from "lucide-react";
@@ -7,13 +6,17 @@ import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/PageHeader";
 import { StayDateFilter } from "@/components/visiteurs/StayDateFilter";
 import { getEventsBetween, getUpcomingEvents } from "@/lib/content";
+import { listingPageMetadata } from "@/lib/seo";
 import { PosterImage, hasPoster } from "@/components/PosterImage";
 
-export const metadata: Metadata = {
+export const revalidate = 300;
+
+export const metadata = listingPageMetadata({
   title: "Agenda des événements à Moorea",
   description:
     "Tous les événements à venir sur Moorea : concerts, marchés, fêtes traditionnelles, sport, culture.",
-};
+  path: "/evenements",
+});
 
 const CATEGORY_VARIANTS = {
   musique: "tiare",

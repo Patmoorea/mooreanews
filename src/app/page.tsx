@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Hero } from "@/components/home/Hero";
 import { SafetyCampaignSlot } from "@/components/home/SafetyCampaignSlot";
 import { PushAlertBanner } from "@/components/pwa/PushAlertBanner";
-import { HomeNewsletterBand } from "@/components/home/HomeNewsletterBand";
 import { MooreaDuJour } from "@/components/home/MooreaDuJour";
 import { HomeSectionNav } from "@/components/home/HomeSectionNav";
 import { LiveDashboard } from "@/components/home/LiveDashboard";
@@ -13,20 +12,13 @@ import { WeekendAgenda } from "@/components/home/WeekendAgenda";
 import { RecentAnnouncements } from "@/components/home/RecentAnnouncements";
 import { InteractiveMap } from "@/components/home/InteractiveMap";
 import { CommunityCTA } from "@/components/home/CommunityCTA";
-import { SITE } from "@/lib/constants";
 
-/** Cache ISR — meilleur TTFB pour Google et visiteurs (données live rafraîchies côté API). */
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: `${SITE.name} — Actualités, ferry & événements à Moorea`,
-  description:
-    "L'info locale de Moorea en temps réel : actualités, agenda, annonces, ferries Tahiti–Moorea, alertes coupures et météo. Gratuit.",
   alternates: {
     canonical: "/",
-    types: {
-      "application/rss+xml": "/feed.xml",
-    },
+    types: { "application/rss+xml": "/actualites/feed.xml" },
   },
 };
 
@@ -37,7 +29,6 @@ export default function HomePage() {
       <SafetyCampaignSlot />
       <PushAlertBanner />
       <MooreaDuJour />
-      <HomeNewsletterBand />
       <HomeSectionNav />
       <LiveDashboard />
       <WeekendAgenda />

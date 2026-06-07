@@ -35,10 +35,18 @@ export const SITE = {
 } as const;
 
 export const SOCIAL = {
-  facebook: "https://www.facebook.com/JourdanPatrice/",
+  facebook: "https://www.facebook.com/MooreaNews",
   instagram: "https://www.instagram.com/mooreanews",
   whatsapp: "+689 89 410 211",
 } as const;
+
+/** Lien WhatsApp (partage / contact). */
+export function whatsappHref(text?: string): string {
+  const digits = SOCIAL.whatsapp.replace(/\D/g, "");
+  const base = `https://wa.me/${digits}`;
+  if (!text?.trim()) return base;
+  return `${base}?text=${encodeURIComponent(text.trim())}`;
+}
 
 /** APK Android téléchargeable sur le site (public/downloads/) */
 export const ANDROID_APK = {

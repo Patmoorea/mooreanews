@@ -78,6 +78,14 @@ export function CommunityCTA() {
                 >
                   Partenaires & tarifs
                 </Link>
+                <a
+                  href="https://www.facebook.com/MooreaNews"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#1877F2] text-white font-semibold hover:opacity-90 transition-opacity"
+                >
+                  Suivre sur Facebook
+                </a>
               </div>
             </div>
           </div>
