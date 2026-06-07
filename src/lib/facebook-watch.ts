@@ -616,6 +616,7 @@ export async function listCommuneMooreaGraphPosts(): Promise<
     created_time?: string;
     message?: string;
     permalink_url?: string;
+    full_picture?: string;
   }>
 > {
   let fallbackPageToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim();
@@ -657,6 +658,7 @@ export async function listCommuneMooreaGraphPosts(): Promise<
     created_time: p.created_time,
     message: p.message,
     permalink_url: p.permalink_url,
+    full_picture: p.full_picture,
   }));
 }
 

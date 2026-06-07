@@ -1,14 +1,35 @@
 {
-  "validFrom": "2026-06-07",
-  "validTo": "2026-06-08",
-  "label": "Samedi 7 / Dimanche 8 juin 2026",
-  "pharmacy": {
-    "name": "",
-    "phone": "",
-    "address": ""
-  },
+  "validFrom": "2026-06-06",
+  "validTo": "2026-06-07",
+  "label": "Samedi 6 / Dimanche 7 juin 2026",
+  "posterImageUrl": "/images/garde/garde-2026-06-06.png",
   "doctor": {
-    "name": "",
-    "phone": ""
-  }
+    "name": "Fougerouse Pierre Antoine",
+    "phone": "87 00 08 00",
+    "address": "Temae — Centre Tumai PK 2,5 côté montagne",
+    "hours": {
+      "saturday": "12h00 – 18h00",
+      "sunday": "8h00 – 16h00"
+    }
+  },
+  "pharmacyHours": [
+    {
+      "district": "Afareaitu",
+      "phone": "40 56 35 47",
+      "saturday": "7h30 – 13h30",
+      "sunday": "7h30 – 11h30"
+    },
+    {
+      "district": "Maharepa",
+      "phone": "40 55 20 75",
+      "saturday": "7h30 – 12h15 / 14h30 – 16h30",
+      "sunday": "8h00 – 11h00"
+    },
+    {
+      "district": "Haapiti",
+      "phone": "40 56 38 37",
+      "saturday": "8h00 – 12h00",
+      "sunday": "8h00 – 10h00"
+    }
+  ]
 }

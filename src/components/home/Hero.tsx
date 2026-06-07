@@ -19,6 +19,7 @@ import { WaveDivider, TROPICAL_EMOJI } from "@/components/decor/TropicalDecor";
 import { HeroWeatherPill } from "@/components/home/HeroWeatherPill";
 import { OutageSticker } from "@/components/home/OutageSticker";
 import { EmploymentSticker } from "@/components/home/EmploymentSticker";
+import { GardeWeekendSticker } from "@/components/home/GardeWeekendSticker";
 import { cn } from "@/lib/utils";
 
 const UTILITIES: {
@@ -123,6 +124,7 @@ export function Hero() {
               </span>
               <HeroWeatherPill />
               <OutageSticker />
+              <GardeWeekendSticker />
               <EmploymentSticker />
             </div>
 

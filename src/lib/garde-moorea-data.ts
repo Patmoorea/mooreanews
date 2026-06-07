@@ -4,7 +4,8 @@
 
 import { readFile } from "fs/promises";
 import path from "path";
-import { resolveGardeMooreaAuto } from "@/lib/garde-moorea-auto";
+import { resolveGardeMooreaAuto, type GardeMooreaSnapshot } from "@/lib/garde-moorea-auto";
+import { gardeArticleSlug } from "@/lib/garde-weekend-article";
 import { tahitiDateKey, tahitiParts } from "@/lib/tahiti-holidays";
 import type { OnCallDuty } from "@/lib/health-on-call-shared";
 
@@ -12,8 +13,20 @@ export type GardeMooreaFile = {
   validFrom: string;
   validTo: string;
   label?: string;
+  posterImageUrl?: string;
   pharmacy?: { name?: string; phone?: string; address?: string };
-  doctor?: { name?: string; phone?: string };
+  doctor?: {
+    name?: string;
+    phone?: string;
+    address?: string;
+    hours?: { saturday?: string; sunday?: string };
+  };
+  pharmacyHours?: Array<{
+    district: string;
+    phone: string;
+    saturday?: string;
+    sunday?: string;
+  }>;
 };
 
 function addDaysKey(dateKey: string, days: number): string {
@@ -69,6 +82,7 @@ function fileToDuty(
       name: name.startsWith("Dr") ? name : `Dr ${name}`,
       phone,
       phoneHref: href,
+      address: (entry as GardeMooreaFile["doctor"])?.address?.trim(),
       source: `Garde week-end — ${label}`,
     };
   }
@@ -83,7 +97,7 @@ function fileToDuty(
 
 let fileMemory: GardeMooreaFile | null | undefined;
 
-async function readGardeFile(): Promise<GardeMooreaFile | null> {
+async function readGardeFileRaw(): Promise<GardeMooreaFile | null> {
   if (fileMemory !== undefined) return fileMemory;
   try {
     const raw = await readFile(path.join(process.cwd(), "data/garde-moorea.json"), "utf8");
@@ -100,6 +114,56 @@ async function readGardeFile(): Promise<GardeMooreaFile | null> {
   }
 }
 
+export function fileToSnapshot(file: GardeMooreaFile): GardeMooreaSnapshot {
+  const label = file.label?.trim() || `${file.validFrom} → ${file.validTo}`;
+  const doctorEntry = file.doctor?.name?.trim()
+    ? {
+        name: file.doctor.name.startsWith("Dr")
+          ? file.doctor.name
+          : `Dr ${file.doctor.name}`,
+        phone: file.doctor.phone?.trim()
+          ? formatPhone(file.doctor.phone)
+          : "—",
+        phoneHref: file.doctor.phone?.trim()
+          ? phoneHref(file.doctor.phone)
+          : "",
+      }
+    : null;
+
+  const pharmacyEntry = file.pharmacy?.name?.trim()
+    ? {
+        name: file.pharmacy.name,
+        phone: file.pharmacy.phone?.trim()
+          ? formatPhone(file.pharmacy.phone)
+          : "—",
+        phoneHref: file.pharmacy.phone?.trim()
+          ? phoneHref(file.pharmacy.phone)
+          : "",
+      }
+    : null;
+
+  return {
+    validFrom: file.validFrom,
+    validTo: file.validTo,
+    label,
+    doctor: doctorEntry,
+    pharmacy: pharmacyEntry,
+    posterImageUrl: file.posterImageUrl ?? null,
+    doctorAddress: file.doctor?.address?.trim(),
+    doctorHours: file.doctor?.hours,
+    pharmacyHours: file.pharmacyHours,
+    articleSlug: gardeArticleSlug(file.validFrom),
+    syncedAt: new Date().toISOString(),
+    sourceUrl: "https://www.facebook.com/CommuneMooreaMaiao",
+  };
+}
+
+export async function readGardeFileSnapshot(): Promise<GardeMooreaSnapshot | null> {
+  const file = await readGardeFileRaw();
+  if (!file) return null;
+  return fileToSnapshot(file);
+}
+
 export function clearGardeMooreaMemoryCache(): void {
   fileMemory = undefined;
 }
@@ -109,7 +173,7 @@ async function fromFile(now: Date): Promise<{
   doctor: OnCallDuty | null;
   weekendLabel: string | null;
 }> {
-  const file = await readGardeFile();
+  const file = await readGardeFileRaw();
   if (!file || !isGardeWeekActive(now, file.validFrom, file.validTo)) {
     return { pharmacy: null, doctor: null, weekendLabel: null };
   }

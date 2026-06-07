@@ -6,11 +6,19 @@ import { unstable_cache } from "next/cache";
 import { listCommuneMooreaGraphPosts } from "@/lib/facebook-watch";
 import {
   inferWeekendFromPostDate,
+  isGardeImagePost,
   parseGardePost,
   type ParsedGardeWeekend,
 } from "@/lib/garde-announcement-parse";
-import { isGardeWeekActive } from "@/lib/garde-moorea-data";
+import {
+  isGardeWeekActive,
+  readGardeFileSnapshot,
+} from "@/lib/garde-moorea-data";
 import { MOOREA_PHARMACIES } from "@/lib/moorea-pharmacies";
+import {
+  gardeArticleSlug,
+  upsertGardeWeekendArticle,
+} from "@/lib/garde-weekend-article";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getPublicSupabase } from "@/lib/supabase/server";
 import type { OnCallDuty } from "@/lib/health-on-call-shared";
@@ -19,9 +27,21 @@ export const GARDE_CACHE_SOURCE_ID = "moorea-garde-weekend";
 const GARDE_CACHE_EXTERNAL_ID = "current";
 const COMMUNE_FB = "https://www.facebook.com/CommuneMooreaMaiao";
 
+export type GardePharmacyHours = {
+  district: string;
+  phone: string;
+  saturday?: string;
+  sunday?: string;
+};
+
 export type GardeMooreaSnapshot = ParsedGardeWeekend & {
   sourceUrl?: string;
   syncedAt: string;
+  posterImageUrl?: string | null;
+  articleSlug?: string;
+  doctorAddress?: string;
+  doctorHours?: { saturday?: string; sunday?: string };
+  pharmacyHours?: GardePharmacyHours[];
 };
 
 function toDuty(
@@ -29,6 +49,7 @@ function toDuty(
   entry: { name: string; phone: string; phoneHref: string } | null,
   source: string,
   sourceUrl?: string,
+  address?: string,
 ): OnCallDuty | null {
   if (!entry?.name) return null;
   if (kind === "doctor") {
@@ -36,6 +57,7 @@ function toDuty(
       name: entry.name.startsWith("Dr") ? entry.name : `Dr ${entry.name}`,
       phone: entry.phone,
       phoneHref: entry.phoneHref,
+      address,
       source,
       sourceUrl,
     };
@@ -45,7 +67,7 @@ function toDuty(
     name: entry.name,
     phone: entry.phone,
     phoneHref: entry.phoneHref,
-    address: ph?.address,
+    address: ph?.address ?? address,
     source,
     sourceUrl,
   };
@@ -63,7 +85,13 @@ function snapshotToDuties(
   return {
     weekendLabel: snap.label,
     pharmacy: toDuty("pharmacy", snap.pharmacy, source, snap.sourceUrl),
-    doctor: toDuty("doctor", snap.doctor, source, snap.sourceUrl),
+    doctor: toDuty(
+      "doctor",
+      snap.doctor,
+      source,
+      snap.sourceUrl,
+      snap.doctorAddress,
+    ),
   };
 }
 
@@ -76,7 +104,18 @@ async function fetchGardeFromCommuneFacebook(): Promise<GardeMooreaSnapshot | nu
     if (t && t < cutoff) continue;
 
     const msg = post.message ?? "";
+    const picture = post.full_picture?.trim() || null;
     let parsed = parseGardePost(msg, post.created_time);
+
+    if (!parsed && picture && isGardeImagePost(msg, post.created_time, true)) {
+      const inferred = post.created_time
+        ? inferWeekendFromPostDate(post.created_time)
+        : null;
+      if (inferred) {
+        parsed = { ...inferred, doctor: null, pharmacy: null };
+      }
+    }
+
     if (!parsed) {
       const partial = parseGardePost(msg);
       const inferred = partial && post.created_time
@@ -87,10 +126,17 @@ async function fetchGardeFromCommuneFacebook(): Promise<GardeMooreaSnapshot | nu
       }
     }
 
-    if (!parsed || (!parsed.doctor && !parsed.pharmacy)) continue;
+    const hasContent =
+      parsed &&
+      (parsed.doctor ||
+        parsed.pharmacy ||
+        (picture && isGardeImagePost(msg, post.created_time, true)));
+
+    if (!hasContent || !parsed) continue;
 
     return {
       ...parsed,
+      posterImageUrl: picture,
       sourceUrl: post.permalink_url ?? COMMUNE_FB,
       syncedAt: new Date().toISOString(),
     };
@@ -148,7 +194,7 @@ export async function readGardeMooreaFromCache(): Promise<GardeMooreaSnapshot | 
 
   const { data } = await supabase
     .from("external_articles")
-    .select("excerpt, url, fetched_at")
+    .select("excerpt, url, fetched_at, image_url")
     .eq("source_id", GARDE_CACHE_SOURCE_ID)
     .eq("external_id", GARDE_CACHE_EXTERNAL_ID)
     .eq("hidden", false)
@@ -161,6 +207,9 @@ export async function readGardeMooreaFromCache(): Promise<GardeMooreaSnapshot | 
     if (!snap.validFrom || !snap.validTo) return null;
     snap.sourceUrl = data.url ?? snap.sourceUrl;
     snap.syncedAt = data.fetched_at ?? snap.syncedAt;
+    if (!snap.posterImageUrl && data.image_url) {
+      snap.posterImageUrl = data.image_url;
+    }
     return snap;
   } catch {
     return null;
@@ -180,8 +229,8 @@ export async function writeGardeMooreaCache(snap: GardeMooreaSnapshot): Promise<
       external_id: GARDE_CACHE_EXTERNAL_ID,
       url: snap.sourceUrl ?? COMMUNE_FB,
       title: title.slice(0, 500),
-      excerpt: JSON.stringify(snap).slice(0, 5000),
-      image_url: null,
+      excerpt: JSON.stringify(snap).slice(0, 8000),
+      image_url: snap.posterImageUrl ?? null,
       author: "Commune Moorea-Maiao",
       published_at: `${snap.validFrom}T12:00:00.000Z`,
       fetched_at: snap.syncedAt,
@@ -193,17 +242,35 @@ export async function writeGardeMooreaCache(snap: GardeMooreaSnapshot): Promise<
   return !error;
 }
 
+async function resolveSnapshotForSync(): Promise<GardeMooreaSnapshot | null> {
+  const live = await fetchLiveGardeMooreaSnapshot();
+  if (live) return live;
+  return readGardeFileSnapshot();
+}
+
 export async function syncGardeMooreaFromCommune(): Promise<{
   ok: boolean;
   found: boolean;
   pharmacy: string | null;
   doctor: string | null;
   weekend: string | null;
+  articleSlug: string | null;
 }> {
-  const snap = await fetchLiveGardeMooreaSnapshot();
+  let snap = await resolveSnapshotForSync();
   if (!snap) {
-    return { ok: true, found: false, pharmacy: null, doctor: null, weekend: null };
+    return {
+      ok: true,
+      found: false,
+      pharmacy: null,
+      doctor: null,
+      weekend: null,
+      articleSlug: null,
+    };
   }
+
+  snap.syncedAt = new Date().toISOString();
+  const article = await upsertGardeWeekendArticle(snap);
+  snap.articleSlug = article.slug;
 
   await writeGardeMooreaCache(snap);
 
@@ -213,6 +280,7 @@ export async function syncGardeMooreaFromCommune(): Promise<{
     pharmacy: snap.pharmacy?.name ?? null,
     doctor: snap.doctor?.name ?? null,
     weekend: snap.label,
+    articleSlug: snap.articleSlug ?? gardeArticleSlug(snap.validFrom),
   };
 }
 
@@ -221,8 +289,6 @@ export async function resolveGardeMooreaAuto(now = new Date()): Promise<{
   doctor: OnCallDuty | null;
   weekendLabel: string | null;
 }> {
-  // Ne jamais appeler Facebook sur une requête utilisateur (timeout Vercel).
-  // La veille live est réservée au cron : syncGardeMooreaFromCommune().
   const snap = await readGardeMooreaFromCache();
   if (!snap) {
     return { pharmacy: null, doctor: null, weekendLabel: null };
@@ -230,3 +296,6 @@ export async function resolveGardeMooreaAuto(now = new Date()): Promise<{
 
   return snapshotToDuties(snap, now);
 }
+
+/** Export cron uniquement — ne pas appeler depuis les pages. */
+export { getCachedLiveGarde };

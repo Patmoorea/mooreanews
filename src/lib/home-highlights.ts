@@ -7,6 +7,7 @@ import {
   getMooreaCruiseSchedule,
 } from "@/lib/moorea-cruise-schedule";
 import { getHealthOnCall } from "@/lib/health-on-call";
+import { getGardeWeekendHighlight } from "@/lib/garde-weekend-public";
 import { getUtilityOutages, type UtilityOutage } from "@/lib/utility-outages";
 
 export type HomeHighlight = {
@@ -77,13 +78,23 @@ export async function getHomeHighlights(): Promise<HomeHighlight[]> {
   const horizon = now + HORIZON_MS;
   const highlights: HomeHighlight[] = [];
 
-  const [outages, mooreaCruises, healthOnCall] = await Promise.all([
+  const [outages, mooreaCruises, healthOnCall, gardeHighlight] = await Promise.all([
     getUtilityOutages().catch(() => null),
     getMooreaCruiseSchedule().catch(() => null),
     getHealthOnCall().catch(() => null),
+    getGardeWeekendHighlight().catch(() => null),
   ]);
 
-  if (healthOnCall?.showProminent) {
+  if (gardeHighlight) {
+    highlights.push({
+      id: "garde-weekend-article",
+      kind: "sante_garde",
+      label: gardeHighlight.label,
+      href: gardeHighlight.href,
+      priority: 4,
+      at: new Date().toISOString(),
+    });
+  } else if (healthOnCall?.showProminent) {
     const parts: string[] = [];
     if (healthOnCall.onDutyPharmacy) {
       parts.push(`Pharmacie : ${healthOnCall.onDutyPharmacy.name}`);

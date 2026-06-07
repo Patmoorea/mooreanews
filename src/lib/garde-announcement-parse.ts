@@ -187,6 +187,30 @@ export function parseGardePost(
   };
 }
 
+export function isGardeImagePost(
+  message: string,
+  postDateIso?: string,
+  hasPicture?: boolean,
+): boolean {
+  if (!hasPicture || !postDateIso) return false;
+
+  const msg = message?.trim() ?? "";
+  if (msg) {
+    const parsed = parseGardeAnnouncement(msg);
+    if (parsed.doctor || parsed.pharmacy) return true;
+    const n = stripAccents(msg);
+    if (/garde|medecin|pharmacie|week[- ]?end|\bwe\b/.test(n)) return true;
+  }
+
+  const post = new Date(postDateIso);
+  if (Number.isNaN(post.getTime())) return false;
+  const key = post.toLocaleDateString("en-CA", { timeZone: "Pacific/Tahiti" });
+  const [y, m, d] = key.split("-").map(Number);
+  const utc = new Date(Date.UTC(y!, m! - 1, d!));
+  const dow = utc.getUTCDay();
+  return dow === 4 || dow === 5 || dow === 6;
+}
+
 export function inferWeekendFromPostDate(postDateIso: string): {
   validFrom: string;
   validTo: string;

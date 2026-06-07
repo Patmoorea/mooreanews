@@ -99,6 +99,7 @@ export async function syncHealthOnCall(): Promise<{
   pharmacy: string | null;
   doctor: string | null;
   found: boolean;
+  articleSlug: string | null;
 }> {
   clearHealthOnCallCache();
   const synced = await syncGardeMooreaFromCommune();
@@ -108,5 +109,6 @@ export async function syncHealthOnCall(): Promise<{
     found: synced.found,
     pharmacy: data.onDutyPharmacy?.name ?? null,
     doctor: data.onDutyDoctor?.name ?? null,
+    articleSlug: synced.articleSlug,
   };
 }
