@@ -27,7 +27,7 @@ export async function HealthOnCallCompact() {
               ? `${data.onDutyPharmacy.name} · ${data.onDutyPharmacy.phone}`
               : data.onDutyDoctor
                 ? `${data.onDutyDoctor.name} · ${data.onDutyDoctor.phone}`
-                : "DSP 40 47 01 44 · planning COPPF"}
+                : "DSP 40 47 01 44 · garde Moorea"}
         </p>
         <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-tiare-700">
           Voir la fiche

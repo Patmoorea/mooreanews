@@ -32,7 +32,7 @@
   {
     "slug": "pharmacie-garde",
     "question": "Comment trouver la pharmacie de garde ?",
-    "answer": "Appelez la DSP au 40 47 01 44 ou 40 47 01 47 pour la garde du jour. Sur MooreaNews, la page /sante-garde affiche la pharmacie et le médecin de garde à Moorea, plus le planning officiel (Ordre des pharmaciens PF).",
+    "answer": "Appelez la DSP au 40 47 01 44 ou 40 47 01 47 pour la garde du jour. Sur MooreaNews, la page /sante-garde affiche la pharmacie et le médecin de garde du week-end en cours (fichier mis à jour chaque vendredi).",
     "category": "sante",
     "source_label": "MooreaNews"
   }

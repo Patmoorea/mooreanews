@@ -19,6 +19,17 @@ export async function upsertEmploymentRows(
   if (!supabase) return 0;
   if (rows.length === 0) return 0;
 
+  const externalIds = rows.map((r) => r.external_id);
+  const { data: existing } = await supabase
+    .from("external_articles")
+    .select("external_id, fetched_at")
+    .eq("source_id", sourceId)
+    .in("external_id", externalIds);
+
+  const fetchedAtById = new Map(
+    (existing ?? []).map((r) => [r.external_id, r.fetched_at as string]),
+  );
+
   const payload = rows.map((r) => ({
     source_id: sourceId,
     source_name: sourceName,
@@ -35,7 +46,7 @@ export async function upsertEmploymentRows(
       excerpt: r.excerpt,
       published_at: r.published_at,
     }),
-    fetched_at: new Date().toISOString(),
+    fetched_at: fetchedAtById.get(r.external_id) ?? new Date().toISOString(),
   }));
 
   const { error, count } = await supabase

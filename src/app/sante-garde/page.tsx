@@ -9,9 +9,9 @@ import { getHealthOnCall } from "@/lib/health-on-call";
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "Pharmacies & médecins de garde — Moorea",
+  title: "Pharmacie & médecin de garde — Moorea",
   description:
-    "Pharmacie et médecin de garde à Moorea : DSP 40 47 01 44, planning officiel COPPF, annonces commune.",
+    "Pharmacie et médecin de garde à Moorea le week-end. DSP 40 47 01 44.",
   alternates: { canonical: "/sante-garde" },
 };
 
@@ -22,8 +22,8 @@ export default async function SanteGardePage() {
     <>
       <PageHeader
         badge="Santé"
-        title="Pharmacies & médecins de garde"
-        description="Week-end, jours fériés et astreintes — Moorea et Polynésie."
+        title="Pharmacie & médecin de garde"
+        description="Week-end et jours fériés — Moorea uniquement."
       />
       <Container className="pb-16">
         <Link
@@ -35,17 +35,10 @@ export default async function SanteGardePage() {
         </Link>
         <HealthOnCallPanel data={data} variant="page" />
         <p className="mt-8 text-xs text-ocean-500 max-w-2xl">
-          Garde du jour : appelez la <strong>DSP (40 47 01 44 / 47)</strong>. Le médecin de
-          garde Moorea est extrait automatiquement (OCR) du{" "}
-          <a
-            href="https://www.ordre-pharmaciens-polynesie.com/medecins-de-garde/"
-            className="underline"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Conseil de l&apos;Ordre des Médecins PF
-          </a>
-          . En cas de doute, contactez la{" "}
+          Garde du jour : appelez la <strong>DSP (40 47 01 44 / 47)</strong>.
+          Les noms affichés proviennent du fichier{" "}
+          <code className="text-[11px]">data/garde-moorea.json</code>, mis à jour
+          chaque vendredi pour le week-end suivant. En cas de doute, contactez la{" "}
           <a
             href="https://www.facebook.com/CommuneMooreaMaiao"
             className="underline"

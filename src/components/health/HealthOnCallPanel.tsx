@@ -1,6 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
-import { Cross, ExternalLink, Phone, Pill, Stethoscope } from "lucide-react";
+import { Cross, Phone, Pill, Stethoscope } from "lucide-react";
 import type { HealthOnCallData, OnCallDuty } from "@/lib/health-on-call-shared";
 
 type Props = {
@@ -11,18 +10,16 @@ type Props = {
 function OnDutyCard({
   kind,
   duty,
-  scheduleImage,
 }: {
   kind: "pharmacy" | "doctor";
   duty: OnCallDuty | null;
-  scheduleImage?: HealthOnCallData["officialDoctorSchedule"];
 }) {
   const isPharmacy = kind === "pharmacy";
   const Icon = isPharmacy ? Pill : Stethoscope;
   const title = isPharmacy ? "Pharmacie de garde" : "Médecin de garde";
   const emptyHint = isPharmacy
-    ? "Non communiquée — appelez la DSP ou la commune."
-    : "Non communiqué — appelez la DSP ou consultez le planning officiel ci-dessous.";
+    ? "Non renseignée — appelez la DSP (40 47 01 44)."
+    : "Non renseigné — appelez la DSP (40 47 01 44).";
 
   return (
     <div className="rounded-2xl border-2 border-tiare-300 bg-white overflow-hidden shadow-sm flex flex-col h-full">
@@ -38,25 +35,13 @@ function OnDutyCard({
             {duty.address && (
               <p className="mt-1 text-sm text-ocean-700">{duty.address}</p>
             )}
-            {duty.phone && duty.phone !== "—" && (
+            {duty.phone && duty.phone !== "—" && duty.phoneHref && (
               <a
                 href={duty.phoneHref}
                 className="mt-4 inline-flex items-center gap-2 px-5 py-3 rounded-full bg-tiare-500 text-white font-bold text-lg w-fit hover:bg-tiare-600"
               >
                 <Phone size={18} />
                 {duty.phone}
-              </a>
-            )}
-            <p className="mt-3 text-xs text-ocean-500">Source : {duty.source}</p>
-            {duty.sourceUrl && (
-              <a
-                href={duty.sourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-tiare-700"
-              >
-                Voir l&apos;annonce
-                <ExternalLink size={10} />
               </a>
             )}
           </>
@@ -79,25 +64,6 @@ function OnDutyCard({
               </a>
             </div>
           </>
-        )}
-
-        {!duty && !isPharmacy && scheduleImage && (
-          <figure className="mt-4 rounded-xl border border-ocean-100 overflow-hidden">
-            <div className="relative aspect-[4/5] bg-ocean-50">
-              <Image
-                src={scheduleImage.imageUrl}
-                alt={scheduleImage.label}
-                fill
-                className="object-contain p-1"
-                sizes="(max-width: 640px) 100vw, 400px"
-                unoptimized
-              />
-            </div>
-            <figcaption className="px-2 py-2 text-[11px] text-ocean-600 border-t">
-              {scheduleImage.sourceName}
-              {scheduleImage.updatedAt ? ` · MAJ ${scheduleImage.updatedAt}` : ""}
-            </figcaption>
-          </figure>
         )}
       </div>
     </div>
@@ -134,18 +100,17 @@ export function HealthOnCallPanel({ data, variant = "page" }: Props) {
 
       <div className={isBanner ? "p-5 sm:p-6" : ""}>
         {!isBanner && (
-          <h1 className="font-display text-2xl sm:text-3xl text-ocean-950 mb-6">
+          <h1 className="font-display text-2xl sm:text-3xl text-ocean-950 mb-2">
             Garde à Moorea
           </h1>
+        )}
+        {!isBanner && data.weekendLabel && (
+          <p className="text-sm text-ocean-600 mb-6">{data.weekendLabel}</p>
         )}
 
         <div className="grid gap-4 sm:grid-cols-2">
           <OnDutyCard kind="pharmacy" duty={data.onDutyPharmacy} />
-          <OnDutyCard
-            kind="doctor"
-            duty={data.onDutyDoctor}
-            scheduleImage={data.officialDoctorSchedule}
-          />
+          <OnDutyCard kind="doctor" duty={data.onDutyDoctor} />
         </div>
 
         <p className="mt-4 text-xs text-ocean-500">

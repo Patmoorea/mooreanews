@@ -94,9 +94,7 @@ export async function getHomeHighlights(): Promise<HomeHighlight[]> {
     const label =
       parts.length > 0
         ? parts.join(" · ")
-        : healthOnCall.officialDoctorSchedule
-          ? "Garde Moorea — planning officiel COPPF"
-          : "Garde Moorea — DSP 40 47 01 44";
+        : "Garde Moorea — DSP 40 47 01 44";
     highlights.push({
       id: "health-on-call",
       kind: "sante_garde",

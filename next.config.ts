@@ -3,7 +3,6 @@ import type { NextConfig } from "next";
 const CANONICAL_HOST = "www.mooreanews.com";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["tesseract.js"],
   async redirects() {
     return [
       {

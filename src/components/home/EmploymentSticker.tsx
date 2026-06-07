@@ -9,9 +9,10 @@ type JobRow = {
   title: string;
   sourceName: string;
   publishedAt: string;
+  fetchedAt: string;
 };
 
-const NEW_DAYS = 14;
+const NEW_DAYS = 3;
 
 function tahitiDateKey(iso: string): string {
   return new Date(iso).toLocaleDateString("en-CA", {
@@ -19,8 +20,8 @@ function tahitiDateKey(iso: string): string {
   });
 }
 
-function isNewOffer(publishedAt: string): boolean {
-  const ageMs = Date.now() - Date.parse(publishedAt);
+function isNewOffer(fetchedAt: string): boolean {
+  const ageMs = Date.now() - Date.parse(fetchedAt);
   return ageMs >= 0 && ageMs <= NEW_DAYS * 24 * 60 * 60 * 1000;
 }
 
@@ -39,21 +40,25 @@ function truncateTitle(title: string, max = 42): string {
 }
 
 function labelFor(jobs: JobRow[]): string {
-  const fresh = jobs.filter((j) => isNewOffer(j.publishedAt));
-  const list = fresh.length > 0 ? fresh : jobs;
+  const fresh = jobs.filter((j) => isNewOffer(j.fetchedAt));
 
-  if (list.length === 0) return "";
+  if (jobs.length === 0) return "";
 
-  if (list.length > 1) {
-    const n = fresh.length > 0 ? fresh.length : list.length;
-    return `${n} nouvelle${n > 1 ? "s" : ""} offre${n > 1 ? "s" : ""} emploi Moorea`;
+  if (fresh.length > 1) {
+    return `${fresh.length} nouvelles offres emploi Moorea`;
   }
 
-  const job = list[0];
-  const prefix = isNewOffer(job.publishedAt)
-    ? "Nouvelle offre"
-    : "Offre emploi";
-  return `${prefix} · ${truncateTitle(job.title)} · ${shortSource(job.sourceName)}`;
+  if (fresh.length === 1) {
+    const job = fresh[0]!;
+    return `Nouvelle offre · ${truncateTitle(job.title)} · ${shortSource(job.sourceName)}`;
+  }
+
+  if (jobs.length > 1) {
+    return `${jobs.length} offres emploi Moorea`;
+  }
+
+  const job = jobs[0]!;
+  return `Offre emploi · ${truncateTitle(job.title)} · ${shortSource(job.sourceName)}`;
 }
 
 /** Pastille compacte sur le hero — offres d'emploi récentes à Moorea. */
@@ -80,7 +85,7 @@ export function EmploymentSticker() {
         const text = labelFor(offers);
         if (!cancelled) {
           setLabel(text || null);
-          setIsFresh(offers.some((o) => isNewOffer(o.publishedAt)));
+          setIsFresh(offers.some((o) => isNewOffer(o.fetchedAt)));
         }
       } catch {
         /* silencieux */
