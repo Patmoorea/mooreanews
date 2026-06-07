@@ -1,5 +1,6 @@
 /**
  * OCR du planning COPPF (Ordre des médecins PF) — ligne Moorea du week-end en cours.
+ * Tesseract ne tourne pas de façon fiable sur Vercel : OCR réservé aux scripts locaux / CI.
  */
 
 import { unstable_cache } from "next/cache";
@@ -12,7 +13,31 @@ const FETCH_HEADERS = {
 };
 
 const OCR_CACHE_MS = 24 * 60 * 60 * 1000;
+const OCR_TIMEOUT_MS = 12_000;
+
+/** Tesseract bloque les fonctions Vercel (timeout ~60 s) — OCR hors prod serverless. */
+export function isLiveCoppfOcrEnabled(): boolean {
+  if (process.env.DISABLE_COPPF_OCR === "1") return false;
+  if (process.env.ENABLE_COPPF_OCR === "1") return true;
+  return process.env.VERCEL !== "1";
+}
+
 const ocrTextMemory = new Map<string, { at: number; text: string | null }>();
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("OCR timeout")), ms);
+    promise
+      .then((v) => {
+        clearTimeout(timer);
+        resolve(v);
+      })
+      .catch((e) => {
+        clearTimeout(timer);
+        reject(e);
+      });
+  });
+}
 
 async function runOcrOnImage(buffer: Buffer): Promise<string> {
   const { createWorker } = await import("tesseract.js");
@@ -26,27 +51,29 @@ async function runOcrOnImage(buffer: Buffer): Promise<string> {
 }
 
 async function fetchAndOcrCoppfImage(imageUrl: string): Promise<string | null> {
-  try {
-    const res = await fetch(imageUrl, { headers: FETCH_HEADERS, cache: "no-store" });
-    if (!res.ok) return null;
-    const buffer = Buffer.from(await res.arrayBuffer());
-    return await runOcrOnImage(buffer);
-  } catch {
-    return null;
-  }
+  const res = await fetch(imageUrl, { headers: FETCH_HEADERS, cache: "no-store" });
+  if (!res.ok) return null;
+  const buffer = Buffer.from(await res.arrayBuffer());
+  return withTimeout(runOcrOnImage(buffer), OCR_TIMEOUT_MS);
 }
 
 async function loadOcrText(imageUrl: string): Promise<string | null> {
   const mem = ocrTextMemory.get(imageUrl);
   if (mem && Date.now() - mem.at < OCR_CACHE_MS) return mem.text;
 
-  const text = await fetchAndOcrCoppfImage(imageUrl);
-  ocrTextMemory.set(imageUrl, { at: Date.now(), text });
-  return text;
+  try {
+    const text = await fetchAndOcrCoppfImage(imageUrl);
+    ocrTextMemory.set(imageUrl, { at: Date.now(), text });
+    return text;
+  } catch {
+    ocrTextMemory.set(imageUrl, { at: Date.now(), text: null });
+    return null;
+  }
 }
 
-/** Texte OCR — cache Next 24 h + mémoire processus. */
 async function getCoppfOcrText(imageUrl: string): Promise<string | null> {
+  if (!isLiveCoppfOcrEnabled()) return null;
+
   try {
     return await unstable_cache(
       () => loadOcrText(imageUrl),
@@ -63,6 +90,8 @@ export async function fetchMooreaDoctorFromCoppfOcr(
   now = new Date(),
   sourcePageUrl?: string,
 ): Promise<OnCallDuty | null> {
+  if (!isLiveCoppfOcrEnabled()) return null;
+
   const ocrText = await getCoppfOcrText(imageUrl);
   if (!ocrText) return null;
 
@@ -82,7 +111,6 @@ export function clearCoppfOcrCache(): void {
   ocrTextMemory.clear();
 }
 
-/** Test local sans téléchargement (scripts / unités). */
 export function parseMooreaDoctorFromCoppfOcrText(
   ocrText: string,
   now = new Date(),
@@ -99,7 +127,7 @@ export function parseMooreaDoctorFromCoppfOcrText(
   };
 }
 
-/** OCR direct (scripts de test). */
+/** OCR direct (scripts locaux / CI). */
 export async function fetchMooreaDoctorFromCoppfOcrDirect(
   imageUrl: string,
   now = new Date(),

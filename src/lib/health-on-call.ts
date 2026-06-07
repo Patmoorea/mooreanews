@@ -2,10 +2,12 @@
  * Pharmacies et médecins de garde — Moorea uniquement (pas d’annuaire).
  */
 
+import { cache } from "react";
 import {
   COPPF_SOURCES,
   fetchCoppfDoctorSchedule,
 } from "@/lib/coppf-guard-schedule";
+import { getCachedCoppfMooreaDoctor, clearCoppfMooreaDoctorMemoryCache } from "@/lib/coppf-moorea-cache";
 import {
   clearCoppfOcrCache,
   fetchMooreaDoctorFromCoppfOcr,
@@ -78,7 +80,7 @@ export const MOOREA_PHARMACIES: MooreaPharmacy[] = [
 ];
 
 const CACHE_MS = 6 * 60 * 60 * 1000;
-let cache: { at: number; data: HealthOnCallData } | null = null;
+let dataCache: { at: number; data: HealthOnCallData } | null = null;
 
 function pharmaciesOpenToday(d: Date): MooreaPharmacy[] {
   const { dow } = tahitiParts(d);
@@ -239,8 +241,8 @@ function formatUpdatedAt(iso: string | null): string | null {
   });
 }
 
-export async function getHealthOnCall(now = new Date()): Promise<HealthOnCallData> {
-  if (cache && Date.now() - cache.at < CACHE_MS) return cache.data;
+export async function getHealthOnCallUncached(now = new Date()): Promise<HealthOnCallData> {
+  if (dataCache && Date.now() - dataCache.at < CACHE_MS) return dataCache.data;
 
   const openToday = pharmaciesOpenToday(now);
   const envPharmacy = parseOnDutyPharmacyFromEnv();
@@ -274,8 +276,12 @@ export async function getHealthOnCall(now = new Date()): Promise<HealthOnCallDat
     onDutyDoctor = communeFb.doctor;
   } else if (communeRss?.doctor) {
     onDutyDoctor = communeRss.doctor;
-  } else if (coppfImageUrl) {
-    onDutyDoctor = await fetchMooreaDoctorFromCoppfOcr(coppfImageUrl, now, coppfPageUrl);
+  } else {
+    onDutyDoctor =
+      (await getCachedCoppfMooreaDoctor(now, coppfPageUrl)) ??
+      (coppfImageUrl
+        ? await fetchMooreaDoctorFromCoppfOcr(coppfImageUrl, now, coppfPageUrl)
+        : null);
   }
 
   const officialDoctorSchedule = coppfDoctors?.images[0]
@@ -304,13 +310,17 @@ export async function getHealthOnCall(now = new Date()): Promise<HealthOnCallDat
     ],
   };
 
-  cache = { at: Date.now(), data };
+  dataCache = { at: Date.now(), data };
   return data;
 }
 
+/** Une seule résolution par requête React (accueil appelle plusieurs composants). */
+export const getHealthOnCall = cache(getHealthOnCallUncached);
+
 export function clearHealthOnCallCache(): void {
-  cache = null;
+  dataCache = null;
   clearCoppfOcrCache();
+  clearCoppfMooreaDoctorMemoryCache();
 }
 
 export async function syncHealthOnCall(): Promise<{
