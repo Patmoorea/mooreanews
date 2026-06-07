@@ -6,6 +6,10 @@ import {
   COPPF_SOURCES,
   fetchCoppfDoctorSchedule,
 } from "@/lib/coppf-guard-schedule";
+import {
+  clearCoppfOcrCache,
+  fetchMooreaDoctorFromCoppfOcr,
+} from "@/lib/coppf-moorea-guard";
 import { listCommuneMooreaGraphPosts } from "@/lib/facebook-watch";
 import {
   parseGardeAnnouncement,
@@ -261,19 +265,24 @@ export async function getHealthOnCall(now = new Date()): Promise<HealthOnCallDat
     onDutyPharmacy = toPharmacyDuty(openToday[0]!, "Horaires officiels (seule ouverte)");
   }
 
+  const coppfImageUrl = coppfDoctors?.images[0]?.imageUrl;
+  const coppfPageUrl = coppfDoctors?.pageUrl ?? COPPF_SOURCES.doctors;
+
   if (envDoctor) {
     onDutyDoctor = envDoctor;
   } else if (communeFb?.doctor) {
     onDutyDoctor = communeFb.doctor;
   } else if (communeRss?.doctor) {
     onDutyDoctor = communeRss.doctor;
+  } else if (coppfImageUrl) {
+    onDutyDoctor = await fetchMooreaDoctorFromCoppfOcr(coppfImageUrl, now, coppfPageUrl);
   }
 
   const officialDoctorSchedule = coppfDoctors?.images[0]
     ? {
         label: "Planning officiel — repérez la ligne Moorea",
         imageUrl: coppfDoctors.images[0].imageUrl,
-        sourceName: "Ordre des pharmaciens PF",
+        sourceName: "Ordre des médecins PF (COPPF)",
         sourceUrl: coppfDoctors.pageUrl,
         updatedAt: formatUpdatedAt(coppfDoctors.updatedAt),
       }
@@ -301,6 +310,7 @@ export async function getHealthOnCall(now = new Date()): Promise<HealthOnCallDat
 
 export function clearHealthOnCallCache(): void {
   cache = null;
+  clearCoppfOcrCache();
 }
 
 export async function syncHealthOnCall(): Promise<{

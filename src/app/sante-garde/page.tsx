@@ -35,17 +35,17 @@ export default async function SanteGardePage() {
         </Link>
         <HealthOnCallPanel data={data} variant="page" />
         <p className="mt-8 text-xs text-ocean-500 max-w-2xl">
-          Garde du jour : appelez la <strong>DSP (40 47 01 44 / 47)</strong>. Le planning image
-          provient du{" "}
+          Garde du jour : appelez la <strong>DSP (40 47 01 44 / 47)</strong>. Le médecin de
+          garde Moorea est extrait automatiquement (OCR) du{" "}
           <a
             href="https://www.ordre-pharmaciens-polynesie.com/medecins-de-garde/"
             className="underline"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Conseil de l&apos;Ordre des Pharmaciens PF
+            Conseil de l&apos;Ordre des Médecins PF
           </a>
-          . TNTV republie parfois le détail week-end. En cas de doute, contactez la{" "}
+          . En cas de doute, contactez la{" "}
           <a
             href="https://www.facebook.com/CommuneMooreaMaiao"
             className="underline"
