@@ -23,6 +23,104 @@ export function absoluteUrl(path: string): string {
   return `${base}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+/** URL absolue pour Open Graph / Twitter (chemins relatifs → www). */
+export function toAbsoluteMediaUrl(
+  url: string | null | undefined,
+): string | undefined {
+  const u = url?.trim();
+  if (!u) return undefined;
+  if (u.startsWith("http://") || u.startsWith("https://")) return u;
+  return absoluteUrl(u);
+}
+
+type ShareMetadataInput = {
+  title: string;
+  description: string;
+  path: string;
+  imageUrl?: string | null;
+  type?: "website" | "article";
+  publishedTime?: string;
+  authors?: string[];
+  tags?: string[];
+};
+
+/** Open Graph + Twitter cohérents pour le partage social (Facebook, WhatsApp, X). */
+export function buildPageShareMetadata(input: ShareMetadataInput): Metadata {
+  const canonical = input.path.startsWith("/") ? input.path : `/${input.path}`;
+  const absImage = toAbsoluteMediaUrl(input.imageUrl);
+  const ogImages = absImage
+    ? [{ url: absImage, alt: input.title }]
+    : undefined;
+
+  return {
+    title: input.title,
+    description: input.description,
+    alternates: { canonical },
+    openGraph: {
+      title: input.title,
+      description: input.description,
+      type: input.type ?? "website",
+      url: absoluteUrl(canonical),
+      ...(ogImages ? { images: ogImages } : {}),
+      ...(input.publishedTime ? { publishedTime: input.publishedTime } : {}),
+      ...(input.authors?.length ? { authors: input.authors } : {}),
+      ...(input.tags?.length ? { tags: input.tags } : {}),
+    },
+    twitter: {
+      card: absImage ? "summary_large_image" : "summary",
+      title: input.title,
+      description: input.description,
+      ...(absImage ? { images: [absImage] } : {}),
+    },
+  };
+}
+
+export function faqPageJsonLd(
+  entries: { question: string; answer: string }[],
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: entries.map((e) => ({
+      "@type": "Question",
+      name: e.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: e.answer,
+      },
+    })),
+  };
+}
+
+export function lodgingBusinessJsonLd(input: {
+  name: string;
+  description: string;
+  slug: string;
+  district: string;
+  website?: string | null;
+  telephone?: string | null;
+  imageUrl?: string | null;
+}) {
+  const url = absoluteUrl(`/hebergements/${input.slug}`);
+  const image = toAbsoluteMediaUrl(input.imageUrl);
+  return {
+    "@context": "https://schema.org",
+    "@type": "LodgingBusiness",
+    name: input.name,
+    description: input.description,
+    url,
+    ...(image ? { image } : {}),
+    ...(input.website ? { sameAs: input.website } : {}),
+    ...(input.telephone ? { telephone: input.telephone } : {}),
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: input.district,
+      addressRegion: "Moorea",
+      addressCountry: "PF",
+    },
+  };
+}
+
 export function googleSiteVerification(): string | undefined {
   return process.env.GOOGLE_SITE_VERIFICATION?.trim() || undefined;
 }
