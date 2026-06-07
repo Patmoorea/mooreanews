@@ -76,6 +76,10 @@ export function buildGardeArticleBody(snap: GardeMooreaSnapshot): string {
     "En cas d'urgence : SAMU 15 · Pompiers 18 · Hôpital Afareaitu 40 55 22 22 · DSP garde 40 47 01 44.",
   );
 
+  blocks.push(
+    "Affiche MooreaNews générée à partir des informations officielles de la commune.",
+  );
+
   if (snap.sourceUrl) {
     blocks.push(`Source officielle : ${snap.sourceUrl}`);
   }

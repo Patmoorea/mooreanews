@@ -125,6 +125,121 @@ function parsePharmacyFromText(
   return null;
 }
 
+export type GardePharmacyHours = {
+  district: string;
+  phone: string;
+  saturday?: string;
+  sunday?: string;
+};
+
+/** Fusionne le texte OCR dans un snapshot garde existant. */
+export function mergeGardeOcrIntoSnapshot<
+  T extends {
+    validFrom: string;
+    validTo: string;
+    label: string;
+    doctor: ParsedOnCall | null;
+    pharmacy: ParsedOnCall | null;
+    doctorAddress?: string;
+    doctorHours?: { saturday?: string; sunday?: string };
+    pharmacyHours?: GardePharmacyHours[];
+  },
+>(snap: T, ocrText: string): T {
+  const dates = parseWeekendDatesFromText(ocrText);
+  const fromPoster = parseGardeFromPosterText(ocrText);
+  const pharmacyHours = parsePharmacyHoursFromText(ocrText);
+  const doctorHours = parseDoctorHoursFromText(ocrText);
+  const doctorAddress = parseDoctorAddressFromText(ocrText);
+
+  return {
+    ...snap,
+    ...(dates ?? {}),
+    doctor: snap.doctor?.name ? snap.doctor : fromPoster.doctor ?? snap.doctor,
+    pharmacy: snap.pharmacy?.name ? snap.pharmacy : fromPoster.pharmacy ?? snap.pharmacy,
+    doctorAddress: snap.doctorAddress ?? doctorAddress,
+    doctorHours: snap.doctorHours ?? doctorHours,
+    pharmacyHours:
+      snap.pharmacyHours && snap.pharmacyHours.length > 0
+        ? snap.pharmacyHours
+        : pharmacyHours.length > 0
+          ? pharmacyHours
+          : snap.pharmacyHours,
+  };
+}
+
+export function parseGardeFromPosterText(
+  text: string,
+  pharmacies: MooreaPharmacy[] = MOOREA_PHARMACIES,
+): { doctor: ParsedOnCall | null; pharmacy: ParsedOnCall | null } {
+  if (!text?.trim()) return { doctor: null, pharmacy: null };
+  const n = stripAccents(text);
+  if (!/garde|medecin|pharmacie|week[- ]?end|\bwe\b|docteur/.test(n)) {
+    return { doctor: null, pharmacy: null };
+  }
+  return {
+    doctor: parseDoctorFromText(text),
+    pharmacy: parsePharmacyFromText(text, pharmacies),
+  };
+}
+
+export function parsePharmacyHoursFromText(text: string): GardePharmacyHours[] {
+  const districts = [
+    { key: "afareaitu", label: "Afareaitu" },
+    { key: "maharepa", label: "Maharepa" },
+    { key: "haapiti", label: "Haapiti" },
+    { key: "tiahura", label: "Haapiti" },
+  ];
+  const n = stripAccents(text);
+  const results: GardePharmacyHours[] = [];
+
+  for (const d of districts) {
+    if (!n.includes(d.key)) continue;
+    const idx = n.indexOf(d.key);
+    const chunk = text.slice(idx, idx + 220);
+    const phoneMatch = chunk.match(/(?:40|87|89)[\s.\d]{7,12}/);
+    const phone = phoneMatch ? cleanPhone(phoneMatch[0]) : "";
+    const sat = chunk.match(
+      /samedi[^.\n]{0,40}?(\d{1,2}\s*[hH][\d\s.]{0,6}(?:\s*[\/\-–]\s*\d{1,2}\s*[hH][\d\s.]{0,6})?)/i,
+    );
+    const sun = chunk.match(
+      /dimanche[^.\n]{0,40}?(\d{1,2}\s*[hH][\d\s.]{0,6}(?:\s*[\/\-–]\s*\d{1,2}\s*[hH][\d\s.]{0,6})?)/i,
+    );
+    if (phone || sat || sun) {
+      results.push({
+        district: d.label,
+        phone,
+        saturday: sat?.[1]?.trim(),
+        sunday: sun?.[1]?.trim(),
+      });
+    }
+  }
+
+  return results;
+}
+
+export function parseDoctorHoursFromText(text: string): {
+  saturday?: string;
+  sunday?: string;
+} {
+  const sat = text.match(
+    /samedi[^.\n]{0,35}?(\d{1,2}\s*[hH]\d{0,2}\s*[–\-—]\s*\d{1,2}\s*[hH]\d{0,2})/i,
+  );
+  const sun = text.match(
+    /dimanche[^.\n]{0,35}?(\d{1,2}\s*[hH]\d{0,2}\s*[–\-—]\s*\d{1,2}\s*[hH]\d{0,2})/i,
+  );
+  return {
+    saturday: sat?.[1]?.trim(),
+    sunday: sun?.[1]?.trim(),
+  };
+}
+
+export function parseDoctorAddressFromText(text: string): string | undefined {
+  const m =
+    text.match(/(?:temae|tumai|pk\s*[\d,.]+)[^\n.]{0,80}/i) ??
+    text.match(/centre\s+tumai[^\n.]{0,60}/i);
+  return m?.[0]?.trim().replace(/\s+/g, " ");
+}
+
 function parseDoctorFromText(text: string): ParsedOnCall | null {
   const n = stripAccents(text);
   if (!/medecin|docteur|dr\.| garde/.test(n)) return null;
@@ -133,11 +248,22 @@ function parseDoctorFromText(text: string): ParsedOnCall | null {
     text.match(
       /(?:Dr|Docteur|Docteure|M[ée]decin)\.?\s+([A-ZÀ-Ü][A-Za-zÀ-ü'\-]+(?:[\s-][A-ZÀ-Ü][A-Za-zÀ-ü'\-]+)*)/,
     ) ??
-    text.match(/(?:Dr|Docteur|Docteure|M[ée]decin)\.?\s+([^\n,;]+)/i);
+    text.match(/(?:Dr|Docteur|Docteure|M[ée]decin)\.?\s+([^\n,;]+)/i) ??
+    text.match(
+      /(?:Dr|Docteur|M[ée]decin)[^\n]{0,40}?([A-Z][A-Za-z\-]+\s+[A-Z][A-Za-z\-]+(?:\s+[A-Z][A-Za-z\-]+)?)/,
+    ) ??
+    text.match(/\b([A-Z][a-z]{4,})\s+(Pierre|Paul|Jean|Marie|Antoine)\s+([A-Z][a-z]{4,})\b/);
 
   if (!dr) return null;
 
-  const name = `Dr ${dr[1].trim().replace(/\s+/g, " ")}`;
+  const rawName = (
+    dr.length >= 4 && dr[2] && dr[3]
+      ? `${dr[1]} ${dr[2]} ${dr[3]}`
+      : dr[1]
+  )
+    .trim()
+    .replace(/\s+/g, " ");
+  const name = rawName.match(/^Dr\.?\s/i) ? rawName : `Dr ${rawName}`;
   const phoneMatch =
     text.match(
       /(?:T[ée]l\.?|Tel\.?|☎|phone|au)\s*[:\.]?\s*((?:\+689\s*)?(?:40|87|89)\s*[\d\s\.]{6,})/i,

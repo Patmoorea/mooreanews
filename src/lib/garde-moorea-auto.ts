@@ -7,9 +7,16 @@ import { listCommuneMooreaGraphPosts } from "@/lib/facebook-watch";
 import {
   inferWeekendFromPostDate,
   isGardeImagePost,
+  mergeGardeOcrIntoSnapshot,
   parseGardePost,
   type ParsedGardeWeekend,
+  type GardePharmacyHours,
 } from "@/lib/garde-announcement-parse";
+import { ocrGardePosterImage } from "@/lib/garde-poster-ocr";
+import {
+  gardePosterHasContent,
+  renderAndUploadMooreaNewsGardePoster,
+} from "@/lib/garde-weekend-poster-sync";
 import {
   isGardeWeekActive,
   readGardeFileSnapshot,
@@ -27,16 +34,12 @@ export const GARDE_CACHE_SOURCE_ID = "moorea-garde-weekend";
 const GARDE_CACHE_EXTERNAL_ID = "current";
 const COMMUNE_FB = "https://www.facebook.com/CommuneMooreaMaiao";
 
-export type GardePharmacyHours = {
-  district: string;
-  phone: string;
-  saturday?: string;
-  sunday?: string;
-};
+export type { GardePharmacyHours } from "@/lib/garde-announcement-parse";
 
 export type GardeMooreaSnapshot = ParsedGardeWeekend & {
   sourceUrl?: string;
   syncedAt: string;
+  communePosterUrl?: string | null;
   posterImageUrl?: string | null;
   articleSlug?: string;
   doctorAddress?: string;
@@ -136,7 +139,8 @@ async function fetchGardeFromCommuneFacebook(): Promise<GardeMooreaSnapshot | nu
 
     return {
       ...parsed,
-      posterImageUrl: picture,
+      communePosterUrl: picture,
+      posterImageUrl: null,
       sourceUrl: post.permalink_url ?? COMMUNE_FB,
       syncedAt: new Date().toISOString(),
     };
@@ -248,13 +252,45 @@ async function resolveSnapshotForSync(): Promise<GardeMooreaSnapshot | null> {
   return readGardeFileSnapshot();
 }
 
-export async function syncGardeMooreaFromCommune(): Promise<{
+async function enrichFromCommuneImage(
+  snap: GardeMooreaSnapshot,
+  runOcr: boolean,
+): Promise<{ snap: GardeMooreaSnapshot; ocrUsed: boolean }> {
+  const imageUrl = snap.communePosterUrl ?? null;
+  if (!runOcr || !imageUrl) return { snap, ocrUsed: false };
+
+  const needsOcr =
+    !snap.doctor?.name ||
+    !snap.pharmacyHours?.length ||
+    !snap.doctorHours?.saturday;
+
+  if (!needsOcr) return { snap, ocrUsed: false };
+
+  const ocrText = await ocrGardePosterImage(imageUrl);
+  if (!ocrText) return { snap, ocrUsed: false };
+
+  return {
+    snap: mergeGardeOcrIntoSnapshot(snap, ocrText),
+    ocrUsed: true,
+  };
+}
+
+export type GardeSyncOptions = {
+  /** Vendredi matin : OCR affiche commune + affiche MooreaNews */
+  fullWeekendPipeline?: boolean;
+};
+
+export async function syncGardeMooreaFromCommune(
+  options: GardeSyncOptions = {},
+): Promise<{
   ok: boolean;
   found: boolean;
   pharmacy: string | null;
   doctor: string | null;
   weekend: string | null;
   articleSlug: string | null;
+  ocrUsed: boolean;
+  posterGenerated: boolean;
 }> {
   let snap = await resolveSnapshotForSync();
   if (!snap) {
@@ -265,7 +301,33 @@ export async function syncGardeMooreaFromCommune(): Promise<{
       doctor: null,
       weekend: null,
       articleSlug: null,
+      ocrUsed: false,
+      posterGenerated: false,
     };
+  }
+
+  if (!snap.communePosterUrl && snap.posterImageUrl?.startsWith("http")) {
+    snap.communePosterUrl = snap.posterImageUrl;
+  }
+
+  const enriched = await enrichFromCommuneImage(
+    snap,
+    Boolean(options.fullWeekendPipeline),
+  );
+  snap = enriched.snap;
+
+  const shouldMakePoster =
+    options.fullWeekendPipeline ||
+    !snap.posterImageUrl ||
+    snap.posterImageUrl.startsWith("/");
+
+  if (shouldMakePoster && gardePosterHasContent(snap)) {
+    const mooreaPoster = await renderAndUploadMooreaNewsGardePoster(snap);
+    if (mooreaPoster) {
+      snap.posterImageUrl = mooreaPoster;
+    } else if (snap.communePosterUrl) {
+      snap.posterImageUrl = snap.communePosterUrl;
+    }
   }
 
   snap.syncedAt = new Date().toISOString();
@@ -281,6 +343,8 @@ export async function syncGardeMooreaFromCommune(): Promise<{
     doctor: snap.doctor?.name ?? null,
     weekend: snap.label,
     articleSlug: snap.articleSlug ?? gardeArticleSlug(snap.validFrom),
+    ocrUsed: enriched.ocrUsed,
+    posterGenerated: Boolean(snap.posterImageUrl),
   };
 }
 

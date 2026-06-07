@@ -11,6 +11,7 @@ import {
   getTahitiClock,
   shouldSendEveningDigest,
   shouldSendMorningDigest,
+  shouldPublishGardeWeekend,
   shouldSendWeekendDigest,
 } from "@/lib/cron-tahiti";
 import { deactivateFalseFerryAlerts } from "@/lib/facebook-alert-import";
@@ -145,7 +146,9 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   }
 
   jobs.utilityOutages = await syncUtilityOutages();
-  jobs.healthOnCall = await syncHealthOnCall();
+  jobs.healthOnCall = await syncHealthOnCall({
+    fullWeekendPipeline: shouldPublishGardeWeekend(clock),
+  });
   revalidatePath("/sante-garde");
   const utilitySync = jobs.utilityOutages as {
     created?: number;

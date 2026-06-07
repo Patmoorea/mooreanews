@@ -7,7 +7,7 @@ import {
   clearGardeMooreaMemoryCache,
   getGardeMooreaForNow,
 } from "@/lib/garde-moorea-data";
-import { syncGardeMooreaFromCommune } from "@/lib/garde-moorea-auto";
+import { syncGardeMooreaFromCommune, type GardeSyncOptions } from "@/lib/garde-moorea-auto";
 import {
   formatTahitiDay,
   isHealthOnCallPeriod,
@@ -94,15 +94,19 @@ export function clearHealthOnCallCache(): void {
   clearGardeMooreaMemoryCache();
 }
 
-export async function syncHealthOnCall(): Promise<{
+export async function syncHealthOnCall(
+  options: GardeSyncOptions = {},
+): Promise<{
   ok: boolean;
   pharmacy: string | null;
   doctor: string | null;
   found: boolean;
   articleSlug: string | null;
+  ocrUsed: boolean;
+  posterGenerated: boolean;
 }> {
   clearHealthOnCallCache();
-  const synced = await syncGardeMooreaFromCommune();
+  const synced = await syncGardeMooreaFromCommune(options);
   const data = await getHealthOnCall();
   return {
     ok: synced.ok,
@@ -110,5 +114,7 @@ export async function syncHealthOnCall(): Promise<{
     pharmacy: data.onDutyPharmacy?.name ?? null,
     doctor: data.onDutyDoctor?.name ?? null,
     articleSlug: synced.articleSlug,
+    ocrUsed: synced.ocrUsed,
+    posterGenerated: synced.posterGenerated,
   };
 }

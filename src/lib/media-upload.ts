@@ -129,3 +129,46 @@ export async function uploadImageToMedia(
 
   return { ok: true, url: publicUrl, path };
 }
+
+/** Upload programmatique (affiches générées, cron). */
+export async function uploadBufferToMedia(
+  admin: SupabaseClient,
+  buffer: Buffer,
+  path: string,
+  contentType: "image/png" | "image/jpeg" | "image/webp" = "image/png",
+): Promise<
+  | { ok: true; url: string; path: string }
+  | { ok: false; error: ImageUploadError; detail?: string }
+> {
+  if (buffer.length > MAX_IMAGE_BYTES) {
+    return { ok: false, error: "file_too_large", detail: "Taille maximum : 5 Mo" };
+  }
+
+  async function tryUpload() {
+    return admin.storage.from(MEDIA_BUCKET).upload(path, buffer, {
+      contentType,
+      cacheControl: "3600",
+      upsert: true,
+    });
+  }
+
+  let { error: uploadError } = await tryUpload();
+
+  if (uploadError && isBucketMissingMessage(uploadError.message)) {
+    const ensured = await ensureMediaBucket(admin);
+    if (!ensured.ok) {
+      return { ok: false, error: "bucket_missing", detail: ensured.detail };
+    }
+    ({ error: uploadError } = await tryUpload());
+  }
+
+  if (uploadError) {
+    return { ok: false, error: "upload_failed", detail: uploadError.message };
+  }
+
+  const {
+    data: { publicUrl },
+  } = admin.storage.from(MEDIA_BUCKET).getPublicUrl(path);
+
+  return { ok: true, url: publicUrl, path };
+}

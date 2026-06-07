@@ -50,6 +50,11 @@ export function shouldSendWeekendDigest(clock: TahitiClock): boolean {
   return clock.weekday === 5 && clock.hour === 7;
 }
 
+/** Garde week-end Moorea : vendredi matin Tahiti (OCR + affiche MooreaNews). */
+export function shouldPublishGardeWeekend(clock: TahitiClock): boolean {
+  return clock.weekday === 5 && clock.hour >= 5 && clock.hour <= 8;
+}
+
 /** Push « Ce soir à Moorea » : jeu–dim entre 16h et 20h Tahiti (cron externe recommandé). */
 export function shouldSendEveningDigest(clock: TahitiClock): boolean {
   const eveningDays = new Set([0, 4, 5, 6]);

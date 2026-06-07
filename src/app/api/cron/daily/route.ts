@@ -3,6 +3,7 @@ import { verifyCronAuth } from "@/lib/cron-auth";
 import { runDailyCron } from "@/lib/cron-daily";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 /**
  * Cron UNIQUE Vercel Hobby (1×/jour).

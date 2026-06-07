@@ -4,7 +4,7 @@
 
 import { readFile } from "fs/promises";
 import path from "path";
-import { resolveGardeMooreaAuto, type GardeMooreaSnapshot } from "@/lib/garde-moorea-auto";
+import { resolveGardeMooreaAuto, readGardeMooreaFromCache, type GardeMooreaSnapshot } from "@/lib/garde-moorea-auto";
 import { gardeArticleSlug } from "@/lib/garde-weekend-article";
 import { tahitiDateKey, tahitiParts } from "@/lib/tahiti-holidays";
 import type { OnCallDuty } from "@/lib/health-on-call-shared";
@@ -149,6 +149,7 @@ export function fileToSnapshot(file: GardeMooreaFile): GardeMooreaSnapshot {
     doctor: doctorEntry,
     pharmacy: pharmacyEntry,
     posterImageUrl: file.posterImageUrl ?? null,
+    communePosterUrl: file.posterImageUrl ?? null,
     doctorAddress: file.doctor?.address?.trim(),
     doctorHours: file.doctor?.hours,
     pharmacyHours: file.pharmacyHours,
@@ -162,6 +163,19 @@ export async function readGardeFileSnapshot(): Promise<GardeMooreaSnapshot | nul
   const file = await readGardeFileRaw();
   if (!file) return null;
   return fileToSnapshot(file);
+}
+
+/** Snapshot pour affiche dynamique /api/garde-weekend/poster/[validFrom] */
+export async function resolveGardeSnapshotForPoster(
+  validFrom: string,
+): Promise<GardeMooreaSnapshot | null> {
+  const cached = await readGardeMooreaFromCache();
+  if (cached?.validFrom === validFrom) return cached;
+
+  const file = await readGardeFileSnapshot();
+  if (file?.validFrom === validFrom) return file;
+
+  return null;
 }
 
 export function clearGardeMooreaMemoryCache(): void {
