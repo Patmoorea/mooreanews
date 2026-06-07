@@ -3,12 +3,12 @@
  */
 
 import type { GardeMooreaSnapshot } from "@/lib/garde-moorea-auto";
-import { getArticleBySlug } from "@/lib/content";
 import { gardeArticleSlug } from "@/lib/garde-weekend-article";
 import {
   isGardeWeekActive,
   resolveGardeWeekendSnapshot,
 } from "@/lib/garde-moorea-data";
+import { resolveGardePosterPublicUrl } from "@/lib/garde-poster-url";
 import { tahitiParts } from "@/lib/tahiti-holidays";
 
 export type GardeWeekendHighlight = {
@@ -19,6 +19,7 @@ export type GardeWeekendHighlight = {
   isFresh: boolean;
   weekendLabel: string;
   doctorName: string | null;
+  posterImageUrl: string | null;
 };
 
 function formatDoctorShort(name: string): string {
@@ -77,8 +78,7 @@ export async function getGardeWeekendHighlight(
   }
 
   const articleSlug = snap.articleSlug ?? gardeArticleSlug(snap.validFrom);
-  const article = await getArticleBySlug(articleSlug);
-  const href = article ? `/actualites/${articleSlug}` : "/sante-garde";
+  const href = `/actualites/${articleSlug}`;
 
   return {
     active: true,
@@ -88,5 +88,8 @@ export async function getGardeWeekendHighlight(
     isFresh: isFreshGarde(snap, now),
     weekendLabel: snap.label,
     doctorName: snap.doctor?.name ?? null,
+    posterImageUrl: resolveGardePosterPublicUrl(
+      snap.posterImageUrl ?? snap.communePosterUrl,
+    ),
   };
 }

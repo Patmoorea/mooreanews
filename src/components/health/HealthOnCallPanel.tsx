@@ -109,21 +109,16 @@ export function HealthOnCallPanel({ data, variant = "page" }: Props) {
           <p className="text-sm text-ocean-600 mb-6">{data.weekendLabel}</p>
         )}
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <OnDutyCard kind="pharmacy" duty={data.onDutyPharmacy} />
-          <OnDutyCard kind="doctor" duty={data.onDutyDoctor} />
-        </div>
-
         {data.posterImageUrl && (
-          <div className="mt-8">
-            <h2 className="font-display text-xl text-ocean-950 mb-3">
+          <div className="mb-8">
+            <h2 className="font-display text-2xl text-ocean-950 mb-4">
               Affiche garde week-end
             </h2>
             <a
               href={data.posterImageUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="block rounded-2xl overflow-hidden border border-ocean-200 shadow-md max-w-md"
+              className="block rounded-2xl overflow-hidden border-2 border-tiare-300 shadow-lg max-w-lg mx-auto sm:mx-0"
             >
               <Image
                 src={data.posterImageUrl}
@@ -132,18 +127,35 @@ export function HealthOnCallPanel({ data, variant = "page" }: Props) {
                 height={675}
                 className="w-full h-auto"
                 unoptimized={data.posterImageUrl.includes("/api/garde-weekend/poster/")}
+                priority
               />
             </a>
-            {data.articleHref && (
-              <Link
-                href={data.articleHref}
-                className="mt-3 inline-flex text-sm font-semibold text-tiare-700 hover:text-tiare-800"
+            <div className="mt-3 flex flex-wrap gap-3">
+              <a
+                href={data.posterImageUrl}
+                download
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex px-4 py-2 rounded-full bg-tiare-500 text-white text-sm font-bold hover:bg-tiare-600"
               >
-                Voir l&apos;article garde week-end
-              </Link>
-            )}
+                Télécharger l&apos;affiche
+              </a>
+              {data.articleHref && (
+                <Link
+                  href={data.articleHref}
+                  className="inline-flex px-4 py-2 rounded-full border border-ocean-300 text-ocean-900 text-sm font-semibold hover:bg-ocean-50"
+                >
+                  Article garde week-end
+                </Link>
+              )}
+            </div>
           </div>
         )}
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <OnDutyCard kind="pharmacy" duty={data.onDutyPharmacy} />
+          <OnDutyCard kind="doctor" duty={data.onDutyDoctor} />
+        </div>
 
         <p className="mt-4 text-xs text-ocean-500">
           En cas d&apos;urgence : SAMU{" "}

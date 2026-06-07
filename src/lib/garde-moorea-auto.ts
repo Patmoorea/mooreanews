@@ -2,6 +2,8 @@
  * Veille automatique garde Moorea — Facebook commune (+ cache Supabase).
  */
 
+import path from "path";
+import { access } from "fs/promises";
 import { unstable_cache } from "next/cache";
 import { listCommuneMooreaGraphPosts } from "@/lib/facebook-watch";
 import {
@@ -246,6 +248,17 @@ export async function writeGardeMooreaCache(snap: GardeMooreaSnapshot): Promise<
   return !error;
 }
 
+async function localGardePosterPath(validFrom: string): Promise<string | null> {
+  const rel = `/images/garde/garde-${validFrom}.png`;
+  const full = path.join(process.cwd(), "public", "images/garde", `garde-${validFrom}.png`);
+  try {
+    await access(full);
+    return rel;
+  } catch {
+    return null;
+  }
+}
+
 async function resolveSnapshotForSync(): Promise<GardeMooreaSnapshot | null> {
   const [live, file] = await Promise.all([
     fetchLiveGardeMooreaSnapshot().catch(() => null),
@@ -366,8 +379,10 @@ export async function syncGardeMooreaFromCommune(
     const mooreaPoster = await renderAndUploadMooreaNewsGardePoster(snap);
     if (mooreaPoster) {
       snap.posterImageUrl = mooreaPoster;
-    } else if (snap.communePosterUrl) {
-      snap.posterImageUrl = snap.communePosterUrl;
+    } else {
+      const local = await localGardePosterPath(snap.validFrom);
+      snap.posterImageUrl =
+        local ?? snap.communePosterUrl ?? snap.posterImageUrl;
     }
   }
 
