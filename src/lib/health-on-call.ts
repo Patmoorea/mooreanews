@@ -1,5 +1,5 @@
 /**
- * Garde week-end Moorea — pharmacie + médecin depuis data/garde-moorea.json.
+ * Garde week-end Moorea — pharmacie + médecin (veille auto commune Facebook).
  */
 
 import { cache } from "react";
@@ -7,6 +7,7 @@ import {
   clearGardeMooreaMemoryCache,
   getGardeMooreaForNow,
 } from "@/lib/garde-moorea-data";
+import { syncGardeMooreaFromCommune } from "@/lib/garde-moorea-auto";
 import {
   formatTahitiDay,
   isHealthOnCallPeriod,
@@ -63,7 +64,6 @@ export async function getHealthOnCallUncached(now = new Date()): Promise<HealthO
   return data;
 }
 
-/** Une seule résolution par requête React (accueil appelle plusieurs composants). */
 export const getHealthOnCall = cache(getHealthOnCallUncached);
 
 export function clearHealthOnCallCache(): void {
@@ -75,11 +75,14 @@ export async function syncHealthOnCall(): Promise<{
   ok: boolean;
   pharmacy: string | null;
   doctor: string | null;
+  found: boolean;
 }> {
   clearHealthOnCallCache();
+  const synced = await syncGardeMooreaFromCommune();
   const data = await getHealthOnCall();
   return {
-    ok: true,
+    ok: synced.ok,
+    found: synced.found,
     pharmacy: data.onDutyPharmacy?.name ?? null,
     doctor: data.onDutyDoctor?.name ?? null,
   };

@@ -1,10 +1,10 @@
 /**
- * Garde week-end Moorea — fichier data/garde-moorea.json (édité chaque vendredi).
- * Affiché uniquement pour le week-end en cours ou le week-end suivant (vendredi).
+ * Garde week-end Moorea — auto (Facebook commune) + secours data/garde-moorea.json.
  */
 
 import { readFile } from "fs/promises";
 import path from "path";
+import { resolveGardeMooreaAuto } from "@/lib/garde-moorea-auto";
 import { tahitiDateKey, tahitiParts } from "@/lib/tahiti-holidays";
 import type { OnCallDuty } from "@/lib/health-on-call-shared";
 
@@ -12,32 +12,9 @@ export type GardeMooreaFile = {
   validFrom: string;
   validTo: string;
   label?: string;
-  pharmacy?: {
-    name?: string;
-    phone?: string;
-    address?: string;
-  };
-  doctor?: {
-    name?: string;
-    phone?: string;
-  };
+  pharmacy?: { name?: string; phone?: string; address?: string };
+  doctor?: { name?: string; phone?: string };
 };
-
-const SOURCE = "Garde week-end Moorea";
-
-function phoneHref(phone: string): string {
-  let d = phone.replace(/\D/g, "");
-  if (d.startsWith("689") && d.length >= 11) d = d.slice(3);
-  if (d.length < 8) return "";
-  d = d.slice(-8);
-  return `tel:+689${d}`;
-}
-
-function formatPhone(phone: string): string {
-  const d = phone.replace(/\D/g, "").slice(-8);
-  if (d.length < 8) return phone.trim();
-  return `${d.slice(0, 2)} ${d.slice(2, 4)} ${d.slice(4, 6)} ${d.slice(6, 8)}`;
-}
 
 function addDaysKey(dateKey: string, days: number): string {
   const [y, m, d] = dateKey.split("-").map(Number);
@@ -62,14 +39,27 @@ export function isGardeWeekActive(
   return false;
 }
 
-function toDuty(
+function phoneHref(phone: string): string {
+  let d = phone.replace(/\D/g, "");
+  if (d.startsWith("689") && d.length >= 11) d = d.slice(3);
+  if (d.length < 8) return "";
+  d = d.slice(-8);
+  return `tel:+689${d}`;
+}
+
+function formatPhone(phone: string): string {
+  const d = phone.replace(/\D/g, "").slice(-8);
+  if (d.length < 8) return phone.trim();
+  return `${d.slice(0, 2)} ${d.slice(2, 4)} ${d.slice(4, 6)} ${d.slice(6, 8)}`;
+}
+
+function fileToDuty(
   kind: "pharmacy" | "doctor",
-  entry: { name?: string; phone?: string; address?: string } | undefined,
-  weekendLabel: string,
+  entry: GardeMooreaFile["pharmacy"] | GardeMooreaFile["doctor"],
+  label: string,
 ): OnCallDuty | null {
   const name = entry?.name?.trim();
   if (!name) return null;
-
   const phoneRaw = entry?.phone?.trim() ?? "";
   const phone = phoneRaw ? formatPhone(phoneRaw) : "—";
   const href = phoneRaw ? phoneHref(phoneRaw) : "";
@@ -79,44 +69,42 @@ function toDuty(
       name: name.startsWith("Dr") ? name : `Dr ${name}`,
       phone,
       phoneHref: href,
-      source: `${SOURCE} — ${weekendLabel}`,
+      source: `Garde week-end — ${label}`,
     };
   }
-
   return {
     name,
     phone,
     phoneHref: href,
-    address: entry?.address?.trim() || undefined,
-    source: `${SOURCE} — ${weekendLabel}`,
+    address: (entry as GardeMooreaFile["pharmacy"])?.address?.trim(),
+    source: `Garde week-end — ${label}`,
   };
 }
 
-let memory: GardeMooreaFile | null | undefined;
+let fileMemory: GardeMooreaFile | null | undefined;
 
 async function readGardeFile(): Promise<GardeMooreaFile | null> {
-  if (memory !== undefined) return memory;
+  if (fileMemory !== undefined) return fileMemory;
   try {
-    const file = path.join(process.cwd(), "data/garde-moorea.json");
-    const raw = await readFile(file, "utf8");
+    const raw = await readFile(path.join(process.cwd(), "data/garde-moorea.json"), "utf8");
     const data = JSON.parse(raw) as GardeMooreaFile;
     if (!data?.validFrom || !data?.validTo) {
-      memory = null;
+      fileMemory = null;
       return null;
     }
-    memory = data;
+    fileMemory = data;
     return data;
   } catch {
-    memory = null;
+    fileMemory = null;
     return null;
   }
 }
 
 export function clearGardeMooreaMemoryCache(): void {
-  memory = undefined;
+  fileMemory = undefined;
 }
 
-export async function getGardeMooreaForNow(now = new Date()): Promise<{
+async function fromFile(now: Date): Promise<{
   pharmacy: OnCallDuty | null;
   doctor: OnCallDuty | null;
   weekendLabel: string | null;
@@ -125,12 +113,21 @@ export async function getGardeMooreaForNow(now = new Date()): Promise<{
   if (!file || !isGardeWeekActive(now, file.validFrom, file.validTo)) {
     return { pharmacy: null, doctor: null, weekendLabel: null };
   }
-
-  const weekendLabel = file.label?.trim() || `${file.validFrom} → ${file.validTo}`;
-
+  const label = file.label?.trim() || `${file.validFrom} → ${file.validTo}`;
   return {
-    pharmacy: toDuty("pharmacy", file.pharmacy, weekendLabel),
-    doctor: toDuty("doctor", file.doctor, weekendLabel),
-    weekendLabel,
+    weekendLabel: label,
+    pharmacy: fileToDuty("pharmacy", file.pharmacy, label),
+    doctor: fileToDuty("doctor", file.doctor, label),
   };
+}
+
+export async function getGardeMooreaForNow(now = new Date()): Promise<{
+  pharmacy: OnCallDuty | null;
+  doctor: OnCallDuty | null;
+  weekendLabel: string | null;
+}> {
+  const auto = await resolveGardeMooreaAuto(now);
+  if (auto.pharmacy || auto.doctor) return auto;
+
+  return fromFile(now);
 }

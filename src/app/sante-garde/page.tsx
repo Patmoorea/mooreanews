@@ -36,9 +36,7 @@ export default async function SanteGardePage() {
         <HealthOnCallPanel data={data} variant="page" />
         <p className="mt-8 text-xs text-ocean-500 max-w-2xl">
           Garde du jour : appelez la <strong>DSP (40 47 01 44 / 47)</strong>.
-          Les noms affichés proviennent du fichier{" "}
-          <code className="text-[11px]">data/garde-moorea.json</code>, mis à jour
-          chaque vendredi pour le week-end suivant. En cas de doute, contactez la{" "}
+          Les noms sont lus automatiquement sur la page Facebook de la{" "}
           <a
             href="https://www.facebook.com/CommuneMooreaMaiao"
             className="underline"
