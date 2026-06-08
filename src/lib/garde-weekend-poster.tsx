@@ -5,86 +5,21 @@
 
 import type { GardeMooreaSnapshot } from "@/lib/garde-moorea-auto";
 import { SITE } from "@/lib/constants";
+import {
+  POSTER,
+  posterBackground,
+  posterBadgeGradient,
+  posterCardStyle,
+  posterCtaGradient,
+  posterLogoGradient,
+  PosterPolynesianScenery,
+} from "@/lib/poster-brand";
 
-const POSTER = { width: 1080, height: 1350 } as const;
-
-const OCEAN = "#0c4a6e";
-const LAGON = "#0e7490";
-const TIARE = "#f97316";
-const SAND = "#fef3c7";
-const WHITE = "#ffffff";
+const POSTER_SIZE = { width: 1080, height: 1350 } as const;
 
 function formatDoctorDisplay(name: string): string {
   const n = name.replace(/^Dr\.?\s+/i, "").trim();
   return `Dr ${n}`;
-}
-
-function PalmSilhouette({ size, top, left, opacity }: {
-  size: number;
-  top: number;
-  left: number;
-  opacity: number;
-}) {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        top,
-        left,
-        width: size,
-        height: size * 1.4,
-        opacity,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-      }}
-    >
-      <div
-        style={{
-          width: size * 0.9,
-          height: size * 0.55,
-          borderRadius: "50% 50% 20% 20%",
-          background: "#15803d",
-          display: "flex",
-        }}
-      />
-      <div
-        style={{
-          width: size * 0.12,
-          height: size * 0.85,
-          background: "#92400e",
-          marginTop: -size * 0.08,
-          borderRadius: 4,
-          display: "flex",
-        }}
-      />
-    </div>
-  );
-}
-
-function HibiscusDot({ top, left }: { top: number; left: number }) {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        top,
-        left,
-        width: 36,
-        height: 36,
-        borderRadius: 999,
-        background: "#fb7185",
-        opacity: 0.45,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: 18,
-        color: WHITE,
-        fontWeight: 900,
-      }}
-    >
-      +
-    </div>
-  );
 }
 
 function PharmacyColumn({
@@ -108,29 +43,30 @@ function PharmacyColumn({
         padding: "14px 10px",
         borderRadius: 16,
         background: "rgba(255,255,255,0.94)",
-        border: "2px solid rgba(14,116,144,0.25)",
+        border: "2px solid rgba(0,194,215,0.35)",
+        boxShadow: "0 8px 24px rgba(8,59,102,0.15)",
         marginLeft: 5,
         marginRight: 5,
       }}
     >
-      <div style={{ fontSize: 18, fontWeight: 900, color: LAGON, display: "flex" }}>
+      <div style={{ fontSize: 18, fontWeight: 900, color: POSTER.lagon, display: "flex" }}>
         {district}
       </div>
-      <div style={{ fontSize: 17, fontWeight: 800, color: OCEAN, marginTop: 4, display: "flex" }}>
+      <div style={{ fontSize: 17, fontWeight: 800, color: POSTER.ocean, marginTop: 4, display: "flex" }}>
         {phone}
       </div>
       {saturday && (
         <div
           style={{
             fontSize: 13,
-            color: "#475569",
+            color: POSTER.slateMid,
             marginTop: 10,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
           }}
         >
-          <div style={{ display: "flex", fontWeight: 700, color: TIARE }}>Samedi</div>
+          <div style={{ display: "flex", fontWeight: 700, color: POSTER.couchant }}>Samedi</div>
           <div style={{ display: "flex" }}>{saturday}</div>
         </div>
       )}
@@ -138,14 +74,14 @@ function PharmacyColumn({
         <div
           style={{
             fontSize: 13,
-            color: "#475569",
+            color: POSTER.slateMid,
             marginTop: 6,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
           }}
         >
-          <div style={{ display: "flex", fontWeight: 700, color: TIARE }}>Dimanche</div>
+          <div style={{ display: "flex", fontWeight: 700, color: POSTER.couchant }}>Dimanche</div>
           <div style={{ display: "flex" }}>{sunday}</div>
         </div>
       )}
@@ -163,19 +99,13 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        background:
-          "linear-gradient(165deg, #ECFEFF 0%, #7DD3FC 22%, #22D3EE 48%, #0E7490 78%, #155E75 100%)",
-        color: OCEAN,
+        background: posterBackground(),
+        color: POSTER.white,
         fontFamily: "system-ui, sans-serif",
         position: "relative",
       }}
     >
-      <PalmSilhouette size={100} top={60} left={-10} opacity={0.28} />
-      <PalmSilhouette size={80} top={180} left={900} opacity={0.22} />
-      <PalmSilhouette size={70} top={380} left={40} opacity={0.18} />
-      <HibiscusDot top={120} left={920} />
-      <HibiscusDot top={280} left={80} />
-      <HibiscusDot top={500} left={960} />
+      <PosterPolynesianScenery />
 
       <div
         style={{
@@ -183,6 +113,7 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
           alignItems: "center",
           justifyContent: "space-between",
           padding: "28px 40px 16px",
+          position: "relative",
         }}
       >
         <div style={{ display: "flex", alignItems: "center" }}>
@@ -191,8 +122,8 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
               width: 56,
               height: 56,
               borderRadius: 999,
-              background: `linear-gradient(135deg, ${OCEAN} 0%, ${LAGON} 100%)`,
-              color: WHITE,
+              background: posterLogoGradient(),
+              color: POSTER.white,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -204,14 +135,14 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
             M
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 26, fontWeight: 900, color: OCEAN, display: "flex" }}>
+            <div style={{ fontSize: 26, fontWeight: 900, color: POSTER.white, display: "flex" }}>
               MooreaNews
             </div>
             <div
               style={{
                 fontSize: 13,
                 letterSpacing: 2,
-                color: LAGON,
+                color: POSTER.lagonLight,
                 fontWeight: 700,
                 display: "flex",
               }}
@@ -223,8 +154,8 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
         <div
           style={{
             fontSize: 12,
-            color: OCEAN,
-            opacity: 0.8,
+            color: POSTER.lagonLight,
+            opacity: 0.95,
             display: "flex",
             flexDirection: "column",
             alignItems: "flex-end",
@@ -241,14 +172,15 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
           flexDirection: "column",
           alignItems: "center",
           padding: "8px 40px 20px",
+          position: "relative",
         }}
       >
         <div
           style={{
             fontSize: 20,
             fontWeight: 800,
-            color: WHITE,
-            background: `linear-gradient(90deg, ${TIARE}, #fb7185)`,
+            color: POSTER.white,
+            background: posterBadgeGradient(),
             padding: "10px 32px",
             borderRadius: 999,
             display: "flex",
@@ -260,7 +192,7 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
           style={{
             fontSize: 28,
             fontWeight: 900,
-            color: OCEAN,
+            color: POSTER.soleil,
             marginTop: 14,
             display: "flex",
           }}
@@ -275,6 +207,7 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
           display: "flex",
           flexDirection: "column",
           padding: "0 36px 16px",
+          position: "relative",
         }}
       >
         {snap.doctor?.name && (
@@ -284,16 +217,14 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
               flexDirection: "column",
               alignItems: "center",
               padding: "28px 32px",
-              borderRadius: 24,
-              background: WHITE,
-              border: `4px solid ${SAND}`,
+              ...posterCardStyle(),
             }}
           >
             <div
               style={{
                 fontSize: 16,
                 fontWeight: 800,
-                color: LAGON,
+                color: POSTER.lagon,
                 letterSpacing: 1,
                 display: "flex",
               }}
@@ -304,7 +235,7 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
               style={{
                 fontSize: 38,
                 fontWeight: 900,
-                color: OCEAN,
+                color: POSTER.ocean,
                 marginTop: 12,
                 fontStyle: "italic",
                 display: "flex",
@@ -330,14 +261,14 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
                       alignItems: "center",
                       padding: "8px 20px",
                       borderRadius: 12,
-                      background: "#FFF7ED",
+                      background: POSTER.sand,
                       marginRight: snap.doctorHours.sunday ? 12 : 0,
                     }}
                   >
-                    <div style={{ display: "flex", fontSize: 13, fontWeight: 700, color: TIARE }}>
+                    <div style={{ display: "flex", fontSize: 13, fontWeight: 700, color: POSTER.couchant }}>
                       Samedi
                     </div>
-                    <div style={{ display: "flex", fontSize: 15, fontWeight: 800, color: OCEAN }}>
+                    <div style={{ display: "flex", fontSize: 15, fontWeight: 800, color: POSTER.ocean }}>
                       {snap.doctorHours.saturday}
                     </div>
                   </div>
@@ -350,13 +281,13 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
                       alignItems: "center",
                       padding: "8px 20px",
                       borderRadius: 12,
-                      background: "#FFF7ED",
+                      background: POSTER.sand,
                     }}
                   >
-                    <div style={{ display: "flex", fontSize: 13, fontWeight: 700, color: TIARE }}>
+                    <div style={{ display: "flex", fontSize: 13, fontWeight: 700, color: POSTER.couchant }}>
                       Dimanche
                     </div>
-                    <div style={{ display: "flex", fontSize: 15, fontWeight: 800, color: OCEAN }}>
+                    <div style={{ display: "flex", fontSize: 15, fontWeight: 800, color: POSTER.ocean }}>
                       {snap.doctorHours.sunday}
                     </div>
                   </div>
@@ -368,7 +299,7 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
               <div
                 style={{
                   fontSize: 17,
-                  color: "#64748b",
+                  color: POSTER.slate,
                   marginTop: 14,
                   display: "flex",
                   textAlign: "center",
@@ -383,8 +314,8 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
                 style={{
                   fontSize: 32,
                   fontWeight: 900,
-                  color: WHITE,
-                  background: `linear-gradient(90deg, ${LAGON}, #14b8a6)`,
+                  color: POSTER.white,
+                  background: posterCtaGradient(),
                   marginTop: 18,
                   padding: "12px 36px",
                   borderRadius: 999,
@@ -404,13 +335,14 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
             display: "flex",
             flexDirection: "column",
             padding: "0 24px 20px",
+            position: "relative",
           }}
         >
           <div
             style={{
               fontSize: 20,
               fontWeight: 900,
-              color: WHITE,
+              color: POSTER.white,
               textAlign: "center",
               marginBottom: 12,
               display: "flex",
@@ -439,15 +371,17 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          background: "rgba(255,255,255,0.9)",
-          borderTop: `3px solid ${SAND}`,
+          background: "rgba(255,255,255,0.94)",
+          borderTop: `4px solid ${POSTER.sandWarm}`,
+          boxShadow: "0 -8px 30px rgba(8,59,102,0.12)",
+          position: "relative",
         }}
       >
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", fontSize: 15, fontWeight: 800, color: OCEAN }}>
+          <div style={{ display: "flex", fontSize: 15, fontWeight: 800, color: POSTER.ocean }}>
             Urgences : 15 · DSP 40 47 01 44
           </div>
-          <div style={{ display: "flex", fontSize: 13, color: "#64748b", marginTop: 4 }}>
+          <div style={{ display: "flex", fontSize: 13, color: POSTER.slate, marginTop: 4 }}>
             Hôpital Afareaitu 40 55 22 22 · Pompiers 18
           </div>
         </div>
@@ -456,7 +390,7 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
             display: "flex",
             fontSize: 14,
             fontWeight: 700,
-            color: LAGON,
+            color: POSTER.lagon,
           }}
         >
           {SITE.url.replace(/^https?:\/\//, "")}
@@ -466,12 +400,12 @@ export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot 
   );
 }
 
-export const GARDE_WEEKEND_POSTER_SIZE = POSTER;
+export const GARDE_WEEKEND_POSTER_SIZE = POSTER_SIZE;
 
 export async function renderGardeWeekendPosterPng(
   snap: GardeMooreaSnapshot,
 ): Promise<Buffer> {
   const { ImageResponse } = await import("next/og");
-  const res = new ImageResponse(GardeWeekendPosterElement({ snap }), POSTER);
+  const res = new ImageResponse(GardeWeekendPosterElement({ snap }), POSTER_SIZE);
   return Buffer.from(await res.arrayBuffer());
 }

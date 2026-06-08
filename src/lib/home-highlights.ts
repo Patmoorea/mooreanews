@@ -8,11 +8,12 @@ import {
 } from "@/lib/moorea-cruise-schedule";
 import { getHealthOnCall } from "@/lib/health-on-call";
 import { getGardeWeekendHighlight } from "@/lib/garde-weekend-public";
+import { getWeeklyRecapHighlight } from "@/lib/weekly-recap-public";
 import { getUtilityOutages, type UtilityOutage } from "@/lib/utility-outages";
 
 export type HomeHighlight = {
   id: string;
-  kind: "coupure_edt" | "coupure_eau" | "paquebot" | "sante_garde";
+  kind: "coupure_edt" | "coupure_eau" | "paquebot" | "sante_garde" | "weekly_recap";
   label: string;
   href: string;
   priority: number;
@@ -78,12 +79,25 @@ export async function getHomeHighlights(): Promise<HomeHighlight[]> {
   const horizon = now + HORIZON_MS;
   const highlights: HomeHighlight[] = [];
 
-  const [outages, mooreaCruises, healthOnCall, gardeHighlight] = await Promise.all([
+  const [outages, mooreaCruises, healthOnCall, gardeHighlight, weeklyRecapHighlight] =
+    await Promise.all([
     getUtilityOutages().catch(() => null),
     getMooreaCruiseSchedule().catch(() => null),
     getHealthOnCall().catch(() => null),
     getGardeWeekendHighlight().catch(() => null),
+    getWeeklyRecapHighlight().catch(() => null),
   ]);
+
+  if (weeklyRecapHighlight) {
+    highlights.push({
+      id: "weekly-recap-article",
+      kind: "weekly_recap",
+      label: weeklyRecapHighlight.label,
+      href: weeklyRecapHighlight.href,
+      priority: 3,
+      at: new Date().toISOString(),
+    });
+  }
 
   if (gardeHighlight) {
     highlights.push({

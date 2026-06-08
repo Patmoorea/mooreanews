@@ -12,6 +12,7 @@ import {
   shouldSendEveningDigest,
   shouldSendMorningDigest,
   shouldPublishGardeWeekend,
+  shouldPublishWeeklyRecap,
   shouldSendWeekendDigest,
 } from "@/lib/cron-tahiti";
 import { deactivateFalseFerryAlerts } from "@/lib/facebook-alert-import";
@@ -30,6 +31,7 @@ import {
 import { syncMeteoVigilanceAlert } from "@/lib/meteo-vigilance-sync";
 import { syncUtilityOutages } from "@/lib/utility-outages-sync";
 import { syncHealthOnCall } from "@/lib/health-on-call";
+import { syncWeeklyRecapFromMooreaNews } from "@/lib/weekly-recap-sync";
 import { checkDpamStatsFreshness } from "@/lib/maritime-traffic";
 import { auditPublicContent } from "@/lib/site-content-audit";
 import { notifyVeilleReport, sendPublicMooreaBrief } from "@/lib/telegram-notify";
@@ -150,6 +152,12 @@ export async function runDailyCron(): Promise<DailyCronResult> {
     fullWeekendPipeline: shouldPublishGardeWeekend(clock),
   });
   revalidatePath("/sante-garde");
+
+  if (shouldPublishWeeklyRecap(clock)) {
+    jobs.weeklyRecap = await syncWeeklyRecapFromMooreaNews();
+    revalidatePath("/actualites");
+    revalidatePath("/", "layout");
+  }
   const utilitySync = jobs.utilityOutages as {
     created?: number;
     updated?: number;

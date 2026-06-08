@@ -20,6 +20,10 @@
     "src/app/api/cron/aggregate/route.ts": {
       "memory": 1024,
       "maxDuration": 300
+    },
+    "src/app/api/cron/weekly-recap/route.ts": {
+      "memory": 1024,
+      "maxDuration": 300
     }
   }
 }

@@ -47,7 +47,7 @@ export function GardeWeekendSticker() {
       className={`inline-flex items-center gap-2 max-w-[min(100%,26rem)] px-3 py-1.5 rounded-full backdrop-blur-md border text-white text-[11px] sm:text-xs font-semibold shadow-lg transition-colors ${
         payload.isFresh
           ? "bg-rose-700/95 border-rose-400/70 shadow-rose-950/40 hover:bg-rose-600"
-          : "bg-emerald-800/90 border-emerald-400/60 shadow-emerald-950/30 hover:bg-emerald-700"
+          : "bg-ocean-800/90 border-lagon-400/60 shadow-ocean-950/30 hover:bg-ocean-700"
       }`}
     >
       <Stethoscope size={14} className="shrink-0" aria-hidden />

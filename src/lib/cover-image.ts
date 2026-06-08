@@ -65,7 +65,9 @@ export function isPosterStyleCover(options: {
   if (/-fb-|facebook-og|te-ito-rau/i.test(slug)) return true;
   const img = options.image?.toLowerCase() ?? "";
   if (slug.startsWith("garde-moorea-")) return true;
+  if (slug.startsWith("agenda-semaine-")) return true;
   if (img.includes("garde-weekend") || img.includes("/garde/")) return true;
+  if (img.includes("weekly-recap") || img.includes("agenda-semaine")) return true;
   return (
     img.includes("fbcdn.net") ||
     img.includes("lookaside.fbsbx.com") ||
