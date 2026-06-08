@@ -17,9 +17,14 @@ import {
 import {
   enrichFacebookPostForImport,
   permalinkForPost,
-  sanitizeCoverUrl,
 } from "@/lib/facebook-post-enrich";
-import { persistFacebookCoverUrl } from "@/lib/facebook-cover-persist";
+import {
+  coverPersistUserMessage,
+  coverUrlForDatabase,
+  isFacebookCdnCoverUrl,
+  persistFacebookCoverUrl,
+  repairPendingFbcdnCoversFromDb,
+} from "@/lib/facebook-cover-persist";
 import { hideExternalArticlesForArticleSlug } from "@/lib/facebook-external-sync";
 import { cleanImportedText } from "@/lib/html-entities";
 import {
@@ -52,6 +57,9 @@ export type FacebookContentImportResult = {
   createdAnnouncements: { title: string; id: string }[];
   createdAlerts: string[];
   articlesRepaired?: number;
+  coversPersisted?: number;
+  coversFailed?: number;
+  warnings: string[];
 };
 
 function importEnabled(): boolean {
@@ -253,7 +261,10 @@ async function importAsArticle(
   config: FacebookPageImportConfig,
   published: boolean,
   publishedAt: string,
-): Promise<{ ok: true; title: string; slug: string } | { ok: false; reason: string }> {
+): Promise<
+  | { ok: true; title: string; slug: string; coverWarning?: string }
+  | { ok: false; reason: string }
+> {
   const supabase = getAdminSupabase();
   if (!supabase) return { ok: false, reason: "Supabase absent" };
 
@@ -276,9 +287,8 @@ async function importAsArticle(
   const timeLabel = tahitiTimeLabel(publishedAt);
   const title = articleTitleFromPost(message, config, hasImage, publishedAt);
 
-  const cover = sanitizeCoverUrl(
-    await persistFacebookCoverUrl(post.full_picture, post.id),
-  );
+  const persist = await persistFacebookCoverUrl(post.full_picture, post.id);
+  const cover = coverUrlForDatabase(persist);
 
   const { data, error } = await supabase
     .from("articles")
@@ -302,6 +312,14 @@ async function importAsArticle(
 
   if (error || !data) return { ok: false, reason: error?.message ?? "insert failed" };
   await hideExternalArticlesForArticleSlug(slug);
+  if (post.full_picture?.trim() && !cover) {
+    return {
+      ok: true,
+      title,
+      slug: data.slug,
+      coverWarning: coverPersistUserMessage(data.slug, persist.reason),
+    };
+  }
   return { ok: true, title, slug: data.slug };
 }
 
@@ -312,7 +330,10 @@ async function repairFacebookArticle(
   config: FacebookPageImportConfig,
   publishedAt: string,
   existingCoverUrl?: string | null,
-): Promise<{ ok: true; title: string; slug: string } | { ok: false; reason: string }> {
+): Promise<
+  | { ok: true; title: string; slug: string; coverWarning?: string }
+  | { ok: false; reason: string }
+> {
   const supabase = getAdminSupabase();
   if (!supabase) return { ok: false, reason: "Supabase absent" };
 
@@ -324,19 +345,18 @@ async function repairFacebookArticle(
   const hasImage = Boolean(post.full_picture?.trim());
   const title = articleTitleFromPost(message, config, hasImage, publishedAt);
   const timeLabel = tahitiTimeLabel(publishedAt);
-  const cover = sanitizeCoverUrl(
-    await persistFacebookCoverUrl(
-      post.full_picture ?? existingCoverUrl ?? undefined,
-      post.id,
-    ),
+  const persist = await persistFacebookCoverUrl(
+    post.full_picture ?? existingCoverUrl ?? undefined,
+    post.id,
   );
+  const cover = coverUrlForDatabase(persist);
 
   const patch: {
     title: string;
     excerpt: string;
     body: string;
     updated_at: string;
-    cover_url?: string;
+    cover_url?: string | null;
   } = {
     title: title.slice(0, 500),
     excerpt:
@@ -346,6 +366,7 @@ async function repairFacebookArticle(
     updated_at: new Date().toISOString(),
   };
   if (cover) patch.cover_url = cover;
+  else if (isFacebookCdnCoverUrl(existingCoverUrl)) patch.cover_url = null;
 
   const { error } = await supabase
     .from("articles")
@@ -354,6 +375,17 @@ async function repairFacebookArticle(
 
   if (error) return { ok: false, reason: error.message };
   await hideExternalArticlesForArticleSlug(slug);
+  if (
+    (post.full_picture?.trim() || existingCoverUrl?.trim()) &&
+    !cover
+  ) {
+    return {
+      ok: true,
+      title,
+      slug,
+      coverWarning: coverPersistUserMessage(slug, persist.reason),
+    };
+  }
   return { ok: true, title, slug };
 }
 
@@ -367,11 +399,10 @@ async function repairFacebookCoverOnly(
   const supabase = getAdminSupabase();
   if (!supabase) return { ok: false, reason: "Supabase absent" };
 
-  const cover = sanitizeCoverUrl(
-    await persistFacebookCoverUrl(existingCoverUrl, postId),
-  );
-  if (!cover?.includes("supabase.co/storage/v1/object/public/")) {
-    return { ok: false, reason: "cover_persist_failed" };
+  const persist = await persistFacebookCoverUrl(existingCoverUrl, postId);
+  const cover = coverUrlForDatabase(persist);
+  if (!cover) {
+    return { ok: false, reason: persist.reason };
   }
 
   const { error } = await supabase
@@ -404,6 +435,7 @@ export async function importFacebookPostsAsContent(
     createdArticles: [],
     createdAnnouncements: [],
     createdAlerts: [],
+    warnings: [],
   };
 
   if (!importEnabled()) return result;
@@ -481,13 +513,17 @@ export async function importFacebookPostsAsContent(
           );
           if (r.ok) {
             result.articlesRepaired = (result.articlesRepaired ?? 0) + 1;
+            result.coversPersisted = (result.coversPersisted ?? 0) + 1;
             result.createdArticles.push({
               title: existing.title,
               slug: r.slug,
             });
             coverPersistsThisRun += 1;
           } else {
-            result.errors.push(`cover ${raw.id}: ${r.reason}`);
+            result.coversFailed = (result.coversFailed ?? 0) + 1;
+            result.warnings.push(
+              coverPersistUserMessage(slug, r.reason),
+            );
           }
           continue;
         }
@@ -518,6 +554,12 @@ export async function importFacebookPostsAsContent(
         if (r.ok) {
           result.articlesRepaired = (result.articlesRepaired ?? 0) + 1;
           result.createdArticles.push({ title: r.title, slug: r.slug });
+          if ("coverWarning" in r && r.coverWarning) {
+            result.warnings.push(r.coverWarning);
+            result.coversFailed = (result.coversFailed ?? 0) + 1;
+          } else if (post.full_picture?.trim()) {
+            result.coversPersisted = (result.coversPersisted ?? 0) + 1;
+          }
           repairsThisRun += 1;
         } else {
           result.errors.push(`repair ${post.id}: ${r.reason}`);
@@ -549,6 +591,12 @@ export async function importFacebookPostsAsContent(
       if (r.ok) {
         result.articlesCreated += 1;
         result.createdArticles.push({ title: r.title, slug: r.slug });
+        if ("coverWarning" in r && r.coverWarning) {
+          result.warnings.push(r.coverWarning);
+          result.coversFailed = (result.coversFailed ?? 0) + 1;
+        } else if (post.full_picture?.trim()) {
+          result.coversPersisted = (result.coversPersisted ?? 0) + 1;
+        }
       } else if (r.reason === "duplicate") {
         result.skipped += 1;
       } else {
@@ -632,11 +680,28 @@ export async function importFacebookPostsAsContent(
     if (r.ok) {
       result.articlesCreated += 1;
       result.createdArticles.push({ title: r.title, slug: r.slug });
+      if ("coverWarning" in r && r.coverWarning) {
+        result.warnings.push(r.coverWarning);
+        result.coversFailed = (result.coversFailed ?? 0) + 1;
+      } else if (post.full_picture?.trim()) {
+        result.coversPersisted = (result.coversPersisted ?? 0) + 1;
+      }
     } else if (r.reason === "duplicate") {
       result.skipped += 1;
     } else {
       result.errors.push(`article ${post.id}: ${r.reason}`);
     }
+  }
+
+  if (config.cronLight && config.importAllFeedPosts) {
+    const queue = await repairPendingFbcdnCoversFromDb(maxCoverPersists);
+    result.articlesRepaired =
+      (result.articlesRepaired ?? 0) + queue.repaired;
+    result.coversPersisted =
+      (result.coversPersisted ?? 0) + queue.repaired;
+    result.coversFailed = (result.coversFailed ?? 0) + queue.failed;
+    result.warnings.push(...queue.warnings);
+    result.errors.push(...queue.errors);
   }
 
   return result;

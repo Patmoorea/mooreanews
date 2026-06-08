@@ -447,3 +447,67 @@ export async function sendPublicMooreaBrief(): Promise<{
     };
   }
 }
+
+/** Alertes admin quand import Facebook échoue (affiches fbcdn, coquilles…). */
+export async function notifyFacebookImportReport(input: {
+  durationMs: number;
+  articlesCreated: number;
+  articlesRepaired: number;
+  articlesSkipped: number;
+  coversPersisted: number;
+  coversFailed: number;
+  fbcdnRemaining: number;
+  errors: string[];
+  warnings: string[];
+}): Promise<{ sent: boolean; reason?: string }> {
+  const hasIssue =
+    input.errors.length > 0 ||
+    input.warnings.length > 0 ||
+    input.coversFailed > 0 ||
+    input.fbcdnRemaining > 0;
+
+  if (!hasIssue && input.articlesRepaired === 0 && input.articlesCreated === 0) {
+    return { sent: false, reason: "nothing_to_report" };
+  }
+
+  const critical = input.errors.some(isCriticalVeilleError);
+  const emoji = critical ? "🔴" : hasIssue ? "⚠️" : "✅";
+
+  const lines = [
+    `${emoji} <b>Import Facebook MooreaNews</b>`,
+    `⏱ ${(input.durationMs / 1000).toFixed(1)} s`,
+    `📥 ${input.articlesCreated} créé(s) · 🔧 ${input.articlesRepaired} réparé(s) · ⏭ ${input.articlesSkipped} ignoré(s)`,
+    `🖼 ${input.coversPersisted} affiche(s) → Supabase · ❌ ${input.coversFailed} échec(s)`,
+  ];
+
+  if (input.fbcdnRemaining > 0) {
+    lines.push(
+      `\n🚫 <b>${input.fbcdnRemaining}</b> affiche(s) fbcdn encore en base (invisibles sur le site)`,
+    );
+    lines.push(
+      `<i>Relancez /api/cron/facebook ou consultez /api/watch/facebook-import-status</i>`,
+    );
+  }
+
+  if (input.warnings.length > 0) {
+    lines.push("\n<b>Avertissements</b>");
+    for (const w of input.warnings.slice(0, 6)) {
+      lines.push(`• ${escapeHtml(w.slice(0, 200))}`);
+    }
+    if (input.warnings.length > 6) {
+      lines.push(`… +${input.warnings.length - 6} autre(s)`);
+    }
+  }
+
+  if (input.errors.length > 0) {
+    lines.push("\n<b>Erreurs</b>");
+    for (const e of input.errors.slice(0, 4)) {
+      lines.push(`• ${escapeHtml(e.slice(0, 200))}`);
+    }
+  }
+
+  const sent = await sendTelegramNotification(lines.join("\n"));
+  return sent.ok
+    ? { sent: true }
+    : { sent: false, reason: sent.error ?? "telegram_failed" };
+}

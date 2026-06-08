@@ -24,6 +24,9 @@ export type AggregationResult = {
   articlesSkipped?: number;
   /** Posts MooreaNews réellement importés (cron light = ~20). */
   importProcessed?: number;
+  coversPersisted?: number;
+  coversFailed?: number;
+  warnings?: string[];
   eventsCreated?: number;
   announcementsCreated?: number;
   alertsCreated?: number;

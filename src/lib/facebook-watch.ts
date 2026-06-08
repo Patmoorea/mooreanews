@@ -682,6 +682,13 @@ export async function aggregateFacebookPagesGraph(options?: {
         result.errors.push(err);
       }
     }
+    if (imported.warnings?.length) {
+      result.warnings = [...(result.warnings ?? []), ...imported.warnings];
+    }
+    result.coversPersisted =
+      (result.coversPersisted ?? 0) + (imported.coversPersisted ?? 0);
+    result.coversFailed =
+      (result.coversFailed ?? 0) + (imported.coversFailed ?? 0);
   }
 
   result.errors = result.errors.filter((e) => !teItoRauGraphNoise(e));
