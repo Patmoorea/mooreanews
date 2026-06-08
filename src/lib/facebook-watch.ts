@@ -321,20 +321,60 @@ async function fetchGraphPhotoById(
   graphPageId: string,
   token: string,
 ): Promise<GraphPost | null> {
-  const apiUrl = new URL(
-    `https://graph.facebook.com/v21.0/${encodeURIComponent(photoId)}`,
-  );
-  apiUrl.searchParams.set(
-    "fields",
-    "id,created_time,link,images,name,alt_text",
-  );
-  apiUrl.searchParams.set("access_token", token);
+  const candidates = [
+    photoId,
+    `${graphPageId}_${photoId}`,
+  ];
+  for (const id of [...new Set(candidates)]) {
+    const apiUrl = new URL(
+      `https://graph.facebook.com/v21.0/${encodeURIComponent(id)}`,
+    );
+    apiUrl.searchParams.set(
+      "fields",
+      "id,created_time,link,images,name,alt_text",
+    );
+    apiUrl.searchParams.set("access_token", token);
 
-  const res = await fetch(apiUrl.toString(), { cache: "no-store" });
-  if (!res.ok) return null;
-  const json = (await res.json()) as GraphUploadedPhoto;
-  if (!json.id) return null;
-  return graphUploadedPhotoToPost(json, graphPageId);
+    const res = await fetch(apiUrl.toString(), { cache: "no-store" });
+    if (!res.ok) continue;
+    const json = (await res.json()) as GraphUploadedPhoto;
+    if (!json.id) continue;
+    return graphUploadedPhotoToPost(json, graphPageId);
+  }
+  return null;
+}
+
+function findGraphPostByFbid(
+  posts: GraphPost[],
+  fbid: string,
+): GraphPost | undefined {
+  return posts.find(
+    (p) =>
+      p.id === fbid ||
+      p.id.endsWith(`_${fbid}`) ||
+      p.id.includes(fbid) ||
+      p.permalink_url?.includes(`fbid=${fbid}`) ||
+      p.permalink_url?.includes(`/${fbid}`),
+  );
+}
+
+async function graphPostFromPhotoFbidFallback(
+  fbid: string,
+  graphPageId: string,
+): Promise<GraphPost | null> {
+  const url = `https://www.facebook.com/photo/?fbid=${fbid}&id=${graphPageId}`;
+  const og = await fetchOpenGraph(url);
+  if (!og?.imageUrl?.trim()) return null;
+  const text = cleanImportedText(
+    og.description?.trim() || og.title?.trim() || "",
+  );
+  return {
+    id: `${graphPageId}_${fbid}`,
+    created_time: new Date().toISOString(),
+    permalink_url: og.url?.startsWith("http") ? og.url : url,
+    message: text || undefined,
+    full_picture: og.imageUrl.trim(),
+  };
 }
 
 async function fetchPagePosts(
@@ -612,16 +652,17 @@ export async function aggregateFacebookPagesGraph(options?: {
           for (const fbid of options.forcePhotoFbids) {
             const id = fbid.trim();
             if (!/^\d+$/.test(id)) continue;
-            const photo = await fetchGraphPhotoById(
-              id,
-              graphPageId,
-              tokenForPage,
-            );
+            let photo =
+              findGraphPostByFbid(posts, id) ??
+              (await fetchGraphPhotoById(id, graphPageId, tokenForPage));
+            if (!photo) {
+              photo = await graphPostFromPhotoFbidFallback(id, graphPageId);
+            }
             if (photo) {
               forcedPosts.push(normalizeGraphPost(photo));
             } else {
               result.errors.push(
-                `Photo album fbid=${id} introuvable (Graph API)`,
+                `Photo album fbid=${id} introuvable (Graph + Open Graph)`,
               );
             }
           }
