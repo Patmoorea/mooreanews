@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import { aggregateFacebookPagesGraph } from "@/lib/facebook-watch";
+import { facebookCronRecentPostLimit } from "@/lib/facebook-import-filters";
 
 /** Rattrapage Facebook uniquement (évite le timeout du cron complet). */
 export const dynamic = "force-dynamic";
@@ -12,7 +13,10 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const start = Date.now();
-  const result = await aggregateFacebookPagesGraph();
+  const result = await aggregateFacebookPagesGraph({
+    light: true,
+    recentImportLimit: facebookCronRecentPostLimit(),
+  });
   const articles =
     (result.articlesCreated ?? 0) + (result.articlesRepaired ?? 0);
   if (articles > 0) {
@@ -23,6 +27,8 @@ export async function GET(req: Request) {
   return NextResponse.json({
     ok: result.errors.length === 0,
     durationMs: Date.now() - start,
+    mode: "light",
+    recentLimit: facebookCronRecentPostLimit(),
     ...result,
   });
 }

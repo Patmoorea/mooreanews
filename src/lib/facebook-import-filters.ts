@@ -19,6 +19,19 @@ export function facebookImportMaxAgeDays(): number {
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : DEFAULT_MAX_AGE_DAYS;
 }
 
+/** Posts récents traités par cron (évite timeout Vercel ~60 s). */
+export function facebookCronRecentPostLimit(): number {
+  const raw = process.env.FACEBOOK_CRON_RECENT_LIMIT?.trim();
+  const n = raw ? Number(raw) : 20;
+  return Number.isFinite(n) && n > 0 ? Math.min(Math.floor(n), 50) : 20;
+}
+
+export function facebookCronMaxRepairsPerRun(): number {
+  const raw = process.env.FACEBOOK_CRON_MAX_REPAIRS?.trim();
+  const n = raw ? Number(raw) : 15;
+  return Number.isFinite(n) && n > 0 ? Math.min(Math.floor(n), 40) : 15;
+}
+
 function maxAgeMs(): number {
   return facebookImportMaxAgeDays() * 24 * 60 * 60 * 1000;
 }
@@ -254,12 +267,6 @@ export function isFacebookArticleNeedsRepair(row: {
   const core = facebookArticleBodyWithoutFooter(row.body);
   if (isFacebookJunkText(core.split("\n")[0] ?? "")) return true;
   if (!row.cover_url?.trim() && isFacebookJunkText(core.slice(0, 200))) {
-    return true;
-  }
-  if (
-    !row.cover_url?.trim() &&
-    (row.slug ?? "").startsWith("mooreanews-fb-")
-  ) {
     return true;
   }
   return false;

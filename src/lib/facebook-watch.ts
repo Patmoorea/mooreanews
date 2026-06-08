@@ -316,8 +316,10 @@ async function fetchPageUploadedPhotos(
 
 async function fetchPagePosts(
   page: FacebookPageWatch,
-  token: string
+  token: string,
+  options?: { light?: boolean },
 ): Promise<GraphPost[]> {
+  const light = options?.light === true;
   const graphPageId = /^\d+$/.test(page.pageId)
     ? page.pageId
     : page.id === "moorea-news"
@@ -326,14 +328,16 @@ async function fetchPagePosts(
 
   const fieldVariants = [GRAPH_POST_FIELDS_FULL, GRAPH_POST_FIELDS_MINIMAL];
   const pageLimit =
-    page.id === "moorea-news" ? 50 : 15;
-  const maxPages = page.id === "moorea-news" ? 5 : 1;
+    page.id === "moorea-news" ? (light ? 25 : 50) : 15;
+  const maxPages = page.id === "moorea-news" ? (light ? 1 : 5) : 1;
   const edges: Array<"posts" | "published_posts" | "feed"> =
     page.id === "moorea-news"
-      ? ["posts", "published_posts", "feed"]
+      ? light
+        ? ["posts", "published_posts"]
+        : ["posts", "published_posts", "feed"]
       : ["posts"];
-  const maxPagesPublished = page.id === "moorea-news" ? 2 : 0;
-  const maxPagesFeed = page.id === "moorea-news" ? 2 : 0;
+  const maxPagesPublished = page.id === "moorea-news" ? (light ? 1 : 2) : 0;
+  const maxPagesFeed = page.id === "moorea-news" && !light ? 2 : 0;
   let lastFailure: { status: number; body: string } | null = null;
   const byId = new Map<string, GraphPost>();
 
@@ -393,7 +397,12 @@ async function fetchPagePosts(
   if (page.id === "moorea-news") {
     try {
       const knownIds = numericIdsFromGraphPosts(byId.values());
-      const photos = await fetchPageUploadedPhotos(graphPageId, token);
+      const photos = await fetchPageUploadedPhotos(
+        graphPageId,
+        token,
+        light ? 25 : 50,
+        light ? 1 : 4,
+      );
       for (const photo of photos) {
         const photoNumeric = photo.id.split("_").pop() ?? photo.id;
         if (knownIds.has(photoNumeric)) continue;
@@ -467,7 +476,11 @@ function pickTokenForPage(options: {
 }
 
 /** Derniers posts des pages configurées (jeton page ou jeton user → /me/accounts). */
-export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> {
+export async function aggregateFacebookPagesGraph(options?: {
+  /** Cron Vercel : lit moins de pages Graph + importe seulement les N posts récents. */
+  light?: boolean;
+  recentImportLimit?: number;
+}): Promise<AggregationResult> {
   const result: AggregationResult = {
     source: "facebook-pages",
     fetched: 0,
@@ -554,15 +567,21 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
         }
         continue;
       }
-      const posts = await fetchPagePosts(page, tokenForPage);
+      const posts = await fetchPagePosts(page, tokenForPage, {
+        light: options?.light,
+      });
       result.fetched += posts.length;
       if (
         page.id === "moorea-news" ||
         page.id === "commune-moorea"
       ) {
         const isMooreaNews = page.id === "moorea-news";
+        const importPosts =
+          isMooreaNews && options?.recentImportLimit
+            ? posts.slice(0, options.recentImportLimit)
+            : posts;
         articleImports.push({
-          posts,
+          posts: importPosts,
           config: {
             pageKey: isMooreaNews ? "mooreanews" : "commune",
             pageName: page.name,

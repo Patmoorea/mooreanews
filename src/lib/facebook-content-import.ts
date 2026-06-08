@@ -8,6 +8,8 @@ import { getAdminSupabase } from "@/lib/supabase/admin";
 import {
   isFacebookArticleNeedsRepair,
   isFacebookJunkText,
+  isRecentFacebookPost,
+  facebookCronMaxRepairsPerRun,
   publishedAtFromFacebookPost,
   shouldImportFacebookPost,
 } from "@/lib/facebook-import-filters";
@@ -373,53 +375,84 @@ export async function importFacebookPostsAsContent(
 
   const published = publishedByDefault();
 
+  type ExistingRow = {
+    id: string;
+    slug: string;
+    title: string;
+    excerpt: string | null;
+    body: string;
+    cover_url: string | null;
+  };
+
+  const existingBySlug = new Map<string, ExistingRow>();
+  if (config.importAllFeedPosts) {
+    const supabase = getAdminSupabase();
+    if (supabase) {
+      const { data } = await supabase
+        .from("articles")
+        .select("id, slug, title, excerpt, body, cover_url")
+        .like("slug", `${config.pageKey}-fb-%`);
+      for (const row of data ?? []) {
+        if (row.slug) existingBySlug.set(row.slug, row);
+      }
+    }
+  }
+
+  let repairsThisRun = 0;
+  const maxRepairs = config.importAllFeedPosts
+    ? facebookCronMaxRepairsPerRun()
+    : posts.length;
+
   for (const raw of posts) {
     const slug = slugForPost(config.pageKey, raw.id);
     const filterOpts = config.importAllFeedPosts
       ? { importAllFeedPosts: true as const }
       : undefined;
 
-    if (config.importAllFeedPosts) {
-      const supabase = getAdminSupabase();
-      if (supabase) {
-        const { data: existing } = await supabase
-          .from("articles")
-          .select("id, slug, title, excerpt, body, cover_url")
-          .eq("slug", slug)
-          .maybeSingle();
+    if (config.importAllFeedPosts && !isRecentFacebookPost(raw.created_time)) {
+      result.skippedStale += 1;
+      continue;
+    }
 
-        if (existing && !isFacebookArticleNeedsRepair({ ...existing, slug })) {
+    if (config.importAllFeedPosts) {
+      const existing = existingBySlug.get(slug);
+
+      if (existing && !isFacebookArticleNeedsRepair({ ...existing, slug })) {
+        result.skipped += 1;
+        continue;
+      }
+
+      if (existing && isFacebookArticleNeedsRepair({ ...existing, slug })) {
+        if (repairsThisRun >= maxRepairs) {
           result.skipped += 1;
           continue;
         }
-
-        if (existing && isFacebookArticleNeedsRepair({ ...existing, slug })) {
-          const post = await enrichPost(raw, config);
-          const freshness = shouldImportFacebookPost(
-            post.message?.trim() ?? "",
-            post.created_time,
-            post,
-            filterOpts,
-          );
-          if (!freshness.ok) {
-            result.skippedStale += 1;
-            continue;
-          }
-          const r = await repairFacebookArticle(
-            existing.id,
-            slug,
-            post,
-            config,
-            freshness.publishedAt,
-          );
-          if (r.ok) {
-            result.articlesRepaired = (result.articlesRepaired ?? 0) + 1;
-            result.createdArticles.push({ title: r.title, slug: r.slug });
-          } else {
-            result.errors.push(`repair ${post.id}: ${r.reason}`);
-          }
+        const post = await enrichPost(raw, config);
+        const freshness = shouldImportFacebookPost(
+          post.message?.trim() ?? "",
+          post.created_time,
+          post,
+          filterOpts,
+        );
+        if (!freshness.ok) {
+          result.skippedStale += 1;
           continue;
         }
+        const r = await repairFacebookArticle(
+          existing.id,
+          slug,
+          post,
+          config,
+          freshness.publishedAt,
+        );
+        if (r.ok) {
+          result.articlesRepaired = (result.articlesRepaired ?? 0) + 1;
+          result.createdArticles.push({ title: r.title, slug: r.slug });
+          repairsThisRun += 1;
+        } else {
+          result.errors.push(`repair ${post.id}: ${r.reason}`);
+        }
+        continue;
       }
     }
 
