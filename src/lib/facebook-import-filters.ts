@@ -190,23 +190,23 @@ export function isEmptyFacebookArticleShell(row: {
 }): boolean {
   if (isFacebookJunkText(row.title)) return true;
 
-  const hasCover = Boolean(row.cover_url?.trim());
-  if (hasCover) return false;
+  const title = row.title.trim();
+  const isGenericAffiche = /— affiche\s·/i.test(title);
+  if (isGenericAffiche) return true;
 
   const core = facebookArticleBodyWithoutFooter(row.body);
   const stripped = core
     .replace(/^Publication Facebook — [^.]+\.?\s*$/i, "")
     .trim();
 
-  const title = row.title.trim();
-  const isGenericAffiche = /— affiche\s·/i.test(title);
-  if (isGenericAffiche) return true;
-
   const isGenericPublication =
     /— publication$/i.test(title) || /— publication\s·/i.test(title);
   if (isGenericPublication) {
     return stripped.length < 20;
   }
+
+  const hasCover = Boolean(row.cover_url?.trim());
+  if (hasCover) return false;
 
   const excerptLen = (row.excerpt ?? "").trim().length;
   if (isGenericFacebookExcerpt(row.excerpt)) {
@@ -225,6 +225,8 @@ export function isFacebookArticleCompleteOnSite(row: {
 }): boolean {
   if (isEmptyFacebookArticleShell(row)) return false;
   if (isFacebookJunkText(row.title)) return false;
+  if (/— affiche\s·/i.test(row.title.trim())) return false;
+  if (/— publication\s·/i.test(row.title.trim())) return false;
   const cover = row.cover_url?.trim() ?? "";
   if (
     !cover ||
