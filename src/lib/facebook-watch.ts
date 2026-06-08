@@ -236,6 +236,70 @@ async function fetchGraphPagePostsOnce(
   };
 }
 
+type GraphUploadedPhoto = {
+  id: string;
+  created_time?: string;
+  link?: string;
+  name?: string;
+  alt_text?: string;
+  images?: { source?: string; width?: number; height?: number }[];
+};
+
+function numericIdsFromGraphPosts(posts: Iterable<GraphPost>): Set<string> {
+  const ids = new Set<string>();
+  for (const post of posts) {
+    const tail = post.id.split("_").pop();
+    if (tail) ids.add(tail);
+    const fbid = post.permalink_url?.match(/fbid=(\d+)/i)?.[1];
+    if (fbid) ids.add(fbid);
+    const postsId = post.permalink_url?.match(/\/posts\/(\d+)/i)?.[1];
+    if (postsId) ids.add(postsId);
+  }
+  return ids;
+}
+
+function graphUploadedPhotoToPost(
+  photo: GraphUploadedPhoto,
+  graphPageId: string,
+): GraphPost {
+  const bestImage = [...(photo.images ?? [])].sort(
+    (a, b) => (b.width ?? 0) - (a.width ?? 0),
+  )[0]?.source?.trim();
+  const caption = photo.name?.trim() || photo.alt_text?.trim() || "";
+  return {
+    id: `${graphPageId}_${photo.id}`,
+    created_time: photo.created_time,
+    permalink_url: photo.link,
+    message: caption || undefined,
+    full_picture: bestImage || undefined,
+  };
+}
+
+/** Photos uploadées sur la page (album) — absentes parfois de /posts. */
+async function fetchPageUploadedPhotos(
+  graphPageId: string,
+  token: string,
+  limit = 30,
+): Promise<GraphPost[]> {
+  const apiUrl = new URL(
+    `https://graph.facebook.com/v21.0/${graphPageId}/photos`,
+  );
+  apiUrl.searchParams.set("type", "uploaded");
+  apiUrl.searchParams.set(
+    "fields",
+    "id,created_time,link,images,name,alt_text",
+  );
+  apiUrl.searchParams.set("limit", String(limit));
+  apiUrl.searchParams.set("access_token", token);
+
+  const res = await fetch(apiUrl.toString(), { cache: "no-store" });
+  if (!res.ok) return [];
+  const json = (await res.json()) as { data?: GraphUploadedPhoto[] };
+  return (json.data ?? []).map((photo) =>
+    graphUploadedPhotoToPost(photo, graphPageId),
+  );
+}
+
 async function fetchPagePosts(
   page: FacebookPageWatch,
   token: string
@@ -301,6 +365,22 @@ async function fetchPagePosts(
         if (!pageOk || !after) break;
       }
       if (byId.size > 0 && fields === GRAPH_POST_FIELDS_FULL) break;
+    }
+  }
+
+  if (page.id === "moorea-news") {
+    try {
+      const knownIds = numericIdsFromGraphPosts(byId.values());
+      const photos = await fetchPageUploadedPhotos(graphPageId, token, 40);
+      for (const photo of photos) {
+        const photoNumeric = photo.id.split("_").pop() ?? photo.id;
+        if (knownIds.has(photoNumeric)) continue;
+        const norm = normalizeGraphPost(photo);
+        byId.set(norm.id, norm);
+        knownIds.add(photoNumeric);
+      }
+    } catch {
+      /* photos optionnel si Meta refuse l’edge */
     }
   }
 
