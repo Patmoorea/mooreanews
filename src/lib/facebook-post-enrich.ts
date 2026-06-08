@@ -109,6 +109,27 @@ export function permalinkForPost(
   return `https://www.facebook.com/${pageId}/posts/${numeric}`;
 }
 
+/** Variantes d’URL pour récupérer texte + affiche via Open Graph. */
+export function openGraphUrlsForFacebookPost(
+  post: Pick<FacebookPostForImport, "id" | "permalink_url">,
+  pageId = "350029589936",
+): string[] {
+  const numeric = post.id.split("_").pop() ?? post.id.replace(/\D/g, "");
+  const candidates = [
+    post.permalink_url?.trim(),
+    permalinkForPost(post, pageId),
+    numeric
+      ? `https://www.facebook.com/permalink.php?story_fbid=${numeric}&id=${pageId}`
+      : undefined,
+    numeric ? `https://www.facebook.com/photo/?fbid=${numeric}` : undefined,
+    numeric
+      ? `https://www.facebook.com/${pageId}/posts/${numeric}`
+      : undefined,
+  ].filter((u): u is string => Boolean(u?.startsWith("http")));
+
+  return [...new Set(candidates)];
+}
+
 function isWeakOgText(text: string): boolean {
   const t = text.trim();
   if (!t || t.length < 12) return true;
@@ -167,12 +188,7 @@ async function enrichFromOpenGraph(
 ): Promise<FacebookPostForImport> {
   let message = post.message?.trim() ?? "";
   let full_picture = post.full_picture?.trim() ?? "";
-  const urls = [
-    post.permalink_url?.trim(),
-    permalinkForPost(post, pageId),
-  ].filter((u): u is string => Boolean(u?.startsWith("http")));
-
-  const uniqueUrls = [...new Set(urls)];
+  const uniqueUrls = openGraphUrlsForFacebookPost(post, pageId);
   if (!force && message && full_picture && !isFacebookJunkText(message)) {
     return post;
   }

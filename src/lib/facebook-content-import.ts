@@ -334,6 +334,110 @@ async function repairFacebookArticle(
   return { ok: true, title, slug };
 }
 
+type ExistingArticleRow = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  body: string;
+  cover_url: string | null;
+};
+
+async function loadExistingMooreaNewsArticle(
+  slug: string,
+): Promise<ExistingArticleRow | null> {
+  const supabase = getAdminSupabase();
+  if (!supabase) return null;
+  const { data } = await supabase
+    .from("articles")
+    .select("id, slug, title, excerpt, body, cover_url")
+    .eq("slug", slug)
+    .maybeSingle();
+  return data ?? null;
+}
+
+/**
+ * MooreaNews : 100 % du fil → actualités (texte, affiche, photo, vidéo…).
+ * 1) réparer les coquilles / affiches manquantes ; 2) créer ce qui manque.
+ */
+async function importMooreaNewsFeedAsArticles(
+  posts: FacebookPostForImport[],
+  config: FacebookPageImportConfig,
+  published: boolean,
+  result: FacebookContentImportResult,
+): Promise<void> {
+  const filterOpts = { importAllFeedPosts: true as const };
+
+  for (const raw of posts) {
+    const slug = slugForPost(config.pageKey, raw.id);
+    const existing = await loadExistingMooreaNewsArticle(slug);
+    if (!existing || !isFacebookArticleNeedsRepair(existing)) continue;
+
+    const post = await enrichPost(raw, config);
+    const freshness = shouldImportFacebookPost(
+      post.message?.trim() ?? "",
+      post.created_time,
+      post,
+      filterOpts,
+    );
+    if (!freshness.ok) {
+      result.skippedStale += 1;
+      continue;
+    }
+
+    const r = await repairFacebookArticle(
+      existing.id,
+      slug,
+      post,
+      config,
+      freshness.publishedAt,
+    );
+    if (r.ok) {
+      result.articlesRepaired = (result.articlesRepaired ?? 0) + 1;
+      result.createdArticles.push({ title: r.title, slug: r.slug });
+    } else {
+      result.errors.push(`repair ${post.id}: ${r.reason}`);
+    }
+  }
+
+  for (const raw of posts) {
+    const slug = slugForPost(config.pageKey, raw.id);
+    const existing = await loadExistingMooreaNewsArticle(slug);
+    if (existing) {
+      result.skipped += 1;
+      continue;
+    }
+
+    const post = await enrichPost(raw, config);
+    const message = post.message?.trim() ?? "";
+    const freshness = shouldImportFacebookPost(
+      message,
+      post.created_time,
+      post,
+      filterOpts,
+    );
+    if (!freshness.ok) {
+      result.skippedStale += 1;
+      continue;
+    }
+
+    const r = await importAsArticle(
+      post,
+      config,
+      published,
+      freshness.publishedAt,
+    );
+    if (r.ok) {
+      result.articlesCreated += 1;
+      result.createdArticles.push({ title: r.title, slug: r.slug });
+    } else if (r.reason === "duplicate") {
+      result.skipped += 1;
+    } else {
+      result.errors.push(`article ${post.id}: ${r.reason}`);
+    }
+  }
+}
+
 /** Route chaque post vers Événement / Annonce / Actualité. */
 export async function importFacebookPostsAsContent(
   posts: FacebookPostForImport[],
@@ -356,76 +460,17 @@ export async function importFacebookPostsAsContent(
   if (!importEnabled()) return result;
 
   const published = publishedByDefault();
-  const maxNewPerRun = config.importAllFeedPosts ? 25 : posts.length;
-  let newImported = 0;
+
+  if (config.importAllFeedPosts) {
+    await importMooreaNewsFeedAsArticles(posts, config, published, result);
+    return result;
+  }
 
   for (const raw of posts) {
     const slug = slugForPost(config.pageKey, raw.id);
-
-    if (config.importAllFeedPosts && newImported >= maxNewPerRun) {
-      const supabase = getAdminSupabase();
-      if (supabase) {
-        const { data: existing } = await supabase
-          .from("articles")
-          .select("id, slug, title, excerpt, body, cover_url")
-          .eq("slug", slug)
-          .maybeSingle();
-        if (!(existing && isFacebookArticleNeedsRepair(existing))) {
-          break;
-        }
-      } else {
-        break;
-      }
-    }
-
-    const filterOpts = config.importAllFeedPosts
-      ? { importAllFeedPosts: true as const }
-      : undefined;
+    const filterOpts = undefined;
     const publishedAt =
       publishedAtFromFacebookPost(raw.created_time) ?? new Date().toISOString();
-
-    if (config.importAllFeedPosts) {
-      const supabase = getAdminSupabase();
-      if (supabase) {
-        const { data: existing } = await supabase
-          .from("articles")
-          .select("id, slug, title, excerpt, body, cover_url")
-          .eq("slug", slug)
-          .maybeSingle();
-        if (existing && !isFacebookArticleNeedsRepair(existing)) {
-          result.skipped += 1;
-          continue;
-        }
-        if (existing && isFacebookArticleNeedsRepair(existing)) {
-          const post = await enrichPost(raw, config);
-          const freshness = shouldImportFacebookPost(
-            post.message?.trim() ?? "",
-            post.created_time,
-            post,
-            filterOpts,
-          );
-          if (!freshness.ok) {
-            result.skippedStale += 1;
-            continue;
-          }
-          const r = await repairFacebookArticle(
-            existing.id,
-            slug,
-            post,
-            config,
-            freshness.publishedAt,
-          );
-          if (r.ok) {
-            result.articlesRepaired = (result.articlesRepaired ?? 0) + 1;
-            result.createdArticles.push({ title: r.title, slug: r.slug });
-            newImported += 1;
-          } else {
-            result.errors.push(`repair ${post.id}: ${r.reason}`);
-          }
-          continue;
-        }
-      }
-    }
 
     const post = await enrichPost(raw, config);
     const message = post.message?.trim() ?? "";
@@ -437,20 +482,6 @@ export async function importFacebookPostsAsContent(
     );
     if (!freshness.ok) {
       result.skippedStale += 1;
-      continue;
-    }
-
-    if (config.importAllFeedPosts) {
-      const r = await importAsArticle(post, config, published, freshness.publishedAt);
-      if (r.ok) {
-        result.articlesCreated += 1;
-        result.createdArticles.push({ title: r.title, slug: r.slug });
-        newImported += 1;
-      } else if (r.reason === "duplicate") {
-        result.skipped += 1;
-      } else {
-        result.errors.push(`article ${post.id}: ${r.reason}`);
-      }
       continue;
     }
 

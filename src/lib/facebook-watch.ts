@@ -279,25 +279,39 @@ function graphUploadedPhotoToPost(
 async function fetchPageUploadedPhotos(
   graphPageId: string,
   token: string,
-  limit = 30,
+  limitPerPage = 50,
+  maxPages = 4,
 ): Promise<GraphPost[]> {
-  const apiUrl = new URL(
-    `https://graph.facebook.com/v21.0/${graphPageId}/photos`,
-  );
-  apiUrl.searchParams.set("type", "uploaded");
-  apiUrl.searchParams.set(
-    "fields",
-    "id,created_time,link,images,name,alt_text",
-  );
-  apiUrl.searchParams.set("limit", String(limit));
-  apiUrl.searchParams.set("access_token", token);
+  const out: GraphPost[] = [];
+  let after: string | undefined;
 
-  const res = await fetch(apiUrl.toString(), { cache: "no-store" });
-  if (!res.ok) return [];
-  const json = (await res.json()) as { data?: GraphUploadedPhoto[] };
-  return (json.data ?? []).map((photo) =>
-    graphUploadedPhotoToPost(photo, graphPageId),
-  );
+  for (let page = 0; page < maxPages; page++) {
+    const apiUrl = new URL(
+      `https://graph.facebook.com/v21.0/${graphPageId}/photos`,
+    );
+    apiUrl.searchParams.set("type", "uploaded");
+    apiUrl.searchParams.set(
+      "fields",
+      "id,created_time,link,images,name,alt_text",
+    );
+    apiUrl.searchParams.set("limit", String(limitPerPage));
+    if (after) apiUrl.searchParams.set("after", after);
+    apiUrl.searchParams.set("access_token", token);
+
+    const res = await fetch(apiUrl.toString(), { cache: "no-store" });
+    if (!res.ok) break;
+    const json = (await res.json()) as {
+      data?: GraphUploadedPhoto[];
+      paging?: { cursors?: { after?: string } };
+    };
+    for (const photo of json.data ?? []) {
+      out.push(graphUploadedPhotoToPost(photo, graphPageId));
+    }
+    after = json.paging?.cursors?.after;
+    if (!after || (json.data?.length ?? 0) === 0) break;
+  }
+
+  return out;
 }
 
 async function fetchPagePosts(
@@ -312,11 +326,11 @@ async function fetchPagePosts(
 
   const fieldVariants = [GRAPH_POST_FIELDS_FULL, GRAPH_POST_FIELDS_MINIMAL];
   const pageLimit =
-    page.id === "moorea-news" ? 30 : 15;
-  const maxPages = page.id === "moorea-news" ? 3 : 1;
+    page.id === "moorea-news" ? 50 : 15;
+  const maxPages = page.id === "moorea-news" ? 5 : 1;
   const edges: Array<"posts" | "published_posts"> =
     page.id === "moorea-news" ? ["posts", "published_posts"] : ["posts"];
-  const maxPagesPublished = page.id === "moorea-news" ? 1 : 0;
+  const maxPagesPublished = page.id === "moorea-news" ? 2 : 0;
   let lastFailure: { status: number; body: string } | null = null;
   const byId = new Map<string, GraphPost>();
 
@@ -371,7 +385,7 @@ async function fetchPagePosts(
   if (page.id === "moorea-news") {
     try {
       const knownIds = numericIdsFromGraphPosts(byId.values());
-      const photos = await fetchPageUploadedPhotos(graphPageId, token, 40);
+      const photos = await fetchPageUploadedPhotos(graphPageId, token);
       for (const photo of photos) {
         const photoNumeric = photo.id.split("_").pop() ?? photo.id;
         if (knownIds.has(photoNumeric)) continue;
