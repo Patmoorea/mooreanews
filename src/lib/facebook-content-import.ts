@@ -310,6 +310,7 @@ async function repairFacebookArticle(
   post: FacebookPostForImport,
   config: FacebookPageImportConfig,
   publishedAt: string,
+  existingCoverUrl?: string | null,
 ): Promise<{ ok: true; title: string; slug: string } | { ok: false; reason: string }> {
   const supabase = getAdminSupabase();
   if (!supabase) return { ok: false, reason: "Supabase absent" };
@@ -323,7 +324,10 @@ async function repairFacebookArticle(
   const title = articleTitleFromPost(message, config, hasImage, publishedAt);
   const timeLabel = tahitiTimeLabel(publishedAt);
   const cover = sanitizeCoverUrl(
-    await persistFacebookCoverUrl(post.full_picture, post.id),
+    await persistFacebookCoverUrl(
+      post.full_picture ?? existingCoverUrl ?? undefined,
+      post.id,
+    ),
   );
 
   const patch: {
@@ -444,6 +448,7 @@ export async function importFacebookPostsAsContent(
           post,
           config,
           freshness.publishedAt,
+          existing.cover_url,
         );
         if (r.ok) {
           result.articlesRepaired = (result.articlesRepaired ?? 0) + 1;

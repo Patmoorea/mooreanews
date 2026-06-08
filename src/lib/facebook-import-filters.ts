@@ -225,6 +225,14 @@ export function isFacebookArticleCompleteOnSite(row: {
 }): boolean {
   if (isEmptyFacebookArticleShell(row)) return false;
   if (isFacebookJunkText(row.title)) return false;
+  const cover = row.cover_url?.trim() ?? "";
+  if (
+    !cover ||
+    cover.includes("fbcdn.net") ||
+    cover.includes("fbsbx.com")
+  ) {
+    return false;
+  }
   return true;
 }
 
@@ -267,6 +275,15 @@ export function isFacebookArticleNeedsRepair(row: {
   const core = facebookArticleBodyWithoutFooter(row.body);
   if (isFacebookJunkText(core.split("\n")[0] ?? "")) return true;
   if (!row.cover_url?.trim() && isFacebookJunkText(core.slice(0, 200))) {
+    return true;
+  }
+  const cover = row.cover_url?.trim() ?? "";
+  const slug = row.slug ?? "";
+  if (
+    slug.startsWith("mooreanews-fb-") &&
+    cover &&
+    (cover.includes("fbcdn.net") || cover.includes("fbsbx.com"))
+  ) {
     return true;
   }
   return false;
