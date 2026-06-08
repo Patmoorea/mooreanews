@@ -245,6 +245,7 @@ export function isFacebookArticleNeedsRepair(row: {
   excerpt: string | null;
   body: string;
   cover_url?: string | null;
+  slug?: string | null;
 }): boolean {
   if (isEmptyFacebookArticleShell(row)) return true;
   if (isFacebookJunkText(row.title)) return true;
@@ -253,6 +254,12 @@ export function isFacebookArticleNeedsRepair(row: {
   const core = facebookArticleBodyWithoutFooter(row.body);
   if (isFacebookJunkText(core.split("\n")[0] ?? "")) return true;
   if (!row.cover_url?.trim() && isFacebookJunkText(core.slice(0, 200))) {
+    return true;
+  }
+  if (
+    !row.cover_url?.trim() &&
+    (row.slug ?? "").startsWith("mooreanews-fb-")
+  ) {
     return true;
   }
   return false;

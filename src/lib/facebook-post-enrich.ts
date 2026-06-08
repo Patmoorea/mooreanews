@@ -271,6 +271,7 @@ export async function enrichFacebookPostForImport(
   options: { pageId?: string; importAll?: boolean } = {},
 ): Promise<FacebookPostForImport> {
   const pageId = options.pageId ?? "350029589936";
+  const listPicture = post.full_picture?.trim() ?? "";
   let current = normalizeGraphPostRaw(post as GraphPostRaw);
 
   const messageIsJunk = isFacebookJunkText(current.message?.trim() ?? "");
@@ -312,7 +313,7 @@ export async function enrichFacebookPostForImport(
     !current.full_picture ||
     !current.message;
 
-  return enrichFromOpenGraph(
+  const enriched = await enrichFromOpenGraph(
     {
       ...current,
       permalink_url: current.permalink_url ?? permalinkForPost(current, pageId),
@@ -321,6 +322,11 @@ export async function enrichFacebookPostForImport(
     stillNeedsOg,
     shareUrls,
   );
+
+  if (!enriched.full_picture?.trim() && listPicture) {
+    return { ...enriched, full_picture: listPicture };
+  }
+  return enriched;
 }
 
 /** Limite URL couverture (PostgREST / affichage). */
