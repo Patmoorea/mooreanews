@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
+import { HERO_PILL_GLASS, heroPillSurface } from "@/components/home/hero-sticker-pill";
 
 type WeeklyRecapPayload = {
   active?: boolean;
@@ -44,13 +45,13 @@ export function WeeklyRecapSticker() {
   return (
     <Link
       href={payload.href}
-      className={`inline-flex items-center gap-2 max-w-[min(100%,28rem)] px-3 py-1.5 rounded-full backdrop-blur-md border text-white text-[11px] sm:text-xs font-semibold shadow-lg transition-colors ${
-        payload.isFresh
-          ? "bg-cyan-700/95 border-cyan-300/70 shadow-cyan-950/40 hover:bg-cyan-600"
-          : "bg-teal-800/90 border-teal-400/60 shadow-teal-950/30 hover:bg-teal-700"
-      }`}
+      className={`inline-flex items-center gap-2 max-w-[min(100%,28rem)] px-3 py-1.5 ${HERO_PILL_GLASS} ${heroPillSurface(payload.isFresh)}`}
     >
-      <CalendarDays size={14} className="shrink-0" aria-hidden />
+      <CalendarDays
+        size={14}
+        className={`shrink-0 ${payload.isFresh ? "text-lagon-200" : "text-white/80"}`}
+        aria-hidden
+      />
       <span className="truncate">{payload.label}</span>
     </Link>
   );

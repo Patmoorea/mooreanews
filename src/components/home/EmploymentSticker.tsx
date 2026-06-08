@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Briefcase } from "lucide-react";
+import { HERO_PILL_GLASS, heroPillSurface } from "@/components/home/hero-sticker-pill";
 
 type JobRow = {
   id: string;
@@ -105,13 +106,13 @@ export function EmploymentSticker() {
   return (
     <Link
       href="/emploi-formation"
-      className={`inline-flex items-center gap-2 max-w-[min(100%,24rem)] px-3 py-1.5 rounded-full backdrop-blur-md border text-white text-[11px] sm:text-xs font-semibold shadow-lg transition-colors ${
-        isFresh
-          ? "bg-emerald-700/95 border-emerald-400/70 shadow-emerald-950/40 hover:bg-emerald-600"
-          : "bg-teal-800/90 border-teal-400/60 shadow-teal-950/30 hover:bg-teal-700"
-      }`}
+      className={`inline-flex items-center gap-2 max-w-[min(100%,24rem)] px-3 py-1.5 ${HERO_PILL_GLASS} ${heroPillSurface(isFresh)}`}
     >
-      <Briefcase size={14} className="shrink-0" aria-hidden />
+      <Briefcase
+        size={14}
+        className={`shrink-0 ${isFresh ? "text-soleil-300" : "text-white/80"}`}
+        aria-hidden
+      />
       <span className="truncate">{label}</span>
     </Link>
   );
