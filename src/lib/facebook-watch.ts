@@ -10,6 +10,7 @@ import { cleanImportedText } from "@/lib/html-entities";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { importFacebookPostsAsContent } from "@/lib/facebook-content-import";
 import {
+  facebookCronRecentPostLimit,
   isFacebookJunkText,
   shouldImportFacebookPost,
 } from "@/lib/facebook-import-filters";
@@ -580,6 +581,7 @@ export async function aggregateFacebookPagesGraph(options?: {
           isMooreaNews && options?.recentImportLimit
             ? posts.slice(0, options.recentImportLimit)
             : posts;
+        result.importProcessed = importPosts.length;
         articleImports.push({
           posts: importPosts,
           config: {
@@ -730,7 +732,7 @@ export async function listMooreaNewsGraphPosts(): Promise<
   });
   if (!token) return [];
 
-  return fetchPagePosts(page, token);
+  return fetchPagePosts(page, token, { light: true });
 }
 
 /** Derniers posts Facebook Commune de Moorea-Maiao (garde, actualités). */
@@ -788,9 +790,13 @@ export async function listCommuneMooreaGraphPosts(): Promise<
 
 export async function aggregateWebWatch(): Promise<AggregationResult[]> {
   const { aggregateWebPagesWatch } = await import("@/lib/web-watch");
+  const recentLimit = facebookCronRecentPostLimit();
   return Promise.all([
     aggregateFacebookWatchUrls(),
-    aggregateFacebookPagesGraph(),
+    aggregateFacebookPagesGraph({
+      light: true,
+      recentImportLimit: recentLimit,
+    }),
     aggregateWebPagesWatch(),
   ]);
 }

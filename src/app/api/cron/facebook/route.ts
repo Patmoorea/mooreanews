@@ -29,6 +29,8 @@ export async function GET(req: Request) {
     durationMs: Date.now() - start,
     mode: "light",
     recentLimit: facebookCronRecentPostLimit(),
+    importProcessed: result.importProcessed ?? facebookCronRecentPostLimit(),
+    graphFetched: result.fetched,
     ...result,
   });
 }

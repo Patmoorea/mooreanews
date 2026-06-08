@@ -423,10 +423,16 @@ export async function importFacebookPostsAsContent(
   if (config.importAllFeedPosts) {
     const supabase = getAdminSupabase();
     if (supabase) {
-      const { data } = await supabase
+      const batchSlugs = posts.map((raw) => slugForPost(config.pageKey, raw.id));
+      let query = supabase
         .from("articles")
-        .select("id, slug, title, excerpt, body, cover_url")
-        .like("slug", `${config.pageKey}-fb-%`);
+        .select("id, slug, title, excerpt, body, cover_url");
+      if (config.cronLight && batchSlugs.length > 0) {
+        query = query.in("slug", batchSlugs);
+      } else {
+        query = query.like("slug", `${config.pageKey}-fb-%`);
+      }
+      const { data } = await query;
       for (const row of data ?? []) {
         if (row.slug) existingBySlug.set(row.slug, row);
       }

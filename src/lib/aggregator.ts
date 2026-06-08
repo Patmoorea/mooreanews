@@ -4,7 +4,7 @@
 
 import { importAlertsFromRssItems } from "@/lib/alert-auto-import";
 import { importArticlesFromRssItems } from "@/lib/rss-article-import";
-import { facebookImportMaxAgeDays } from "@/lib/facebook-import-filters";
+import { facebookImportMaxAgeDays, facebookCronRecentPostLimit } from "@/lib/facebook-import-filters";
 import { aggregateWebWatch } from "@/lib/facebook-watch";
 import { fetchRssFeed, type RssItem } from "@/lib/rss-parser";
 import { isTransientFeedError } from "@/lib/feed-errors";
@@ -22,6 +22,8 @@ export type AggregationResult = {
   articlesCreated?: number;
   articlesRepaired?: number;
   articlesSkipped?: number;
+  /** Posts MooreaNews réellement importés (cron light = ~20). */
+  importProcessed?: number;
   eventsCreated?: number;
   announcementsCreated?: number;
   alertsCreated?: number;
