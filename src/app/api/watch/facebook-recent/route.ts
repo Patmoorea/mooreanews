@@ -46,6 +46,9 @@ export async function GET(req: Request) {
     }
   }
 
+  const url = new URL(req.url);
+  const fbidSearch = url.searchParams.get("fbid")?.trim();
+
   const recent = posts.slice(0, 20).map((post) => {
     const message = post.message?.trim() ?? "";
     const slug = slugForPostId(post.id);
@@ -90,9 +93,39 @@ export async function GET(req: Request) {
     };
   });
 
+  let fbidMatch: Record<string, unknown> | null = null;
+  if (fbidSearch && /^\d+$/.test(fbidSearch)) {
+    const post = posts.find(
+      (p) =>
+        p.id === fbidSearch ||
+        p.id.endsWith(`_${fbidSearch}`) ||
+        p.permalink_url?.includes(`fbid=${fbidSearch}`),
+    );
+    if (post) {
+      const message = post.message?.trim() ?? "";
+      const numericId = post.id.split("_").pop() ?? post.id;
+      const altSlug = `mooreanews-fb-350029589936-${numericId}`;
+      const article = articlesBySlug.get(slugForPostId(post.id)) ?? articlesBySlug.get(altSlug);
+      fbidMatch = {
+        id: post.id,
+        created_time: post.created_time,
+        messagePreview: message.slice(0, 200) || null,
+        hasImage: Boolean(post.full_picture?.trim()),
+        permalink: post.permalink_url,
+        onSite: Boolean(article),
+        slug: altSlug,
+        siteUrl: article
+          ? `https://www.mooreanews.com/actualites/${altSlug}`
+          : null,
+      };
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     fetched: posts.length,
+    fbidSearch: fbidSearch || undefined,
+    fbidMatch,
     missingOnSite: recent.filter((p) => !p.onSite),
     incompleteOnSite: recent.filter((p) => p.onSite && !p.completeOnSite),
     recent,

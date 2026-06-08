@@ -644,7 +644,19 @@ export async function aggregateFacebookPagesGraph(options?: {
         const graphPageId = isMooreaNews ? "350029589936" : page.pageId;
         let importPosts =
           isMooreaNews && options?.recentImportLimit
-            ? posts.slice(0, options.recentImportLimit)
+            ? (() => {
+                const cutoffMs = Date.now() - 7 * 24 * 60 * 60 * 1000;
+                const weekPosts = posts.filter((p) => {
+                  const t = Date.parse(p.created_time ?? "");
+                  return !Number.isNaN(t) && t >= cutoffMs;
+                });
+                const pool =
+                  weekPosts.length > 0 ? weekPosts : posts;
+                return pool.slice(
+                  0,
+                  Math.max(options.recentImportLimit ?? 20, weekPosts.length),
+                );
+              })()
             : posts;
 
         if (isMooreaNews && options?.forcePhotoFbids?.length) {
