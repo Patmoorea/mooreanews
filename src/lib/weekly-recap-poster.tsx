@@ -1,11 +1,16 @@
 /**
- * Affiche récap semaine — format compact, style éditorial MooreaNews.
- * Hauteur dynamique selon le nombre de lignes (pas de portrait Instagram vide).
+ * Affiche récap semaine — visuel type flyer (couleurs, motifs, cartes).
  */
 
+import type { ReactNode } from "react";
 import type { WeeklyRecapSnapshot } from "@/lib/weekly-recap-data";
 import { SITE } from "@/lib/constants";
-import { POSTER, posterLogoGradient } from "@/lib/poster-brand";
+import {
+  POSTER,
+  posterBackground,
+  posterBadgeGradient,
+  posterLogoGradient,
+} from "@/lib/poster-brand";
 
 const WIDTH = 1080;
 
@@ -22,7 +27,6 @@ function truncate(s: string, max: number): string {
   return `${t.slice(0, max - 1)}…`;
 }
 
-/** Hauteur PNG proportionnelle au contenu. */
 export function weeklyRecapPosterSize(snap: WeeklyRecapSnapshot): {
   width: number;
   height: number;
@@ -31,86 +35,266 @@ export function weeklyRecapPosterSize(snap: WeeklyRecapSnapshot): {
   const articleRows = snap.articles.length > 0 ? Math.min(snap.articles.length, 6) : 0;
   const empty = eventRows === 0 && articleRows === 0;
 
-  let h = 132; // en-tête
-  if (eventRows > 0) h += 36 + eventRows * 46;
-  if (articleRows > 0) h += 36 + articleRows * 46;
+  let h = 400;
+  if (eventRows > 0) h += 52 + eventRows * 48;
+  if (articleRows > 0) h += 52 + articleRows * 48;
+  if (eventRows > 0 && articleRows > 0) h += 16;
   if (empty) h += 100;
-  h += 56; // pied de page
 
-  return { width: WIDTH, height: Math.min(Math.max(h, 420), 920) };
+  return { width: WIDTH, height: Math.min(Math.max(h, 620), 1050) };
 }
 
-function SectionTitle({ label }: { label: string }) {
+function PosterBackdrop() {
+  const dots: { x: number; y: number }[] = [];
+  for (let row = 0; row < 7; row++) {
+    for (let col = 0; col < 10; col++) {
+      dots.push({ x: col * 108 + (row % 2) * 54 + 24, y: row * 88 + 40 });
+    }
+  }
+
+  return (
+    <>
+      <div
+        style={{
+          position: "absolute",
+          top: -60,
+          right: -40,
+          width: 360,
+          height: 360,
+          borderRadius: 999,
+          background: `radial-gradient(circle, ${POSTER.lagon}55 0%, transparent 68%)`,
+          display: "flex",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          top: 120,
+          left: -80,
+          width: 280,
+          height: 280,
+          borderRadius: 999,
+          background: `radial-gradient(circle, ${POSTER.couchant}44 0%, transparent 70%)`,
+          display: "flex",
+        }}
+      />
+      {dots.map((d, i) => (
+        <div
+          key={i}
+          style={{
+            position: "absolute",
+            left: d.x,
+            top: d.y,
+            width: 5,
+            height: 5,
+            borderRadius: 999,
+            background: POSTER.white,
+            opacity: 0.12,
+            display: "flex",
+          }}
+        />
+      ))}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          width: WIDTH,
+          height: 88,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            bottom: 24,
+            left: -30,
+            width: 1140,
+            height: 70,
+            borderRadius: "50% 50% 0 0",
+            background: POSTER.lagonDark,
+            opacity: 0.85,
+            display: "flex",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            bottom: 8,
+            left: -20,
+            width: 1120,
+            height: 55,
+            borderRadius: "50% 50% 0 0",
+            background: POSTER.lagon,
+            opacity: 0.9,
+            display: "flex",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            width: WIDTH,
+            height: 22,
+            background: `linear-gradient(90deg, ${POSTER.sandWarm}, ${POSTER.sandDeep})`,
+            display: "flex",
+          }}
+        />
+      </div>
+    </>
+  );
+}
+
+function SectionCard({
+  title,
+  bannerColor,
+  bannerGradient,
+  children,
+}: {
+  title: string;
+  bannerColor?: string;
+  bannerGradient?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        borderRadius: 20,
+        overflow: "hidden",
+        boxShadow: "0 10px 36px rgba(8,59,102,0.28)",
+        border: `2px solid ${POSTER.white}55`,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          padding: "14px 22px",
+          background: bannerGradient ?? bannerColor ?? POSTER.lagon,
+        }}
+      >
+        <div
+          style={{
+            width: 10,
+            height: 10,
+            borderRadius: 999,
+            background: POSTER.white,
+            opacity: 0.9,
+            marginRight: 12,
+            display: "flex",
+          }}
+        />
+        <div
+          style={{
+            fontSize: 20,
+            fontWeight: 900,
+            color: POSTER.white,
+            letterSpacing: 2,
+            textTransform: "uppercase",
+            display: "flex",
+          }}
+        >
+          {title}
+        </div>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          background: "rgba(255,255,255,0.96)",
+          padding: "6px 14px 10px",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function EventRow({ date, text }: { date: string; text: string }) {
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "row",
         alignItems: "center",
-        marginBottom: 8,
-        marginTop: 4,
+        padding: "11px 6px",
+        borderBottom: `1px solid ${POSTER.oceanDeep}12`,
       }}
     >
       <div
         style={{
-          width: 4,
-          height: 18,
-          background: POSTER.lagon,
-          borderRadius: 2,
-          marginRight: 10,
-          display: "flex",
-        }}
-      />
-      <div
-        style={{
-          fontSize: 13,
+          minWidth: 102,
+          padding: "6px 10px",
+          borderRadius: 10,
+          background: `linear-gradient(135deg, ${POSTER.lagonLight}88, ${POSTER.lagon}44)`,
+          fontSize: 12,
           fontWeight: 800,
-          letterSpacing: 2,
-          color: POSTER.oceanMid,
-          textTransform: "uppercase",
+          color: POSTER.oceanDeep,
           display: "flex",
         }}
       >
-        {label}
+        {date}
+      </div>
+      <div
+        style={{
+          flex: 1,
+          marginLeft: 14,
+          fontSize: 15,
+          fontWeight: 700,
+          color: POSTER.oceanDeep,
+          lineHeight: 1.3,
+          display: "flex",
+        }}
+      >
+        {truncate(text, 82)}
       </div>
     </div>
   );
 }
 
-function DigestRow({ left, text }: { left: string; text: string }) {
+function ActuRow({ text }: { text: string }) {
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "row",
         alignItems: "flex-start",
-        padding: "11px 0",
-        borderBottom: `1px solid ${POSTER.oceanDeep}14`,
+        padding: "11px 6px",
+        borderBottom: `1px solid ${POSTER.oceanDeep}12`,
       }}
     >
       <div
         style={{
-          width: 108,
-          flexShrink: 0,
-          fontSize: 13,
-          fontWeight: 700,
-          color: POSTER.lagonDark,
+          padding: "5px 10px",
+          borderRadius: 8,
+          background: posterBadgeGradient(),
+          fontSize: 11,
+          fontWeight: 900,
+          color: POSTER.white,
+          letterSpacing: 1,
           display: "flex",
         }}
       >
-        {left}
+        ACTU
       </div>
       <div
         style={{
           flex: 1,
+          marginLeft: 12,
           fontSize: 15,
-          fontWeight: 600,
+          fontWeight: 700,
           color: POSTER.oceanDeep,
-          lineHeight: 1.35,
+          lineHeight: 1.3,
           display: "flex",
         }}
       >
-        {truncate(text, 88)}
+        {truncate(text, 86)}
       </div>
     </div>
   );
@@ -124,172 +308,258 @@ export function WeeklyRecapPosterElement({ snap }: { snap: WeeklyRecapSnapshot }
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        background: POSTER.white,
+        background: posterBackground(),
         fontFamily: "system-ui, sans-serif",
+        position: "relative",
+        color: POSTER.white,
       }}
     >
-      {/* Bandeau */}
+      <PosterBackdrop />
+
       <div
         style={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "22px 40px",
-          background: POSTER.oceanDeep,
-        }}
-      >
-        <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 10,
-              background: posterLogoGradient(),
-              color: POSTER.white,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 22,
-              fontWeight: 900,
-              marginRight: 14,
-            }}
-          >
-            M
-          </div>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <div
-              style={{
-                fontSize: 20,
-                fontWeight: 800,
-                color: POSTER.white,
-                display: "flex",
-              }}
-            >
-              MooreaNews
-            </div>
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                color: POSTER.lagonLight,
-                letterSpacing: 1,
-                display: "flex",
-              }}
-            >
-              Agenda & actualités de la semaine
-            </div>
-          </div>
-        </div>
-        <div
-          style={{
-            fontSize: 15,
-            fontWeight: 700,
-            color: POSTER.white,
-            display: "flex",
-          }}
-        >
-          {snap.label}
-        </div>
-      </div>
-
-      {/* Ligne accent lagon */}
-      <div style={{ height: 3, background: POSTER.lagon, display: "flex" }} />
-
-      {/* Contenu */}
-      <div
-        style={{
+          position: "relative",
           display: "flex",
           flexDirection: "column",
-          padding: "20px 40px 12px",
+          padding: "32px 44px 100px",
           flex: 1,
         }}
       >
-        {snap.events.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", marginBottom: 12 }}>
-            <SectionTitle label="Événements" />
-            {snap.events.slice(0, 6).map((e) => (
-              <DigestRow
-                key={e.slug}
-                left={e.date}
-                text={`${e.title}${e.time ? ` · ${e.time}` : ""}${e.location ? ` · ${e.location}` : ""}`}
-              />
-            ))}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
+            <div
+              style={{
+                width: 50,
+                height: 50,
+                borderRadius: 14,
+                background: posterLogoGradient(),
+                color: POSTER.white,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 26,
+                fontWeight: 900,
+                marginRight: 14,
+                boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
+              }}
+            >
+              M
+            </div>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <div style={{ fontSize: 22, fontWeight: 900, display: "flex" }}>MooreaNews</div>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: 3,
+                  color: POSTER.lagonLight,
+                  display: "flex",
+                }}
+              >
+                AGENDA HEBDO
+              </div>
+            </div>
           </div>
-        )}
-
-        {snap.articles.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <SectionTitle label="Actualités" />
-            {snap.articles.slice(0, 6).map((a) => (
-              <DigestRow key={a.slug} left="Actu" text={a.title} />
-            ))}
+          <div
+            style={{
+              padding: "8px 18px",
+              borderRadius: 999,
+              background: posterBadgeGradient(),
+              fontSize: 13,
+              fontWeight: 800,
+              display: "flex",
+              boxShadow: "0 4px 14px rgba(0,0,0,0.15)",
+            }}
+          >
+            Ia ora na !
           </div>
-        )}
+        </div>
 
-        {snap.events.length === 0 && snap.articles.length === 0 && (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            marginTop: 28,
+            marginBottom: 28,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 700,
+              letterSpacing: 5,
+              color: POSTER.lagonLight,
+              display: "flex",
+            }}
+          >
+            MOOREA · POLYNÉSIE FRANÇAISE
+          </div>
+          <div
+            style={{
+              fontSize: 52,
+              fontWeight: 900,
+              marginTop: 8,
+              textAlign: "center",
+              display: "flex",
+              textShadow: "0 2px 12px rgba(8,59,102,0.35)",
+            }}
+          >
+            Votre semaine
+          </div>
+          <div
+            style={{
+              fontSize: 30,
+              fontWeight: 900,
+              color: POSTER.soleil,
+              marginTop: 6,
+              display: "flex",
+            }}
+          >
+            {snap.label}
+          </div>
           <div
             style={{
               display: "flex",
-              flexDirection: "column",
-              padding: "24px 0",
+              flexDirection: "row",
+              marginTop: 16,
             }}
           >
             <div
               style={{
-                fontSize: 17,
-                fontWeight: 700,
-                color: POSTER.oceanDeep,
+                width: 48,
+                height: 5,
+                borderRadius: 999,
+                background: POSTER.lagon,
+                marginRight: 8,
                 display: "flex",
               }}
-            >
-              Semaine calme sur Moorea
-            </div>
+            />
             <div
               style={{
-                fontSize: 14,
-                color: POSTER.slate,
-                marginTop: 6,
+                width: 48,
+                height: 5,
+                borderRadius: 999,
+                background: POSTER.couchant,
+                marginRight: 8,
                 display: "flex",
               }}
-            >
-              Consultez l&apos;agenda complet sur mooreanews.com
-            </div>
+            />
+            <div
+              style={{
+                width: 48,
+                height: 5,
+                borderRadius: 999,
+                background: POSTER.tiare,
+                display: "flex",
+              }}
+            />
           </div>
-        )}
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          {snap.events.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", marginBottom: 16 }}>
+              <SectionCard
+                title="Événements"
+                bannerGradient={`linear-gradient(90deg, ${POSTER.lagonDark}, ${POSTER.lagon})`}
+              >
+                {snap.events.slice(0, 6).map((e) => (
+                  <EventRow
+                    key={e.slug}
+                    date={e.date}
+                    text={`${e.title}${e.time ? ` · ${e.time}` : ""}${e.location ? ` · ${e.location}` : ""}`}
+                  />
+                ))}
+              </SectionCard>
+            </div>
+          )}
+
+          {snap.articles.length > 0 && (
+            <SectionCard
+              title="Actualités"
+              bannerGradient={`linear-gradient(90deg, ${POSTER.couchant}, ${POSTER.tiare})`}
+            >
+              {snap.articles.slice(0, 6).map((a) => (
+                <ActuRow key={a.slug} text={a.title} />
+              ))}
+            </SectionCard>
+          )}
+
+          {snap.events.length === 0 && snap.articles.length === 0 && (
+            <SectionCard title="Cette semaine" bannerColor={POSTER.oceanMid}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  padding: 20,
+                  alignItems: "center",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 22,
+                    fontWeight: 900,
+                    color: POSTER.oceanDeep,
+                    display: "flex",
+                  }}
+                >
+                  Semaine en cours sur Moorea
+                </div>
+                <div
+                  style={{
+                    fontSize: 15,
+                    color: POSTER.slate,
+                    marginTop: 8,
+                    display: "flex",
+                  }}
+                >
+                  Agenda complet sur mooreanews.com
+                </div>
+              </div>
+            </SectionCard>
+          )}
+        </div>
       </div>
 
-      {/* Pied */}
       <div
         style={{
+          position: "absolute",
+          bottom: 28,
+          left: 44,
+          right: 44,
           display: "flex",
           flexDirection: "row",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: "14px 40px",
-          background: "#f0f9ff",
-          borderTop: `1px solid ${POSTER.oceanDeep}18`,
         }}
       >
+        <div style={{ fontSize: 16, fontWeight: 800, display: "flex" }}>
+          {SITE.url.replace(/^https?:\/\//, "")}
+        </div>
         <div
           style={{
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: 600,
-            color: POSTER.oceanMid,
+            color: POSTER.lagonLight,
             display: "flex",
           }}
         >
-          {SITE.url.replace(/^https?:\/\//, "")}
-        </div>
-        <div style={{ fontSize: 12, color: POSTER.slate, display: "flex" }}>
-          Généré automatiquement chaque lundi
+          Affiche générée chaque lundi
         </div>
       </div>
     </div>
   );
 }
 
-export const WEEKLY_RECAP_POSTER_SIZE = { width: WIDTH, height: 640 };
+export const WEEKLY_RECAP_POSTER_SIZE = { width: WIDTH, height: 720 };
 
 export async function renderWeeklyRecapPosterPng(
   snap: WeeklyRecapSnapshot,
