@@ -7,6 +7,7 @@ import type { FacebookPageImportConfig } from "@/lib/facebook-article-import";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import {
   isFacebookArticleNeedsRepair,
+  isFacebookCoverNeedsPersistOnly,
   isFacebookJunkText,
   isRecentFacebookPost,
   facebookCronMaxRepairsPerRun,
@@ -356,6 +357,36 @@ async function repairFacebookArticle(
   return { ok: true, title, slug };
 }
 
+/** Recopie fbcdn → Supabase sans enrichissement Graph/OG (cron rapide). */
+async function repairFacebookCoverOnly(
+  articleId: string,
+  slug: string,
+  postId: string,
+  existingCoverUrl: string,
+): Promise<{ ok: true; slug: string } | { ok: false; reason: string }> {
+  const supabase = getAdminSupabase();
+  if (!supabase) return { ok: false, reason: "Supabase absent" };
+
+  const cover = sanitizeCoverUrl(
+    await persistFacebookCoverUrl(existingCoverUrl, postId),
+  );
+  if (!cover?.includes("supabase.co/storage/v1/object/public/")) {
+    return { ok: false, reason: "cover_persist_failed" };
+  }
+
+  const { error } = await supabase
+    .from("articles")
+    .update({
+      cover_url: cover,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", articleId);
+
+  if (error) return { ok: false, reason: error.message };
+  await hideExternalArticlesForArticleSlug(slug);
+  return { ok: true, slug };
+}
+
 /** Route chaque post vers Événement / Annonce / Actualité. */
 export async function importFacebookPostsAsContent(
   posts: FacebookPostForImport[],
@@ -403,9 +434,13 @@ export async function importFacebookPostsAsContent(
   }
 
   let repairsThisRun = 0;
-  const maxRepairs = config.importAllFeedPosts
-    ? facebookCronMaxRepairsPerRun()
-    : posts.length;
+  let coverPersistsThisRun = 0;
+  const maxFullRepairs = config.cronLight
+    ? 3
+    : config.importAllFeedPosts
+      ? facebookCronMaxRepairsPerRun()
+      : posts.length;
+  const maxCoverPersists = config.cronLight ? 8 : 40;
 
   for (const raw of posts) {
     const slug = slugForPost(config.pageKey, raw.id);
@@ -427,7 +462,31 @@ export async function importFacebookPostsAsContent(
       }
 
       if (existing && isFacebookArticleNeedsRepair({ ...existing, slug })) {
-        if (repairsThisRun >= maxRepairs) {
+        if (isFacebookCoverNeedsPersistOnly({ ...existing, slug })) {
+          if (coverPersistsThisRun >= maxCoverPersists) {
+            result.skipped += 1;
+            continue;
+          }
+          const r = await repairFacebookCoverOnly(
+            existing.id,
+            slug,
+            raw.id,
+            existing.cover_url ?? "",
+          );
+          if (r.ok) {
+            result.articlesRepaired = (result.articlesRepaired ?? 0) + 1;
+            result.createdArticles.push({
+              title: existing.title,
+              slug: r.slug,
+            });
+            coverPersistsThisRun += 1;
+          } else {
+            result.errors.push(`cover ${raw.id}: ${r.reason}`);
+          }
+          continue;
+        }
+
+        if (repairsThisRun >= maxFullRepairs) {
           result.skipped += 1;
           continue;
         }

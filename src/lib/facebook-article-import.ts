@@ -30,6 +30,8 @@ export type FacebookPageImportConfig = {
   /** Jeton page Meta pour enrichissement post-by-id. */
   pageAccessToken?: string;
   graphPageId?: string;
+  /** Cron Vercel : réparations légères (persist cover sans Graph/OG). */
+  cronLight?: boolean;
 };
 
 /** @deprecated Utiliser importFacebookPostsAsContent */

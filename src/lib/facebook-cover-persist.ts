@@ -30,6 +30,7 @@ export async function persistFacebookCoverUrl(
       },
       cache: "no-store",
       redirect: "follow",
+      signal: AbortSignal.timeout(12_000),
     });
     if (!res.ok) return u;
 

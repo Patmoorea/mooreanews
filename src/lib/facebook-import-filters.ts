@@ -289,6 +289,32 @@ export function isFacebookArticleNeedsRepair(row: {
   return false;
 }
 
+/** Affiche fbcdn mais texte déjà OK — recopie Supabase sans Graph/OG. */
+export function isFacebookCoverNeedsPersistOnly(row: {
+  title: string;
+  excerpt: string | null;
+  body: string;
+  cover_url?: string | null;
+  slug?: string | null;
+}): boolean {
+  const slug = row.slug ?? "";
+  if (!slug.startsWith("mooreanews-fb-")) return false;
+  const cover = row.cover_url?.trim() ?? "";
+  if (
+    !cover ||
+    (!cover.includes("fbcdn.net") && !cover.includes("fbsbx.com"))
+  ) {
+    return false;
+  }
+  if (isEmptyFacebookArticleShell(row)) return false;
+  if (isFacebookJunkText(row.title)) return false;
+  if (isFacebookJunkText(row.excerpt ?? "")) return false;
+  const core = facebookArticleBodyWithoutFooter(row.body);
+  if (isFacebookJunkText(core.split("\n")[0] ?? "")) return false;
+  if (isFacebookJunkText(core.slice(0, 200))) return false;
+  return true;
+}
+
 export function isFacebookImportArticle(row: {
   tags?: string[] | null;
   slug?: string | null;

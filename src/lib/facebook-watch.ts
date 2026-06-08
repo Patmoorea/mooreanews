@@ -592,6 +592,7 @@ export async function aggregateFacebookPagesGraph(options?: {
             importAllFeedPosts: isMooreaNews,
             pageAccessToken: tokenForPage,
             graphPageId: isMooreaNews ? "350029589936" : page.pageId,
+            cronLight: options?.light === true,
           },
         });
       }
