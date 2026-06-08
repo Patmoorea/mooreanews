@@ -3,7 +3,7 @@
  */
 
 import { getAdminSupabase } from "@/lib/supabase/admin";
-import { resolveGardePosterPublicUrl } from "@/lib/garde-poster-url";
+import { resolvePosterCoverUrl } from "@/lib/garde-poster-url";
 import type { WeeklyRecapSnapshot } from "@/lib/weekly-recap-data";
 import { weeklyRecapArticleSlug } from "@/lib/weekly-recap-data";
 
@@ -70,7 +70,7 @@ export async function upsertWeeklyRecapArticle(
   const title = buildWeeklyRecapTitle(snap).slice(0, 200);
   const excerpt = buildWeeklyRecapExcerpt(snap).slice(0, 280);
   const body = buildWeeklyRecapBody(snap);
-  const coverUrl = resolveGardePosterPublicUrl(snap.posterImageUrl);
+  const coverUrl = resolvePosterCoverUrl(snap.posterImageUrl, snap.syncedAt);
   const publishedAt = `${snap.weekStart}T07:00:00.000Z`;
 
   const { data: existing } = await supabase

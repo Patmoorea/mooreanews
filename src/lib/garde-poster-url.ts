@@ -12,3 +12,15 @@ export function resolveGardePosterPublicUrl(
   }
   return raw;
 }
+
+/** Évite le cache Next/Supabase quand l’affiche est régénérée (même chemin). */
+export function resolvePosterCoverUrl(
+  url: string | null | undefined,
+  version: string,
+): string | null {
+  const base = resolveGardePosterPublicUrl(url);
+  if (!base) return null;
+  const v = version.replace(/[^0-9A-Za-z-]/g, "").slice(0, 24) || "1";
+  const sep = base.includes("?") ? "&" : "?";
+  return `${base}${sep}v=${v}`;
+}
