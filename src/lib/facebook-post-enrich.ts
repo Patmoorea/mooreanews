@@ -17,11 +17,7 @@ function attachmentShareUrls(
   const walk = (items: GraphAttachment[] | undefined) => {
     for (const att of items ?? []) {
       const u = att.url?.trim();
-      if (
-        u?.startsWith("http") &&
-        !urls.includes(u) &&
-        /facebook\.com/i.test(u)
-      ) {
+      if (u?.startsWith("http") && !urls.includes(u)) {
         urls.push(u);
       }
       walk(att.subattachments?.data);
@@ -222,8 +218,8 @@ async function enrichFromOpenGraph(
   let full_picture = post.full_picture?.trim() ?? "";
   const uniqueUrls = [
     ...new Set([
-      ...openGraphUrlsForFacebookPost(post, pageId),
       ...extraUrls.filter((u) => u.startsWith("http")),
+      ...openGraphUrlsForFacebookPost(post, pageId),
     ]),
   ];
   if (!force && message && full_picture && !isFacebookJunkText(message)) {
