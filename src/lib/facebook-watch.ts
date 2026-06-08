@@ -588,6 +588,8 @@ export async function aggregateFacebookPagesGraph(): Promise<AggregationResult> 
         );
         if (!freshness.ok) continue;
 
+        if (page.id === "moorea-news") continue;
+
         const firstLine = message.split("\n")[0]?.trim().slice(0, 200) ?? "";
         const title =
           firstLine && !isFacebookJunkText(firstLine)

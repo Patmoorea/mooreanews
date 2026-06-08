@@ -16,6 +16,8 @@ import {
   permalinkForPost,
   sanitizeCoverUrl,
 } from "@/lib/facebook-post-enrich";
+import { persistFacebookCoverUrl } from "@/lib/facebook-cover-persist";
+import { hideExternalArticlesForArticleSlug } from "@/lib/facebook-external-sync";
 import { cleanImportedText } from "@/lib/html-entities";
 import {
   announcementCategoryFromMessage,
@@ -271,7 +273,9 @@ async function importAsArticle(
   const timeLabel = tahitiTimeLabel(publishedAt);
   const title = articleTitleFromPost(message, config, hasImage, publishedAt);
 
-  const cover = sanitizeCoverUrl(post.full_picture);
+  const cover = sanitizeCoverUrl(
+    await persistFacebookCoverUrl(post.full_picture, post.id),
+  );
 
   const { data, error } = await supabase
     .from("articles")
@@ -294,6 +298,7 @@ async function importAsArticle(
     .single();
 
   if (error || !data) return { ok: false, reason: error?.message ?? "insert failed" };
+  await hideExternalArticlesForArticleSlug(slug);
   return { ok: true, title, slug: data.slug };
 }
 
@@ -315,7 +320,9 @@ async function repairFacebookArticle(
   const hasImage = Boolean(post.full_picture?.trim());
   const title = articleTitleFromPost(message, config, hasImage, publishedAt);
   const timeLabel = tahitiTimeLabel(publishedAt);
-  const cover = sanitizeCoverUrl(post.full_picture);
+  const cover = sanitizeCoverUrl(
+    await persistFacebookCoverUrl(post.full_picture, post.id),
+  );
 
   const patch: {
     title: string;
@@ -339,6 +346,7 @@ async function repairFacebookArticle(
     .eq("id", articleId);
 
   if (error) return { ok: false, reason: error.message };
+  await hideExternalArticlesForArticleSlug(slug);
   return { ok: true, title, slug };
 }
 
