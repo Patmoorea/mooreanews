@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyCronAuth } from "@/lib/cron-auth";
-import { listMooreaNewsGraphPosts } from "@/lib/facebook-watch";
+import { listMooreaNewsGraphPosts, listMooreaNewsUploadedPhotos } from "@/lib/facebook-watch";
 import { shouldImportFacebookPost, isFacebookArticleCompleteOnSite } from "@/lib/facebook-import-filters";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 
@@ -50,6 +50,7 @@ export async function GET(req: Request) {
   const fbidSearch = url.searchParams.get("fbid")?.trim();
   const textSearch = url.searchParams.get("q")?.trim().toLowerCase();
   const daySearch = url.searchParams.get("day")?.trim();
+  const withUploaded = url.searchParams.get("uploaded") === "1";
 
   const recent = posts.slice(0, 20).map((post) => {
     const message = post.message?.trim() ?? "";
@@ -161,6 +162,10 @@ export async function GET(req: Request) {
           }))
       : undefined;
 
+  const uploadedPhotos = withUploaded
+    ? await listMooreaNewsUploadedPhotos(35)
+    : undefined;
+
   return NextResponse.json({
     ok: true,
     fetched: posts.length,
@@ -170,6 +175,7 @@ export async function GET(req: Request) {
     textMatches,
     daySearch: daySearch || undefined,
     dayMatches,
+    uploadedPhotos,
     missingOnSite: recent.filter((p) => !p.onSite),
     incompleteOnSite: recent.filter((p) => p.onSite && !p.completeOnSite),
     recent,

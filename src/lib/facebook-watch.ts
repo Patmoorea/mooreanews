@@ -209,6 +209,7 @@ async function fetchGraphPagePostsOnce(
   limit: number,
   after?: string,
   edge: "posts" | "published_posts" | "feed" = "posts",
+  since?: string,
 ): Promise<
   | { ok: true; posts: GraphPost[]; next?: string }
   | { ok: false; status: number; body: string }
@@ -219,6 +220,7 @@ async function fetchGraphPagePostsOnce(
   apiUrl.searchParams.set("fields", fields);
   apiUrl.searchParams.set("limit", String(limit));
   if (after) apiUrl.searchParams.set("after", after);
+  if (since) apiUrl.searchParams.set("since", since);
   apiUrl.searchParams.set("access_token", token);
 
   const res = await fetch(apiUrl.toString(), { cache: "no-store" });
@@ -441,12 +443,14 @@ async function fetchPagePosts(
   const maxPages = page.id === "moorea-news" ? (light ? 1 : 5) : 1;
   const edges: Array<"posts" | "published_posts" | "feed"> =
     page.id === "moorea-news"
-      ? light
-        ? ["posts", "published_posts"]
-        : ["posts", "published_posts", "feed"]
+      ? ["posts", "published_posts", "feed"]
       : ["posts"];
-  const maxPagesPublished = page.id === "moorea-news" ? (light ? 1 : 2) : 0;
-  const maxPagesFeed = page.id === "moorea-news" && !light ? 2 : 0;
+  const maxPagesPublished = page.id === "moorea-news" ? (light ? 2 : 2) : 0;
+  const maxPagesFeed = page.id === "moorea-news" ? (light ? 2 : 2) : 0;
+  const sinceUnix =
+    page.id === "moorea-news"
+      ? String(Math.floor(Date.now() / 1000 - 14 * 24 * 3600))
+      : undefined;
   let lastFailure: { status: number; body: string } | null = null;
   const byId = new Map<string, GraphPost>();
 
@@ -469,6 +473,7 @@ async function fetchPagePosts(
             pageLimit,
             after,
             edge,
+            edge === "posts" ? sinceUnix : undefined,
           );
           if (result.ok) {
             for (const p of result.posts) {
@@ -508,8 +513,8 @@ async function fetchPagePosts(
       const photos = await fetchPageUploadedPhotos(
         graphPageId,
         token,
-        light ? 50 : 50,
-        light ? 6 : 6,
+        50,
+        10,
       );
       mergeUploadedPhotosIntoPosts(byId, photos);
     } catch {
@@ -684,7 +689,7 @@ export async function aggregateFacebookPagesGraph(options?: {
         let importPosts =
           isMooreaNews && options?.recentImportLimit
             ? (() => {
-                const cutoffMs = Date.now() - 7 * 24 * 60 * 60 * 1000;
+                const cutoffMs = Date.now() - 14 * 24 * 60 * 60 * 1000;
                 const weekPosts = posts.filter((p) => {
                   const t = Date.parse(p.created_time ?? "");
                   return !Number.isNaN(t) && t >= cutoffMs;
@@ -840,6 +845,64 @@ export async function aggregateFacebookPagesGraph(options?: {
   result.errors = result.errors.filter((e) => !teItoRauGraphNoise(e));
 
   return result;
+}
+
+export async function listMooreaNewsUploadedPhotos(limit = 40): Promise<
+  Array<{
+    id: string;
+    created_time?: string;
+    tahiti?: string;
+    message?: string;
+    permalink_url?: string;
+    full_picture?: string;
+  }>
+> {
+  let fallbackPageToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim();
+  let userToken = process.env.FACEBOOK_USER_ACCESS_TOKEN?.trim();
+  if (!fallbackPageToken && !userToken) return [];
+
+  const page = FACEBOOK_PAGE_WATCHES.find((p) => p.id === "moorea-news");
+  if (!page) return [];
+
+  const perPageTokenByIdOrUsername = new Map<string, string>();
+  if (userToken) {
+    try {
+      for (const acc of await fetchMeAccounts(userToken)) {
+        if (acc.access_token && acc.id) {
+          perPageTokenByIdOrUsername.set(acc.id, acc.access_token);
+        }
+      }
+    } catch {
+      /* optional */
+    }
+  }
+
+  const token = pickTokenForPage({
+    page,
+    perPageTokenByIdOrUsername,
+    fallbackPageToken:
+      perPageTokenByIdOrUsername.size > 0 ? undefined : fallbackPageToken,
+  });
+  if (!token) return [];
+
+  const photos = await fetchPageUploadedPhotos("350029589936", token, 50, 4);
+  return photos.slice(0, limit).map((p) => {
+    const norm = normalizeGraphPost(p);
+    return {
+      id: norm.id,
+      created_time: norm.created_time,
+      tahiti: norm.created_time
+        ? new Date(norm.created_time).toLocaleString("fr-FR", {
+            timeZone: "Pacific/Tahiti",
+            dateStyle: "short",
+            timeStyle: "short",
+          })
+        : undefined,
+      message: norm.message,
+      permalink_url: norm.permalink_url,
+      full_picture: norm.full_picture,
+    };
+  });
 }
 
 /** Diagnostic admin : derniers posts Graph API page MooreaNews. */
