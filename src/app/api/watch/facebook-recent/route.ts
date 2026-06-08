@@ -48,6 +48,7 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const fbidSearch = url.searchParams.get("fbid")?.trim();
+  const textSearch = url.searchParams.get("q")?.trim().toLowerCase();
 
   const recent = posts.slice(0, 20).map((post) => {
     const message = post.message?.trim() ?? "";
@@ -121,11 +122,30 @@ export async function GET(req: Request) {
     }
   }
 
+  const textMatches =
+    textSearch && textSearch.length >= 3
+      ? posts
+          .filter((p) => {
+            const blob = `${p.message ?? ""} ${p.permalink_url ?? ""} ${p.id}`.toLowerCase();
+            return blob.includes(textSearch);
+          })
+          .slice(0, 10)
+          .map((post) => ({
+            id: post.id,
+            created_time: post.created_time,
+            messagePreview: post.message?.slice(0, 160) ?? null,
+            permalink: post.permalink_url,
+            hasImage: Boolean(post.full_picture?.trim()),
+          }))
+      : undefined;
+
   return NextResponse.json({
     ok: true,
     fetched: posts.length,
     fbidSearch: fbidSearch || undefined,
     fbidMatch,
+    textSearch: textSearch || undefined,
+    textMatches,
     missingOnSite: recent.filter((p) => !p.onSite),
     incompleteOnSite: recent.filter((p) => p.onSite && !p.completeOnSite),
     recent,
