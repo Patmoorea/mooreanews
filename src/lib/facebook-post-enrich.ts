@@ -8,12 +8,34 @@ import { fetchOpenGraph } from "@/lib/open-graph";
 import { cleanImportedText } from "@/lib/html-entities";
 
 export const GRAPH_POST_DETAIL_FIELDS =
-  "id,message,permalink_url,created_time,full_picture,picture,status_type,attachments{description,title,media_type,url,media{image{src}},subattachments{data{description,title,media_type,media{image{src}}}}}";
+  "id,message,permalink_url,created_time,full_picture,picture,status_type,attachments{description,title,media_type,type,url,media{image{src}},subattachments{data{description,title,media_type,type,url,media{image{src}}}}}";
+
+function attachmentShareUrls(
+  attachments: GraphAttachment[] | undefined,
+): string[] {
+  const urls: string[] = [];
+  const walk = (items: GraphAttachment[] | undefined) => {
+    for (const att of items ?? []) {
+      const u = att.url?.trim();
+      if (
+        u?.startsWith("http") &&
+        !urls.includes(u) &&
+        /facebook\.com/i.test(u)
+      ) {
+        urls.push(u);
+      }
+      walk(att.subattachments?.data);
+    }
+  };
+  walk(attachments);
+  return urls;
+}
 
 type GraphAttachment = {
   description?: string;
   title?: string;
   media_type?: string;
+  type?: string;
   url?: string;
   media?: { image?: { src?: string } };
   subattachments?: { data?: GraphAttachment[] };
@@ -160,11 +182,11 @@ async function fetchGraphAttachmentImage(
   return bestImageFromAttachments(json.data) || null;
 }
 
-/** Détail complet d’un post via Graph API (image + texte manquants sur /posts). */
-export async function fetchGraphPostById(
+/** Détail brut Graph (partages, pièces jointes). */
+async function fetchGraphPostRawById(
   postId: string,
   token: string,
-): Promise<FacebookPostForImport | null> {
+): Promise<GraphPostRaw | null> {
   const apiUrl = new URL(`https://graph.facebook.com/v21.0/${postId}`);
   apiUrl.searchParams.set("fields", GRAPH_POST_DETAIL_FIELDS);
   apiUrl.searchParams.set("access_token", token);
@@ -172,7 +194,16 @@ export async function fetchGraphPostById(
   const res = await fetch(apiUrl.toString(), { cache: "no-store" });
   if (!res.ok) return null;
   const json = (await res.json()) as GraphPostRaw;
-  if (!json?.id) return null;
+  return json?.id ? json : null;
+}
+
+/** Détail complet d’un post via Graph API (image + texte manquants sur /posts). */
+export async function fetchGraphPostById(
+  postId: string,
+  token: string,
+): Promise<FacebookPostForImport | null> {
+  const json = await fetchGraphPostRawById(postId, token);
+  if (!json) return null;
   let post = normalizeGraphPostRaw(json);
   if (!post.full_picture) {
     const attImg = await fetchGraphAttachmentImage(postId, token);
@@ -185,10 +216,16 @@ async function enrichFromOpenGraph(
   post: FacebookPostForImport,
   pageId: string,
   force: boolean,
+  extraUrls: string[] = [],
 ): Promise<FacebookPostForImport> {
   let message = post.message?.trim() ?? "";
   let full_picture = post.full_picture?.trim() ?? "";
-  const uniqueUrls = openGraphUrlsForFacebookPost(post, pageId);
+  const uniqueUrls = [
+    ...new Set([
+      ...openGraphUrlsForFacebookPost(post, pageId),
+      ...extraUrls.filter((u) => u.startsWith("http")),
+    ]),
+  ];
   if (!force && message && full_picture && !isFacebookJunkText(message)) {
     return post;
   }
@@ -211,7 +248,7 @@ async function enrichFromOpenGraph(
       if (ogImage?.startsWith("http") && ogImage.length > full_picture.length) {
         full_picture = ogImage;
       }
-      if (message && full_picture) break;
+      if (!force && message && full_picture) break;
     } catch {
       /* essai URL suivante */
     }
@@ -244,9 +281,16 @@ export async function enrichFacebookPostForImport(
       !current.message ||
       messageIsJunk);
 
+  let shareUrls: string[] = [];
   if (needsGraph && token) {
-    const detailed = await fetchGraphPostById(post.id, token);
-    if (detailed) {
+    const raw = await fetchGraphPostRawById(post.id, token);
+    if (raw) {
+      shareUrls = attachmentShareUrls(raw.attachments?.data);
+      let detailed = normalizeGraphPostRaw(raw);
+      if (!detailed.full_picture) {
+        const attImg = await fetchGraphAttachmentImage(post.id, token);
+        if (attImg) detailed = { ...detailed, full_picture: attImg };
+      }
       const detailedJunk = isFacebookJunkText(detailed.message?.trim() ?? "");
       current = {
         ...current,
@@ -275,6 +319,7 @@ export async function enrichFacebookPostForImport(
     },
     pageId,
     stillNeedsOg,
+    shareUrls,
   );
 }
 

@@ -203,6 +203,18 @@ export function isEmptyFacebookArticleShell(row: {
   return stripped.length < 15 && excerptLen < 15;
 }
 
+/** Article visible sur le site avec contenu exploitable (pas une coquille vide). */
+export function isFacebookArticleCompleteOnSite(row: {
+  title: string;
+  excerpt: string | null;
+  body: string;
+  cover_url?: string | null;
+}): boolean {
+  if (isEmptyFacebookArticleShell(row)) return false;
+  if (isFacebookJunkText(row.title)) return false;
+  return true;
+}
+
 /** Post Graph API / OG : texte, image ou (MooreaNews) toute entrée du fil. */
 export function facebookPostHasPublishableContent(
   post: Pick<

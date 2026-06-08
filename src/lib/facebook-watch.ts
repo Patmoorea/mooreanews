@@ -207,7 +207,7 @@ async function fetchGraphPagePostsOnce(
   fields: string,
   limit: number,
   after?: string,
-  edge: "posts" | "published_posts" = "posts",
+  edge: "posts" | "published_posts" | "feed" = "posts",
 ): Promise<
   | { ok: true; posts: GraphPost[]; next?: string }
   | { ok: false; status: number; body: string }
@@ -328,16 +328,24 @@ async function fetchPagePosts(
   const pageLimit =
     page.id === "moorea-news" ? 50 : 15;
   const maxPages = page.id === "moorea-news" ? 5 : 1;
-  const edges: Array<"posts" | "published_posts"> =
-    page.id === "moorea-news" ? ["posts", "published_posts"] : ["posts"];
+  const edges: Array<"posts" | "published_posts" | "feed"> =
+    page.id === "moorea-news"
+      ? ["posts", "published_posts", "feed"]
+      : ["posts"];
   const maxPagesPublished = page.id === "moorea-news" ? 2 : 0;
+  const maxPagesFeed = page.id === "moorea-news" ? 2 : 0;
   let lastFailure: { status: number; body: string } | null = null;
   const byId = new Map<string, GraphPost>();
 
   for (const edge of edges) {
     for (const fields of fieldVariants) {
       let after: string | undefined;
-      const pagesForEdge = edge === "published_posts" ? maxPagesPublished : maxPages;
+      const pagesForEdge =
+        edge === "published_posts"
+          ? maxPagesPublished
+          : edge === "feed"
+            ? maxPagesFeed
+            : maxPages;
       for (let pageNum = 0; pageNum < pagesForEdge; pageNum++) {
         let pageOk = false;
         for (let attempt = 0; attempt < 3; attempt++) {

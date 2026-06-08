@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import { listMooreaNewsGraphPosts } from "@/lib/facebook-watch";
-import { shouldImportFacebookPost } from "@/lib/facebook-import-filters";
+import { shouldImportFacebookPost, isFacebookArticleCompleteOnSite } from "@/lib/facebook-import-filters";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -20,14 +20,29 @@ export async function GET(req: Request) {
 
   const posts = await listMooreaNewsGraphPosts();
   const supabase = getAdminSupabase();
-  const slugs = new Set<string>();
+  const articlesBySlug = new Map<
+    string,
+    {
+      title: string;
+      excerpt: string | null;
+      body: string;
+      cover_url: string | null;
+    }
+  >();
   if (supabase) {
     const { data } = await supabase
       .from("articles")
-      .select("slug")
+      .select("slug, title, excerpt, body, cover_url")
       .like("slug", "mooreanews-fb-%");
     for (const row of data ?? []) {
-      if (row.slug) slugs.add(row.slug);
+      if (row.slug) {
+        articlesBySlug.set(row.slug, {
+          title: row.title,
+          excerpt: row.excerpt,
+          body: row.body,
+          cover_url: row.cover_url,
+        });
+      }
     }
   }
 
@@ -36,7 +51,12 @@ export async function GET(req: Request) {
     const slug = slugForPostId(post.id);
     const numericId = post.id.split("_").pop() ?? post.id;
     const altSlug = `mooreanews-fb-350029589936-${numericId}`;
-    const onSite = slugs.has(slug) || slugs.has(altSlug);
+    const article = articlesBySlug.get(slug) ?? articlesBySlug.get(altSlug);
+    const onSite = Boolean(article);
+    const completeOnSite = article
+      ? isFacebookArticleCompleteOnSite(article)
+      : false;
+    const hasCoverOnSite = Boolean(article?.cover_url?.trim());
     const freshness = shouldImportFacebookPost(
       message,
       post.created_time,
@@ -54,6 +74,9 @@ export async function GET(req: Request) {
           })
         : null,
       onSite,
+      completeOnSite,
+      hasCoverOnSite,
+      siteTitle: article?.title?.slice(0, 120) ?? null,
       slug: altSlug,
       siteUrl: onSite
         ? `https://www.mooreanews.com/actualites/${altSlug}`
@@ -71,6 +94,7 @@ export async function GET(req: Request) {
     ok: true,
     fetched: posts.length,
     missingOnSite: recent.filter((p) => !p.onSite),
+    incompleteOnSite: recent.filter((p) => p.onSite && !p.completeOnSite),
     recent,
   });
 }
