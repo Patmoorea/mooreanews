@@ -315,6 +315,28 @@ async function fetchPageUploadedPhotos(
   return out;
 }
 
+/** Photo d’album par fbid (hors fil /posts). */
+async function fetchGraphPhotoById(
+  photoId: string,
+  graphPageId: string,
+  token: string,
+): Promise<GraphPost | null> {
+  const apiUrl = new URL(
+    `https://graph.facebook.com/v21.0/${encodeURIComponent(photoId)}`,
+  );
+  apiUrl.searchParams.set(
+    "fields",
+    "id,created_time,link,images,name,alt_text",
+  );
+  apiUrl.searchParams.set("access_token", token);
+
+  const res = await fetch(apiUrl.toString(), { cache: "no-store" });
+  if (!res.ok) return null;
+  const json = (await res.json()) as GraphUploadedPhoto;
+  if (!json.id) return null;
+  return graphUploadedPhotoToPost(json, graphPageId);
+}
+
 async function fetchPagePosts(
   page: FacebookPageWatch,
   token: string,
@@ -401,8 +423,8 @@ async function fetchPagePosts(
       const photos = await fetchPageUploadedPhotos(
         graphPageId,
         token,
-        light ? 25 : 50,
-        light ? 1 : 4,
+        light ? 50 : 50,
+        light ? 3 : 4,
       );
       for (const photo of photos) {
         const photoNumeric = photo.id.split("_").pop() ?? photo.id;
@@ -481,6 +503,8 @@ export async function aggregateFacebookPagesGraph(options?: {
   /** Cron Vercel : lit moins de pages Graph + importe seulement les N posts récents. */
   light?: boolean;
   recentImportLimit?: number;
+  /** fbids album à forcer (ex. affiche Fête des pères). */
+  forcePhotoFbids?: string[];
 }): Promise<AggregationResult> {
   const result: AggregationResult = {
     source: "facebook-pages",
@@ -577,10 +601,40 @@ export async function aggregateFacebookPagesGraph(options?: {
         page.id === "commune-moorea"
       ) {
         const isMooreaNews = page.id === "moorea-news";
-        const importPosts =
+        const graphPageId = isMooreaNews ? "350029589936" : page.pageId;
+        let importPosts =
           isMooreaNews && options?.recentImportLimit
             ? posts.slice(0, options.recentImportLimit)
             : posts;
+
+        if (isMooreaNews && options?.forcePhotoFbids?.length) {
+          const forcedPosts: GraphPost[] = [];
+          for (const fbid of options.forcePhotoFbids) {
+            const id = fbid.trim();
+            if (!/^\d+$/.test(id)) continue;
+            const photo = await fetchGraphPhotoById(
+              id,
+              graphPageId,
+              tokenForPage,
+            );
+            if (photo) {
+              forcedPosts.push(normalizeGraphPost(photo));
+            } else {
+              result.errors.push(
+                `Photo album fbid=${id} introuvable (Graph API)`,
+              );
+            }
+          }
+          const seen = new Set(importPosts.map((p) => p.id));
+          for (const p of forcedPosts) {
+            if (!seen.has(p.id)) {
+              importPosts = [p, ...importPosts];
+              seen.add(p.id);
+            }
+          }
+          result.fetched += forcedPosts.length;
+        }
+
         result.importProcessed = importPosts.length;
         articleImports.push({
           posts: importPosts,

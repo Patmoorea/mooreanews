@@ -49,9 +49,18 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const start = Date.now();
+  const url = new URL(req.url);
+  const forcePhotoFbids = [
+    ...url.searchParams.getAll("fbid"),
+    ...(url.searchParams.get("fbids")?.split(/[,;\s]+/) ?? []),
+  ]
+    .map((s) => s.trim())
+    .filter((s) => /^\d+$/.test(s));
+
   const result = await aggregateFacebookPagesGraph({
     light: true,
     recentImportLimit: facebookCronRecentPostLimit(),
+    forcePhotoFbids: forcePhotoFbids.length > 0 ? forcePhotoFbids : undefined,
   });
   const fbcdnRemaining = await countFbcdnCoversInDb();
   const warnings = result.warnings ?? [];
@@ -99,6 +108,7 @@ export async function GET(req: Request) {
     durationMs,
     mode: "light",
     recentLimit: facebookCronRecentPostLimit(),
+    forcePhotoFbids: forcePhotoFbids.length > 0 ? forcePhotoFbids : undefined,
     importProcessed: result.importProcessed ?? facebookCronRecentPostLimit(),
     graphFetched: result.fetched,
     fbcdnRemaining,
