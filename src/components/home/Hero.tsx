@@ -118,16 +118,20 @@ export function Hero() {
         <div className="max-w-6xl mx-auto lg:grid lg:grid-cols-[1fr_auto] lg:gap-10 lg:items-center">
           {/* Carte glass principale */}
           <div className="rounded-3xl border border-white/20 bg-white/10 backdrop-blur-xl shadow-[0_24px_80px_-20px_rgba(8,59,102,0.65)] p-6 sm:p-10">
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 sm:gap-3">
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white text-[11px] sm:text-xs uppercase tracking-widest font-semibold">
-                <span aria-hidden>{TROPICAL_EMOJI.welcome}</span>
-                Ia ora na
-              </span>
-              <HeroWeatherPill />
-              <OutageSticker />
-              <GardeWeekendSticker />
-              <WeeklyRecapSticker />
-              <EmploymentSticker />
+            <div className="flex flex-col gap-2.5 sm:gap-3">
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 sm:gap-3">
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white text-[11px] sm:text-xs uppercase tracking-widest font-semibold">
+                  <span aria-hidden>{TROPICAL_EMOJI.welcome}</span>
+                  Ia ora na
+                </span>
+                <HeroWeatherPill />
+              </div>
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 sm:gap-3">
+                <OutageSticker />
+                <GardeWeekendSticker />
+                <WeeklyRecapSticker />
+                <EmploymentSticker />
+              </div>
             </div>
 
             <h1 className="mt-5 font-display text-3xl sm:text-4xl lg:text-5xl text-center lg:text-left text-balance leading-[1.08] text-white drop-shadow-sm">

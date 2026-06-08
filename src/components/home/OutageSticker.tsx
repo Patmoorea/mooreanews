@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Droplets, Zap } from "lucide-react";
+import {
+  HERO_STICKER_ACCENTS,
+  HeroStickerVignette,
+} from "@/components/home/HeroStickerVignette";
 
 type OutageRow = {
   id: string;
@@ -112,16 +114,14 @@ export function OutageSticker() {
     Date.parse(outage.endsAt) >= Date.now();
 
   return (
-    <Link
+    <HeroStickerVignette
       href="/coupures"
-      className={`inline-flex items-center gap-2 max-w-[min(100%,22rem)] px-3 py-1.5 rounded-full backdrop-blur-md border text-white text-[11px] sm:text-xs font-semibold shadow-lg transition-colors ${
-        inProgress
-          ? "bg-red-600/95 border-red-400/70 shadow-red-950/40 animate-pulse"
-          : "bg-orange-700/90 border-orange-400/60 shadow-orange-950/30 hover:bg-orange-600"
-      }`}
-    >
-      <Icon size={14} className="shrink-0" aria-hidden />
-      <span className="truncate">{labelFor(outage)}</span>
-    </Link>
+      label={labelFor(outage)}
+      icon={Icon}
+      accent={
+        inProgress ? HERO_STICKER_ACCENTS.coupure : HERO_STICKER_ACCENTS.coupureCalm
+      }
+      pulse={inProgress}
+    />
   );
 }

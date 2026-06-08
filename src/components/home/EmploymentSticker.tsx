@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Briefcase } from "lucide-react";
-import { HERO_PILL_GLASS, heroPillSurface } from "@/components/home/hero-sticker-pill";
+import {
+  HERO_STICKER_ACCENTS,
+  HeroStickerVignette,
+} from "@/components/home/HeroStickerVignette";
 
 type JobRow = {
   id: string;
@@ -14,12 +16,6 @@ type JobRow = {
 };
 
 const NEW_DAYS = 3;
-
-function tahitiDateKey(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-CA", {
-    timeZone: "Pacific/Tahiti",
-  });
-}
 
 function isNewOffer(fetchedAt: string): boolean {
   const ageMs = Date.now() - Date.parse(fetchedAt);
@@ -62,7 +58,7 @@ function labelFor(jobs: JobRow[]): string {
   return `Offre emploi · ${truncateTitle(job.title)} · ${shortSource(job.sourceName)}`;
 }
 
-/** Pastille compacte sur le hero — offres d'emploi récentes à Moorea. */
+/** Vignette hero — offres d'emploi récentes à Moorea. */
 export function EmploymentSticker() {
   const [label, setLabel] = useState<string | null>(null);
   const [isFresh, setIsFresh] = useState(false);
@@ -104,16 +100,12 @@ export function EmploymentSticker() {
   if (!label) return null;
 
   return (
-    <Link
+    <HeroStickerVignette
       href="/emploi-formation"
-      className={`inline-flex items-center gap-2 max-w-[min(100%,24rem)] px-3 py-1.5 ${HERO_PILL_GLASS} ${heroPillSurface(isFresh)}`}
-    >
-      <Briefcase
-        size={14}
-        className={`shrink-0 ${isFresh ? "text-soleil-300" : "text-white/80"}`}
-        aria-hidden
-      />
-      <span className="truncate">{label}</span>
-    </Link>
+      label={label}
+      icon={Briefcase}
+      accent={HERO_STICKER_ACCENTS.emploi}
+      isFresh={isFresh}
+    />
   );
 }
