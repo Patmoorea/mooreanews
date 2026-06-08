@@ -49,6 +49,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const fbidSearch = url.searchParams.get("fbid")?.trim();
   const textSearch = url.searchParams.get("q")?.trim().toLowerCase();
+  const daySearch = url.searchParams.get("day")?.trim();
 
   const recent = posts.slice(0, 20).map((post) => {
     const message = post.message?.trim() ?? "";
@@ -139,6 +140,27 @@ export async function GET(req: Request) {
           }))
       : undefined;
 
+  const dayMatches =
+    daySearch && /^\d{4}-\d{2}-\d{2}$/.test(daySearch)
+      ? posts
+          .filter((p) => p.created_time?.startsWith(daySearch))
+          .slice(0, 30)
+          .map((post) => ({
+            id: post.id,
+            created_time: post.created_time,
+            tahiti: post.created_time
+              ? new Date(post.created_time).toLocaleString("fr-FR", {
+                  timeZone: "Pacific/Tahiti",
+                  dateStyle: "short",
+                  timeStyle: "short",
+                })
+              : null,
+            hasImage: Boolean(post.full_picture?.trim()),
+            messagePreview: post.message?.slice(0, 120) || null,
+            permalink: post.permalink_url,
+          }))
+      : undefined;
+
   return NextResponse.json({
     ok: true,
     fetched: posts.length,
@@ -146,6 +168,8 @@ export async function GET(req: Request) {
     fbidMatch,
     textSearch: textSearch || undefined,
     textMatches,
+    daySearch: daySearch || undefined,
+    dayMatches,
     missingOnSite: recent.filter((p) => !p.onSite),
     incompleteOnSite: recent.filter((p) => p.onSite && !p.completeOnSite),
     recent,
