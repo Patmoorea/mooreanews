@@ -36,8 +36,19 @@ if (!process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
   console.error("SUPABASE_SERVICE_ROLE_KEY manquant dans .env.local");
   process.exit(1);
 }
-if (!process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim()) {
-  console.error("FACEBOOK_PAGE_ACCESS_TOKEN manquant dans .env.local");
+
+const hasPageToken = Boolean(process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim());
+const hasUserToken = Boolean(process.env.FACEBOOK_USER_ACCESS_TOKEN?.trim());
+
+if (!hasPageToken && !hasUserToken) {
+  console.error(
+    "Jeton Meta manquant dans .env.local.\n\n" +
+      "Ajoutez au moins l’un des deux (copie depuis Vercel → Settings → Environment Variables) :\n" +
+      "  • FACEBOOK_USER_ACCESS_TOKEN  (recommandé — récupère MooreaNews via /me/accounts)\n" +
+      "  • FACEBOOK_PAGE_ACCESS_TOKEN  (jeton page MooreaNews, id 350029589936)\n\n" +
+      "Optionnel pour renouvellement auto du jeton user :\n" +
+      "  FACEBOOK_APP_ID, FACEBOOK_APP_SECRET\n",
+  );
   process.exit(1);
 }
 
@@ -59,7 +70,8 @@ async function main() {
   console.log(JSON.stringify(result, null, 2));
   console.log(
     `\n✓ ${result.fetched} posts lus · ${result.inserted} externes · ` +
-      `${result.articlesCreated ?? 0} articles · ` +
+      `${result.articlesCreated ?? 0} articles créés · ` +
+      `${result.articlesRepaired ?? 0} articles réparés · ` +
       `${result.eventsCreated ?? 0} événements · ` +
       `${result.announcementsCreated ?? 0} annonces`,
   );

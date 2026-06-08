@@ -360,8 +360,24 @@ export async function importFacebookPostsAsContent(
   let newImported = 0;
 
   for (const raw of posts) {
-    if (config.importAllFeedPosts && newImported >= maxNewPerRun) break;
     const slug = slugForPost(config.pageKey, raw.id);
+
+    if (config.importAllFeedPosts && newImported >= maxNewPerRun) {
+      const supabase = getAdminSupabase();
+      if (supabase) {
+        const { data: existing } = await supabase
+          .from("articles")
+          .select("id, slug, title, excerpt, body, cover_url")
+          .eq("slug", slug)
+          .maybeSingle();
+        if (!(existing && isFacebookArticleNeedsRepair(existing))) {
+          break;
+        }
+      } else {
+        break;
+      }
+    }
+
     const filterOpts = config.importAllFeedPosts
       ? { importAllFeedPosts: true as const }
       : undefined;

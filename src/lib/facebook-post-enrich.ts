@@ -8,7 +8,7 @@ import { fetchOpenGraph } from "@/lib/open-graph";
 import { cleanImportedText } from "@/lib/html-entities";
 
 export const GRAPH_POST_DETAIL_FIELDS =
-  "id,message,permalink_url,created_time,full_picture,status_type,attachments{description,title,media_type,url,media{image{src}},subattachments{data{description,title,media_type,media{image{src}}}}}";
+  "id,message,permalink_url,created_time,full_picture,picture,status_type,attachments{description,title,media_type,url,media{image{src}},subattachments{data{description,title,media_type,media{image{src}}}}}";
 
 type GraphAttachment = {
   description?: string;
@@ -25,9 +25,18 @@ export type GraphPostRaw = {
   permalink_url?: string;
   created_time?: string;
   full_picture?: string;
+  picture?: string | { data?: { url?: string } };
   status_type?: string;
   attachments?: { data?: GraphAttachment[] };
 };
+
+function pictureUrlFromGraph(
+  picture: GraphPostRaw["picture"],
+): string {
+  if (!picture) return "";
+  if (typeof picture === "string") return picture.trim();
+  return picture.data?.url?.trim() ?? "";
+}
 
 function bestImageFromAttachments(
   attachments: GraphAttachment[] | undefined,
@@ -63,6 +72,10 @@ function textFromAttachments(attachments: GraphAttachment[] | undefined): string
 export function normalizeGraphPostRaw(raw: GraphPostRaw): FacebookPostForImport {
   let message = cleanImportedText(raw.message?.trim() ?? "");
   let full_picture = raw.full_picture?.trim() ?? "";
+  const graphPicture = pictureUrlFromGraph(raw.picture);
+  if (graphPicture && graphPicture.length > full_picture.length) {
+    full_picture = graphPicture;
+  }
   const attImage = bestImageFromAttachments(raw.attachments?.data);
   if (attImage && attImage.length > full_picture.length) {
     full_picture = attImage;

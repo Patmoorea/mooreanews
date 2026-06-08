@@ -185,8 +185,13 @@ export function isEmptyFacebookArticleShell(row: {
     .replace(/^Publication Facebook — [^.]+\.?\s*$/i, "")
     .trim();
 
-  const genericTitle = /— publication$/i.test(row.title.trim());
-  if (genericTitle) {
+  const title = row.title.trim();
+  const isGenericAffiche = /— affiche\s·/i.test(title);
+  if (isGenericAffiche) return true;
+
+  const isGenericPublication =
+    /— publication$/i.test(title) || /— publication\s·/i.test(title);
+  if (isGenericPublication) {
     return stripped.length < 20;
   }
 
@@ -229,6 +234,7 @@ export function isFacebookArticleNeedsRepair(row: {
   body: string;
   cover_url?: string | null;
 }): boolean {
+  if (isEmptyFacebookArticleShell(row)) return true;
   if (isFacebookJunkText(row.title)) return true;
   if (/^facebook$/i.test(row.title.trim())) return true;
   if (isFacebookJunkText(row.excerpt ?? "")) return true;

@@ -175,7 +175,7 @@ async function resolveGraphPageId(
 
 const GRAPH_POST_FIELDS_FULL = GRAPH_POST_DETAIL_FIELDS;
 const GRAPH_POST_FIELDS_MINIMAL =
-  "id,message,permalink_url,created_time,full_picture";
+  "id,message,permalink_url,created_time,full_picture,picture";
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
