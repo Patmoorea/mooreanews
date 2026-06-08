@@ -377,6 +377,52 @@ async function graphPostFromPhotoFbidFallback(
   };
 }
 
+function mergeGraphPosts(base: GraphPost, extra: GraphPost): GraphPost {
+  const baseMsg = base.message?.trim() ?? "";
+  const extraMsg = extra.message?.trim() ?? "";
+  return {
+    ...base,
+    full_picture: extra.full_picture?.trim() || base.full_picture,
+    message:
+      extraMsg.length > baseMsg.length ? extra.message : base.message ?? extra.message,
+    permalink_url: base.permalink_url ?? extra.permalink_url,
+    created_time: base.created_time ?? extra.created_time,
+  };
+}
+
+function mergeUploadedPhotosIntoPosts(
+  byId: Map<string, GraphPost>,
+  photos: GraphPost[],
+): void {
+  for (const photo of photos) {
+    const norm = normalizeGraphPost(photo);
+    const prev = byId.get(norm.id);
+    if (prev) {
+      byId.set(norm.id, mergeGraphPosts(prev, norm));
+      continue;
+    }
+
+    const photoTime = Date.parse(norm.created_time ?? "");
+    let merged = false;
+    if (!Number.isNaN(photoTime) && norm.full_picture?.trim()) {
+      for (const [id, post] of byId) {
+        if (post.full_picture?.trim()) continue;
+        const postTime = Date.parse(post.created_time ?? "");
+        if (Number.isNaN(postTime)) continue;
+        if (Math.abs(postTime - photoTime) <= 45 * 60 * 1000) {
+          byId.set(id, mergeGraphPosts(post, norm));
+          merged = true;
+          break;
+        }
+      }
+    }
+
+    if (!merged) {
+      byId.set(norm.id, norm);
+    }
+  }
+}
+
 async function fetchPagePosts(
   page: FacebookPageWatch,
   token: string,
@@ -459,20 +505,13 @@ async function fetchPagePosts(
 
   if (page.id === "moorea-news") {
     try {
-      const knownIds = numericIdsFromGraphPosts(byId.values());
       const photos = await fetchPageUploadedPhotos(
         graphPageId,
         token,
         light ? 50 : 50,
-        light ? 3 : 4,
+        light ? 6 : 6,
       );
-      for (const photo of photos) {
-        const photoNumeric = photo.id.split("_").pop() ?? photo.id;
-        if (knownIds.has(photoNumeric)) continue;
-        const norm = normalizeGraphPost(photo);
-        byId.set(norm.id, norm);
-        knownIds.add(photoNumeric);
-      }
+      mergeUploadedPhotosIntoPosts(byId, photos);
     } catch {
       /* photos optionnel si Meta refuse l’edge */
     }
@@ -846,7 +885,7 @@ export async function listMooreaNewsGraphPosts(): Promise<
   });
   if (!token) return [];
 
-  return fetchPagePosts(page, token, { light: true });
+  return fetchPagePosts(page, token, { light: false });
 }
 
 /** Derniers posts Facebook Commune de Moorea-Maiao (garde, actualités). */

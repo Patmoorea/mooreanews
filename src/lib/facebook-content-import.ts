@@ -100,11 +100,18 @@ function articleTitleFromPost(
   config: FacebookPageImportConfig,
   hasImage: boolean,
   publishedAt: string,
+  imageCaption?: string,
 ): string {
   const clean = message.trim();
   if (clean && !isFacebookJunkText(clean)) {
     const fromMsg = titleFromMessage(clean, "");
     if (fromMsg && !isFacebookJunkText(fromMsg)) return fromMsg;
+  }
+  const cap = imageCaption?.trim() ?? "";
+  if (cap && !isFacebookJunkText(cap) && cap.length >= 8) {
+    const fromCap = titleFromMessage(cap, "");
+    if (fromCap && !isFacebookJunkText(fromCap)) return fromCap;
+    return cap.slice(0, 120);
   }
   const timeLabel = tahitiTimeLabel(publishedAt);
   return hasImage
@@ -474,13 +481,34 @@ export async function importFacebookPostsAsContent(
   let repairsThisRun = 0;
   let coverPersistsThisRun = 0;
   const maxFullRepairs = config.cronLight
-    ? 3
+    ? 12
     : config.importAllFeedPosts
       ? facebookCronMaxRepairsPerRun()
       : posts.length;
-  const maxCoverPersists = config.cronLight ? 8 : 40;
+  const maxCoverPersists = config.cronLight ? 10 : 40;
 
-  for (const raw of posts) {
+  const sortedPosts =
+    config.cronLight && config.importAllFeedPosts
+      ? [...posts].sort((a, b) => {
+          const slugA = slugForPost(config.pageKey, a.id);
+          const slugB = slugForPost(config.pageKey, b.id);
+          const exA = existingBySlug.get(slugA);
+          const exB = existingBySlug.get(slugB);
+          const priA = !exA
+            ? 2
+            : isFacebookArticleNeedsRepair({ ...exA, slug: slugA })
+              ? 0
+              : 3;
+          const priB = !exB
+            ? 2
+            : isFacebookArticleNeedsRepair({ ...exB, slug: slugB })
+              ? 0
+              : 3;
+          return priA - priB;
+        })
+      : posts;
+
+  for (const raw of sortedPosts) {
     const slug = slugForPost(config.pageKey, raw.id);
     const filterOpts = config.importAllFeedPosts
       ? { importAllFeedPosts: true as const }
