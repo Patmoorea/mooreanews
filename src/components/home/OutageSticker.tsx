@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Droplets, Zap } from "lucide-react";
 import {
   HERO_STICKER_ACCENTS,
   HeroStickerVignette,
