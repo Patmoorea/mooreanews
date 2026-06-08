@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { buildWeeklyRecapSnapshotForWeekStart } from "@/lib/weekly-recap-data";
 import {
   WeeklyRecapPosterElement,
-  WEEKLY_RECAP_POSTER_SIZE,
+  weeklyRecapPosterSize,
 } from "@/lib/weekly-recap-poster";
 
 export const runtime = "nodejs";
@@ -21,7 +21,7 @@ export async function GET(
     const snap = await buildWeeklyRecapSnapshotForWeekStart(weekStart);
     return new ImageResponse(
       WeeklyRecapPosterElement({ snap }),
-      WEEKLY_RECAP_POSTER_SIZE,
+      weeklyRecapPosterSize(snap),
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
