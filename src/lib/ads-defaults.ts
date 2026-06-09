@@ -1,26 +1,47 @@
 import type { AdCampaign, AdSlotDefinition } from "@/lib/ads-types";
 
-const MAITAI_ADS = "/images/ads/moorea-maitai";
+const MAITAI = "/images/ads/moorea-maitai/separees";
+
+/** Visuels natifs extraits du composite ChatGPT (sans redimensionnement destructif). */
+const B = {
+  billboard: `${MAITAI}/moorea-maitai-01-billboard-top-grande.png`,
+  skyscraper: `${MAITAI}/moorea-maitai-02-skyscraper-vertical.png`,
+  coucher: `${MAITAI}/moorea-maitai-03-rectangle-coucher-soleil.png`,
+  reserver: `${MAITAI}/moorea-maitai-04-rectangle-reserver.png`,
+  bonsMoments: `${MAITAI}/moorea-maitai-05-bons-moments-reserver.png`,
+  leaderboard: `${MAITAI}/moorea-maitai-06-leaderboard-bottom.png`,
+  ribbon: `${MAITAI}/moorea-maitai-07-ribbon-footer.png`,
+} as const;
 
 export const DEFAULT_AD_CAMPAIGNS: Record<string, AdCampaign> = {
   "moorea-maitai": {
     id: "moorea-maitai",
     name: "Moorea Maitai — Snack Bar",
-    image: `${MAITAI_ADS}/moorea-maitai-ad-billboard-970x250.png`,
-    imageWidth: 970,
-    imageHeight: 250,
+    image: B.billboard,
+    imageWidth: 816,
+    imageHeight: 259,
     formatImages: {
-      leaderboard: `${MAITAI_ADS}/moorea-maitai-ad-leaderboard-728x90.png`,
-      billboard: `${MAITAI_ADS}/moorea-maitai-ad-billboard-970x250.png`,
-      rectangle: `${MAITAI_ADS}/moorea-maitai-ad-rectangle-300x250.png`,
-      sidebar: `${MAITAI_ADS}/moorea-maitai-ad-rectangle-300x250.png`,
-      card: `${MAITAI_ADS}/moorea-maitai-ad-card-300x200.png`,
-      ribbon: `${MAITAI_ADS}/moorea-maitai-ad-ribbon-468x60.png`,
+      leaderboard: B.leaderboard,
+      billboard: B.billboard,
+      rectangle: B.coucher,
+      sidebar: B.coucher,
+      card: B.bonsMoments,
+      ribbon: B.ribbon,
     },
+    /** Chaque emplacement = visuel différent quand possible (7 créas, 12 slots). */
     slotImages: {
-      "home-map": `${MAITAI_ADS}/moorea-maitai-ad-billboard-sunset-970x250.png`,
-      "evenements-top": `${MAITAI_ADS}/moorea-maitai-ad-billboard-sunset-970x250.png`,
-      "restaurants-inline": `${MAITAI_ADS}/moorea-maitai-ad-rectangle-compact-300x250.png`,
+      "home-leaderboard": B.leaderboard,
+      "home-articles": B.billboard,
+      "home-events": B.coucher,
+      "home-map": B.skyscraper,
+      "actualites-top": B.reserver,
+      "actualites-inline": B.bonsMoments,
+      "article-bottom": B.billboard,
+      "restaurants-top": B.leaderboard,
+      "restaurants-inline": B.reserver,
+      "evenements-top": B.skyscraper,
+      "visiteurs-mid": B.coucher,
+      "footer-sponsors": B.ribbon,
     },
     href: "https://www.facebook.com/profile.php?id=61555377901751",
     alt: "Moorea Maitai Snack Bar — Sunset Beach Maharepa, cuisine locale, tapas, grillades, fruits de mer. 7/7 11h-21h",
