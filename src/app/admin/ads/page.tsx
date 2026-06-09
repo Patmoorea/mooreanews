@@ -39,7 +39,7 @@ export default async function AdminAdsPage({ searchParams }: Props) {
         </p>
       )}
 
-      {!dbReady && (
+      {!dbReady ? (
         <div className="rounded-2xl border border-soleil-200 bg-soleil-50 p-5 text-sm text-ocean-800">
           <p className="font-semibold">Activer la gestion en base</p>
           <p className="mt-2">
@@ -53,6 +53,21 @@ export default async function AdminAdsPage({ searchParams }: Props) {
               className="px-4 py-2 rounded-full bg-ocean-950 text-white text-sm font-semibold hover:bg-ocean-900"
             >
               Initialiser les publicités
+            </button>
+          </form>
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-ocean-100 bg-ocean-50/60 p-4 text-sm text-ocean-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <p>
+            Met à jour la campagne Moorea Maitai et les 12 emplacements avec les visuels IAB du
+            déploiement (970×250, 728×90, etc.).
+          </p>
+          <form action={seedAdDefaults} className="shrink-0">
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-full border border-ocean-200 bg-white text-ocean-900 text-sm font-semibold hover:bg-ocean-50"
+            >
+              Resynchroniser les valeurs par défaut
             </button>
           </form>
         </div>
