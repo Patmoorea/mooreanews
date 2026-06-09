@@ -13,8 +13,10 @@ export type AdCampaign = {
   image: string;
   imageWidth: number;
   imageHeight: number;
-  /** Visuels aux dimensions IAB exactes, par emplacement. */
+  /** Visuels aux dimensions IAB exactes, par format. */
   formatImages?: Partial<Record<AdFormat, string>>;
+  /** Visuels dédiés par emplacement (prioritaire sur formatImages). */
+  slotImages?: Partial<Record<string, string>>;
   href: string;
   alt: string;
   sponsor?: string;

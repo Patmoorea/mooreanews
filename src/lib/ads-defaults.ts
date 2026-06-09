@@ -17,6 +17,11 @@ export const DEFAULT_AD_CAMPAIGNS: Record<string, AdCampaign> = {
       card: `${MAITAI_ADS}/moorea-maitai-ad-card-300x200.png`,
       ribbon: `${MAITAI_ADS}/moorea-maitai-ad-ribbon-468x60.png`,
     },
+    slotImages: {
+      "home-map": `${MAITAI_ADS}/moorea-maitai-ad-billboard-sunset-970x250.png`,
+      "evenements-top": `${MAITAI_ADS}/moorea-maitai-ad-billboard-sunset-970x250.png`,
+      "restaurants-inline": `${MAITAI_ADS}/moorea-maitai-ad-rectangle-compact-300x250.png`,
+    },
     href: "https://www.facebook.com/profile.php?id=61555377901751",
     alt: "Moorea Maitai Snack Bar — Sunset Beach Maharepa, cuisine locale, tapas, grillades, fruits de mer. 7/7 11h-21h",
     sponsor: "Moorea Maitai",
