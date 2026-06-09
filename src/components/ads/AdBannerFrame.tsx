@@ -10,18 +10,17 @@ type Props = {
   className?: string;
 };
 
-/** Affiche une créa dans un cadre aux dimensions pub standard (IAB). */
+/** Affiche une créa aux dimensions IAB — sans recadrage (object-contain). */
 export function AdBannerFrame({ src, alt, format, className }: Props) {
   const spec = AD_FORMAT_DISPLAY[format];
 
   return (
     <div
       className={cn(
-        "relative w-full mx-auto overflow-hidden bg-ocean-100",
+        "mx-auto w-full bg-black",
         spec.maxWidthClass,
         className,
       )}
-      style={{ aspectRatio: `${spec.width} / ${spec.height}` }}
     >
       <Image
         src={src}
@@ -29,7 +28,7 @@ export function AdBannerFrame({ src, alt, format, className }: Props) {
         width={spec.width}
         height={spec.height}
         sizes={`(max-width: 768px) 100vw, ${spec.width}px`}
-        className="block h-auto w-full"
+        className="block h-auto w-full object-contain"
         priority={format === "leaderboard"}
       />
     </div>
