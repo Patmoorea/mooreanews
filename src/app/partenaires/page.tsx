@@ -5,6 +5,7 @@ import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 import { RaiTahitiSpotlight } from "@/components/RaiTahitiSpotlight";
 import { SITE } from "@/lib/constants";
+import { AD_INVENTORY } from "@/lib/ads";
 
 export const metadata: Metadata = {
   title: "Annonceurs & partenaires",
@@ -122,6 +123,52 @@ export default function PartenairesPage() {
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="mt-10 rounded-3xl border border-ocean-100 bg-white overflow-hidden shadow-[var(--shadow-soft)]">
+          <div className="px-6 py-4 bg-gradient-to-r from-lagon-50 to-ocean-50 border-b border-ocean-100">
+            <h3 className="font-display text-xl text-ocean-950">
+              Emplacements publicitaires sur MooreaNews
+            </h3>
+            <p className="mt-1 text-sm text-ocean-600">
+              Plusieurs zones visibles sur l&apos;accueil, les actualités, les restaurants
+              et la page visiteurs — tarifs indicatifs / mois.
+            </p>
+          </div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-ocean-100 bg-ocean-50/50">
+                <th className="text-left font-semibold text-ocean-900 px-6 py-3">
+                  Emplacement
+                </th>
+                <th className="text-left font-semibold text-ocean-900 px-6 py-3 hidden sm:table-cell">
+                  Format
+                </th>
+                <th className="text-left font-semibold text-ocean-900 px-6 py-3 hidden md:table-cell">
+                  Zone
+                </th>
+                <th className="text-right font-semibold text-ocean-900 px-6 py-3">
+                  À partir de
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {AD_INVENTORY.map((row) => (
+                <tr key={row.slot} className="border-b border-ocean-100 last:border-0">
+                  <td className="px-6 py-4 font-medium text-ocean-900">{row.slot}</td>
+                  <td className="px-6 py-4 text-ocean-600 hidden sm:table-cell">
+                    {row.format}
+                  </td>
+                  <td className="px-6 py-4 text-ocean-600 hidden md:table-cell">
+                    {row.placement}
+                  </td>
+                  <td className="px-6 py-4 text-right text-ocean-800 font-semibold whitespace-nowrap">
+                    {row.fromXpf} XPF
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
         <div className="mt-10 rounded-3xl border border-ocean-100 bg-white overflow-hidden shadow-[var(--shadow-soft)]">

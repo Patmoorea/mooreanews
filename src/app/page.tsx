@@ -7,6 +7,7 @@ import { MooreaDuJour } from "@/components/home/MooreaDuJour";
 import { HomeSectionNav } from "@/components/home/HomeSectionNav";
 import { LiveDashboard } from "@/components/home/LiveDashboard";
 import { FeaturedArticles } from "@/components/home/FeaturedArticles";
+import { AdSlot } from "@/components/ads/AdSlot";
 import { ExternalArticles } from "@/components/ExternalArticles";
 import { UpcomingEvents } from "@/components/home/UpcomingEvents";
 import { WeekendAgenda } from "@/components/home/WeekendAgenda";
@@ -27,6 +28,7 @@ export default function HomePage() {
   return (
     <>
       <Hero />
+      <AdSlot slotId="home-leaderboard" fullBleed />
       <SafetyCampaignSlot />
       <HealthOnCallSlot />
       <PushAlertBanner />
@@ -35,9 +37,12 @@ export default function HomePage() {
       <LiveDashboard />
       <WeekendAgenda />
       <FeaturedArticles />
+      <AdSlot slotId="home-articles" fullBleed />
       <UpcomingEvents />
+      <AdSlot slotId="home-events" />
       <RecentAnnouncements />
       <ExternalArticles limit={6} />
+      <AdSlot slotId="home-map" fullBleed />
       <InteractiveMap />
       <CommunityCTA />
     </>

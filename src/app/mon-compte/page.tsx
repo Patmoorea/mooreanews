@@ -4,12 +4,14 @@ import { redirect } from "next/navigation";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { staticPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = staticPageMetadata({
   title: "Mon compte",
   description: "Mes quartiers, alertes et favoris MooreaNews.",
-  alternates: { canonical: "/mon-compte" },
-};
+  path: "/mon-compte",
+  index: false,
+});
 
 export default async function MonComptePage() {
   const supabase = await getServerSupabase();

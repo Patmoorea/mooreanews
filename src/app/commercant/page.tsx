@@ -9,12 +9,14 @@ import { PremiumAccommodationButton } from "@/components/commerce/PremiumAccommo
 import { getRestaurants } from "@/lib/content";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { stripePublicEnabled, formatXpf, STRIPE_PRICES } from "@/lib/stripe";
+import { staticPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = staticPageMetadata({
   title: "Espace commerçant",
   description:
     "Restaurants, hébergements et commerces Moorea : premium et visibilité sur MooreaNews.",
-};
+  path: "/commercant",
+});
 
 type Props = {
   searchParams: Promise<{ premium?: string; accommodation_premium?: string }>;

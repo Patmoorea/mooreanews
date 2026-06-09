@@ -7,6 +7,7 @@ import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { resolveCoverImage } from "@/lib/cover-image";
 import { ShareButtons } from "@/components/ShareButtons";
+import { AdSlot } from "@/components/ads/AdSlot";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getArticleBySlug, getArticles } from "@/lib/content";
 import { formatDateFR } from "@/lib/utils";
@@ -148,6 +149,8 @@ export default async function ArticlePage({ params }: Props) {
             description={article.excerpt}
           />
         </div>
+
+        <AdSlot slotId="article-bottom" className="mt-10" />
       </Container>
 
       {/* Articles liés */}

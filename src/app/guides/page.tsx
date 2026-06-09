@@ -3,12 +3,14 @@ import Link from "next/link";
 import { ArrowRight, BookOpen } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
+import { staticPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = staticPageMetadata({
   title: "Guides Moorea",
   description:
     "Guides pratiques : ferry Tahiti–Moorea, 48h sur l'île, infos essentielles.",
-};
+  path: "/guides",
+});
 
 const GUIDES = [
   {

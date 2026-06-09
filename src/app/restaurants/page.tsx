@@ -1,12 +1,14 @@
-import type { Metadata } from "next";
 import Link from "next/link";
+import { Fragment } from "react";
 import { MapPin, Phone, Clock, Star, ArrowRight } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/PageHeader";
 import { RestaurantPriceLevel } from "@/components/RestaurantPriceLevel";
 import { PublicationCover } from "@/components/PublicationCover";
+import { AdSlot } from "@/components/ads/AdSlot";
 import { getRestaurants, restaurantToOpenMeta } from "@/lib/content";
+import { listingPageMetadata } from "@/lib/seo";
 import {
   listOpenRestaurantsNow,
   resolveRestaurantOpenStatus,
@@ -15,11 +17,12 @@ import {
   isOpenStatusConfigured,
 } from "@/lib/restaurant-open-status";
 
-export const metadata: Metadata = {
+export const metadata = listingPageMetadata({
   title: "Restaurants de Moorea",
   description:
     "Tous les restaurants de Moorea : cuisine locale, gastronomique, brunch, roulottes. Trouvez votre table de l'île.",
-};
+  path: "/restaurants",
+});
 
 export default async function RestaurantsPage({
   searchParams,
@@ -92,6 +95,8 @@ export default async function RestaurantsPage({
           </p>
         )}
 
+        <AdSlot slotId="restaurants-top" className="mb-8" />
+
         {openOnly && items.length === 0 && (
           <p className="text-center text-ocean-600 py-12">
             Aucun restaurant confirmé ouvert pour l&apos;instant. Les statuts viennent de
@@ -101,13 +106,18 @@ export default async function RestaurantsPage({
         )}
 
         <div className="grid gap-6 lg:grid-cols-2">
-          {items.map((r) => {
+          {items.map((r, index) => {
             const status = statusBySlug.get(r.slug);
             const isOpen = status?.state === "open";
             const isClosed = status?.state === "closed";
             return (
+              <Fragment key={r.slug}>
+              {index === 2 && (
+                <div className="lg:col-span-2">
+                  <AdSlot slotId="restaurants-inline" />
+                </div>
+              )}
               <article
-                key={r.slug}
                 className="group relative bg-white rounded-2xl border border-ocean-100 overflow-hidden shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:border-tiare-200 hover:-translate-y-0.5 transition-all flex flex-col sm:flex-row"
               >
                 <Link
@@ -210,6 +220,7 @@ export default async function RestaurantsPage({
                   </div>
                 </div>
               </article>
+              </Fragment>
             );
           })}
         </div>

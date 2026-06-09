@@ -69,11 +69,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.55,
     })),
     ...hebergements.map((h) => ({
-      url: absoluteUrl(`/hebergements/${h.slug}`),
-      lastModified: now,
-      changeFrequency: "monthly" as const,
-      priority: 0.6,
-    })),
+        url: absoluteUrl(`/hebergements/${h.slug}`),
+        lastModified: now,
+        changeFrequency: "monthly" as const,
+        priority: 0.6,
+      })),
   ];
 
   return [...staticRoutes, ...dynamicRoutes];

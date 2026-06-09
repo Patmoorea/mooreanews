@@ -7,8 +7,10 @@ import { NewsletterForm } from "@/components/NewsletterForm";
 import { FacebookIcon, InstagramIcon, WhatsAppIcon } from "@/components/ui/SocialIcons";
 import { Logo } from "@/components/ui/Logo";
 import { WaveDivider } from "@/components/decor/TropicalDecor";
+import { AdSponsorsStrip } from "@/components/ads/AdSponsorsStrip";
+import type { AdCampaign } from "@/lib/ads-types";
 
-export function Footer() {
+export function Footer({ sponsorCampaigns = [] }: { sponsorCampaigns?: AdCampaign[] }) {
   return (
     <footer className="relative mt-20 bg-gradient-to-b from-ocean-800 via-ocean-900 to-ocean-950 text-ocean-100">
       <WaveDivider className="absolute top-0 left-0 right-0 -translate-y-full text-lagon-100" flip />
@@ -172,6 +174,8 @@ export function Footer() {
           </div>
         </div>
       </Container>
+
+      <AdSponsorsStrip campaigns={sponsorCampaigns} />
 
       {/* Copyright */}
       <div className="border-t border-ocean-800/60">

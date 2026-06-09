@@ -11,12 +11,14 @@ import {
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
+import { staticPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = staticPageMetadata({
   title: "À propos — MooreaNews",
   description:
     "MooreaNews, l'info de Moorea en Polynésie française : un projet communautaire, gratuit, automatisé pour centraliser toute l'info de l'île.",
-};
+  path: "/a-propos",
+});
 
 const VALUES: { icon: LucideIcon; title: string; desc: string }[] = [
   {

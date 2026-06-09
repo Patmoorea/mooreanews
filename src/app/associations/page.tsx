@@ -4,12 +4,14 @@ import { ExternalLink } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 import { MOOREA_ASSOCIATIONS, MOOREA_COMMUNITY_LINKS } from "@/lib/constants";
+import { staticPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = staticPageMetadata({
   title: "Associations & collectifs — MooreaNews",
   description:
     "Associations, fédérations et collectifs qui œuvrent pour Moorea : environnement, culture, jeunesse, protection du lagon.",
-};
+  path: "/associations",
+});
 
 export default function AssociationsPage() {
   return (

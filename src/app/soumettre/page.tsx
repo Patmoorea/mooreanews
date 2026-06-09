@@ -3,12 +3,14 @@ import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 import { SubmitForm } from "@/components/SubmitForm";
 import { CheckCircle2, Clock, Eye, Megaphone } from "lucide-react";
+import { staticPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = staticPageMetadata({
   title: "Publier une info — Moorea",
   description:
     "Publiez gratuitement votre événement, annonce, service ou info pratique sur MooreaNews. Validation sous 24h.",
-};
+  path: "/soumettre",
+});
 
 export default function SoumettrePage() {
   return (

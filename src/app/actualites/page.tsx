@@ -4,6 +4,7 @@ import { Users } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 import { ArticlesFilter } from "@/components/ArticlesFilter";
+import { AdSlot } from "@/components/ads/AdSlot";
 import { ExternalArticles } from "@/components/ExternalArticles";
 import { getArticles } from "@/lib/content";
 import { listingPageMetadata } from "@/lib/seo";
@@ -58,7 +59,8 @@ export default async function ActualitesPage() {
             Flux RSS
           </Link>
         </div>
-        <ArticlesFilter articles={articles} />
+        <AdSlot slotId="actualites-top" />
+        <ArticlesFilter articles={articles} showInlineAds />
       </Container>
 
       <ExternalArticles limit={8} />

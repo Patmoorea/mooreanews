@@ -4,6 +4,7 @@ import { MapPin, Tag, Clock, User, ArrowRight } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/PageHeader";
+import { AdSlot } from "@/components/ads/AdSlot";
 import { StayDateFilter } from "@/components/visiteurs/StayDateFilter";
 import { getEventsBetween, getUpcomingEvents } from "@/lib/content";
 import { listingPageMetadata } from "@/lib/seo";
@@ -66,6 +67,7 @@ export default async function EvenementsPage({ searchParams }: Props) {
             </Link>
           </p>
         )}
+        <AdSlot slotId="evenements-top" className="mt-6" />
         <div className="mt-8">
         {events.length === 0 ? (
           <p className="text-center text-ocean-600">

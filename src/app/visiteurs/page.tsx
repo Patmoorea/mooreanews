@@ -15,6 +15,7 @@ import { AccommodationsList } from "@/components/visiteurs/AccommodationsList";
 import { BeachTidePanel } from "@/components/visiteurs/BeachTidePanel";
 import { TouristMapSection } from "@/components/visiteurs/TouristMapSection";
 import { VisitorMonetizationSection } from "@/components/visiteurs/VisitorMonetizationSection";
+import { AdSlot } from "@/components/ads/AdSlot";
 import { getVisitorAccommodations } from "@/lib/accommodations";
 import { getBeachTideSlots } from "@/lib/beach-tide-slots";
 import { getMooreaDuJour } from "@/lib/moorea-du-jour";
@@ -136,6 +137,8 @@ export default async function VisiteursPage() {
           </div>
           <AccommodationsList items={accommodations} />
         </section>
+
+        <AdSlot slotId="visiteurs-mid" fullBleed />
 
         <BeachTidePanel slots={beachSlots} />
 

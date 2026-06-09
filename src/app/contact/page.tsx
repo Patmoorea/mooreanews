@@ -6,12 +6,14 @@ import { PageHeader } from "@/components/PageHeader";
 import { ContactForm } from "@/components/ContactForm";
 import { SITE, SOCIAL } from "@/lib/constants";
 import { FacebookIcon, WhatsAppIcon } from "@/components/ui/SocialIcons";
+import { staticPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = staticPageMetadata({
   title: "Contact — MooreaNews",
   description:
     "Contactez l'équipe de MooreaNews : signalement, partenariat, suggestion d'amélioration, presse.",
-};
+  path: "/contact",
+});
 
 export default function ContactPage() {
   return (

@@ -293,6 +293,31 @@ type TableDef<TRow> = {
   Relationships: [];
 };
 
+export type AdSlotRow = {
+  id: string;
+  label: string;
+  format: string;
+  campaign_id: string | null;
+  enabled: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AdCampaignRow = {
+  id: string;
+  name: string;
+  image: string;
+  image_width: number;
+  image_height: number;
+  href: string;
+  alt: string;
+  sponsor: string | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export type PageViewRow = {
   id: string;
   path: string;
@@ -335,6 +360,8 @@ export type Database = {
       alert_email_subscriptions: TableDef<AlertEmailSubscriptionRow>;
       faq_entries: TableDef<FaqEntryRow>;
       user_favorites: TableDef<UserFavoriteRow>;
+      ad_campaigns: TableDef<AdCampaignRow>;
+      ad_slots: TableDef<AdSlotRow>;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

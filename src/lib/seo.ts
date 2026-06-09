@@ -229,6 +229,35 @@ export const STATIC_SITEMAP_PATHS: {
   { path: "/en", priority: 0.6, freq: "weekly" },
 ];
 
+/** Metadata SEO pour pages statiques (canonical + OG). */
+export function staticPageMetadata(opts: {
+  title: string;
+  description: string;
+  path: string;
+  index?: boolean;
+}): Metadata {
+  const canonical = opts.path.startsWith("/") ? opts.path : `/${opts.path}`;
+  return {
+    title: opts.title,
+    description: opts.description,
+    alternates: { canonical },
+    openGraph: {
+      title: opts.title,
+      description: opts.description,
+      url: absoluteUrl(canonical),
+      siteName: SITE.name,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: opts.title,
+      description: opts.description,
+    },
+    ...(opts.index === false
+      ? { robots: { index: false, follow: true } }
+      : {}),
+  };
+}
+
 /** Metadata SEO pour pages liste (canonical + OG + RSS optionnel). */
 export function listingPageMetadata(opts: {
   title: string;

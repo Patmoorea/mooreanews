@@ -10,12 +10,14 @@ import {
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { ANDROID_APK, SITE } from "@/lib/constants";
+import { staticPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = staticPageMetadata({
   title: "Télécharger l'app",
   description:
     "Téléchargez l'APK MooreaNews pour Android. PWA et iOS aussi disponibles. Ferries, alertes et météo Moorea.",
-};
+  path: "/telecharger",
+});
 
 export default function TelechargerPage() {
   const apkUrl = ANDROID_APK.href;

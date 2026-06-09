@@ -12,6 +12,7 @@ import {
   bingSiteVerification,
   webSiteJsonLd,
 } from "@/lib/seo";
+import { getActiveSponsorCampaigns } from "@/lib/ads";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -55,7 +56,6 @@ export const metadata: Metadata = {
   creator: SITE.name,
   publisher: SITE.name,
   alternates: {
-    canonical: "/",
     languages: {
       "fr-PF": getSiteOrigin(),
       en: `${getSiteOrigin()}/en`,
@@ -102,11 +102,13 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const sponsorCampaigns = await getActiveSponsorCampaigns();
+
   return (
     <html
       lang="fr"
@@ -114,7 +116,7 @@ export default function RootLayout({
     >
       <body className="min-h-screen flex flex-col bg-island-sky bg-palm-pattern text-ocean-950 dark:bg-ocean-950 dark:text-ocean-50">
         <JsonLd data={webSiteJsonLd()} />
-        <SiteChrome>{children}</SiteChrome>
+        <SiteChrome sponsorCampaigns={sponsorCampaigns}>{children}</SiteChrome>
         <Analytics />
         <SpeedInsights />
       </body>
