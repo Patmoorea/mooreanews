@@ -4,9 +4,9 @@ export const DEFAULT_AD_CAMPAIGNS: Record<string, AdCampaign> = {
   "moorea-maitai": {
     id: "moorea-maitai",
     name: "Moorea Maitai — Snack Bar",
-    image: "/images/restaurants/moorea-maitai-banniere-facebook.png",
-    imageWidth: 1536,
-    imageHeight: 1024,
+    image: "/images/restaurants/moorea-maitai-banniere-facebook-cover.png",
+    imageWidth: 1640,
+    imageHeight: 624,
     href: "https://www.facebook.com/profile.php?id=61555377901751",
     alt: "Moorea Maitai Snack Bar — Sunset Beach Maharepa, cuisine locale, tapas, grillades, fruits de mer. 7/7 11h-21h",
     sponsor: "Moorea Maitai",

@@ -1,43 +1,16 @@
 import { Megaphone } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { cn } from "@/lib/utils";
+import { AD_FORMAT_DISPLAY } from "@/lib/ad-format-sizes";
 import { resolveAdSlot } from "@/lib/ads-data";
-import type { AdFormat } from "@/lib/ads-types";
 import { AdBannerLink } from "@/components/ads/AdBannerLink";
-import { AdBannerImage } from "@/components/ads/AdBannerImage";
+import { AdBannerFrame } from "@/components/ads/AdBannerFrame";
 
 type Props = {
   slotId: string;
   fullBleed?: boolean;
   className?: string;
   hideLabel?: boolean;
-};
-
-const FORMAT_CLASS: Record<AdFormat, { wrap: string; sizes: string }> = {
-  leaderboard: {
-    wrap: "max-w-5xl mx-auto",
-    sizes: "(max-width: 1280px) 100vw, 1200px",
-  },
-  billboard: {
-    wrap: "max-w-4xl mx-auto",
-    sizes: "(max-width: 1024px) 100vw, 960px",
-  },
-  rectangle: {
-    wrap: "max-w-2xl mx-auto",
-    sizes: "(max-width: 768px) 100vw, 640px",
-  },
-  sidebar: {
-    wrap: "max-w-xs mx-auto lg:mx-0",
-    sizes: "320px",
-  },
-  card: {
-    wrap: "h-full",
-    sizes: "(max-width: 640px) 100vw, 400px",
-  },
-  ribbon: {
-    wrap: "max-w-md mx-auto",
-    sizes: "(max-width: 768px) 90vw, 420px",
-  },
 };
 
 export async function AdSlot({
@@ -50,27 +23,28 @@ export async function AdSlot({
   if (!resolved) return null;
 
   const { slot, campaign } = resolved;
-  const fmt = FORMAT_CLASS[slot.format];
+  const spec = AD_FORMAT_DISPLAY[slot.format];
   const isCard = slot.format === "card";
 
   const inner = (
     <div
       className={cn(
-        "group relative",
-        fmt.wrap,
+        "group relative mx-auto",
+        isCard ? "max-w-[300px] w-full" : "w-full",
         isCard &&
-          "flex flex-col bg-white rounded-2xl border border-ocean-100 overflow-hidden shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:border-tiare-200 transition-all",
+          "flex flex-col bg-white rounded-xl border border-ocean-100 overflow-hidden shadow-sm hover:shadow-md hover:border-tiare-200 transition-all",
       )}
     >
       {!hideLabel && (
-        <p className="mb-2 flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-ocean-400 font-semibold">
-          <Megaphone size={11} aria-hidden />
-          Partenaire local
+        <p className="mb-1.5 flex items-center justify-center gap-1.5 text-[9px] uppercase tracking-[0.18em] text-ocean-400 font-semibold">
+          <Megaphone size={10} aria-hidden />
+          Publicité
           {campaign.sponsor ? (
             <span className="text-ocean-500 normal-case tracking-normal font-medium">
               · {campaign.sponsor}
             </span>
           ) : null}
+          <span className="text-ocean-300 hidden sm:inline">· {spec.label}</span>
         </p>
       )}
 
@@ -79,39 +53,39 @@ export async function AdSlot({
         slotId={slot.id}
         campaignId={campaign.id}
         className={cn(
-          "block ring-1 ring-ocean-100/80 bg-ocean-50 hover:ring-tiare-300 transition-all",
-          isCard ? "flex-1 rounded-none ring-0 overflow-hidden" : "rounded-2xl shadow-sm hover:shadow-md overflow-hidden",
+          "block overflow-hidden ring-1 ring-ocean-100/80 hover:ring-tiare-300 transition-all",
+          isCard ? "rounded-none ring-0" : "rounded-lg",
         )}
       >
-        <AdBannerImage
+        <AdBannerFrame
           src={campaign.image}
           alt={campaign.alt}
-          width={campaign.imageWidth}
-          height={campaign.imageHeight}
-          sizes={fmt.sizes}
+          format={slot.format}
         />
       </AdBannerLink>
 
       {isCard && (
-        <div className="p-4 border-t border-ocean-100">
-          <p className="font-display text-lg text-ocean-900">{campaign.name}</p>
-          <p className="mt-1 text-xs text-ocean-600 line-clamp-2">{campaign.alt}</p>
-          <span className="mt-2 inline-block text-xs font-semibold text-tiare-600 group-hover:underline">
-            Découvrir →
+        <div className="p-3 border-t border-ocean-100">
+          <p className="font-semibold text-sm text-ocean-900 line-clamp-1">
+            {campaign.name}
+          </p>
+          <span className="mt-1 inline-block text-xs font-semibold text-tiare-600 group-hover:underline">
+            En savoir plus →
           </span>
         </div>
       )}
     </div>
   );
 
+  const compact = slot.format === "leaderboard" || slot.format === "ribbon";
+
   if (fullBleed || slot.format === "leaderboard" || slot.format === "billboard") {
     return (
       <aside
-        aria-label={`Publicité partenaire — ${campaign.name}`}
+        aria-label={`Publicité — ${campaign.name}`}
         className={cn(
-          "py-6 sm:py-8",
-          slot.format === "leaderboard" && "bg-gradient-to-b from-ocean-50/80 to-white",
-          slot.format === "billboard" && "bg-white",
+          compact ? "py-3" : "py-4 sm:py-5",
+          slot.format === "leaderboard" && "bg-ocean-50/50",
           className,
         )}
       >
@@ -122,10 +96,7 @@ export async function AdSlot({
 
   if (slot.format === "ribbon") {
     return (
-      <aside
-        aria-label={`Partenaire — ${campaign.name}`}
-        className={cn("py-4", className)}
-      >
+      <aside aria-label={`Partenaire — ${campaign.name}`} className={cn("py-2", className)}>
         {inner}
       </aside>
     );
@@ -133,10 +104,12 @@ export async function AdSlot({
 
   return (
     <aside
-      aria-label={`Publicité partenaire — ${campaign.name}`}
-      className={cn("py-4", className)}
+      aria-label={`Publicité — ${campaign.name}`}
+      className={cn("py-3", className)}
     >
-      {inner}
+      <Container size={slot.format === "rectangle" ? "narrow" : "default"}>
+        {inner}
+      </Container>
     </aside>
   );
 }

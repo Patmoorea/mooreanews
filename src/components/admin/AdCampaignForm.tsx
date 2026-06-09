@@ -6,6 +6,7 @@ import {
 } from "@/components/admin/AdminFormFields";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import type { AdCampaignRow } from "@/lib/ads-types";
+import { AD_FORMAT_DISPLAY } from "@/lib/ad-format-sizes";
 
 export function AdCampaignForm({
   action,
@@ -37,8 +38,19 @@ export function AdCampaignForm({
         name="image"
         defaultValue={initial?.image}
         label="Visuel bannière"
-        help="Bannière complète — affichée sans rognage (1536×1024 recommandé)"
+        help="Format paysage large (ex. 970×250 ou 728×90). Le site recadre automatiquement selon l’emplacement (Leaderboard, Rectangle…)."
       />
+
+      <div className="rounded-xl border border-lagon-100 bg-lagon-50/50 p-4 text-xs text-ocean-700 space-y-1">
+        <p className="font-semibold text-ocean-900">Tailles d’affichage sur le site :</p>
+        {Object.entries(AD_FORMAT_DISPLAY).map(([key, v]) => (
+          <p key={key}>
+            <span className="font-medium">{v.label}</span>
+            {" — "}
+            {v.width}×{v.height} px
+          </p>
+        ))}
+      </div>
 
       <Field name="name" label="Nom campagne" required defaultValue={initial?.name} />
       <Field
@@ -54,13 +66,13 @@ export function AdCampaignForm({
           name="image_width"
           label="Largeur image (px)"
           type="number"
-          defaultValue={String(initial?.image_width ?? 1536)}
+          defaultValue={String(initial?.image_width ?? 728)}
         />
         <Field
           name="image_height"
-          label="Hauteur image (px)"
+          label="Hauteur source (px)"
           type="number"
-          defaultValue={String(initial?.image_height ?? 1024)}
+          defaultValue={String(initial?.image_height ?? 90)}
         />
       </div>
 

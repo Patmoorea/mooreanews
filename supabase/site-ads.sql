@@ -62,9 +62,9 @@ insert into public.ad_campaigns (id, name, image, image_width, image_height, hre
 values (
   'moorea-maitai',
   'Moorea Maitai — Snack Bar',
-  '/images/restaurants/moorea-maitai-banniere-facebook.png',
-  1536,
-  1024,
+  '/images/restaurants/moorea-maitai-banniere-facebook-cover.png',
+  1640,
+  624,
   'https://www.facebook.com/profile.php?id=61555377901751',
   'Moorea Maitai Snack Bar — Sunset Beach Maharepa, cuisine locale, tapas, grillades, fruits de mer. 7/7 11h-21h',
   'Moorea Maitai',
