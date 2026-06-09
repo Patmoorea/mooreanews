@@ -62,14 +62,22 @@ insert into public.ad_campaigns (id, name, image, image_width, image_height, hre
 values (
   'moorea-maitai',
   'Moorea Maitai — Snack Bar',
-  '/images/restaurants/moorea-maitai-banniere-facebook-cover.png',
-  1640,
-  624,
+  '/images/ads/moorea-maitai/moorea-maitai-ad-billboard-970x250.png',
+  970,
+  250,
   'https://www.facebook.com/profile.php?id=61555377901751',
   'Moorea Maitai Snack Bar — Sunset Beach Maharepa, cuisine locale, tapas, grillades, fruits de mer. 7/7 11h-21h',
   'Moorea Maitai',
   true
-) on conflict (id) do nothing;
+) on conflict (id) do update set
+  name = excluded.name,
+  image = excluded.image,
+  image_width = excluded.image_width,
+  image_height = excluded.image_height,
+  href = excluded.href,
+  alt = excluded.alt,
+  sponsor = excluded.sponsor,
+  active = excluded.active;
 
 insert into public.ad_slots (id, label, format, campaign_id, enabled, sort_order) values
   ('home-leaderboard', 'Accueil — bandeau principal (sous le hero)', 'leaderboard', 'moorea-maitai', true, 10),

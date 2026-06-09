@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
+import { getCampaignImageForFormat } from "@/lib/ads-campaign-images";
 import type { AdCampaign } from "@/lib/ads-types";
 import { AdBannerLink } from "@/components/ads/AdBannerLink";
 import { AdBannerFrame } from "@/components/ads/AdBannerFrame";
@@ -22,7 +23,11 @@ export function AdSponsorsStrip({ campaigns }: { campaigns: AdCampaign[] }) {
               campaignId={c.id}
               className="block rounded-lg overflow-hidden ring-1 ring-ocean-700/50 hover:ring-lagon-400 transition-all opacity-90 hover:opacity-100 w-full max-w-[468px]"
             >
-              <AdBannerFrame src={c.image} alt={c.alt} format="ribbon" />
+              <AdBannerFrame
+                src={getCampaignImageForFormat(c, "ribbon")}
+                alt={c.alt}
+                format="ribbon"
+              />
             </AdBannerLink>
           ))}
           <Link

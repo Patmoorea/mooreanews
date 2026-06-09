@@ -26,14 +26,11 @@ export function AdBannerFrame({ src, alt, format, className }: Props) {
       <Image
         src={src}
         alt={alt}
-        fill
+        width={spec.width}
+        height={spec.height}
         sizes={`(max-width: 768px) 100vw, ${spec.width}px`}
-        className={cn(
-          spec.objectFit === "cover" ? "object-cover" : "object-contain",
-        )}
-        style={
-          spec.objectPosition ? { objectPosition: spec.objectPosition } : undefined
-        }
+        className="block h-auto w-full"
+        priority={format === "leaderboard"}
       />
     </div>
   );

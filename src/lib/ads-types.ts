@@ -9,9 +9,12 @@ export type AdFormat =
 export type AdCampaign = {
   id: string;
   name: string;
+  /** Visuel principal (aperçu admin, repli si pas de visuel par format). */
   image: string;
   imageWidth: number;
   imageHeight: number;
+  /** Visuels aux dimensions IAB exactes, par emplacement. */
+  formatImages?: Partial<Record<AdFormat, string>>;
   href: string;
   alt: string;
   sponsor?: string;

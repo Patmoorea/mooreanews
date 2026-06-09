@@ -2,6 +2,7 @@ import { Megaphone } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { cn } from "@/lib/utils";
 import { AD_FORMAT_DISPLAY } from "@/lib/ad-format-sizes";
+import { getCampaignImageForFormat } from "@/lib/ads-campaign-images";
 import { resolveAdSlot } from "@/lib/ads-data";
 import { AdBannerLink } from "@/components/ads/AdBannerLink";
 import { AdBannerFrame } from "@/components/ads/AdBannerFrame";
@@ -58,7 +59,7 @@ export async function AdSlot({
         )}
       >
         <AdBannerFrame
-          src={campaign.image}
+          src={getCampaignImageForFormat(campaign, slot.format)}
           alt={campaign.alt}
           format={slot.format}
         />

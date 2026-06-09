@@ -20,12 +20,14 @@ export type AdsConfig = {
 };
 
 function campaignFromRow(row: AdCampaignRow): AdCampaign {
+  const defaults = DEFAULT_AD_CAMPAIGNS[row.id];
   return {
     id: row.id,
     name: row.name,
     image: row.image,
     imageWidth: row.image_width,
     imageHeight: row.image_height,
+    formatImages: defaults?.formatImages,
     href: row.href,
     alt: row.alt,
     sponsor: row.sponsor ?? undefined,

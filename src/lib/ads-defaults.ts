@@ -1,12 +1,22 @@
 import type { AdCampaign, AdSlotDefinition } from "@/lib/ads-types";
 
+const MAITAI_ADS = "/images/ads/moorea-maitai";
+
 export const DEFAULT_AD_CAMPAIGNS: Record<string, AdCampaign> = {
   "moorea-maitai": {
     id: "moorea-maitai",
     name: "Moorea Maitai — Snack Bar",
-    image: "/images/restaurants/moorea-maitai-banniere-facebook-cover.png",
-    imageWidth: 1640,
-    imageHeight: 624,
+    image: `${MAITAI_ADS}/moorea-maitai-ad-billboard-970x250.png`,
+    imageWidth: 970,
+    imageHeight: 250,
+    formatImages: {
+      leaderboard: `${MAITAI_ADS}/moorea-maitai-ad-leaderboard-728x90.png`,
+      billboard: `${MAITAI_ADS}/moorea-maitai-ad-billboard-970x250.png`,
+      rectangle: `${MAITAI_ADS}/moorea-maitai-ad-rectangle-300x250.png`,
+      sidebar: `${MAITAI_ADS}/moorea-maitai-ad-rectangle-300x250.png`,
+      card: `${MAITAI_ADS}/moorea-maitai-ad-card-300x200.png`,
+      ribbon: `${MAITAI_ADS}/moorea-maitai-ad-ribbon-468x60.png`,
+    },
     href: "https://www.facebook.com/profile.php?id=61555377901751",
     alt: "Moorea Maitai Snack Bar — Sunset Beach Maharepa, cuisine locale, tapas, grillades, fruits de mer. 7/7 11h-21h",
     sponsor: "Moorea Maitai",
