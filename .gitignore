@@ -45,3 +45,5 @@ next-env.d.ts
 
 *.traineddata
 scripts/.openclaw-watch-state.json
+scripts/__pycache__/
+public/images/ads/rai-tahiti/debug/
