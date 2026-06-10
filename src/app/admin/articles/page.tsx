@@ -6,7 +6,10 @@ import { AdminRowActions } from "@/components/admin/AdminRowActions";
 import { CleanupFacebookImportsButton } from "@/components/admin/CleanupFacebookImportsButton";
 import { CleanupDuplicateArticlesButton } from "@/components/admin/CleanupDuplicateArticlesButton";
 import { countStaleFacebookImports, countStaleFacebookEvents } from "@/lib/facebook-import-cleanup";
-import { countDuplicateArticles } from "@/lib/article-duplicate-cleanup";
+import {
+  countDuplicateArticlesFromRows,
+  type ArticleDedupeRow,
+} from "@/lib/article-duplicate-cleanup";
 import { formatDateShortFR } from "@/lib/utils";
 
 export const metadata = { title: "Articles" };
@@ -20,7 +23,19 @@ export default async function AdminArticlesPage() {
 
   const staleFacebookCount =
     (await countStaleFacebookImports()) + (await countStaleFacebookEvents());
-  const duplicateCount = await countDuplicateArticles();
+
+  const dedupeRows: ArticleDedupeRow[] = (articles ?? []).map((a) => ({
+    id: a.id,
+    slug: a.slug,
+    title: a.title,
+    excerpt: a.excerpt,
+    body: a.body,
+    cover_url: a.cover_url,
+    published: a.published,
+    published_at: a.published_at,
+    tags: a.tags,
+  }));
+  const duplicateCount = countDuplicateArticlesFromRows(dedupeRows);
 
   return (
     <div>
