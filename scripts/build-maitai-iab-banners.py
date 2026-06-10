@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 ROOT = Path("/Users/patricejourdan/Desktop/moorea-hub")
 MASTER = ROOT / "public/images/restaurants/moorea-maitai-banniere-facebook.png"
-COVER = ROOT / "public/images/restaurants/moorea-maitai-banniere-facebook-cover.png"
+COVER = ROOT / "public/images/restaurants/moorea-maitai-banniere-facebook.png"
 OUT = ROOT / "public/images/ads/moorea-maitai"
 DESK = Path("/Users/patricejourdan/Desktop/Moorea-Maitai-ads")
 

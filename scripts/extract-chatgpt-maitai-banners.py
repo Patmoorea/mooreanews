@@ -19,7 +19,7 @@ EXPORTS: list[tuple[str, tuple[int, int, int, int] | None, int, int]] = [
     ("moorea-maitai-ad-billboard-970x250.png", (8, 8, 740, 198), 970, 250),
     ("moorea-maitai-ad-billboard-sunset-970x250.png", None, 970, 250),
     ("moorea-maitai-ad-leaderboard-728x90.png", (4, 528, 1020, 616), 728, 90),
-    ("moorea-maitai-ad-rectangle-300x250.png", (8, 252, 398, 504), 300, 250),
+    ("moorea-maitai-ad-rectangle-300x250.png", (10, 252, 396, 502), 300, 250),
     ("moorea-maitai-ad-rectangle-compact-300x250.png", (406, 256, 740, 370), 300, 250),
     ("moorea-maitai-ad-card-300x200.png", (406, 398, 740, 520), 300, 200),
     ("moorea-maitai-ad-ribbon-468x60.png", (4, 656, 1020, 682), 468, 60),
