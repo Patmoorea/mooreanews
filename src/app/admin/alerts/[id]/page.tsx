@@ -23,7 +23,7 @@ export default async function EditAlertPage({ params }: Props) {
     <div>
       <AdminPageHeader
         title="Modifier alerte"
-        description="Active + urgente = bandeau BREAKING NEWS sur le site."
+        description="Active + urgente = bandeau haut uniquement pour météo, ferry, houle ou route (pas « autre » ni coupures)."
       />
       <AlertForm
         initial={row}

@@ -10,7 +10,7 @@ export default function NewAlertPage() {
     <div>
       <AdminPageHeader
         title="Nouvelle alerte"
-        description="Une alerte active + urgente s’affiche en BREAKING NEWS."
+        description="Urgente + active = bandeau haut pour météo, ferry, houle ou route uniquement."
       />
 
       <AlertForm

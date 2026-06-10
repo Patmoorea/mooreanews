@@ -103,7 +103,12 @@ export function AlertForm({
 
       <div className="grid sm:grid-cols-2 gap-5 pt-2">
         <Checkbox name="active" label="Active" defaultChecked={initial?.active ?? true} />
-        <Checkbox name="urgent" label="BREAKING NEWS (urgent)" defaultChecked={initial?.urgent ?? false} />
+        <Checkbox
+          name="urgent"
+          label="BREAKING NEWS (urgent)"
+          defaultChecked={initial?.urgent ?? false}
+          help="Bandeau haut seulement si type météo, ferry, houle ou route — pas « autre »."
+        />
       </div>
 
       <FormActions cancelHref="/admin/alerts" />

@@ -11,13 +11,23 @@ function isOutageType(type: string) {
   return type === "coupure_edt" || type === "coupure_eau";
 }
 
-/** Bandeau réservé aux alertes non-coupure (météo, ferry, houle, urgent). Les coupures passent par le sticker hero. */
+/** Types éligibles au bandeau haut (pas les infos générales / articles). */
+const BANNER_TYPES = new Set(["meteo", "ferry", "houle", "route"]);
+
+function isBannerEligible(a: AlertRow): boolean {
+  if (!a.active || isOutageType(a.type)) return false;
+  if (a.type === "autre") return false;
+  return BANNER_TYPES.has(a.type);
+}
+
+/** Bandeau réservé aux alertes opérationnelles (météo, ferry, houle, route). Pas les articles ni « autre ». */
 function pickBreakingAlert(alerts: AlertRow[]): AlertRow | null {
-  const active = alerts.filter((a) => a.active && !isOutageType(a.type));
+  const eligible = alerts.filter(isBannerEligible);
   return (
-    active.find((a) => a.urgent) ??
-    active.find((a) => a.type === "meteo") ??
-    active.find((a) => a.type === "ferry" || a.type === "houle") ??
+    eligible.find((a) => a.urgent) ??
+    eligible.find((a) => a.type === "meteo") ??
+    eligible.find((a) => a.type === "ferry" || a.type === "houle") ??
+    eligible.find((a) => a.type === "route" && a.urgent) ??
     null
   );
 }
