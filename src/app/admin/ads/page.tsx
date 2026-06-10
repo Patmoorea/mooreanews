@@ -141,8 +141,8 @@ export default async function AdminAdsPage({ searchParams }: Props) {
         <section>
           <h2 className="font-display text-xl text-ocean-950 mb-2">Emplacements sur le site</h2>
           <p className="text-sm text-ocean-600 mb-4">
-            Assignez une campagne à chaque zone. Les changements sont visibles immédiatement après
-            enregistrement.
+            Les campagnes actives alternent automatiquement sur chaque zone (toutes les 30 min).
+            Le pied de page affiche tous les partenaires actifs côte à côte.
           </p>
           <AdSlotsEditor slots={slots} campaigns={campaigns} />
         </section>

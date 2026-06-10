@@ -9,6 +9,7 @@ import {
   buildFooterSponsorStripItems,
   type AdSponsorStripItem,
 } from "@/lib/ads-sponsors";
+import { listActiveCampaigns, pickRotatingCampaign } from "@/lib/ads-rotate";
 import type {
   AdCampaign,
   AdCampaignRow,
@@ -41,12 +42,12 @@ function campaignFromRow(row: AdCampaignRow): AdCampaign {
 }
 
 function slotFromRow(row: AdSlotRow): AdSlotDefinition | null {
-  if (!row.campaign_id || !row.enabled) return null;
+  if (!row.enabled) return null;
   return {
     id: row.id,
     label: row.label,
     format: row.format,
-    campaignId: row.campaign_id,
+    campaignId: row.campaign_id ?? undefined,
     enabled: row.enabled,
     sortOrder: row.sort_order,
   };
@@ -69,17 +70,27 @@ async function fetchFromDatabase(): Promise<AdsConfig | null> {
   for (const row of campaignRows as AdCampaignRow[]) {
     campaigns[row.id] = campaignFromRow(row);
   }
+  for (const [id, def] of Object.entries(DEFAULT_AD_CAMPAIGNS)) {
+    if (!campaigns[id]) campaigns[id] = def;
+  }
 
-  const slots = (slotRows as AdSlotRow[])
-    .filter((r) => r.enabled && r.campaign_id)
+  const dbSlots = (slotRows as AdSlotRow[])
+    .filter((r) => r.enabled)
     .map((r) => ({
       id: r.id,
       label: r.label,
       format: r.format as AdFormat,
-      campaignId: r.campaign_id!,
+      campaignId: r.campaign_id ?? undefined,
       enabled: r.enabled,
       sortOrder: r.sort_order,
     }));
+
+  for (const def of DEFAULT_AD_SLOTS) {
+    if (!dbSlots.some((s) => s.id === def.id)) {
+      dbSlots.push(def);
+    }
+  }
+  const slots = dbSlots.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 
   return { campaigns, slots, source: "database" };
 }
@@ -99,9 +110,12 @@ export async function resolveAdSlot(
 ): Promise<{ slot: AdSlotDefinition; campaign: AdCampaign } | null> {
   const { campaigns, slots } = await getAdsConfig();
   const slot = slots.find((s) => s.id === slotId);
-  if (!slot?.campaignId) return null;
-  const campaign = campaigns[slot.campaignId];
-  if (!campaign?.active) return null;
+  if (!slot || slot.enabled === false) return null;
+
+  const pool = listActiveCampaigns(campaigns);
+  const campaign = pickRotatingCampaign(slotId, pool);
+  if (!campaign) return null;
+
   return { slot, campaign };
 }
 

@@ -113,6 +113,8 @@ export async function seedAdDefaults() {
     if (error) throw new Error(error.message);
   }
 
+  await supabase.from("ad_slots").delete().eq("id", "footer-sponsors");
+
   revalidateAds();
   redirect("/admin/ads?seeded=1");
 }

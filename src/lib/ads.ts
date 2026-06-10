@@ -24,6 +24,7 @@ export {
 
 export type { AdSponsorStripItem } from "@/lib/ads-sponsors";
 export { FOOTER_SPONSOR_SLOT_PREFIX, MAX_FOOTER_SPONSOR_SLOTS } from "@/lib/ads-sponsors";
+export { AD_ROTATION_MS } from "@/lib/ads-rotate";
 
 /** Grille tarifaire indicative pour /partenaires */
 export const AD_INVENTORY = [
