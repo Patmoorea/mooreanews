@@ -43,6 +43,8 @@ import {
   tryImportFacebookMeteoAlert,
 } from "@/lib/facebook-alert-import";
 import { routeFacebookImport } from "@/lib/facebook-content-route";
+import { facebookStoryIdFromPostId } from "@/lib/article-dedupe";
+import { normalizeTitleKey } from "@/lib/cover-image";
 
 export type FacebookContentImportResult = {
   eventsCreated: number;
@@ -142,6 +144,54 @@ function buildBody(
   const text = message.trim();
   const footer = `\n\n---\n\nSource : [Publication Facebook — ${pageName}](${permalink})`;
   return text ? `${text}${footer}` : `Publication Facebook — ${pageName}.${footer}`;
+}
+
+async function findExistingFacebookArticle(
+  permalink: string,
+  storyId: string,
+  title: string,
+  publishedAt: string,
+  authorLabel: string,
+): Promise<boolean> {
+  const supabase = getAdminSupabase();
+  if (!supabase) return false;
+
+  const ids = new Set<string>();
+  if (storyId.length >= 8) ids.add(storyId);
+  const fromLink =
+    permalink.match(/\/posts\/(\d+)/)?.[1] ??
+    permalink.match(/permalink\/(\d+)/)?.[1] ??
+    permalink.match(/fbid=(\d+)/)?.[1];
+  if (fromLink && fromLink.length >= 8) ids.add(fromLink);
+
+  for (const id of ids) {
+    const { data: byStory } = await supabase
+      .from("articles")
+      .select("id")
+      .or(`slug.like.%-fb-${id},slug.like.%-fb-%-${id},body.ilike.%${id}%`)
+      .limit(1);
+    if (byStory?.length) return true;
+  }
+
+  const titleKey = normalizeTitleKey(title.slice(0, 160));
+  if (titleKey.length >= 24) {
+    const day = publishedAt.slice(0, 10);
+    const nextDay = new Date(`${day}T00:00:00.000Z`);
+    nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+    const { data: sameDay } = await supabase
+      .from("articles")
+      .select("id, title")
+      .eq("author", authorLabel)
+      .gte("published_at", `${day}T00:00:00.000Z`)
+      .lt("published_at", nextDay.toISOString());
+    for (const row of sameDay ?? []) {
+      if (normalizeTitleKey(row.title.slice(0, 160)) === titleKey) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 function fallbackEventDate(createdTime?: string): string {
@@ -293,6 +343,15 @@ async function importAsArticle(
   const hasImage = Boolean(post.full_picture?.trim());
   const timeLabel = tahitiTimeLabel(publishedAt);
   const title = articleTitleFromPost(message, config, hasImage, publishedAt);
+
+  const isDuplicate = await findExistingFacebookArticle(
+    permalink,
+    facebookStoryIdFromPostId(post.id),
+    title,
+    publishedAt,
+    config.authorLabel,
+  );
+  if (isDuplicate) return { ok: false, reason: "duplicate" };
 
   const persist = await persistFacebookCoverUrl(post.full_picture, post.id);
   const cover = coverUrlForDatabase(persist);

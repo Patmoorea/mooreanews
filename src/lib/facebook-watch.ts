@@ -21,6 +21,7 @@ import {
 } from "@/lib/facebook-post-enrich";
 import { refreshFacebookUserTokenInProcess } from "@/lib/facebook-token";
 import { importFacebookOgAsArticles } from "@/lib/og-article-import";
+import { facebookStoryIdFromPostId } from "@/lib/article-dedupe";
 import {
   allFacebookWatchUrls,
   FACEBOOK_PAGE_WATCHES,
@@ -425,6 +426,38 @@ function mergeUploadedPhotosIntoPosts(
   }
 }
 
+function graphPostRichness(post: GraphPost): number {
+  let score = 0;
+  if (post.full_picture?.trim()) score += 10;
+  score += post.message?.trim().length ?? 0;
+  if (post.permalink_url?.trim()) score += 5;
+  return score;
+}
+
+/** Même publication sur posts / feed / published_posts → une seule entrée. */
+function dedupeGraphPosts(posts: GraphPost[]): GraphPost[] {
+  const kept: GraphPost[] = [];
+  for (const post of posts) {
+    const storyId = facebookStoryIdFromPostId(post.id);
+    const link = post.permalink_url?.trim();
+    const idx = kept.findIndex((p) => {
+      if (link && p.permalink_url?.trim() === link) return true;
+      if (storyId.length >= 8 && facebookStoryIdFromPostId(p.id) === storyId) {
+        return true;
+      }
+      return false;
+    });
+    if (idx === -1) {
+      kept.push(post);
+      continue;
+    }
+    if (graphPostRichness(post) > graphPostRichness(kept[idx])) {
+      kept[idx] = post;
+    }
+  }
+  return kept;
+}
+
 async function fetchPagePosts(
   page: FacebookPageWatch,
   token: string,
@@ -523,11 +556,13 @@ async function fetchPagePosts(
   }
 
   if (byId.size > 0) {
-    return [...byId.values()].sort((a, b) => {
-      const ta = Date.parse(a.created_time ?? "") || 0;
-      const tb = Date.parse(b.created_time ?? "") || 0;
-      return tb - ta;
-    });
+    return dedupeGraphPosts(
+      [...byId.values()].sort((a, b) => {
+        const ta = Date.parse(a.created_time ?? "") || 0;
+        const tb = Date.parse(b.created_time ?? "") || 0;
+        return tb - ta;
+      }),
+    );
   }
 
   throw new Error(

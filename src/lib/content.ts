@@ -50,6 +50,7 @@ import type {
   InfoRow,
 } from "@/lib/supabase/types";
 import { normalizeTitleKey } from "@/lib/cover-image";
+import { dedupeArticlesForDisplay } from "@/lib/article-dedupe";
 
 // =====================================================================
 // Articles
@@ -57,7 +58,7 @@ import { normalizeTitleKey } from "@/lib/cover-image";
 
 export async function getArticles(): Promise<Article[]> {
   const db = await dbListArticles();
-  if (db) return db.map(articleFromRow);
+  if (db) return dedupeArticlesForDisplay(db.map(articleFromRow));
   return (articlesData as Article[])
     .slice()
     .sort(
