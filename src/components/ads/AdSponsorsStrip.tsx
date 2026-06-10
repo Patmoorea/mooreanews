@@ -15,7 +15,10 @@ export function AdSponsorsStrip({ items }: { items: AdSponsorStripItem[] }) {
           Partenaires locaux
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-          {items.map(({ slotId, campaign }) => (
+          {items.map(({ slotId, campaign }) => {
+            const src = getCampaignImageForSlot(campaign, "ribbon", slotId);
+            if (!src) return null;
+            return (
             <AdBannerLink
               key={slotId}
               href={campaign.href}
@@ -24,12 +27,13 @@ export function AdSponsorsStrip({ items }: { items: AdSponsorStripItem[] }) {
               className="block rounded-lg overflow-hidden ring-1 ring-ocean-700/50 hover:ring-lagon-400 transition-all opacity-90 hover:opacity-100 w-full max-w-[468px] sm:w-auto sm:flex-1 sm:min-w-[280px] sm:max-w-[468px]"
             >
               <AdBannerFrame
-                src={getCampaignImageForSlot(campaign, "ribbon", slotId)}
+                src={src}
                 alt={campaign.alt}
                 format="ribbon"
               />
             </AdBannerLink>
-          ))}
+            );
+          })}
           <Link
             href="/partenaires"
             className="text-xs font-semibold text-lagon-300 hover:text-white underline-offset-2 hover:underline px-2"

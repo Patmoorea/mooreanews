@@ -6,6 +6,10 @@ import {
   DEFAULT_AD_SLOTS,
 } from "@/lib/ads-defaults";
 import {
+  mergeCampaignFormatImages,
+  parseFormatImagesJson,
+} from "@/lib/ads-format-images";
+import {
   buildFooterSponsorStripItems,
   type AdSponsorStripItem,
 } from "@/lib/ads-sponsors";
@@ -26,13 +30,16 @@ export type AdsConfig = {
 
 function campaignFromRow(row: AdCampaignRow): AdCampaign {
   const defaults = DEFAULT_AD_CAMPAIGNS[row.id];
+  const fromDb = parseFormatImagesJson(row.format_images);
+  const formatImages = mergeCampaignFormatImages(row.id, fromDb);
+  const image = row.image?.trim() || defaults?.image || formatImages?.leaderboard || "";
   return {
     id: row.id,
     name: row.name,
-    image: defaults?.image ?? row.image,
-    imageWidth: defaults?.imageWidth ?? row.image_width,
-    imageHeight: defaults?.imageHeight ?? row.image_height,
-    formatImages: defaults?.formatImages,
+    image,
+    imageWidth: row.image_width || defaults?.imageWidth || 728,
+    imageHeight: row.image_height || defaults?.imageHeight || 90,
+    formatImages,
     slotImages: defaults?.slotImages,
     href: row.href,
     alt: row.alt,

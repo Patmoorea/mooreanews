@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { DEFAULT_AD_CAMPAIGNS, DEFAULT_AD_SLOTS } from "@/lib/ads-defaults";
+import { campaignFormatImagesFromDefaults } from "@/lib/ads-format-images";
 import type { AdFormat } from "@/lib/ads-types";
 
 /** Initialise les tables pub depuis les valeurs par défaut (admin / cron). */
@@ -22,6 +23,7 @@ export async function POST(req: Request) {
       image: c.image,
       image_width: c.imageWidth,
       image_height: c.imageHeight,
+      format_images: campaignFormatImagesFromDefaults(c),
       href: c.href,
       alt: c.alt,
       sponsor: c.sponsor ?? null,

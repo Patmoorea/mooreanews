@@ -6,6 +6,7 @@ create table if not exists public.ad_campaigns (
   image           text not null,
   image_width     int not null default 1536,
   image_height    int not null default 1024,
+  format_images   jsonb not null default '{}'::jsonb,
   href            text not null,
   alt             text not null default '',
   sponsor         text,
@@ -13,6 +14,9 @@ create table if not exists public.ad_campaigns (
   created_at      timestamptz not null default now(),
   updated_at      timestamptz not null default now()
 );
+
+alter table public.ad_campaigns
+  add column if not exists format_images jsonb not null default '{}'::jsonb;
 
 create table if not exists public.ad_slots (
   id              text primary key,
@@ -58,7 +62,7 @@ create trigger set_updated_at_ad_slots
   for each row execute function public.set_updated_at();
 
 -- Données initiales (Moorea Maitai + RAI TAHITI + emplacements)
-insert into public.ad_campaigns (id, name, image, image_width, image_height, href, alt, sponsor, active)
+insert into public.ad_campaigns (id, name, image, image_width, image_height, format_images, href, alt, sponsor, active)
 values
   (
     'moorea-maitai',
@@ -66,6 +70,14 @@ values
     '/images/ads/moorea-maitai/moorea-maitai-ad-billboard-970x250.png',
     970,
     250,
+    '{
+      "leaderboard": "/images/ads/moorea-maitai/moorea-maitai-ad-leaderboard-728x90.png",
+      "billboard": "/images/ads/moorea-maitai/moorea-maitai-ad-billboard-970x250.png",
+      "rectangle": "/images/ads/moorea-maitai/moorea-maitai-ad-rectangle-300x250.png",
+      "sidebar": "/images/ads/moorea-maitai/moorea-maitai-ad-rectangle-300x250.png",
+      "card": "/images/ads/moorea-maitai/moorea-maitai-ad-card-300x200.png",
+      "ribbon": "/images/ads/moorea-maitai/moorea-maitai-ad-ribbon-468x60.png"
+    }'::jsonb,
     'https://www.facebook.com/profile.php?id=61555377901751',
     'Moorea Maitai Snack Bar — Sunset Beach Maharepa, cuisine locale, tapas, grillades, fruits de mer. 7/7 11h-21h',
     'Moorea Maitai',
@@ -74,9 +86,13 @@ values
   (
     'rai-tahiti',
     'RAI TAHITI — Transport sanitaire VSL',
-    '/images/ads/rai-tahiti/rai-tahiti-ad-billboard-970x250.png',
-    970,
-    250,
+    '/images/ads/rai-tahiti/rai-tahiti-ad-leaderboard-728x90.png',
+    728,
+    90,
+    '{
+      "leaderboard": "/images/ads/rai-tahiti/rai-tahiti-ad-leaderboard-728x90.png",
+      "ribbon": "/images/ads/rai-tahiti/rai-tahiti-ad-ribbon-468x60.png"
+    }'::jsonb,
     'https://www.raitahiti.com',
     'RAI TAHITI — transport sanitaire VSL conventionné CPS, Moorea & Tahiti, 7j/7.',
     'RAI TAHITI',
@@ -87,6 +103,7 @@ on conflict (id) do update set
   image = excluded.image,
   image_width = excluded.image_width,
   image_height = excluded.image_height,
+  format_images = excluded.format_images,
   href = excluded.href,
   alt = excluded.alt,
   sponsor = excluded.sponsor,

@@ -94,16 +94,7 @@ export const DEFAULT_AD_CAMPAIGNS: Record<string, AdCampaign> = {
     imageHeight: 90,
     formatImages: {
       leaderboard: R.leaderboard,
-      billboard: R.leaderboard,
-      rectangle: R.rectangle,
-      sidebar: R.rectangle,
-      card: R.card,
       ribbon: R.ribbon,
-    },
-    slotImages: {
-      "visiteurs-mid": R.leaderboard,
-      "sante-garde-mid": R.leaderboard,
-      "footer-sponsors-02": R.ribbon,
     },
     href: "https://www.raitahiti.com",
     alt: "RAI TAHITI — transport sanitaire VSL conventionné CPS, Moorea & Tahiti, 7j/7. Moorea 89 77 76 24 · Tahiti 89 41 02 10",

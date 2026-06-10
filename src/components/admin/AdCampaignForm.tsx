@@ -5,17 +5,27 @@ import {
   FormActions,
 } from "@/components/admin/AdminFormFields";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
-import type { AdCampaignRow } from "@/lib/ads-types";
+import type { AdCampaignRow, AdFormat } from "@/lib/ads-types";
 import { AD_FORMAT_DISPLAY } from "@/lib/ad-format-sizes";
+import {
+  AD_FORMATS,
+  formatUploadHelp,
+  parseFormatImagesJson,
+} from "@/lib/ads-format-images";
 
 export function AdCampaignForm({
   action,
   initial,
+  usedFormats = [],
 }: {
   action: (formData: FormData) => void | Promise<void>;
   initial?: AdCampaignRow | null;
+  /** Formats requis sur le site pour cette campagne (emplacements assignés). */
+  usedFormats?: AdFormat[];
 }) {
   const isNew = !initial;
+  const formatImages = parseFormatImagesJson(initial?.format_images ?? null);
+  const usedSet = new Set(usedFormats);
 
   return (
     <form
@@ -34,22 +44,61 @@ export function AdCampaignForm({
         />
       )}
 
-      <ImageUploadField
-        name="image"
-        defaultValue={initial?.image}
-        label="Visuel bannière"
-        help="Format paysage large (ex. 970×250 ou 728×90). Le site recadre automatiquement selon l’emplacement (Leaderboard, Rectangle…)."
-      />
-
-      <div className="rounded-xl border border-lagon-100 bg-lagon-50/50 p-4 text-xs text-ocean-700 space-y-1">
-        <p className="font-semibold text-ocean-900">Tailles d’affichage sur le site :</p>
-        {Object.entries(AD_FORMAT_DISPLAY).map(([key, v]) => (
-          <p key={key}>
-            <span className="font-medium">{v.label}</span>
-            {" — "}
-            {v.width}×{v.height} px
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold text-ocean-950">Bannières par format</h3>
+          <p className="mt-1 text-sm text-ocean-600">
+            Téléversez <strong>un fichier par format</strong>, aux dimensions exactes indiquées.
+            Le site affiche le bon fichier selon l&apos;emplacement — sans étirement ni recadrage
+            automatique.
           </p>
-        ))}
+        </div>
+
+        {usedFormats.length > 0 && (
+          <div className="rounded-xl border border-tipanier-200 bg-tipanier-50/60 p-4 text-sm text-ocean-800">
+            <p className="font-semibold text-ocean-900">Formats utilisés sur le site pour cette campagne :</p>
+            <ul className="mt-2 list-disc list-inside space-y-0.5">
+              {usedFormats.map((format) => {
+                const spec = AD_FORMAT_DISPLAY[format];
+                return (
+                  <li key={format}>
+                    {spec.label} ({spec.width}×{spec.height} px)
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
+        <div className="grid gap-5">
+          {AD_FORMATS.map((format) => {
+            const spec = AD_FORMAT_DISPLAY[format];
+            const requiredOnSite = usedSet.has(format);
+            const isSidebar = format === "sidebar";
+            return (
+              <div
+                key={format}
+                className={
+                  requiredOnSite
+                    ? "rounded-2xl ring-2 ring-lagon-300 ring-offset-2"
+                    : undefined
+                }
+              >
+                <ImageUploadField
+                  name={`format_image_${format}`}
+                  label={`${spec.label}${requiredOnSite ? " — requis sur le site" : ""}`}
+                  defaultValue={formatImages[format]}
+                  help={
+                    isSidebar
+                      ? `${formatUploadHelp(format)} Même visuel que le rectangle 300×250 si vous n’en avez qu’un.`
+                      : formatUploadHelp(format)
+                  }
+                  required={requiredOnSite}
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <Field name="name" label="Nom campagne" required defaultValue={initial?.name} />
@@ -60,21 +109,6 @@ export function AdCampaignForm({
       />
       <Field name="href" label="Lien de destination" required defaultValue={initial?.href} type="url" />
       <TextArea name="alt" label="Texte alternatif (accessibilité + SEO)" rows={3} defaultValue={initial?.alt} />
-
-      <div className="grid sm:grid-cols-2 gap-5">
-        <Field
-          name="image_width"
-          label="Largeur image (px)"
-          type="number"
-          defaultValue={String(initial?.image_width ?? 728)}
-        />
-        <Field
-          name="image_height"
-          label="Hauteur source (px)"
-          type="number"
-          defaultValue={String(initial?.image_height ?? 90)}
-        />
-      </div>
 
       <Checkbox name="active" label="Campagne active" defaultChecked={initial?.active ?? true} />
 

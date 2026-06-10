@@ -4,7 +4,8 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdCampaignForm } from "@/components/admin/AdCampaignForm";
 import { saveAdCampaign } from "@/app/admin/ads-actions";
 import { DeleteAdCampaignButton } from "@/components/admin/DeleteAdCampaignButton";
-import { getAdCampaignAdmin } from "@/lib/ads";
+import { getAdCampaignAdmin, listAdSlotsAdmin } from "@/lib/ads";
+import { formatsUsedByCampaign } from "@/lib/ads-format-images";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -22,6 +23,8 @@ export default async function EditAdCampaignPage({ params, searchParams }: Props
   const sp = await searchParams;
   const campaign = await getAdCampaignAdmin(id);
   if (!campaign) notFound();
+  const slots = await listAdSlotsAdmin();
+  const usedFormats = formatsUsedByCampaign(id, slots);
 
   return (
     <div className="space-y-6">
@@ -36,18 +39,7 @@ export default async function EditAdCampaignPage({ params, searchParams }: Props
         </p>
       )}
 
-      {campaign.image && (
-        <div className="rounded-2xl border border-ocean-100 overflow-hidden bg-ocean-50 p-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={campaign.image}
-            alt=""
-            className="w-full max-w-3xl mx-auto h-auto rounded-xl"
-          />
-        </div>
-      )}
-
-      <AdCampaignForm action={saveAdCampaign} initial={campaign} />
+      <AdCampaignForm action={saveAdCampaign} initial={campaign} usedFormats={usedFormats} />
 
       <div className="flex items-center justify-between pt-4 border-t border-ocean-100">
         <Link href="/admin/ads" className="text-sm text-ocean-600 hover:text-tiare-600">

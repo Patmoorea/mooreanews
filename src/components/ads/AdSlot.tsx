@@ -25,6 +25,8 @@ export async function AdSlot({
 
   const { slot, campaign } = resolved;
   const spec = AD_FORMAT_DISPLAY[slot.format];
+  const bannerSrc = getCampaignImageForSlot(campaign, slot.format, slot.id);
+  if (!bannerSrc) return null;
   const isCard = slot.format === "card";
 
   const inner = (
@@ -59,7 +61,7 @@ export async function AdSlot({
         )}
       >
         <AdBannerFrame
-          src={getCampaignImageForSlot(campaign, slot.format, slot.id)}
+          src={bannerSrc}
           alt={campaign.alt}
           format={slot.format}
         />

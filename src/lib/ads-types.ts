@@ -39,6 +39,8 @@ export type AdCampaignRow = {
   image: string;
   image_width: number;
   image_height: number;
+  /** Un fichier par format IAB (leaderboard, ribbon, etc.). */
+  format_images: Partial<Record<AdFormat, string>> | null;
   href: string;
   alt: string;
   sponsor: string | null;

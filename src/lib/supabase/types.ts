@@ -310,6 +310,7 @@ export type AdCampaignRow = {
   image: string;
   image_width: number;
   image_height: number;
+  format_images: Record<string, string> | null;
   href: string;
   alt: string;
   sponsor: string | null;
