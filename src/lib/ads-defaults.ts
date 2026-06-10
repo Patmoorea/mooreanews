@@ -89,20 +89,20 @@ export const DEFAULT_AD_CAMPAIGNS: Record<string, AdCampaign> = {
   "rai-tahiti": {
     id: "rai-tahiti",
     name: "RAI TAHITI — Transport sanitaire VSL",
-    image: R.billboard,
-    imageWidth: 970,
-    imageHeight: 250,
+    image: R.leaderboard,
+    imageWidth: 728,
+    imageHeight: 90,
     formatImages: {
       leaderboard: R.leaderboard,
-      billboard: R.billboard,
+      billboard: R.leaderboard,
       rectangle: R.rectangle,
       sidebar: R.rectangle,
       card: R.card,
       ribbon: R.ribbon,
     },
     slotImages: {
-      "visiteurs-mid": R.billboardOcean,
-      "sante-garde-mid": R.billboard,
+      "visiteurs-mid": R.leaderboard,
+      "sante-garde-mid": R.leaderboard,
       "footer-sponsors-02": R.ribbon,
     },
     href: "https://www.raitahiti.com",
@@ -123,8 +123,8 @@ const PAGE_AD_SLOTS: AdSlotDefinition[] = [
   { id: "restaurants-top", label: "Restaurants — haut de page", format: "leaderboard", campaignId: "moorea-maitai", enabled: true, sortOrder: 80 },
   { id: "restaurants-inline", label: "Restaurants — encart dans la liste", format: "rectangle", campaignId: "moorea-maitai", enabled: true, sortOrder: 90 },
   { id: "evenements-top", label: "Événements — haut de page", format: "billboard", campaignId: "moorea-maitai", enabled: true, sortOrder: 100 },
-  { id: "visiteurs-mid", label: "Visiteurs — milieu de page", format: "billboard", campaignId: "rai-tahiti", enabled: true, sortOrder: 110 },
-  { id: "sante-garde-mid", label: "Santé / garde — encart transport VSL", format: "billboard", campaignId: "rai-tahiti", enabled: true, sortOrder: 115 },
+  { id: "visiteurs-mid", label: "Visiteurs — bandeau RAI TAHITI", format: "leaderboard", campaignId: "rai-tahiti", enabled: true, sortOrder: 110 },
+  { id: "sante-garde-mid", label: "Santé / garde — bandeau transport VSL", format: "leaderboard", campaignId: "rai-tahiti", enabled: true, sortOrder: 115 },
 ];
 
 /** Emplacements page + jusqu'à 10 rubans partenaires en pied de page. */
