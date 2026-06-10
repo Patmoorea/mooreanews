@@ -44,5 +44,13 @@ export function formatOutageWindow(startIso: string, endIso: string): string {
 }
 
 export function outageSyncFingerprint(outage: UtilityOutage): string {
-  return outage.id;
+  const day = new Date(outage.startsAt).toLocaleDateString("en-CA", {
+    timeZone: "Pacific/Tahiti",
+  });
+  const place = (outage.district ?? outage.area ?? "moorea")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, "-");
+  return `${outage.kind}-${day}-${place}`;
 }

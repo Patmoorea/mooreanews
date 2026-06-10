@@ -59,6 +59,48 @@ function tahitiDateKey(d: Date = new Date()): string {
   return d.toLocaleDateString("en-CA", { timeZone: "Pacific/Tahiti" });
 }
 
+/** Désactive les doublons actifs (même type + jour + secteur). */
+async function dedupeActiveOutageAlerts(
+  admin: NonNullable<ReturnType<typeof getAdminSupabase>>,
+  now: string,
+): Promise<number> {
+  const { data } = await admin
+    .from("alerts")
+    .select("*")
+    .in("type", ["coupure_edt", "coupure_eau"])
+    .eq("active", true);
+
+  if (!data?.length) return 0;
+
+  const groups = new Map<string, AlertRow[]>();
+  for (const row of data as AlertRow[]) {
+    const day = row.ends_at?.slice(0, 10) ?? "unknown";
+    const district = (row.district ?? "").toLowerCase().trim();
+    const key = `${row.type}|${day}|${district}`;
+    const list = groups.get(key) ?? [];
+    list.push(row);
+    groups.set(key, list);
+  }
+
+  let removed = 0;
+  for (const rows of groups.values()) {
+    if (rows.length <= 1) continue;
+    rows.sort(
+      (a, b) =>
+        Date.parse(b.updated_at ?? b.created_at) -
+        Date.parse(a.updated_at ?? a.created_at),
+    );
+    for (const drop of rows.slice(1)) {
+      const { error } = await admin
+        .from("alerts")
+        .update({ active: false, updated_at: now })
+        .eq("id", drop.id);
+      if (!error) removed += 1;
+    }
+  }
+  return removed;
+}
+
 function alertPayload(outage: UtilityOutage, now: string) {
   const fp = outageSyncFingerprint(outage);
   const today = tahitiDateKey();
@@ -189,6 +231,8 @@ export async function syncUtilityOutages(): Promise<UtilityOutagesSyncResult> {
   }
 
   lastSyncAt = Date.now();
+
+  await dedupeActiveOutageAlerts(admin, now);
 
   return {
     synced: true,

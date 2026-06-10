@@ -17,7 +17,7 @@ import { Container } from "@/components/ui/Container";
 import { SITE } from "@/lib/constants";
 import { WaveDivider, TROPICAL_EMOJI } from "@/components/decor/TropicalDecor";
 import { HeroWeatherPill } from "@/components/home/HeroWeatherPill";
-import { OutageSticker } from "@/components/home/OutageSticker";
+import { HeroOutageSticker } from "@/components/home/HeroOutageSticker";
 import { EmploymentSticker } from "@/components/home/EmploymentSticker";
 import { GardeWeekendSticker } from "@/components/home/GardeWeekendSticker";
 import { WeeklyRecapSticker } from "@/components/home/WeeklyRecapSticker";
@@ -125,9 +125,9 @@ export function Hero() {
                   Ia ora na
                 </span>
                 <HeroWeatherPill />
+                <HeroOutageSticker />
               </div>
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 sm:gap-3">
-                <OutageSticker />
                 <GardeWeekendSticker />
                 <WeeklyRecapSticker />
                 <EmploymentSticker />

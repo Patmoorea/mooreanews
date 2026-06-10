@@ -30,7 +30,11 @@ export async function AlertsStrip() {
     syncUtilityOutagesIfStale(),
   ]);
   const rows = (await dbListActiveAlerts()) ?? [];
-  const sorted = [...rows].sort(
+  /** Coupures = bandeau rouge + pastille hero (pas de cartes en double). */
+  const withoutOutages = rows.filter(
+    (a) => a.type !== "coupure_edt" && a.type !== "coupure_eau",
+  );
+  const sorted = [...withoutOutages].sort(
     (a, b) =>
       alertSortPriority(a.type, a.urgent) -
         alertSortPriority(b.type, b.urgent) ||
