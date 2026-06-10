@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { getCampaignImageForSlot } from "@/lib/ads-campaign-images";
-import type { AdCampaign } from "@/lib/ads-types";
+import type { AdSponsorStripItem } from "@/lib/ads-sponsors";
 import { AdBannerLink } from "@/components/ads/AdBannerLink";
 import { AdBannerFrame } from "@/components/ads/AdBannerFrame";
 
-export function AdSponsorsStrip({ campaigns }: { campaigns: AdCampaign[] }) {
-  if (campaigns.length === 0) return null;
+export function AdSponsorsStrip({ items }: { items: AdSponsorStripItem[] }) {
+  if (items.length === 0) return null;
 
   return (
     <div className="border-t border-ocean-800/60 py-5">
@@ -15,17 +15,17 @@ export function AdSponsorsStrip({ campaigns }: { campaigns: AdCampaign[] }) {
           Partenaires locaux
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-          {campaigns.map((c) => (
+          {items.map(({ slotId, campaign }) => (
             <AdBannerLink
-              key={c.id}
-              href={c.href}
-              slotId="footer-sponsors"
-              campaignId={c.id}
-              className="block rounded-lg overflow-hidden ring-1 ring-ocean-700/50 hover:ring-lagon-400 transition-all opacity-90 hover:opacity-100 w-full max-w-[468px]"
+              key={slotId}
+              href={campaign.href}
+              slotId={slotId}
+              campaignId={campaign.id}
+              className="block rounded-lg overflow-hidden ring-1 ring-ocean-700/50 hover:ring-lagon-400 transition-all opacity-90 hover:opacity-100 w-full max-w-[468px] sm:w-auto sm:flex-1 sm:min-w-[280px] sm:max-w-[468px]"
             >
               <AdBannerFrame
-                src={getCampaignImageForSlot(c, "ribbon", "footer-sponsors")}
-                alt={c.alt}
+                src={getCampaignImageForSlot(campaign, "ribbon", slotId)}
+                alt={campaign.alt}
                 format="ribbon"
               />
             </AdBannerLink>

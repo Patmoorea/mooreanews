@@ -57,19 +57,32 @@ create trigger set_updated_at_ad_slots
   before update on public.ad_slots
   for each row execute function public.set_updated_at();
 
--- Données initiales Moorea Maitai
+-- Données initiales (Moorea Maitai + RAI TAHITI + emplacements)
 insert into public.ad_campaigns (id, name, image, image_width, image_height, href, alt, sponsor, active)
-values (
-  'moorea-maitai',
-  'Moorea Maitai — Snack Bar',
-  '/images/ads/moorea-maitai/separees/moorea-maitai-01-billboard-top-grande.png',
-  816,
-  259,
-  'https://www.facebook.com/profile.php?id=61555377901751',
-  'Moorea Maitai Snack Bar — Sunset Beach Maharepa, cuisine locale, tapas, grillades, fruits de mer. 7/7 11h-21h',
-  'Moorea Maitai',
-  true
-) on conflict (id) do update set
+values
+  (
+    'moorea-maitai',
+    'Moorea Maitai — Snack Bar',
+    '/images/ads/moorea-maitai/moorea-maitai-ad-billboard-970x250.png',
+    970,
+    250,
+    'https://www.facebook.com/profile.php?id=61555377901751',
+    'Moorea Maitai Snack Bar — Sunset Beach Maharepa, cuisine locale, tapas, grillades, fruits de mer. 7/7 11h-21h',
+    'Moorea Maitai',
+    true
+  ),
+  (
+    'rai-tahiti',
+    'RAI TAHITI — Transport sanitaire VSL',
+    '/images/ads/rai-tahiti/rai-tahiti-ad-billboard-970x250.png',
+    970,
+    250,
+    'https://www.raitahiti.com',
+    'RAI TAHITI — transport sanitaire VSL conventionné CPS, Moorea & Tahiti, 7j/7.',
+    'RAI TAHITI',
+    true
+  )
+on conflict (id) do update set
   name = excluded.name,
   image = excluded.image,
   image_width = excluded.image_width,
@@ -90,6 +103,24 @@ insert into public.ad_slots (id, label, format, campaign_id, enabled, sort_order
   ('restaurants-top', 'Restaurants — haut de page', 'leaderboard', 'moorea-maitai', true, 80),
   ('restaurants-inline', 'Restaurants — encart dans la liste', 'rectangle', 'moorea-maitai', true, 90),
   ('evenements-top', 'Événements — haut de page', 'billboard', 'moorea-maitai', true, 100),
-  ('visiteurs-mid', 'Visiteurs — milieu de page', 'billboard', 'moorea-maitai', true, 110),
-  ('footer-sponsors', 'Pied de page — bandeau partenaires', 'ribbon', 'moorea-maitai', true, 120)
-on conflict (id) do nothing;
+  ('visiteurs-mid', 'Visiteurs — milieu de page', 'billboard', 'rai-tahiti', true, 110),
+  ('sante-garde-mid', 'Santé / garde — encart transport VSL', 'billboard', 'rai-tahiti', true, 115),
+  ('footer-sponsors-01', 'Pied de page — partenaire 1 (ruban 468×60)', 'ribbon', 'moorea-maitai', true, 201),
+  ('footer-sponsors-02', 'Pied de page — partenaire 2 (ruban 468×60)', 'ribbon', 'rai-tahiti', true, 202),
+  ('footer-sponsors-03', 'Pied de page — partenaire 3 (ruban 468×60)', 'ribbon', null, false, 203),
+  ('footer-sponsors-04', 'Pied de page — partenaire 4 (ruban 468×60)', 'ribbon', null, false, 204),
+  ('footer-sponsors-05', 'Pied de page — partenaire 5 (ruban 468×60)', 'ribbon', null, false, 205),
+  ('footer-sponsors-06', 'Pied de page — partenaire 6 (ruban 468×60)', 'ribbon', null, false, 206),
+  ('footer-sponsors-07', 'Pied de page — partenaire 7 (ruban 468×60)', 'ribbon', null, false, 207),
+  ('footer-sponsors-08', 'Pied de page — partenaire 8 (ruban 468×60)', 'ribbon', null, false, 208),
+  ('footer-sponsors-09', 'Pied de page — partenaire 9 (ruban 468×60)', 'ribbon', null, false, 209),
+  ('footer-sponsors-10', 'Pied de page — partenaire 10 (ruban 468×60)', 'ribbon', null, false, 210)
+on conflict (id) do update set
+  label = excluded.label,
+  format = excluded.format,
+  campaign_id = excluded.campaign_id,
+  enabled = excluded.enabled,
+  sort_order = excluded.sort_order;
+
+-- Ancien emplacement unique (remplacé par footer-sponsors-01…10)
+delete from public.ad_slots where id = 'footer-sponsors';

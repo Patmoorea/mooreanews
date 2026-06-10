@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import type { AdCampaign } from "@/lib/ads-types";
+import type { AdSponsorStripItem } from "@/lib/ads-sponsors";
 import { InfoBannerSlot } from "@/components/layout/InfoBannerSlot";
 import { BreakingNewsSlot } from "@/components/layout/BreakingNewsSlot";
 import { Header } from "@/components/layout/Header";
@@ -19,10 +19,10 @@ function isMinimalChrome(pathname: string): boolean {
 
 export function SiteChrome({
   children,
-  sponsorCampaigns = [],
+  sponsorItems = [],
 }: {
   children: React.ReactNode;
-  sponsorCampaigns?: AdCampaign[];
+  sponsorItems?: AdSponsorStripItem[];
 }) {
   const pathname = usePathname();
   const minimal = isMinimalChrome(pathname);
@@ -49,7 +49,7 @@ export function SiteChrome({
       <main className="flex-1 pb-16 md:pb-0">{children}</main>
       <FerryStickyBar />
       <InstallPrompt />
-      <Footer sponsorCampaigns={sponsorCampaigns} />
+      <Footer sponsorItems={sponsorItems} />
     </>
   );
 }

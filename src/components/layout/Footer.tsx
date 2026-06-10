@@ -8,9 +8,9 @@ import { FacebookIcon, InstagramIcon, WhatsAppIcon } from "@/components/ui/Socia
 import { Logo } from "@/components/ui/Logo";
 import { WaveDivider } from "@/components/decor/TropicalDecor";
 import { AdSponsorsStrip } from "@/components/ads/AdSponsorsStrip";
-import type { AdCampaign } from "@/lib/ads-types";
+import type { AdSponsorStripItem } from "@/lib/ads-sponsors";
 
-export function Footer({ sponsorCampaigns = [] }: { sponsorCampaigns?: AdCampaign[] }) {
+export function Footer({ sponsorItems = [] }: { sponsorItems?: AdSponsorStripItem[] }) {
   return (
     <footer className="relative mt-20 bg-gradient-to-b from-ocean-800 via-ocean-900 to-ocean-950 text-ocean-100">
       <WaveDivider className="absolute top-0 left-0 right-0 -translate-y-full text-lagon-100" flip />
@@ -175,7 +175,7 @@ export function Footer({ sponsorCampaigns = [] }: { sponsorCampaigns?: AdCampaig
         </div>
       </Container>
 
-      <AdSponsorsStrip campaigns={sponsorCampaigns} />
+      <AdSponsorsStrip items={sponsorItems} />
 
       {/* Copyright */}
       <div className="border-t border-ocean-800/60">

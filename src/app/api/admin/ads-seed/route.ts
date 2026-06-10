@@ -37,7 +37,7 @@ export async function POST(req: Request) {
       id: s.id,
       label: s.label,
       format: s.format as AdFormat,
-      campaign_id: s.campaignId,
+      campaign_id: s.campaignId || null,
       enabled: s.enabled !== false,
       sort_order: s.sortOrder ?? 0,
     });

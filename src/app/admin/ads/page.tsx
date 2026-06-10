@@ -59,8 +59,8 @@ export default async function AdminAdsPage({ searchParams }: Props) {
       ) : (
         <div className="rounded-2xl border border-ocean-100 bg-ocean-50/60 p-4 text-sm text-ocean-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <p>
-            Met à jour la campagne Moorea Maitai et les 12 emplacements avec les visuels IAB du
-            déploiement (970×250, 728×90, etc.).
+            Met à jour les campagnes (Maitai, RAI TAHITI…) et tous les emplacements, y compris
+            les 10 rubans pied de page.
           </p>
           <form action={seedAdDefaults} className="shrink-0">
             <button

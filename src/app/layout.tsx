@@ -12,7 +12,7 @@ import {
   bingSiteVerification,
   webSiteJsonLd,
 } from "@/lib/seo";
-import { getActiveSponsorCampaigns } from "@/lib/ads";
+import { getFooterSponsorStripItems } from "@/lib/ads";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -107,7 +107,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const sponsorCampaigns = await getActiveSponsorCampaigns();
+  const sponsorItems = await getFooterSponsorStripItems();
 
   return (
     <html
@@ -116,7 +116,7 @@ export default async function RootLayout({
     >
       <body className="min-h-screen flex flex-col bg-island-sky bg-palm-pattern text-ocean-950 dark:bg-ocean-950 dark:text-ocean-50">
         <JsonLd data={webSiteJsonLd()} />
-        <SiteChrome sponsorCampaigns={sponsorCampaigns}>{children}</SiteChrome>
+        <SiteChrome sponsorItems={sponsorItems}>{children}</SiteChrome>
         <Analytics />
         <SpeedInsights />
       </body>

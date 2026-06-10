@@ -15,11 +15,15 @@ export { AD_FORMAT_LABELS } from "@/lib/ads-types";
 export {
   getAdsConfig,
   resolveAdSlot,
+  getFooterSponsorStripItems,
   getActiveSponsorCampaigns,
   listAdCampaignsAdmin,
   listAdSlotsAdmin,
   getAdCampaignAdmin,
 } from "@/lib/ads-data";
+
+export type { AdSponsorStripItem } from "@/lib/ads-sponsors";
+export { FOOTER_SPONSOR_SLOT_PREFIX, MAX_FOOTER_SPONSOR_SLOTS } from "@/lib/ads-sponsors";
 
 /** Grille tarifaire indicative pour /partenaires */
 export const AD_INVENTORY = [

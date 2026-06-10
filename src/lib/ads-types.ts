@@ -27,7 +27,8 @@ export type AdSlotDefinition = {
   id: string;
   label: string;
   format: AdFormat;
-  campaignId: string;
+  /** Vide = emplacement réservé (ex. pied de page partenaire 3–10). */
+  campaignId?: string;
   enabled?: boolean;
   sortOrder?: number;
 };

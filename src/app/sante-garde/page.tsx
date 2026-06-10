@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 import { HealthOnCallPanel } from "@/components/health/HealthOnCallPanel";
+import { AdSlot } from "@/components/ads/AdSlot";
 import { getHealthOnCall } from "@/lib/health-on-call";
 
 export const revalidate = 3600;
@@ -25,6 +26,7 @@ export default async function SanteGardePage() {
         title="Pharmacie & médecin de garde"
         description="Week-end et jours fériés — Moorea uniquement."
       />
+      <AdSlot slotId="sante-garde-mid" fullBleed />
       <Container className="pb-16">
         <Link
           href="/"

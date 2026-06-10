@@ -1,4 +1,8 @@
 import type { AdCampaign, AdSlotDefinition } from "@/lib/ads-types";
+import {
+  FOOTER_SPONSOR_SLOT_PREFIX,
+  MAX_FOOTER_SPONSOR_SLOTS,
+} from "@/lib/ads-sponsors";
 
 const IAB_MAITAI = "/images/ads/moorea-maitai";
 const IAB_RAI = "/images/ads/rai-tahiti";
@@ -23,6 +27,31 @@ const R = {
   card: `${IAB_RAI}/rai-tahiti-ad-card-300x200.png`,
   ribbon: `${IAB_RAI}/rai-tahiti-ad-ribbon-468x60.png`,
 } as const;
+
+/** Campagnes par défaut au ruban pied de page (emplacements 01, 02…). */
+const FOOTER_SPONSOR_ASSIGNMENTS: Record<number, string> = {
+  1: "moorea-maitai",
+  2: "rai-tahiti",
+};
+
+function footerSponsorSlotId(index: number): string {
+  return `${FOOTER_SPONSOR_SLOT_PREFIX}${String(index).padStart(2, "0")}`;
+}
+
+function buildFooterSponsorSlots(): AdSlotDefinition[] {
+  return Array.from({ length: MAX_FOOTER_SPONSOR_SLOTS }, (_, i) => {
+    const n = i + 1;
+    const campaignId = FOOTER_SPONSOR_ASSIGNMENTS[n];
+    return {
+      id: footerSponsorSlotId(n),
+      label: `Pied de page — partenaire ${n} (ruban 468×60)`,
+      format: "ribbon",
+      campaignId,
+      enabled: Boolean(campaignId),
+      sortOrder: 200 + n,
+    };
+  });
+}
 
 export const DEFAULT_AD_CAMPAIGNS: Record<string, AdCampaign> = {
   "moorea-maitai": {
@@ -50,8 +79,7 @@ export const DEFAULT_AD_CAMPAIGNS: Record<string, AdCampaign> = {
       "restaurants-top": B.leaderboard,
       "restaurants-inline": B.rectangleCompact,
       "evenements-top": B.billboard,
-      "visiteurs-mid": B.rectangle,
-      "footer-sponsors": B.ribbon,
+      "footer-sponsors-01": B.ribbon,
     },
     href: "https://www.facebook.com/profile.php?id=61555377901751",
     alt: "Moorea Maitai Snack Bar — Sunset Beach Maharepa, cuisine locale, tapas, grillades, fruits de mer. 7/7 11h-21h",
@@ -73,18 +101,9 @@ export const DEFAULT_AD_CAMPAIGNS: Record<string, AdCampaign> = {
       ribbon: R.ribbon,
     },
     slotImages: {
-      "home-leaderboard": R.leaderboard,
-      "home-articles": R.billboard,
-      "home-events": R.rectangle,
-      "home-map": R.billboardOcean,
-      "actualites-top": R.leaderboard,
-      "actualites-inline": R.card,
-      "article-bottom": R.billboardOcean,
-      "restaurants-top": R.leaderboard,
-      "restaurants-inline": R.rectangleCompact,
-      "evenements-top": R.billboard,
-      "visiteurs-mid": R.rectangle,
-      "footer-sponsors": R.ribbon,
+      "visiteurs-mid": R.billboardOcean,
+      "sante-garde-mid": R.billboard,
+      "footer-sponsors-02": R.ribbon,
     },
     href: "https://www.raitahiti.com",
     alt: "RAI TAHITI — transport sanitaire VSL conventionné CPS, Moorea & Tahiti, 7j/7. Moorea 89 77 76 24 · Tahiti 89 41 02 10",
@@ -93,7 +112,7 @@ export const DEFAULT_AD_CAMPAIGNS: Record<string, AdCampaign> = {
   },
 };
 
-export const DEFAULT_AD_SLOTS: AdSlotDefinition[] = [
+const PAGE_AD_SLOTS: AdSlotDefinition[] = [
   { id: "home-leaderboard", label: "Accueil — bandeau principal (sous le hero)", format: "leaderboard", campaignId: "moorea-maitai", enabled: true, sortOrder: 10 },
   { id: "home-articles", label: "Accueil — entre actualités et événements", format: "billboard", campaignId: "moorea-maitai", enabled: true, sortOrder: 20 },
   { id: "home-events", label: "Accueil — après l'agenda", format: "rectangle", campaignId: "moorea-maitai", enabled: true, sortOrder: 30 },
@@ -104,6 +123,12 @@ export const DEFAULT_AD_SLOTS: AdSlotDefinition[] = [
   { id: "restaurants-top", label: "Restaurants — haut de page", format: "leaderboard", campaignId: "moorea-maitai", enabled: true, sortOrder: 80 },
   { id: "restaurants-inline", label: "Restaurants — encart dans la liste", format: "rectangle", campaignId: "moorea-maitai", enabled: true, sortOrder: 90 },
   { id: "evenements-top", label: "Événements — haut de page", format: "billboard", campaignId: "moorea-maitai", enabled: true, sortOrder: 100 },
-  { id: "visiteurs-mid", label: "Visiteurs — milieu de page", format: "billboard", campaignId: "moorea-maitai", enabled: true, sortOrder: 110 },
-  { id: "footer-sponsors", label: "Pied de page — bandeau partenaires", format: "ribbon", campaignId: "moorea-maitai", enabled: true, sortOrder: 120 },
+  { id: "visiteurs-mid", label: "Visiteurs — milieu de page", format: "billboard", campaignId: "rai-tahiti", enabled: true, sortOrder: 110 },
+  { id: "sante-garde-mid", label: "Santé / garde — encart transport VSL", format: "billboard", campaignId: "rai-tahiti", enabled: true, sortOrder: 115 },
+];
+
+/** Emplacements page + jusqu'à 10 rubans partenaires en pied de page. */
+export const DEFAULT_AD_SLOTS: AdSlotDefinition[] = [
+  ...PAGE_AD_SLOTS,
+  ...buildFooterSponsorSlots(),
 ];

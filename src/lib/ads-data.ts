@@ -5,6 +5,10 @@ import {
   DEFAULT_AD_CAMPAIGNS,
   DEFAULT_AD_SLOTS,
 } from "@/lib/ads-defaults";
+import {
+  buildFooterSponsorStripItems,
+  type AdSponsorStripItem,
+} from "@/lib/ads-sponsors";
 import type {
   AdCampaign,
   AdCampaignRow,
@@ -95,25 +99,21 @@ export async function resolveAdSlot(
 ): Promise<{ slot: AdSlotDefinition; campaign: AdCampaign } | null> {
   const { campaigns, slots } = await getAdsConfig();
   const slot = slots.find((s) => s.id === slotId);
-  if (!slot) return null;
+  if (!slot?.campaignId) return null;
   const campaign = campaigns[slot.campaignId];
   if (!campaign?.active) return null;
   return { slot, campaign };
 }
 
-export async function getActiveSponsorCampaigns(): Promise<AdCampaign[]> {
+export async function getFooterSponsorStripItems(): Promise<AdSponsorStripItem[]> {
   const { campaigns, slots } = await getAdsConfig();
-  const seen = new Set<string>();
-  const out: AdCampaign[] = [];
-  for (const slot of slots) {
-    if (slot.format !== "ribbon") continue;
-    const c = campaigns[slot.campaignId];
-    if (c?.active && !seen.has(c.id)) {
-      seen.add(c.id);
-      out.push(c);
-    }
-  }
-  return out;
+  return buildFooterSponsorStripItems(campaigns, slots);
+}
+
+/** @deprecated Préférer getFooterSponsorStripItems */
+export async function getActiveSponsorCampaigns(): Promise<AdCampaign[]> {
+  const items = await getFooterSponsorStripItems();
+  return items.map((i) => i.campaign);
 }
 
 /** Admin — toutes les campagnes (y compris inactives). */
