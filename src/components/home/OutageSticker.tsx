@@ -50,6 +50,9 @@ function timeRange(startIso: string, endIso: string): string {
 function pickOutage(rows: OutageRow[]): OutageRow | null {
   const now = Date.now();
   const today = tahitiDateKey(new Date().toISOString());
+  const tomorrow = tahitiDateKey(
+    new Date(Date.now() + 86400000).toISOString(),
+  );
 
   const sorted = [...rows].sort(
     (a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt),
@@ -58,8 +61,14 @@ function pickOutage(rows: OutageRow[]): OutageRow | null {
   for (const o of sorted) {
     const end = Date.parse(o.endsAt);
     const startDay = tahitiDateKey(o.startsAt);
-    // En cours, à venir, ou coupure du jour (même terminée)
-    if (end >= now || startDay === today) return o;
+    // En cours, à venir (48 h), ou coupure du jour (même terminée)
+    if (
+      end >= now ||
+      startDay === today ||
+      startDay === tomorrow
+    ) {
+      return o;
+    }
   }
   return null;
 }

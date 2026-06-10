@@ -6,6 +6,7 @@ import { facebookCronRecentPostLimit } from "@/lib/facebook-import-filters";
 import { countFbcdnCoversInDb } from "@/lib/facebook-cover-persist";
 import { getFacebookImportStatus } from "@/lib/facebook-import-status";
 import { notifyFacebookImportReport } from "@/lib/telegram-notify";
+import { syncUtilityOutages } from "@/lib/utility-outages-sync";
 
 /** Rattrapage Facebook uniquement (évite le timeout du cron complet). */
 export const dynamic = "force-dynamic";
@@ -62,6 +63,7 @@ export async function GET(req: Request) {
     recentImportLimit: facebookCronRecentPostLimit(),
     forcePhotoFbids: forcePhotoFbids.length > 0 ? forcePhotoFbids : undefined,
   });
+  const utilityOutages = await syncUtilityOutages();
   const fbcdnRemaining = await countFbcdnCoversInDb();
   const warnings = result.warnings ?? [];
   const errors = result.errors ?? [];
@@ -69,8 +71,13 @@ export async function GET(req: Request) {
 
   const articles =
     (result.articlesCreated ?? 0) + (result.articlesRepaired ?? 0);
-  if (articles > 0) {
+  if (
+    articles > 0 ||
+    utilityOutages.created > 0 ||
+    utilityOutages.updated > 0
+  ) {
     revalidatePath("/actualites");
+    revalidatePath("/alertes");
     revalidatePath("/coupures");
     revalidatePath("/", "layout");
   }
@@ -121,6 +128,7 @@ export async function GET(req: Request) {
       incompleteArticles: importStatus.incompleteArticles,
       samples: importStatus.samples,
     },
+    utilityOutages,
     ...result,
   });
 }

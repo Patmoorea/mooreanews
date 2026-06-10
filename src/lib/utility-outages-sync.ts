@@ -3,6 +3,7 @@
  */
 
 import {
+  clearUtilityOutagesCache,
   getUtilityOutages,
   outageSyncFingerprint,
   type UtilityOutage,
@@ -54,15 +55,18 @@ async function listSyncedAlerts(): Promise<AlertRow[]> {
   );
 }
 
+function tahitiDateKey(d: Date = new Date()): string {
+  return d.toLocaleDateString("en-CA", { timeZone: "Pacific/Tahiti" });
+}
+
 function alertPayload(outage: UtilityOutage, now: string) {
   const fp = outageSyncFingerprint(outage);
-  const today = new Date().toLocaleDateString("en-CA", {
-    timeZone: "Pacific/Tahiti",
-  });
+  const today = tahitiDateKey();
+  const tomorrow = tahitiDateKey(new Date(Date.now() + 86400000));
   const outageDay = new Date(outage.startsAt).toLocaleDateString("en-CA", {
     timeZone: "Pacific/Tahiti",
   });
-  const isToday = today === outageDay;
+  const isSoon = outageDay === today || outageDay === tomorrow;
 
   return {
     type: outage.kind,
@@ -74,9 +78,30 @@ function alertPayload(outage: UtilityOutage, now: string) {
     starts_at: null,
     ends_at: outage.endsAt,
     active: true,
-    urgent: isToday,
+    urgent: isSoon,
     updated_at: now,
   };
+}
+
+const MIN_SYNC_INTERVAL_MS = 15 * 60 * 1000;
+let lastSyncAt = 0;
+
+/** Sync throttlé — accueil / alertes sans surcharger les sources. */
+export async function syncUtilityOutagesIfStale(): Promise<
+  UtilityOutagesSyncResult & { skipped?: boolean }
+> {
+  if (Date.now() - lastSyncAt < MIN_SYNC_INTERVAL_MS) {
+    return {
+      synced: false,
+      skipped: true,
+      edt: 0,
+      water: 0,
+      created: 0,
+      updated: 0,
+      cleared: 0,
+    };
+  }
+  return syncUtilityOutages();
 }
 
 /** Crée / met à jour / désactive les alertes coupures programmées Moorea. */
@@ -93,6 +118,8 @@ export async function syncUtilityOutages(): Promise<UtilityOutagesSyncResult> {
       error: "Supabase absent",
     };
   }
+
+  clearUtilityOutagesCache();
 
   let schedule;
   try {
@@ -132,6 +159,7 @@ export async function syncUtilityOutages(): Promise<UtilityOutagesSyncResult> {
         prev.title === payload.title &&
         prev.ends_at === payload.ends_at &&
         prev.district === payload.district &&
+        prev.urgent === payload.urgent &&
         extractSyncFingerprint(prev.details) === fp;
       if (same) continue;
 
@@ -159,6 +187,8 @@ export async function syncUtilityOutages(): Promise<UtilityOutagesSyncResult> {
       .eq("id", row.id);
     if (!error) cleared += 1;
   }
+
+  lastSyncAt = Date.now();
 
   return {
     synced: true,

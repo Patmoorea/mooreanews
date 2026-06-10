@@ -3,6 +3,7 @@ import { ExternalLink, Siren } from "lucide-react";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
 import { expirePastAlerts } from "@/lib/alert-schedule";
 import { syncMeteoVigilanceAlert } from "@/lib/meteo-vigilance-sync";
+import { syncUtilityOutagesIfStale } from "@/lib/utility-outages-sync";
 import { Container } from "@/components/ui/Container";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -23,7 +24,11 @@ function alertSortPriority(type: string, urgent: boolean): number {
 }
 
 export async function AlertsStrip() {
-  await Promise.all([expirePastAlerts(), syncMeteoVigilanceAlert()]);
+  await Promise.all([
+    expirePastAlerts(),
+    syncMeteoVigilanceAlert(),
+    syncUtilityOutagesIfStale(),
+  ]);
   const rows = (await dbListActiveAlerts()) ?? [];
   const sorted = [...rows].sort(
     (a, b) =>

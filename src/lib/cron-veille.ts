@@ -5,6 +5,8 @@
 
 import { revalidatePath } from "next/cache";
 import { aggregateAll } from "@/lib/aggregator";
+import { refreshFacebookUserTokenInProcess } from "@/lib/facebook-token";
+import { syncUtilityOutages } from "@/lib/utility-outages-sync";
 
 export type VeilleCronResult = {
   ok: boolean;
@@ -13,12 +15,14 @@ export type VeilleCronResult = {
   totalInserted: number;
   articlesCreated: number;
   alertsCreated: number;
+  utilityOutages: Awaited<ReturnType<typeof syncUtilityOutages>>;
   errors: string[];
   bySource: Awaited<ReturnType<typeof aggregateAll>>;
 };
 
 export async function runVeilleCron(): Promise<VeilleCronResult> {
   const start = Date.now();
+  await refreshFacebookUserTokenInProcess();
   const results = await aggregateAll();
 
   const totalFetched = results.reduce((s, r) => s + r.fetched, 0);
@@ -42,6 +46,18 @@ export async function runVeilleCron(): Promise<VeilleCronResult> {
   }
   if (articlesCreated > 0) {
     revalidatePath("/actualites");
+    revalidatePath("/coupures");
+    revalidatePath("/", "layout");
+  }
+
+  const utilityOutages = await syncUtilityOutages();
+  if (
+    utilityOutages.created > 0 ||
+    utilityOutages.updated > 0 ||
+    utilityOutages.cleared > 0
+  ) {
+    revalidatePath("/alertes");
+    revalidatePath("/coupures");
     revalidatePath("/", "layout");
   }
 
@@ -62,6 +78,7 @@ export async function runVeilleCron(): Promise<VeilleCronResult> {
     totalInserted,
     articlesCreated,
     alertsCreated,
+    utilityOutages,
     errors,
     bySource: results,
   };

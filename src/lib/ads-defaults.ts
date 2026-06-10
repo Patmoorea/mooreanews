@@ -1,16 +1,16 @@
 import type { AdCampaign, AdSlotDefinition } from "@/lib/ads-types";
 
-const MAITAI = "/images/ads/moorea-maitai/separees";
+const IAB = "/images/ads/moorea-maitai";
 
-/** Visuels natifs extraits du composite ChatGPT (sans redimensionnement destructif). */
+/** Visuels exportés aux dimensions IAB exactes (728×90, 970×250, etc.). */
 const B = {
-  billboard: `${MAITAI}/moorea-maitai-01-billboard-top-grande.png`,
-  skyscraper: `${MAITAI}/moorea-maitai-02-skyscraper-vertical.png`,
-  coucher: `${MAITAI}/moorea-maitai-03-rectangle-coucher-soleil.png`,
-  reserver: `${MAITAI}/moorea-maitai-04-rectangle-reserver.png`,
-  bonsMoments: `${MAITAI}/moorea-maitai-05-bons-moments-reserver.png`,
-  leaderboard: `${MAITAI}/moorea-maitai-06-leaderboard-bottom.png`,
-  ribbon: `${MAITAI}/moorea-maitai-07-ribbon-footer.png`,
+  leaderboard: `${IAB}/moorea-maitai-ad-leaderboard-728x90.png`,
+  billboard: `${IAB}/moorea-maitai-ad-billboard-970x250.png`,
+  billboardSunset: `${IAB}/moorea-maitai-ad-billboard-sunset-970x250.png`,
+  rectangle: `${IAB}/moorea-maitai-ad-rectangle-300x250.png`,
+  rectangleCompact: `${IAB}/moorea-maitai-ad-rectangle-compact-300x250.png`,
+  card: `${IAB}/moorea-maitai-ad-card-300x200.png`,
+  ribbon: `${IAB}/moorea-maitai-ad-ribbon-468x60.png`,
 } as const;
 
 export const DEFAULT_AD_CAMPAIGNS: Record<string, AdCampaign> = {
@@ -18,29 +18,28 @@ export const DEFAULT_AD_CAMPAIGNS: Record<string, AdCampaign> = {
     id: "moorea-maitai",
     name: "Moorea Maitai — Snack Bar",
     image: B.billboard,
-    imageWidth: 816,
-    imageHeight: 259,
+    imageWidth: 970,
+    imageHeight: 250,
     formatImages: {
       leaderboard: B.leaderboard,
       billboard: B.billboard,
-      rectangle: B.coucher,
-      sidebar: B.coucher,
-      card: B.bonsMoments,
+      rectangle: B.rectangle,
+      sidebar: B.rectangle,
+      card: B.card,
       ribbon: B.ribbon,
     },
-    /** Chaque emplacement = visuel différent quand possible (7 créas, 12 slots). */
     slotImages: {
       "home-leaderboard": B.leaderboard,
       "home-articles": B.billboard,
-      "home-events": B.coucher,
-      "home-map": B.skyscraper,
-      "actualites-top": B.reserver,
-      "actualites-inline": B.bonsMoments,
-      "article-bottom": B.billboard,
+      "home-events": B.rectangle,
+      "home-map": B.billboardSunset,
+      "actualites-top": B.leaderboard,
+      "actualites-inline": B.card,
+      "article-bottom": B.billboardSunset,
       "restaurants-top": B.leaderboard,
-      "restaurants-inline": B.reserver,
-      "evenements-top": B.skyscraper,
-      "visiteurs-mid": B.coucher,
+      "restaurants-inline": B.rectangleCompact,
+      "evenements-top": B.billboard,
+      "visiteurs-mid": B.rectangle,
       "footer-sponsors": B.ribbon,
     },
     href: "https://www.facebook.com/profile.php?id=61555377901751",

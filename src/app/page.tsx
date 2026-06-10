@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Hero } from "@/components/home/Hero";
+import { AlertsStrip } from "@/components/home/AlertsStrip";
 import { SafetyCampaignSlot } from "@/components/home/SafetyCampaignSlot";
 import { HealthOnCallSlot } from "@/components/health/HealthOnCallSlot";
 import { PushAlertBanner } from "@/components/pwa/PushAlertBanner";
@@ -28,6 +29,7 @@ export default function HomePage() {
   return (
     <>
       <Hero />
+      <AlertsStrip />
       <AdSlot slotId="home-leaderboard" fullBleed />
       <SafetyCampaignSlot />
       <HealthOnCallSlot />

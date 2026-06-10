@@ -63,6 +63,11 @@ const FRENCH_MONTHS: Record<string, number> = {
 const CACHE_MS = 3 * 60 * 60 * 1000;
 let cache: { at: number; data: UtilityOutagesResult } | null = null;
 
+/** Invalide le cache mémoire (avant sync cron ou admin). */
+export function clearUtilityOutagesCache(): void {
+  cache = null;
+}
+
 function normalizeKey(s: string): string {
   return s
     .normalize("NFD")

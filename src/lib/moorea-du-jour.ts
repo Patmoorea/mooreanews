@@ -3,6 +3,7 @@
  */
 
 import { expirePastAlerts } from "@/lib/alert-schedule";
+import { syncUtilityOutagesIfStale } from "@/lib/utility-outages-sync";
 import {
   getFeaturedArticles,
   getUpcomingEvents,
@@ -64,7 +65,7 @@ function weekendRange(): { start: string; end: string } {
 }
 
 export async function getMooreaDuJour(): Promise<MooreaDuJour> {
-  await expirePastAlerts();
+  await Promise.all([expirePastAlerts(), syncUtilityOutagesIfStale()]);
   const [weather, ferries, alertsRows, events, restaurants, featured] =
     await Promise.all([
       getCurrentWeather(),

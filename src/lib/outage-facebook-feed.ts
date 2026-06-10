@@ -20,6 +20,7 @@ import {
   TE_ITO_RAU_FACEBOOK_PAGE,
   type FacebookPageWatch,
 } from "@/lib/watch-sources";
+import { teItoRauWatchUrls } from "@/lib/outage-te-ito-fallback";
 
 const OUTAGE_FACEBOOK_PAGES: FacebookPageWatch[] = [
   ...FACEBOOK_PAGE_WATCHES,
@@ -249,7 +250,18 @@ export async function fetchOutagesFromFacebookFeeds(): Promise<{
   userToken = ut;
 
   if (!userToken && !fallbackPageToken) {
-    return { outages, errors, postsImported: 0 };
+    const { fetchOutagesFromTeItoRauFallback } = await import(
+      "@/lib/outage-te-ito-fallback"
+    );
+    const fallback = await fetchOutagesFromTeItoRauFallback();
+    return {
+      outages: fallback.outages,
+      errors:
+        fallback.outages.length === 0
+          ? ["Token Facebook absent — repli Te Ito Rau OG uniquement"]
+          : [],
+      postsImported: 0,
+    };
   }
 
   const postsForImport: {
@@ -295,13 +307,16 @@ export async function fetchOutagesFromFacebookFeeds(): Promise<{
   }
 
   let postsImported = 0;
-  if (
-    process.env.FACEBOOK_IMPORT_AS_ARTICLES === "true" &&
-    postsForImport.length > 0
-  ) {
+  if (postsForImport.length > 0) {
     for (const batch of postsForImport) {
       const isTeIto = batch.page.id === "te-ito-rau";
       const isMooreaNews = batch.page.id === "moorea-news";
+      const shouldImport =
+        isTeIto ||
+        (process.env.FACEBOOK_IMPORT_AS_ARTICLES === "true" &&
+          (isMooreaNews || batch.page.id === "commune-moorea"));
+      if (!shouldImport) continue;
+
       try {
         const imported = await importFacebookPostsAsContent(batch.posts, {
           pageKey: isTeIto
@@ -326,6 +341,24 @@ export async function fetchOutagesFromFacebookFeeds(): Promise<{
       } catch (e) {
         errors.push(`import ${batch.page.id}: ${String(e)}`);
       }
+    }
+  }
+
+  const hasTeItoEdt = outages.some(
+    (o) => o.kind === "coupure_edt" && /te ito rau/i.test(o.source),
+  );
+  if (!hasTeItoEdt) {
+    const { fetchOutagesFromTeItoRauFallback } = await import(
+      "@/lib/outage-te-ito-fallback"
+    );
+    const fallback = await fetchOutagesFromTeItoRauFallback();
+    for (const o of fallback.outages) {
+      outages.push(o);
+    }
+    if (fallback.urlsTried > 0 && fallback.outages.length === 0) {
+      errors.push(
+        `Te Ito Rau OG: ${fallback.urlsTried} URL(s) sans coupure parseable (${fallback.sources.join(", ") || "aucune source"})`,
+      );
     }
   }
 
@@ -362,11 +395,7 @@ export async function fetchOutagesFromExtraFacebookUrls(
 }
 
 export function extraTeItoRauPostUrlsFromEnv(): string[] {
-  const raw = process.env.TE_ITO_RAU_FB_POST_URLS ?? "";
-  return raw
-    .split(/[\n,]/)
-    .map((u) => u.trim())
-    .filter((u) => u.includes("facebook.com"));
+  return teItoRauWatchUrls();
 }
 
 export type { OutageTextSource };

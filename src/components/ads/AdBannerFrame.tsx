@@ -10,14 +10,14 @@ type Props = {
   className?: string;
 };
 
-/** Cadre IAB : le visuel natif est centré en entier (object-contain, jamais rogné). */
+/** Cadre IAB verrouillé — visuels aux dimensions exactes, remplissage object-cover. */
 export function AdBannerFrame({ src, alt, format, className }: Props) {
   const spec = AD_FORMAT_DISPLAY[format];
 
   return (
     <div
       className={cn(
-        "mx-auto flex w-full items-center justify-center bg-black",
+        "relative mx-auto w-full overflow-hidden bg-ocean-950/5",
         spec.maxWidthClass,
         className,
       )}
@@ -26,10 +26,16 @@ export function AdBannerFrame({ src, alt, format, className }: Props) {
       <Image
         src={src}
         alt={alt}
-        width={spec.width}
-        height={spec.height}
+        fill
         sizes={`(max-width: 768px) 100vw, ${spec.width}px`}
-        className="max-h-full max-w-full object-contain"
+        className={cn(
+          spec.objectFit === "cover" ? "object-cover" : "object-contain",
+        )}
+        style={
+          spec.objectPosition
+            ? { objectPosition: spec.objectPosition }
+            : undefined
+        }
         priority={format === "leaderboard"}
       />
     </div>
