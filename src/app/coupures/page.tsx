@@ -7,7 +7,7 @@ import {
   PDE_SOURCE_LABEL,
   type UtilityOutage,
 } from "@/lib/utility-outages";
-import { syncUtilityOutages } from "@/lib/utility-outages-sync";
+import { syncUtilityOutagesIfStale } from "@/lib/utility-outages-sync";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 
@@ -86,7 +86,7 @@ function OutageTable({
 }
 
 export default async function CoupuresPage() {
-  await syncUtilityOutages().catch(() => {});
+  void syncUtilityOutagesIfStale().catch(() => {});
 
   let schedule;
   let error: string | null = null;

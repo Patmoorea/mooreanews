@@ -54,6 +54,23 @@ async function findExistingVigilanceAlert() {
   );
 }
 
+const MIN_SYNC_INTERVAL_MS = 15 * 60 * 1000;
+let lastSyncAt = 0;
+
+/** Sync throttlé — pages publiques sans bloquer ~30s sur meteo.pf. */
+export async function syncMeteoVigilanceAlertIfStale(): Promise<
+  MeteoVigilanceSyncResult & { skipped?: boolean }
+> {
+  if (Date.now() - lastSyncAt < MIN_SYNC_INTERVAL_MS) {
+    return { synced: false, skipped: true, action: "skipped" };
+  }
+  const result = await syncMeteoVigilanceAlert();
+  if (result.action !== "error") {
+    lastSyncAt = Date.now();
+  }
+  return result;
+}
+
 /** Met à jour ou désactive l'alerte vigilance officielle. */
 export async function syncMeteoVigilanceAlert(): Promise<MeteoVigilanceSyncResult> {
   const admin = getAdminSupabase();

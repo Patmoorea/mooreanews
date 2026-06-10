@@ -6,7 +6,7 @@ import {
   vigilanceLocalLevel,
   vigilanceNationalFootnote,
 } from "@/lib/meteo-vigilance";
-import { syncMeteoVigilanceAlert } from "@/lib/meteo-vigilance-sync";
+import { syncMeteoVigilanceAlertIfStale } from "@/lib/meteo-vigilance-sync";
 
 const LEVEL_STYLES: Record<
   number,
@@ -40,7 +40,7 @@ const LEVEL_STYLES: Record<
 };
 
 export async function MeteoVigilanceCard() {
-  await syncMeteoVigilanceAlert();
+  void syncMeteoVigilanceAlertIfStale().catch(() => {});
 
   let snapshot;
   try {

@@ -5,8 +5,8 @@ import { AlertesListClient } from "@/components/alerts/AlertesListClient";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
 import { expirePastAlerts } from "@/lib/alert-schedule";
 import { expireStaleAnnouncements } from "@/lib/announcement-expiry";
-import { syncMeteoVigilanceAlert } from "@/lib/meteo-vigilance-sync";
-import { syncUtilityOutages } from "@/lib/utility-outages-sync";
+import { syncMeteoVigilanceAlertIfStale } from "@/lib/meteo-vigilance-sync";
+import { syncUtilityOutagesIfStale } from "@/lib/utility-outages-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -18,12 +18,15 @@ export const metadata: Metadata = {
 };
 
 export default async function AlertesPage() {
-  await Promise.all([
-    expirePastAlerts(),
-    syncMeteoVigilanceAlert(),
-    syncUtilityOutages(),
-    expireStaleAnnouncements(),
+  await expirePastAlerts().catch(() => 0);
+
+  // Syncs externes (~30s) en arrière-plan — sinon timeout navigateur sur /alertes
+  void Promise.all([
+    syncMeteoVigilanceAlertIfStale(),
+    syncUtilityOutagesIfStale(),
+    expireStaleAnnouncements().catch(() => 0),
   ]);
+
   const rows = (await dbListActiveAlerts()) ?? [];
 
   return (

@@ -8,7 +8,7 @@ import {
   fetchMeteoVigilance,
   CYCLONE_ALERT_LABEL,
 } from "@/lib/meteo-vigilance";
-import { syncMeteoVigilanceAlert } from "@/lib/meteo-vigilance-sync";
+import { syncMeteoVigilanceAlertIfStale } from "@/lib/meteo-vigilance-sync";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 
@@ -31,7 +31,7 @@ const CHECKLIST = [
 ];
 
 export default async function VigilanceCyclonePage() {
-  await syncMeteoVigilanceAlert();
+  void syncMeteoVigilanceAlertIfStale().catch(() => {});
   let snapshot;
   try {
     snapshot = await fetchMeteoVigilance();
