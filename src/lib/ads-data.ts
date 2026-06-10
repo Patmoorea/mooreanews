@@ -74,7 +74,7 @@ async function fetchFromDatabase(): Promise<AdsConfig | null> {
     if (!campaigns[id]) campaigns[id] = def;
   }
 
-  const dbSlots = (slotRows as AdSlotRow[])
+  const dbSlots: AdSlotDefinition[] = (slotRows as AdSlotRow[])
     .filter((r) => r.enabled)
     .map((r) => ({
       id: r.id,
