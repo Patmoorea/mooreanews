@@ -24,7 +24,7 @@ function alertSortPriority(type: string, urgent: boolean): number {
 export async function AlertsStrip() {
   await expirePastAlerts().catch(() => 0);
   const rows = (await dbListActiveAlerts()) ?? [];
-  /** Coupures = bandeau rouge + pastille hero (pas de cartes en double). */
+  /** Coupures = pastille hero uniquement (pas de cartes en double). */
   const withoutOutages = rows.filter(
     (a) => a.type !== "coupure_edt" && a.type !== "coupure_eau",
   );

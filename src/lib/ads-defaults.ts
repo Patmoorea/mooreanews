@@ -1,16 +1,27 @@
 import type { AdCampaign, AdSlotDefinition } from "@/lib/ads-types";
 
-const IAB = "/images/ads/moorea-maitai";
+const IAB_MAITAI = "/images/ads/moorea-maitai";
+const IAB_RAI = "/images/ads/rai-tahiti";
 
 /** Visuels exportés aux dimensions IAB exactes (728×90, 970×250, etc.). */
 const B = {
-  leaderboard: `${IAB}/moorea-maitai-ad-leaderboard-728x90.png`,
-  billboard: `${IAB}/moorea-maitai-ad-billboard-970x250.png`,
-  billboardSunset: `${IAB}/moorea-maitai-ad-billboard-sunset-970x250.png`,
-  rectangle: `${IAB}/moorea-maitai-ad-rectangle-300x250.png`,
-  rectangleCompact: `${IAB}/moorea-maitai-ad-rectangle-compact-300x250.png`,
-  card: `${IAB}/moorea-maitai-ad-card-300x200.png`,
-  ribbon: `${IAB}/moorea-maitai-ad-ribbon-468x60.png`,
+  leaderboard: `${IAB_MAITAI}/moorea-maitai-ad-leaderboard-728x90.png`,
+  billboard: `${IAB_MAITAI}/moorea-maitai-ad-billboard-970x250.png`,
+  billboardSunset: `${IAB_MAITAI}/moorea-maitai-ad-billboard-sunset-970x250.png`,
+  rectangle: `${IAB_MAITAI}/moorea-maitai-ad-rectangle-300x250.png`,
+  rectangleCompact: `${IAB_MAITAI}/moorea-maitai-ad-rectangle-compact-300x250.png`,
+  card: `${IAB_MAITAI}/moorea-maitai-ad-card-300x200.png`,
+  ribbon: `${IAB_MAITAI}/moorea-maitai-ad-ribbon-468x60.png`,
+} as const;
+
+const R = {
+  leaderboard: `${IAB_RAI}/rai-tahiti-ad-leaderboard-728x90.png`,
+  billboard: `${IAB_RAI}/rai-tahiti-ad-billboard-970x250.png`,
+  billboardOcean: `${IAB_RAI}/rai-tahiti-ad-billboard-ocean-970x250.png`,
+  rectangle: `${IAB_RAI}/rai-tahiti-ad-rectangle-300x250.png`,
+  rectangleCompact: `${IAB_RAI}/rai-tahiti-ad-rectangle-compact-300x250.png`,
+  card: `${IAB_RAI}/rai-tahiti-ad-card-300x200.png`,
+  ribbon: `${IAB_RAI}/rai-tahiti-ad-ribbon-468x60.png`,
 } as const;
 
 export const DEFAULT_AD_CAMPAIGNS: Record<string, AdCampaign> = {
@@ -45,6 +56,39 @@ export const DEFAULT_AD_CAMPAIGNS: Record<string, AdCampaign> = {
     href: "https://www.facebook.com/profile.php?id=61555377901751",
     alt: "Moorea Maitai Snack Bar — Sunset Beach Maharepa, cuisine locale, tapas, grillades, fruits de mer. 7/7 11h-21h",
     sponsor: "Moorea Maitai",
+    active: true,
+  },
+  "rai-tahiti": {
+    id: "rai-tahiti",
+    name: "RAI TAHITI — Transport sanitaire VSL",
+    image: R.billboard,
+    imageWidth: 970,
+    imageHeight: 250,
+    formatImages: {
+      leaderboard: R.leaderboard,
+      billboard: R.billboard,
+      rectangle: R.rectangle,
+      sidebar: R.rectangle,
+      card: R.card,
+      ribbon: R.ribbon,
+    },
+    slotImages: {
+      "home-leaderboard": R.leaderboard,
+      "home-articles": R.billboard,
+      "home-events": R.rectangle,
+      "home-map": R.billboardOcean,
+      "actualites-top": R.leaderboard,
+      "actualites-inline": R.card,
+      "article-bottom": R.billboardOcean,
+      "restaurants-top": R.leaderboard,
+      "restaurants-inline": R.rectangleCompact,
+      "evenements-top": R.billboard,
+      "visiteurs-mid": R.rectangle,
+      "footer-sponsors": R.ribbon,
+    },
+    href: "https://www.raitahiti.com",
+    alt: "RAI TAHITI — transport sanitaire VSL conventionné CPS, Moorea & Tahiti, 7j/7. Moorea 89 77 76 24 · Tahiti 89 41 02 10",
+    sponsor: "RAI TAHITI",
     active: true,
   },
 };
