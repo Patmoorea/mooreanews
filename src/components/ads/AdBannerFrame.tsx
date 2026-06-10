@@ -22,7 +22,7 @@ export function AdBannerFrame({ src, alt, format, className }: Props) {
         width={spec.width}
         height={spec.height}
         sizes={`(max-width: 768px) 100vw, ${spec.width}px`}
-        className="block h-auto w-full max-w-full"
+        className="block h-auto w-full max-w-full object-contain object-center bg-white"
         style={{ aspectRatio: `${spec.width} / ${spec.height}` }}
         priority={format === "leaderboard"}
       />

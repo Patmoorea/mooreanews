@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Découpe le composite RAI TAHITI en 10 bannières + exports IAB (sans étirement)."""
+"""Installe les bannières RAI TAHITI fournies (assets/) — copie directe, redimension proportionnel uniquement."""
 
 from __future__ import annotations
 
@@ -12,34 +12,38 @@ ROOT = Path(__file__).resolve().parents[1]
 ASSETS = Path(
     "/Users/patricejourdan/.cursor/projects/Users-patricejourdan-Desktop-moorea-hub/assets"
 )
-COMPOSITE = ASSETS / "ChatGPT_Image_10_juin_2026__06_55_56-c6594f42-8618-49f9-9866-d35ac057fdd0.png"
 OUT = ROOT / "public/images/ads/rai-tahiti"
 SEP = OUT / "separees"
-LABEL_X = 182
 BG = (255, 255, 255)
 
-# id, fichier separees, crop x1,y1,x2,y2
-BANNERS: list[tuple[str, str, tuple[int, int, int, int]]] = [
-    ("01", "01-leaderboard-728x90.png", (LABEL_X, 16, 1012, 105)),
-    ("02", "02-inline-468x60.png", (LABEL_X, 129, 354, 189)),
-    ("03", "03-mobile-320x50.png", (182, 189, 502, 239)),
-    ("04", "04-medium-rectangle-300x250.png", (375, 129, 563, 339)),
-    ("05", "05-large-rectangle-336x280.png", (574, 129, 797, 339)),
-    ("06", "06-half-page-300x600.png", (574, 129, 798, 646)),
-    ("07", "07-skyscraper-160x600.png", (182, 129, 354, 646)),
-    ("08", "08-facebook-1200x628.png", (285, 365, 716, 646)),
-    ("09", "09-instagram-1080x1080.png", (820, 129, 1012, 400)),
-    ("10", "10-pinterest-1000x1500.png", (753, 365, 1012, 646)),
-]
+# prefixe fichier assets → nom separees
+ASSET_NAMES: dict[str, str] = {
+    "01": "01-leaderboard-728x90.png",
+    "02": "02-inline-468x60.png",
+    "03": "03-mobile-320x50.png",
+    "04": "04-medium-rectangle-300x250.png",
+    "05": "05-large-rectangle-336x280.png",
+    "06-card": "06-card-square.png",
+    "06-half": "06-half-page-300x600.png",
+    "07": "07-skyscraper-160x600.png",
+    "08": "08-facebook-1200x628.png",
+    "10": "10-pinterest-1000x1500.png",
+}
 
-# export IAB : fichier, source id, w, h, mode (contain | cover | width)
-IAB_EXPORTS: list[tuple[str, str, int, int, str]] = [
-    ("rai-tahiti-ad-leaderboard-728x90.png", "01", 728, 90, "width"),
-    ("rai-tahiti-ad-ribbon-468x60.png", "01", 468, 60, "ribbon"),
-    ("rai-tahiti-ad-rectangle-300x250.png", "04", 300, 250, "contain"),
-    ("rai-tahiti-ad-rectangle-compact-300x250.png", "05", 300, 250, "contain"),
-    ("rai-tahiti-ad-card-300x200.png", "04", 300, 200, "contain"),
-]
+
+def find_asset(prefix: str) -> Path | None:
+    matches = sorted(ASSETS.glob(f"rai-tahiti-{prefix}-*.png"))
+    return matches[0] if matches else None
+
+
+def fit_width_pad(src: Image.Image, w: int, h: int) -> Image.Image:
+    """Largeur cible, hauteur proportionnelle, centré sur fond blanc (jamais d'étirement)."""
+    sw, sh = src.size
+    nh = max(1, int(sh * w / sw))
+    resized = src.resize((w, nh), Image.Resampling.LANCZOS)
+    canvas = Image.new("RGB", (w, h), BG)
+    canvas.paste(resized, (0, (h - nh) // 2))
+    return canvas
 
 
 def fit_contain(src: Image.Image, w: int, h: int) -> Image.Image:
@@ -52,78 +56,55 @@ def fit_contain(src: Image.Image, w: int, h: int) -> Image.Image:
     return canvas
 
 
-def fit_cover(src: Image.Image, w: int, h: int) -> Image.Image:
-    sw, sh = src.size
-    scale = max(w / sw, h / sh)
-    nw, nh = max(1, int(sw * scale)), max(1, int(sh * scale))
-    resized = src.resize((nw, nh), Image.Resampling.LANCZOS)
-    left = max(0, (nw - w) // 2)
-    top = max(0, (nh - h) // 2)
-    return resized.crop((left, top, left + w, top + h))
-
-
-def fit_width(src: Image.Image, w: int, h: int) -> Image.Image:
-    sw, sh = src.size
-    nh = max(1, int(sh * w / sw))
-    resized = src.resize((w, nh), Image.Resampling.LANCZOS)
-    if nh <= h:
-        canvas = Image.new("RGB", (w, h), BG)
-        canvas.paste(resized, (0, (h - nh) // 2))
-        return canvas
-    top = (nh - h) // 2
-    return resized.crop((0, top, w, top + h))
-
-
-def ribbon_from_leaderboard(src: Image.Image, w: int, h: int) -> Image.Image:
-    """Bandeau pied de page : partie droite du leaderboard (paysage + CTA)."""
-    sw, sh = src.size
-    strip = src.crop((int(sw * 0.38), 0, sw, sh))
-    return fit_cover(strip, w, h)
-
-
-def export_iab(src: Image.Image, w: int, h: int, mode: str) -> Image.Image:
-    if mode == "width":
-        return fit_width(src, w, h)
-    if mode == "ribbon":
-        return ribbon_from_leaderboard(src, w, h)
-    if mode == "cover":
-        return fit_cover(src, w, h)
-    return fit_contain(src, w, h)
+def ribbon_from_leaderboard(lb: Image.Image, w: int = 468, h: int = 60) -> Image.Image:
+    """Ruban pied de page : zone droite du leaderboard (paysage + bouton), sans étirer."""
+    sw, sh = lb.size
+    strip = lb.crop((int(sw * 0.52), 0, sw, sh))
+    sw2, sh2 = strip.size
+    scale = min(w / sw2, h / sh2)
+    nw, nh = max(1, int(sw2 * scale)), max(1, int(sh2 * scale))
+    resized = strip.resize((nw, nh), Image.Resampling.LANCZOS)
+    canvas = Image.new("RGB", (w, h), BG)
+    canvas.paste(resized, ((w - nw) // 2, (h - nh) // 2))
+    return canvas
 
 
 def main() -> None:
-    if not COMPOSITE.exists():
-        raise SystemExit(f"Composite introuvable : {COMPOSITE}")
-
-    if SEP.exists():
-        shutil.rmtree(SEP)
     SEP.mkdir(parents=True, exist_ok=True)
+    loaded: dict[str, Image.Image] = {}
 
-    src = Image.open(COMPOSITE).convert("RGB")
-    print(f"Source: {COMPOSITE.name} ({src.size[0]}×{src.size[1]})")
+    for key, sep_name in ASSET_NAMES.items():
+        src_path = find_asset(key)
+        if not src_path:
+            print(f"  SKIP {key} — fichier assets introuvable")
+            continue
+        img = Image.open(src_path).convert("RGB")
+        loaded[key] = img
+        dest = SEP / f"rai-tahiti-{sep_name}"
+        shutil.copy2(src_path, dest)
+        print(f"  separees/rai-tahiti-{sep_name}  ← {src_path.name} ({img.size[0]}×{img.size[1]})")
 
-    crops: dict[str, Image.Image] = {}
-    for bid, name, box in BANNERS:
-        crop = src.crop(box)
-        crops[bid] = crop
-        path = SEP / f"rai-tahiti-{name}"
-        crop.save(path, optimize=True, quality=95)
-        print(f"  separees/rai-tahiti-{name}  {crop.size[0]}×{crop.size[1]}")
+    if "01" not in loaded:
+        raise SystemExit("Bannière 01-leaderboard introuvable dans assets/")
 
-    for out_name, bid, w, h, mode in IAB_EXPORTS:
-        out = export_iab(crops[bid], w, h, mode)
-        path = OUT / out_name
-        out.save(path, optimize=True, quality=95)
-        print(f"  {out_name}  {w}×{h} ({mode})")
+    lb = loaded["01"]
 
-    # Legacy : même visuel leaderboard (plus d'étirement billboard)
-    lb = OUT / "rai-tahiti-ad-leaderboard-728x90.png"
-    for legacy in (
-        "rai-tahiti-ad-billboard-970x250.png",
-        "rai-tahiti-ad-billboard-ocean-970x250.png",
-    ):
-        shutil.copy2(lb, OUT / legacy)
-        print(f"  {legacy}  ← leaderboard (fallback)")
+    exports: list[tuple[str, Image.Image]] = [
+        ("rai-tahiti-ad-leaderboard-728x90.png", fit_width_pad(lb, 728, 90)),
+        ("rai-tahiti-ad-ribbon-468x60.png", ribbon_from_leaderboard(lb, 468, 60)),
+    ]
+
+    if "04" in loaded:
+        exports.append(("rai-tahiti-ad-rectangle-300x250.png", fit_contain(loaded["04"], 300, 250)))
+        exports.append(("rai-tahiti-ad-card-300x200.png", fit_contain(loaded["04"], 300, 200)))
+    if "05" in loaded:
+        exports.append(
+            ("rai-tahiti-ad-rectangle-compact-300x250.png", fit_contain(loaded["05"], 300, 250))
+        )
+
+    for name, img in exports:
+        img.save(OUT / name, optimize=True, quality=95)
+        print(f"  {name}  {img.size[0]}×{img.size[1]}")
 
     print("OK")
 
