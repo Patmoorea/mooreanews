@@ -2,8 +2,6 @@ import Link from "next/link";
 import { ExternalLink, Siren } from "lucide-react";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
 import { expirePastAlerts } from "@/lib/alert-schedule";
-import { syncMeteoVigilanceAlert } from "@/lib/meteo-vigilance-sync";
-import { syncUtilityOutagesIfStale } from "@/lib/utility-outages-sync";
 import { Container } from "@/components/ui/Container";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -24,11 +22,7 @@ function alertSortPriority(type: string, urgent: boolean): number {
 }
 
 export async function AlertsStrip() {
-  await Promise.all([
-    expirePastAlerts(),
-    syncMeteoVigilanceAlert(),
-    syncUtilityOutagesIfStale(),
-  ]);
+  await expirePastAlerts().catch(() => 0);
   const rows = (await dbListActiveAlerts()) ?? [];
   /** Coupures = bandeau rouge + pastille hero (pas de cartes en double). */
   const withoutOutages = rows.filter(

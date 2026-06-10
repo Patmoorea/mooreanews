@@ -3,14 +3,12 @@ import { HeroStickerVignette } from "@/components/home/HeroStickerVignette";
 import {
   isOutageInProgress,
   outageStickerLabel,
-  pickFeaturedOutage,
 } from "@/lib/outage-display";
-import { getUtilityOutages } from "@/lib/utility-outages";
+import { getFeaturedOutageForDisplay } from "@/lib/outage-display-server";
 
-/** Pastille coupure sur le hero — rendu serveur, visible dès le chargement. */
+/** Pastille coupure sur le hero — lecture DB rapide (pas de fetch lourd). */
 export async function HeroOutageSticker() {
-  const schedule = await getUtilityOutages();
-  const outage = pickFeaturedOutage(schedule.all);
+  const outage = await getFeaturedOutageForDisplay();
   if (!outage) return null;
 
   const isEdt = outage.kind === "coupure_edt";
