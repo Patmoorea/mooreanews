@@ -10,32 +10,20 @@ type Props = {
   className?: string;
 };
 
-/** Cadre IAB verrouillé — visuels aux dimensions exactes, remplissage object-cover. */
+/** Cadre IAB : visuel natif aux pixels exacts, ratio verrouillé. */
 export function AdBannerFrame({ src, alt, format, className }: Props) {
   const spec = AD_FORMAT_DISPLAY[format];
 
   return (
-    <div
-      className={cn(
-        "relative mx-auto w-full overflow-hidden bg-ocean-950/5",
-        spec.maxWidthClass,
-        className,
-      )}
-      style={{ aspectRatio: `${spec.width} / ${spec.height}` }}
-    >
+    <div className={cn("mx-auto w-full", spec.maxWidthClass, className)}>
       <Image
         src={src}
         alt={alt}
-        fill
+        width={spec.width}
+        height={spec.height}
         sizes={`(max-width: 768px) 100vw, ${spec.width}px`}
-        className={cn(
-          spec.objectFit === "cover" ? "object-cover" : "object-contain",
-        )}
-        style={
-          spec.objectPosition
-            ? { objectPosition: spec.objectPosition }
-            : undefined
-        }
+        className="block h-auto w-full max-w-full"
+        style={{ aspectRatio: `${spec.width} / ${spec.height}` }}
         priority={format === "leaderboard"}
       />
     </div>

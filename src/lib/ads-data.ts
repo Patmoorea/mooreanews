@@ -24,9 +24,9 @@ function campaignFromRow(row: AdCampaignRow): AdCampaign {
   return {
     id: row.id,
     name: row.name,
-    image: row.image,
-    imageWidth: row.image_width,
-    imageHeight: row.image_height,
+    image: defaults?.image ?? row.image,
+    imageWidth: defaults?.imageWidth ?? row.image_width,
+    imageHeight: defaults?.imageHeight ?? row.image_height,
     formatImages: defaults?.formatImages,
     slotImages: defaults?.slotImages,
     href: row.href,
