@@ -67,6 +67,11 @@ export function detectOutageDistrict(text: string): string | null {
     if (upper.includes(d.toUpperCase())) return d;
   }
   if (/TIAHURA/i.test(text)) return "Tiahura";
+  if (/DEHORS/i.test(text) && /TIAHURA|MAHAREPA|PAOPAO/i.test(text)) {
+    if (/MAHAREPA/i.test(text)) return "Maharepa";
+    if (/PAOPAO/i.test(text)) return "Paopao";
+    return "Tiahura";
+  }
   if (/GENDRON/i.test(text)) return "Tiahura";
   if (/MAHAREPA/i.test(text)) return "Maharepa";
   if (/LINAREVA/i.test(text)) return "Papetoai";
@@ -125,6 +130,14 @@ export function parseOutageDatesFromText(corpus: string): {
   }
   if (!timeM) {
     timeM = t.match(/(\d{1,2})h(\d{2})\s+(\d{1,2})h(\d{2})/i);
+  }
+
+  // Date dans le titre Te Ito Rau mais corps FB tronqué (« demain… ») — horaire type entretien poste
+  if (!timeM && /info coupure|coupure d['']?électricité|coupure d['']?electricite/i.test(t)) {
+    return {
+      startsAt: tahitiIso(year, month, day, 8, 0),
+      endsAt: tahitiIso(year, month, day, 13, 0),
+    };
   }
   if (!timeM) return null;
 

@@ -11,6 +11,41 @@ import {
 } from "@/lib/outage-text-parse";
 import type { UtilityOutage } from "@/lib/utility-outages";
 
+function corpusNeedsOgEnrich(corpus: string): boolean {
+  return (
+    (/\.\.\.|…/.test(corpus) || /demain[^0-9]{0,12}$/i.test(corpus.trim())) &&
+    !/\d{1,2}h\d{2}/.test(corpus)
+  );
+}
+
+async function enrichCorpusFromFacebookOg(
+  slug: string,
+  corpus: string,
+): Promise<string> {
+  if (!corpusNeedsOgEnrich(corpus)) return corpus;
+  const m = slug.match(/-fb-(\d+)-(\d+)$/);
+  if (!m) return corpus;
+
+  const [, pageId, postId] = m;
+  const { fetchOpenGraph } = await import("@/lib/open-graph");
+  const candidates = [
+    `https://www.facebook.com/${pageId}/posts/${postId}`,
+    `https://www.facebook.com/photo?fbid=${postId}`,
+  ];
+
+  for (const url of candidates) {
+    try {
+      const og = await fetchOpenGraph(url);
+      if (!og) continue;
+      const merged = cleanImportedText(`${og.title} ${og.description}`).trim();
+      if (merged.length > corpus.length + 20) return merged;
+    } catch {
+      /* ignore */
+    }
+  }
+  return corpus;
+}
+
 export async function fetchOutagesFromArticles(): Promise<UtilityOutage[]> {
   const admin = getAdminSupabase();
   if (!admin) return [];
@@ -32,9 +67,10 @@ export async function fetchOutagesFromArticles(): Promise<UtilityOutage[]> {
   const outages: UtilityOutage[] = [];
 
   for (const row of data) {
-    const corpus = cleanImportedText(
+    let corpus = cleanImportedText(
       `${row.title ?? ""} ${row.excerpt ?? ""} ${row.body ?? ""}`,
     );
+    corpus = await enrichCorpusFromFacebookOg(row.slug, corpus);
 
     const sourceLabel = row.slug.startsWith("te-ito-rau-fb-")
       ? "Te Ito Rau — Facebook"
