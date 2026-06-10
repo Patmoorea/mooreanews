@@ -7,8 +7,8 @@ import { CleanupFacebookImportsButton } from "@/components/admin/CleanupFacebook
 import { CleanupDuplicateArticlesButton } from "@/components/admin/CleanupDuplicateArticlesButton";
 import { countStaleFacebookImports, countStaleFacebookEvents } from "@/lib/facebook-import-cleanup";
 import {
+  articleRowToDedupeRow,
   countDuplicateArticlesFromRows,
-  type ArticleDedupeRow,
 } from "@/lib/article-duplicate-cleanup";
 import { formatDateShortFR } from "@/lib/utils";
 
@@ -23,18 +23,7 @@ export default async function AdminArticlesPage() {
 
   const staleFacebookCount =
     (await countStaleFacebookImports()) + (await countStaleFacebookEvents());
-
-  const dedupeRows: ArticleDedupeRow[] = (articles ?? []).map((a) => ({
-    id: a.id,
-    slug: a.slug,
-    title: a.title,
-    excerpt: a.excerpt,
-    body: a.body,
-    cover_url: a.cover_url,
-    published: a.published,
-    published_at: a.published_at,
-    tags: a.tags,
-  }));
+  const dedupeRows = (articles ?? []).map(articleRowToDedupeRow);
   const duplicateCount = countDuplicateArticlesFromRows(dedupeRows);
 
   return (

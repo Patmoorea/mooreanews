@@ -5,16 +5,6 @@
 import { normalizeTitleKey } from "@/lib/cover-image";
 import type { Article } from "@/lib/content-types";
 
-const EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu;
-
-function tahitiDay(iso: string): string {
-  const ms = Date.parse(iso);
-  if (Number.isNaN(ms)) return iso.slice(0, 10);
-  return new Date(ms).toLocaleDateString("en-CA", {
-    timeZone: "Pacific/Tahiti",
-  });
-}
-
 /** Extrait l’identifiant story/photo d’un id Graph (PAGEID_STORYID ou photo seule). */
 export function facebookStoryIdFromPostId(postId: string): string {
   const trimmed = postId.trim();
@@ -31,66 +21,89 @@ export function facebookPermalinkFromArticleBody(body: string): string | null {
   return match?.[1]?.trim() ?? null;
 }
 
-export function normalizeArticleTitleForDedupe(title: string): string {
+function normalizeTitleForDedupe(title: string): string {
   return normalizeTitleKey(
-    title.replace(EMOJI_RE, "").replace(/\s+/g, " ").trim().slice(0, 200),
+    title
+      .replace(/\p{Extended_Pictographic}/gu, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 160),
   );
 }
 
-function facebookPermalinkDedupeKey(permalink: string): string | null {
-  const storyId =
+function facebookStoryIdFromPermalink(permalink: string): string | null {
+  const id =
     permalink.match(/\/posts\/(\d+)/)?.[1] ??
-    permalink.match(/\/permalink\/(\d+)/)?.[1] ??
+    permalink.match(/permalink\/(\d+)/)?.[1] ??
     permalink.match(/fbid=(\d+)/)?.[1];
-  if (storyId && storyId.length >= 8) return `fb-story:${storyId}`;
-  return null;
+  return id && id.length >= 8 ? id : null;
 }
 
-type DedupeFields = Pick<
-  Article,
-  "slug" | "title" | "publishedAt" | "image" | "body"
->;
+/** Clé stable pour regrouper les doublons (même publication Facebook, IDs/slugs différents). */
+export function articleDisplayDedupeKey(
+  article: Pick<Article, "slug" | "title" | "publishedAt" | "image" | "body">,
+): string {
+  const day = article.publishedAt.slice(0, 10);
+  const titleKey = normalizeTitleForDedupe(article.title);
 
-/** Clé stable pour regrouper les doublons (affichage + nettoyage admin). */
-export function articleDedupeKey(article: DedupeFields): string {
+  // Imports Facebook : priorité au titre + jour (les affiches fbcdn diffèrent souvent).
+  if (article.slug.includes("-fb-") && titleKey.length >= 10) {
+    return `fb-title:${titleKey}:${day}`;
+  }
+
   const permalink = article.body
     ? facebookPermalinkFromArticleBody(article.body)
     : null;
   if (permalink) {
-    const pk = facebookPermalinkDedupeKey(permalink);
-    if (pk) return pk;
+    const storyId = facebookStoryIdFromPermalink(permalink);
+    if (storyId) return `fb-story:${storyId}`;
+    try {
+      const u = new URL(permalink);
+      return `fb:${u.pathname}${u.search}`;
+    } catch {
+      return `fb:${permalink}`;
+    }
   }
 
-  const titleKey = normalizeArticleTitleForDedupe(article.title);
-  const day = tahitiDay(article.publishedAt);
   if (titleKey.length >= 12) {
     return `title:${titleKey}:${day}`;
   }
 
   const img = article.image?.split("?")[0]?.trim() ?? "";
-  if (img.length > 20) {
+  if (img.length > 20 && !img.includes("fbcdn.net")) {
     return `img:${img}`;
   }
 
   return `slug:${article.slug}`;
 }
 
-/** @deprecated Alias — utiliser articleDedupeKey */
-export const articleDisplayDedupeKey = articleDedupeKey;
+function articleDisplayScore(
+  article: Pick<Article, "title" | "publishedAt" | "image" | "body" | "excerpt">,
+): number {
+  let score = 0;
+  const cover = article.image?.trim() ?? "";
+  if (cover && !cover.includes("fbcdn.net")) score += 25;
+  else if (cover) score += 10;
+  const body = article.body ?? "";
+  const excerpt = article.excerpt ?? "";
+  score += Math.min(body.length, 800) / 20;
+  score += Math.min(excerpt.length, 280) / 30;
+  if (facebookPermalinkFromArticleBody(body)) score += 3;
+  score += Date.parse(article.publishedAt) / 1e15;
+  return score;
+}
 
-/** Garde l’article le plus complet par clé de déduplication. */
+/** Garde la fiche la plus complète par clé de déduplication. */
 export function dedupeArticlesForDisplay(articles: Article[]): Article[] {
   const byKey = new Map<string, Article>();
   for (const article of articles) {
-    const key = articleDedupeKey(article);
+    const key = articleDisplayDedupeKey(article);
     const prev = byKey.get(key);
     if (!prev) {
       byKey.set(key, article);
       continue;
     }
-    const score = (a: Article) =>
-      (a.image ? 10 : 0) + Math.min(a.body.length, 500) / 50;
-    if (score(article) >= score(prev)) {
+    if (articleDisplayScore(article) >= articleDisplayScore(prev)) {
       byKey.set(key, article);
     }
   }

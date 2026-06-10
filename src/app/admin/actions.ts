@@ -507,18 +507,13 @@ export async function deleteDuplicateArticles(): Promise<{
   deleted: number;
   groups: number;
 }> {
-  await requireAdmin();
-  const admin = getAdminSupabase();
-  if (!admin) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY manquant sur Vercel — suppression impossible.",
-    );
-  }
+  const { supabase } = await requireAdmin();
+  const admin = getAdminSupabase() ?? supabase;
 
   const { purgeDuplicateArticles } = await import(
     "@/lib/article-duplicate-cleanup"
   );
-  const result = await purgeDuplicateArticles();
+  const result = await purgeDuplicateArticles(admin);
 
   revalidatePath("/admin/articles");
   revalidatePath("/actualites");
