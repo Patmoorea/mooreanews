@@ -4,7 +4,9 @@ import { getServerSupabase } from "@/lib/supabase/server";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminRowActions } from "@/components/admin/AdminRowActions";
 import { CleanupFacebookImportsButton } from "@/components/admin/CleanupFacebookImportsButton";
+import { CleanupDuplicateArticlesButton } from "@/components/admin/CleanupDuplicateArticlesButton";
 import { countStaleFacebookImports, countStaleFacebookEvents } from "@/lib/facebook-import-cleanup";
+import { countDuplicateArticles } from "@/lib/article-duplicate-cleanup";
 import { formatDateShortFR } from "@/lib/utils";
 
 export const metadata = { title: "Articles" };
@@ -18,6 +20,7 @@ export default async function AdminArticlesPage() {
 
   const staleFacebookCount =
     (await countStaleFacebookImports()) + (await countStaleFacebookEvents());
+  const duplicateCount = await countDuplicateArticles();
 
   return (
     <div>
@@ -28,6 +31,7 @@ export default async function AdminArticlesPage() {
         newLabel="Nouvel article"
       />
 
+      <CleanupDuplicateArticlesButton count={duplicateCount} />
       <CleanupFacebookImportsButton count={staleFacebookCount} />
 
       <div className="bg-white rounded-2xl border border-ocean-100 overflow-x-auto">

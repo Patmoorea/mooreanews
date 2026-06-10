@@ -502,6 +502,30 @@ export async function deleteLegacyFacebookImports(): Promise<{
   };
 }
 
+/** Supprime les actualités Facebook en double (même publication, slugs différents). */
+export async function deleteDuplicateArticles(): Promise<{
+  deleted: number;
+  groups: number;
+}> {
+  await requireAdmin();
+  const admin = getAdminSupabase();
+  if (!admin) {
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY manquant sur Vercel — suppression impossible.",
+    );
+  }
+
+  const { purgeDuplicateArticles } = await import(
+    "@/lib/article-duplicate-cleanup"
+  );
+  const result = await purgeDuplicateArticles();
+
+  revalidatePath("/admin/articles");
+  revalidatePath("/actualites");
+  revalidateArticlePublicPaths();
+  return result;
+}
+
 /** @deprecated Utiliser deleteLegacyFacebookImports */
 export async function unpublishLegacyFacebookImports(): Promise<{
   unpublished: number;
