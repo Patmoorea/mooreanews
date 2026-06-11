@@ -1,7 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { getAdminSupabase } from "@/lib/supabase/admin";
-import { getServerSupabase } from "@/lib/supabase/server";
+import { getPublicSupabase } from "@/lib/supabase/server";
 import {
   DEFAULT_AD_CAMPAIGNS,
   DEFAULT_AD_SLOTS,
@@ -74,7 +74,8 @@ function slotFromRow(row: AdSlotRow): AdSlotDefinition | null {
 export const ADS_CONFIG_CACHE_TAG = "ads-config";
 
 async function fetchFromDatabaseUncached(): Promise<AdsConfig | null> {
-  const supabase = (await getServerSupabase()) ?? getAdminSupabase();
+  // Client anon sans cookies — compatible unstable_cache / pré-rendu statique.
+  const supabase = getPublicSupabase() ?? getAdminSupabase();
   if (!supabase) return null;
 
   const [{ data: campaignRows, error: cErr }, { data: slotRows, error: sErr }] =

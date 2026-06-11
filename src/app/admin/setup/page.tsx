@@ -9,6 +9,9 @@ import {
 
 export const metadata = { title: "Configuration production" };
 
+/** Checks réseau au runtime — ne pas pré-générer au build (timeout 60s Vercel). */
+export const dynamic = "force-dynamic";
+
 export default async function AdminSetupPage() {
   const checks = await getProductionSetupStatus();
   const pushCounts = await getPushSubscriberCounts();
