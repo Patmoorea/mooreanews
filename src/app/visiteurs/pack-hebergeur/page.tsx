@@ -6,7 +6,7 @@ import { Container } from "@/components/ui/Container";
 import { RAI_TAHITI, SITE } from "@/lib/constants";
 import { getMooreaDuJour } from "@/lib/moorea-du-jour";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Pack hébergeur — MooreaNews",

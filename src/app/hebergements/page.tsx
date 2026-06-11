@@ -9,7 +9,7 @@ import {
   type AccommodationType,
 } from "@/lib/accommodations";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 600;
 
 const TYPE_FILTERS: { value: AccommodationType | "all"; label: string }[] = [
   { value: "all", label: "Tous" },

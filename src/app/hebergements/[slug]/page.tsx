@@ -15,7 +15,7 @@ import {
   lodgingBusinessJsonLd,
 } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 600;
 
 type Props = { params: Promise<{ slug: string }> };
 

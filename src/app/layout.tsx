@@ -93,6 +93,9 @@ export const metadata: Metadata = {
   },
 };
 
+/** Pied de page (pubs) + chrome — cache 10 min pour limiter le CPU Vercel. */
+export const revalidate = 600;
+
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#06b6d4" },

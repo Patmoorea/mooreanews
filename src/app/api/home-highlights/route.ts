@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getHomeHighlights } from "@/lib/home-highlights";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 600;
 
 export async function GET() {
   try {

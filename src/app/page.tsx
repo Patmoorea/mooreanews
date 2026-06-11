@@ -16,7 +16,7 @@ import { RecentAnnouncements } from "@/components/home/RecentAnnouncements";
 import { InteractiveMap } from "@/components/home/InteractiveMap";
 import { CommunityCTA } from "@/components/home/CommunityCTA";
 
-export const revalidate = 300;
+export const revalidate = 600;
 
 export const metadata: Metadata = {
   alternates: {

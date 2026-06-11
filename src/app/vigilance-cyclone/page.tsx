@@ -12,7 +12,7 @@ import { syncMeteoVigilanceAlertIfStale } from "@/lib/meteo-vigilance-sync";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 600;
 
 export const metadata: Metadata = {
   title: "Vigilance cyclone & météo — Moorea",

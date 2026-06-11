@@ -18,7 +18,7 @@ export const metadata = {
   alternates: { canonical: "/coupures" },
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 function OutageTable({
   outages,

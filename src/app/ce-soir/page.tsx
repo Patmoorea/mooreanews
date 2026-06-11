@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { getMooreaDuJour } from "@/lib/moorea-du-jour";
 import { OPEN_STATUS_HELP, openStatusLabel } from "@/lib/restaurant-open-status";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Ce soir à Moorea",

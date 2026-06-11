@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { ADS_CONFIG_CACHE_TAG } from "@/lib/ads-data";
 import { redirect } from "next/navigation";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import type { AdFormat, AdPackageId } from "@/lib/ads-types";
@@ -22,7 +23,8 @@ function slugifyId(raw: string): string {
 }
 
 function revalidateAds() {
-  revalidatePath("/", "layout");
+  revalidateTag(ADS_CONFIG_CACHE_TAG, "max");
+  revalidatePath("/");
   revalidatePath("/admin/ads");
   revalidatePath("/partenaires");
 }

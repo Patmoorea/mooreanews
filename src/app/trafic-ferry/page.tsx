@@ -18,7 +18,7 @@ export const metadata = {
   alternates: { canonical: "/trafic-ferry" },
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 600;
 
 function ChangeBadge({
   current,

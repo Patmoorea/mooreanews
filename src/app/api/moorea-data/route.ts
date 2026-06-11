@@ -3,7 +3,7 @@ import { getMooreaDuJour } from "@/lib/moorea-du-jour";
 import { getBeachSwimScores } from "@/lib/swim-beaches";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 /** API ouverte « Moorea Data » — ferries, météo, alertes, plages. */
 export async function GET() {

@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/emploi-formation" },
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 1800;
 
 export default async function EmploiFormationPage() {
   const [sefiJobs, aravihiJobs, cgfJobs, communePosts, trainings, lastSync] =

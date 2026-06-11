@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { TripPlanClient } from "@/components/trip/TripPlanClient";
 import { buildTripPlan } from "@/lib/mon-sejour";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Mon séjour à Moorea",

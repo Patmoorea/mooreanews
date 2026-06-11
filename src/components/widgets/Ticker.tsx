@@ -65,9 +65,9 @@ export function Ticker() {
     async function load() {
       try {
         const [weatherRes, sunRes, ferryRes] = await Promise.all([
-          fetch("/api/weather", { cache: "no-store" }).catch(() => null),
-          fetch("/api/sun", { cache: "no-store" }).catch(() => null),
-          fetch("/api/ferries", { cache: "no-store" }).catch(() => null),
+          fetch("/api/weather").catch(() => null),
+          fetch("/api/sun").catch(() => null),
+          fetch("/api/ferries").catch(() => null),
         ]);
 
         const next: TickerItem[] = [];

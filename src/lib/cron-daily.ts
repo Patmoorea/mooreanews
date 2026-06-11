@@ -60,7 +60,7 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   jobs.expiredAnnouncements = await expireStaleAnnouncements();
   if (expiredAlerts > 0) {
     revalidatePath("/alertes");
-    revalidatePath("/", "layout");
+    revalidatePath("/");
   }
 
   jobs.meteoVigilance = await syncMeteoVigilanceAlert();
@@ -72,7 +72,7 @@ export async function runDailyCron(): Promise<DailyCronResult> {
     const action = (jobs.meteoVigilance as { action: string }).action;
     if (action === "created" || action === "updated" || action === "cleared") {
       revalidatePath("/alertes");
-      revalidatePath("/", "layout");
+      revalidatePath("/");
     }
   }
 
@@ -135,7 +135,7 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   );
   if (alertsCreated > 0) {
     revalidatePath("/alertes");
-    revalidatePath("/", "layout");
+    revalidatePath("/");
   }
 
   const articlesCreated = results.reduce(
@@ -144,19 +144,25 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   );
   if (articlesCreated > 0) {
     revalidatePath("/actualites");
-    revalidatePath("/", "layout");
+    revalidatePath("/");
   }
 
   jobs.utilityOutages = await syncUtilityOutages();
-  jobs.healthOnCall = await syncHealthOnCall({
-    fullWeekendPipeline: shouldPublishGardeWeekend(clock),
-  });
-  revalidatePath("/sante-garde");
+  if (shouldPublishGardeWeekend(clock)) {
+    jobs.healthOnCall = await syncHealthOnCall({ fullWeekendPipeline: true });
+    revalidatePath("/sante-garde");
+    revalidatePath("/");
+  } else {
+    jobs.healthOnCall = {
+      skipped: true,
+      reason: "garde/OCR uniquement le vendredi matin Tahiti — données en cache le reste de la semaine",
+    };
+  }
 
   if (shouldPublishWeeklyRecap(clock)) {
     jobs.weeklyRecap = await syncWeeklyRecapFromMooreaNews();
     revalidatePath("/actualites");
-    revalidatePath("/", "layout");
+    revalidatePath("/");
   }
   const utilitySync = jobs.utilityOutages as {
     created?: number;
@@ -170,7 +176,7 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   ) {
     revalidatePath("/alertes");
     revalidatePath("/coupures");
-    revalidatePath("/", "layout");
+    revalidatePath("/");
   }
 
   const aggErrors = results.flatMap((r) =>
@@ -192,14 +198,13 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   if (facebookPurge.deleted > 0 || facebookEventsPurge.unpublished > 0) {
     revalidatePath("/actualites");
     revalidatePath("/evenements");
-    revalidatePath("/", "layout");
+    revalidatePath("/");
   }
 
-  revalidatePath("/");
-  revalidatePath("/api/ferries");
-
   jobs.ferrySync = await checkFerryScheduleSync();
-  jobs.audit = await auditPublicContent();
+  jobs.audit = shouldPublishWeeklyRecap(clock)
+    ? await auditPublicContent()
+    : { skipped: true, findings: [], totals: { articles: 0, events: 0, announcements: 0, external: 0 } };
 
   const facebookHealth = await checkFacebookTokenHealth();
   if (fbRefresh.refreshed) facebookHealth.refreshedThisRun = true;

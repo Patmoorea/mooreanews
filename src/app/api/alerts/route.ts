@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { expirePastAlerts } from "@/lib/alert-schedule";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export async function GET() {
   await expirePastAlerts();

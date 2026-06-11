@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getServerSupabase } from "@/lib/supabase/server";
@@ -70,7 +71,9 @@ function slotFromRow(row: AdSlotRow): AdSlotDefinition | null {
   };
 }
 
-async function fetchFromDatabase(): Promise<AdsConfig | null> {
+export const ADS_CONFIG_CACHE_TAG = "ads-config";
+
+async function fetchFromDatabaseUncached(): Promise<AdsConfig | null> {
   const supabase = (await getServerSupabase()) ?? getAdminSupabase();
   if (!supabase) return null;
 
@@ -112,8 +115,14 @@ async function fetchFromDatabase(): Promise<AdsConfig | null> {
   return { campaigns, slots, source: "database" };
 }
 
+const fetchAdsConfigCached = unstable_cache(
+  fetchFromDatabaseUncached,
+  ["ads-config-v1"],
+  { revalidate: 600, tags: [ADS_CONFIG_CACHE_TAG] },
+);
+
 export const getAdsConfig = cache(async (): Promise<AdsConfig> => {
-  const fromDb = await fetchFromDatabase();
+  const fromDb = await fetchAdsConfigCached();
   if (fromDb) return fromDb;
   return {
     campaigns: DEFAULT_AD_CAMPAIGNS,

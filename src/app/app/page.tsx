@@ -12,7 +12,7 @@ import { Logo } from "@/components/ui/Logo";
 import { getMooreaDuJour } from "@/lib/moorea-du-jour";
 import { SITE } from "@/lib/constants";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "App MooreaNews",

@@ -27,7 +27,7 @@ export function ServiceHighlightsTicker() {
 
     async function load() {
       try {
-        const res = await fetch("/api/home-highlights", { cache: "no-store" });
+        const res = await fetch("/api/home-highlights");
         if (!res.ok) return;
         const { highlights } = (await res.json()) as {
           highlights: HomeHighlight[];
