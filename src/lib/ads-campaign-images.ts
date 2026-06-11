@@ -1,15 +1,17 @@
 import type { AdCampaign, AdFormat } from "@/lib/ads-types";
 
-/** Visuel pub pour un emplacement (slot > format > image principale). */
+/** Visuel pub pour un emplacement (format IAB d’abord, override par slot optionnel). */
 export function getCampaignImageForSlot(
   campaign: AdCampaign,
   format: AdFormat,
   slotId?: string,
 ): string | null {
+  const fromFormat = getCampaignImageForFormat(campaign, format);
+  if (fromFormat) return fromFormat;
   if (slotId && campaign.slotImages?.[slotId]) {
     return campaign.slotImages[slotId];
   }
-  return getCampaignImageForFormat(campaign, format);
+  return null;
 }
 
 /** Visuel dédié par format IAB — pas de redimensionnement d’une image générique. */

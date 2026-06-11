@@ -51,7 +51,6 @@ function campaignFromRow(row: AdCampaignRow): AdCampaign {
     imageWidth: row.image_width || defaults?.imageWidth || 728,
     imageHeight: row.image_height || defaults?.imageHeight || 90,
     formatImages,
-    slotImages: defaults?.slotImages,
     href: row.href,
     alt: row.alt,
     sponsor: row.sponsor ?? undefined,

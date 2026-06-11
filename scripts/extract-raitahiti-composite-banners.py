@@ -109,6 +109,11 @@ def main() -> None:
     elif "04" in loaded:
         exports.append(("rai-tahiti-ad-card-300x200.png", fit_contain(loaded["04"], 300, 200)))
 
+    # Grand encart 970×250 — source la plus large disponible (Facebook / half-page)
+    billboard_src = loaded.get("08") or loaded.get("05") or loaded.get("06-half")
+    if billboard_src:
+        exports.append(("rai-tahiti-ad-billboard-970x250.png", fit_contain(billboard_src, 970, 250)))
+
     for name, img in exports:
         img.save(OUT / name, optimize=True, quality=95)
         print(f"  → {name}  {img.size[0]}×{img.size[1]}")
