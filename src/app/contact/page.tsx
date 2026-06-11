@@ -98,18 +98,16 @@ export default function ContactPage() {
                   Visibilité renforcée (restaurants, partenaires)
                 </p>
                 <p className="mt-1 text-ocean-700">
-                  Mise en avant type « Premium » sur la page Restaurants ou
-                  encart partenaire : contactez-nous avec votre activité, la
-                  durée souhaitée et un visuel. Nous vous répondons par email
-                  avec les modalités (pas de paiement en ligne pour l&apos;instant).
-                </p>
-                <p className="mt-2">
-                  <a
+                  Forfaits publicitaires Essentiel, Ciblé ou Premium : tarifs et emplacements
+                  sur{" "}
+                  <Link
                     href="/partenaires"
                     className="text-tiare-600 font-semibold hover:underline"
                   >
-                    Voir la page Annonceurs & partenaires
-                  </a>
+                    Annonceurs & partenaires
+                  </Link>
+                  . Demande via ce formulaire ou par email — nous mettons vos bannières en
+                  ligne après accord (pas de paiement en ligne pour l&apos;instant).
                 </p>
               </div>
             </div>

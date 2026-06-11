@@ -3,29 +3,40 @@ import {
   TextArea,
   Checkbox,
   FormActions,
+  Select,
 } from "@/components/admin/AdminFormFields";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
-import type { AdCampaignRow, AdFormat } from "@/lib/ads-types";
+import type { AdCampaignRow, AdFormat, AdPackageId } from "@/lib/ads-types";
 import { AD_FORMAT_DISPLAY } from "@/lib/ad-format-sizes";
 import {
   AD_FORMATS,
   formatUploadHelp,
   parseFormatImagesJson,
 } from "@/lib/ads-format-images";
+import {
+  AD_PACKAGES,
+  AD_PACKAGE_IDS,
+  formatsForPackage,
+  getAdPackage,
+  packagePlacementLabels,
+  DEFAULT_CAMPAIGN_PACKAGE,
+} from "@/lib/ad-packages";
 
 export function AdCampaignForm({
   action,
   initial,
-  usedFormats = [],
 }: {
   action: (formData: FormData) => void | Promise<void>;
   initial?: AdCampaignRow | null;
-  /** Formats requis sur le site pour cette campagne (emplacements assignés). */
-  usedFormats?: AdFormat[];
 }) {
   const isNew = !initial;
   const formatImages = parseFormatImagesJson(initial?.format_images ?? null);
-  const usedSet = new Set(usedFormats);
+  const packageId: AdPackageId =
+    (initial?.ad_package as AdPackageId) ||
+    (initial?.id ? DEFAULT_CAMPAIGN_PACKAGE[initial.id] : undefined) ||
+    "cible";
+  const pkg = getAdPackage(packageId);
+  const includedSet = new Set(formatsForPackage(packageId));
 
   return (
     <form
@@ -44,28 +55,47 @@ export function AdCampaignForm({
         />
       )}
 
+      <Select
+        name="ad_package"
+        label="Forfait publicitaire"
+        required
+        defaultValue={packageId}
+        options={AD_PACKAGE_IDS.map((id) => ({
+          value: id,
+          label: `${AD_PACKAGES[id].name} — dès ${AD_PACKAGES[id].fromXpf} XPF/mois`,
+        }))}
+        help="Détermine les emplacements sur le site et les bannières à fournir. Mêmes règles pour tous les annonceurs."
+      />
+
+      <div className="rounded-xl border border-lagon-200 bg-lagon-50/50 p-4 text-sm text-ocean-800">
+        <p className="font-semibold text-ocean-900">
+          Forfait {pkg.name} — {pkg.tagline}
+        </p>
+        <ul className="mt-2 list-disc list-inside space-y-0.5">
+          {pkg.highlights.map((h) => (
+            <li key={h}>{h}</li>
+          ))}
+        </ul>
+      </div>
+
       <div className="space-y-4">
         <div>
           <h3 className="text-sm font-semibold text-ocean-950">Bannières par format</h3>
           <p className="mt-1 text-sm text-ocean-600">
-            Téléversez <strong>un fichier par format</strong>, aux dimensions exactes indiquées.
-            Le site affiche le bon fichier selon l&apos;emplacement — sans étirement ni recadrage
-            automatique.
+            Téléversez <strong>un fichier par format</strong> inclus dans le forfait, aux
+            dimensions exactes. Le site affiche le bon fichier — sans étirement.
           </p>
         </div>
 
-        {usedFormats.length > 0 && (
+        {formatsForPackage(packageId).length > 0 && (
           <div className="rounded-xl border border-tipanier-200 bg-tipanier-50/60 p-4 text-sm text-ocean-800">
-            <p className="font-semibold text-ocean-900">Formats utilisés sur le site pour cette campagne :</p>
+            <p className="font-semibold text-ocean-900">
+              Emplacements inclus dans votre forfait :
+            </p>
             <ul className="mt-2 list-disc list-inside space-y-0.5">
-              {usedFormats.map((format) => {
-                const spec = AD_FORMAT_DISPLAY[format];
-                return (
-                  <li key={format}>
-                    {spec.label} ({spec.width}×{spec.height} px)
-                  </li>
-                );
-              })}
+              {packagePlacementLabels(packageId).map((line) => (
+                <li key={line}>{line}</li>
+              ))}
             </ul>
           </div>
         )}
@@ -73,27 +103,28 @@ export function AdCampaignForm({
         <div className="grid gap-5">
           {AD_FORMATS.map((format) => {
             const spec = AD_FORMAT_DISPLAY[format];
-            const requiredOnSite = usedSet.has(format);
+            const includedInPackage = includedSet.has(format);
             const isSidebar = format === "sidebar";
+            if (isSidebar) return null;
             return (
               <div
                 key={format}
                 className={
-                  requiredOnSite
+                  includedInPackage
                     ? "rounded-2xl ring-2 ring-lagon-300 ring-offset-2"
                     : undefined
                 }
               >
                 <ImageUploadField
                   name={`format_image_${format}`}
-                  label={`${spec.label}${requiredOnSite ? " — requis sur le site" : ""}`}
+                  label={`${spec.label}${includedInPackage ? " — inclus dans votre forfait" : ""}`}
                   defaultValue={formatImages[format]}
                   help={
-                    isSidebar
-                      ? `${formatUploadHelp(format)} Même visuel que le rectangle 300×250 si vous n’en avez qu’un.`
-                      : formatUploadHelp(format)
+                    includedInPackage
+                      ? formatUploadHelp(format)
+                      : `${formatUploadHelp(format)} Hors forfait ${pkg.name} — optionnel.`
                   }
-                  required={requiredOnSite}
+                  required={includedInPackage}
                 />
               </div>
             );

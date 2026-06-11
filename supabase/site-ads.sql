@@ -7,6 +7,8 @@ create table if not exists public.ad_campaigns (
   image_width     int not null default 1536,
   image_height    int not null default 1024,
   format_images   jsonb not null default '{}'::jsonb,
+  ad_package      text not null default 'cible'
+    check (ad_package in ('essentiel', 'cible', 'premium')),
   href            text not null,
   alt             text not null default '',
   sponsor         text,
@@ -17,6 +19,14 @@ create table if not exists public.ad_campaigns (
 
 alter table public.ad_campaigns
   add column if not exists format_images jsonb not null default '{}'::jsonb;
+
+alter table public.ad_campaigns
+  add column if not exists ad_package text not null default 'cible';
+
+alter table public.ad_campaigns drop constraint if exists ad_campaigns_ad_package_check;
+alter table public.ad_campaigns
+  add constraint ad_campaigns_ad_package_check
+  check (ad_package in ('essentiel', 'cible', 'premium'));
 
 create table if not exists public.ad_slots (
   id              text primary key,
@@ -62,7 +72,7 @@ create trigger set_updated_at_ad_slots
   for each row execute function public.set_updated_at();
 
 -- Données initiales (Moorea Maitai + RAI TAHITI + emplacements)
-insert into public.ad_campaigns (id, name, image, image_width, image_height, format_images, href, alt, sponsor, active)
+insert into public.ad_campaigns (id, name, image, image_width, image_height, format_images, ad_package, href, alt, sponsor, active)
 values
   (
     'moorea-maitai',
@@ -78,6 +88,7 @@ values
       "card": "/images/ads/moorea-maitai/moorea-maitai-ad-card-300x200.png",
       "ribbon": "/images/ads/moorea-maitai/moorea-maitai-ad-ribbon-468x60.png"
     }'::jsonb,
+    'premium',
     'https://www.facebook.com/profile.php?id=61555377901751',
     'Moorea Maitai Snack Bar — Sunset Beach Maharepa, cuisine locale, tapas, grillades, fruits de mer. 7/7 11h-21h',
     'Moorea Maitai',
@@ -91,8 +102,13 @@ values
     90,
     '{
       "leaderboard": "/images/ads/rai-tahiti/rai-tahiti-ad-leaderboard-728x90.png",
+      "billboard": "/images/ads/rai-tahiti/rai-tahiti-ad-billboard-970x250.png",
+      "rectangle": "/images/ads/rai-tahiti/rai-tahiti-ad-rectangle-300x250.png",
+      "sidebar": "/images/ads/rai-tahiti/rai-tahiti-ad-rectangle-300x250.png",
+      "card": "/images/ads/rai-tahiti/rai-tahiti-ad-card-300x200.png",
       "ribbon": "/images/ads/rai-tahiti/rai-tahiti-ad-ribbon-468x60.png"
     }'::jsonb,
+    'premium',
     'https://www.raitahiti.com',
     'RAI TAHITI — transport sanitaire VSL conventionné CPS, Moorea & Tahiti, 7j/7.',
     'RAI TAHITI',
@@ -104,24 +120,25 @@ on conflict (id) do update set
   image_width = excluded.image_width,
   image_height = excluded.image_height,
   format_images = excluded.format_images,
+  ad_package = excluded.ad_package,
   href = excluded.href,
   alt = excluded.alt,
   sponsor = excluded.sponsor,
   active = excluded.active;
 
 insert into public.ad_slots (id, label, format, campaign_id, enabled, sort_order) values
-  ('home-leaderboard', 'Accueil — bandeau principal (sous le hero)', 'leaderboard', 'moorea-maitai', true, 10),
-  ('home-articles', 'Accueil — entre actualités et événements', 'billboard', 'moorea-maitai', true, 20),
-  ('home-events', 'Accueil — après l''agenda', 'rectangle', 'moorea-maitai', true, 30),
-  ('home-map', 'Accueil — avant la carte interactive', 'billboard', 'moorea-maitai', true, 40),
-  ('actualites-top', 'Actualités — haut de liste', 'leaderboard', 'moorea-maitai', true, 50),
-  ('actualites-inline', 'Actualités — encart dans la grille', 'card', 'moorea-maitai', true, 60),
-  ('article-bottom', 'Article — sous le contenu', 'billboard', 'moorea-maitai', true, 70),
-  ('restaurants-top', 'Restaurants — haut de page', 'leaderboard', 'moorea-maitai', true, 80),
-  ('restaurants-inline', 'Restaurants — encart dans la liste', 'rectangle', 'moorea-maitai', true, 90),
-  ('evenements-top', 'Événements — haut de page', 'billboard', 'moorea-maitai', true, 100),
-  ('visiteurs-mid', 'Visiteurs — bandeau RAI TAHITI', 'leaderboard', 'rai-tahiti', true, 110),
-  ('sante-garde-mid', 'Santé / garde — bandeau transport VSL', 'leaderboard', 'rai-tahiti', true, 115),
+  ('home-leaderboard', 'Accueil — bandeau principal (sous le hero)', 'leaderboard', null, true, 10),
+  ('home-articles', 'Accueil — entre actualités et événements', 'billboard', null, true, 20),
+  ('home-events', 'Accueil — après l''agenda', 'rectangle', null, true, 30),
+  ('home-map', 'Accueil — avant la carte interactive', 'billboard', null, true, 40),
+  ('actualites-top', 'Actualités — haut de liste', 'leaderboard', null, true, 50),
+  ('actualites-inline', 'Actualités — encart dans la grille', 'card', null, true, 60),
+  ('article-bottom', 'Article — sous le contenu', 'billboard', null, true, 70),
+  ('restaurants-top', 'Restaurants — haut de page', 'leaderboard', null, true, 80),
+  ('restaurants-inline', 'Restaurants — encart dans la liste', 'rectangle', null, true, 90),
+  ('evenements-top', 'Événements — haut de page', 'billboard', null, true, 100),
+  ('visiteurs-mid', 'Visiteurs — bandeau partenaire', 'leaderboard', null, true, 110),
+  ('sante-garde-mid', 'Santé / garde — bandeau partenaire', 'leaderboard', null, true, 115),
   ('footer-sponsors-01', 'Pied de page — partenaire 1 (ruban 468×60)', 'ribbon', 'moorea-maitai', true, 201),
   ('footer-sponsors-02', 'Pied de page — partenaire 2 (ruban 468×60)', 'ribbon', 'rai-tahiti', true, 202),
   ('footer-sponsors-03', 'Pied de page — partenaire 3 (ruban 468×60)', 'ribbon', null, false, 203),

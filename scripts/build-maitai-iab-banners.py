@@ -5,9 +5,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont
 
-ROOT = Path("/Users/patricejourdan/Desktop/moorea-hub")
+ROOT = Path(__file__).resolve().parents[1]
 MASTER = ROOT / "public/images/restaurants/moorea-maitai-banniere-facebook.png"
 COVER = ROOT / "public/images/restaurants/moorea-maitai-banniere-facebook.png"
 OUT = ROOT / "public/images/ads/moorea-maitai"

@@ -5,13 +5,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont
 
+ROOT = Path(__file__).resolve().parents[1]
 ASSETS = Path(
     "/Users/patricejourdan/.cursor/projects/Users-patricejourdan-Desktop-moorea-hub/assets"
 )
-OUT_DESK = Path("/Users/patricejourdan/Desktop")
-OUT_PROJ = Path("/Users/patricejourdan/Desktop/moorea-hub/public/images/restaurants")
+OUT_DESK = Path.home() / "Desktop"
+OUT_PROJ = ROOT / "public/images/restaurants"
 
 FONT_SERIF_BOLD = "/System/Library/Fonts/Supplemental/Georgia Bold.ttf"
 FONT_SERIF = "/System/Library/Fonts/Supplemental/Georgia.ttf"

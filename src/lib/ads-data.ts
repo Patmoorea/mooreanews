@@ -6,6 +6,11 @@ import {
   DEFAULT_AD_SLOTS,
 } from "@/lib/ads-defaults";
 import {
+  DEFAULT_CAMPAIGN_PACKAGE,
+  campaignCanUseSlot,
+  getAdPackage,
+} from "@/lib/ad-packages";
+import {
   mergeCampaignFormatImages,
   parseFormatImagesJson,
 } from "@/lib/ads-format-images";
@@ -33,9 +38,15 @@ function campaignFromRow(row: AdCampaignRow): AdCampaign {
   const fromDb = parseFormatImagesJson(row.format_images);
   const formatImages = mergeCampaignFormatImages(row.id, fromDb);
   const image = row.image?.trim() || defaults?.image || formatImages?.leaderboard || "";
+  const adPackage =
+    (row.ad_package as AdCampaign["adPackage"]) ||
+    defaults?.adPackage ||
+    DEFAULT_CAMPAIGN_PACKAGE[row.id] ||
+    "cible";
   return {
     id: row.id,
     name: row.name,
+    adPackage,
     image,
     imageWidth: row.image_width || defaults?.imageWidth || 728,
     imageHeight: row.image_height || defaults?.imageHeight || 90,
@@ -119,7 +130,9 @@ export async function resolveAdSlot(
   const slot = slots.find((s) => s.id === slotId);
   if (!slot || slot.enabled === false) return null;
 
-  const pool = listActiveCampaigns(campaigns);
+  const pool = listActiveCampaigns(campaigns).filter((c) =>
+    campaignCanUseSlot(c, slot),
+  );
   const campaign = pickRotatingCampaign(slotId, pool);
   if (!campaign) return null;
 

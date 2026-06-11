@@ -2,6 +2,8 @@ import Link from "next/link";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdSlotsEditor } from "@/components/admin/AdSlotsEditor";
 import { getAdsConfig, listAdCampaignsAdmin, listAdSlotsAdmin } from "@/lib/ads";
+import { getAdPackage, DEFAULT_CAMPAIGN_PACKAGE } from "@/lib/ad-packages";
+import type { AdPackageId } from "@/lib/ads-types";
 import { seedAdDefaults } from "@/app/admin/ads-actions";
 
 export const metadata = { title: "Publicités" };
@@ -35,7 +37,8 @@ export default async function AdminAdsPage({ searchParams }: Props) {
 
       {params.seeded === "1" && (
         <p className="rounded-xl border border-tipanier-200 bg-tipanier-50 px-4 py-3 text-sm text-tipanier-900">
-          Données publicitaires initialisées avec succès.
+          Emplacements mis à jour. Les bannières déjà enregistrées pour Maitai, RAI TAHITI
+          et les autres campagnes existantes sont <strong>conservées</strong>.
         </p>
       )}
 
@@ -59,15 +62,16 @@ export default async function AdminAdsPage({ searchParams }: Props) {
       ) : (
         <div className="rounded-2xl border border-ocean-100 bg-ocean-50/60 p-4 text-sm text-ocean-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <p>
-            Met à jour les campagnes (Maitai, RAI TAHITI…) et tous les emplacements, y compris
-            les 10 rubans pied de page.
+            Met à jour la <strong>liste des emplacements</strong> (nouvelles zones, rubans
+            pied de page, libellés). Ne remplace <strong>pas</strong> les bannières déjà
+            téléversées — modifiez-les campagne par campagne ci-dessous.
           </p>
           <form action={seedAdDefaults} className="shrink-0">
             <button
               type="submit"
               className="px-4 py-2 rounded-full border border-ocean-200 bg-white text-ocean-900 text-sm font-semibold hover:bg-ocean-50"
             >
-              Resynchroniser les valeurs par défaut
+              Mettre à jour les emplacements
             </button>
           </form>
         </div>
@@ -80,6 +84,7 @@ export default async function AdminAdsPage({ searchParams }: Props) {
             <thead className="bg-ocean-50 text-xs uppercase text-ocean-600">
               <tr>
                 <th className="px-4 py-3 text-left">Campagne</th>
+                <th className="px-4 py-3 text-left hidden sm:table-cell">Forfait</th>
                 <th className="px-4 py-3 text-left hidden md:table-cell">Lien</th>
                 <th className="px-4 py-3 text-center">État</th>
                 <th className="px-4 py-3 text-right">Actions</th>
@@ -92,8 +97,19 @@ export default async function AdminAdsPage({ searchParams }: Props) {
                     name: c.name,
                     href: c.href,
                     active: c.active,
+                    packageName: getAdPackage(
+                      (c.ad_package as AdPackageId) ||
+                        DEFAULT_CAMPAIGN_PACKAGE[c.id] ||
+                        "cible",
+                    ).name,
                   }))
-                : Object.values(config.campaigns)
+                : Object.values(config.campaigns).map((c) => ({
+                    id: c.id,
+                    name: c.name,
+                    href: c.href,
+                    active: c.active,
+                    packageName: getAdPackage(c.adPackage).name,
+                  }))
               ).map((c) => (
                   <tr key={c.id} className="hover:bg-ocean-50/40">
                     <td className="px-4 py-3">
@@ -103,6 +119,9 @@ export default async function AdminAdsPage({ searchParams }: Props) {
                       >
                         {c.name}
                       </Link>
+                    </td>
+                    <td className="px-4 py-3 hidden sm:table-cell text-ocean-700 text-xs font-semibold">
+                      {c.packageName}
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell text-ocean-600 text-xs truncate max-w-xs">
                       {c.href}
@@ -149,9 +168,9 @@ export default async function AdminAdsPage({ searchParams }: Props) {
       )}
 
       <p className="text-xs text-ocean-500">
-        Grille tarifaire publique :{" "}
+        Grille tarifaire et parcours annonceur :{" "}
         <Link href="/partenaires" className="text-lagon-700 hover:underline">
-          /partenaires
+          www.mooreanews.com/partenaires
         </Link>
       </p>
     </div>

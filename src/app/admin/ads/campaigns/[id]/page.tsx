@@ -4,8 +4,9 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdCampaignForm } from "@/components/admin/AdCampaignForm";
 import { saveAdCampaign } from "@/app/admin/ads-actions";
 import { DeleteAdCampaignButton } from "@/components/admin/DeleteAdCampaignButton";
-import { getAdCampaignAdmin, listAdSlotsAdmin } from "@/lib/ads";
-import { formatsUsedByCampaign } from "@/lib/ads-format-images";
+import { getAdCampaignAdmin } from "@/lib/ads";
+import { getAdPackage, DEFAULT_CAMPAIGN_PACKAGE } from "@/lib/ad-packages";
+import type { AdPackageId } from "@/lib/ads-types";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -23,23 +24,27 @@ export default async function EditAdCampaignPage({ params, searchParams }: Props
   const sp = await searchParams;
   const campaign = await getAdCampaignAdmin(id);
   if (!campaign) notFound();
-  const slots = await listAdSlotsAdmin();
-  const usedFormats = formatsUsedByCampaign(id, slots);
+  const packageId: AdPackageId =
+    (campaign.ad_package as AdPackageId) ||
+    DEFAULT_CAMPAIGN_PACKAGE[id] ||
+    "cible";
+  const pkg = getAdPackage(packageId);
 
   return (
     <div className="space-y-6">
       <AdminPageHeader
         title={campaign.name}
-        description={`Identifiant : ${campaign.id}`}
+        description={`Forfait ${pkg.name} · identifiant : ${campaign.id}`}
       />
 
       {sp.saved === "1" && (
         <p className="rounded-xl border border-tipanier-200 bg-tipanier-50 px-4 py-3 text-sm text-tipanier-900">
-          Campagne enregistrée — visible sur le site si active et assignée à un emplacement.
+          Campagne enregistrée — visible sur les emplacements inclus dans le forfait{" "}
+          {pkg.name} si la campagne est active.
         </p>
       )}
 
-      <AdCampaignForm action={saveAdCampaign} initial={campaign} usedFormats={usedFormats} />
+      <AdCampaignForm action={saveAdCampaign} initial={campaign} />
 
       <div className="flex items-center justify-between pt-4 border-t border-ocean-100">
         <Link href="/admin/ads" className="text-sm text-ocean-600 hover:text-tiare-600">

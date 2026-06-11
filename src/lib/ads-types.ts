@@ -6,9 +6,13 @@ export type AdFormat =
   | "card"
   | "ribbon";
 
+export type AdPackageId = "essentiel" | "cible" | "premium";
+
 export type AdCampaign = {
   id: string;
   name: string;
+  /** Forfait commercial (détermine emplacements + bannières requises). */
+  adPackage: AdPackageId;
   /** Visuel principal (aperçu admin, repli si pas de visuel par format). */
   image: string;
   imageWidth: number;
@@ -41,6 +45,8 @@ export type AdCampaignRow = {
   image_height: number;
   /** Un fichier par format IAB (leaderboard, ribbon, etc.). */
   format_images: Partial<Record<AdFormat, string>> | null;
+  /** Forfait commercial (Essentiel, Ciblé, Premium). */
+  ad_package?: AdPackageId | null;
   href: string;
   alt: string;
   sponsor: string | null;

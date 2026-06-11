@@ -3,13 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAdminSupabase } from "@/lib/supabase/admin";
-import type { AdFormat } from "@/lib/ads-types";
+import type { AdFormat, AdPackageId } from "@/lib/ads-types";
 import {
   AD_FORMATS,
   formatImagesToJson,
   pickPrimaryCampaignImage,
-  campaignFormatImagesFromDefaults,
 } from "@/lib/ads-format-images";
+import { AD_PACKAGE_IDS } from "@/lib/ad-packages";
+import { seedAdsSafe } from "@/lib/ads-seed";
 
 function slugifyId(raw: string): string {
   return raw
@@ -52,6 +53,11 @@ export async function saveAdCampaign(formData: FormData) {
     throw new Error("Au moins une bannière (par format) est obligatoire");
   }
 
+  const adPackageRaw = String(formData.get("ad_package") ?? "cible").trim();
+  const ad_package: AdPackageId = AD_PACKAGE_IDS.includes(adPackageRaw as AdPackageId)
+    ? (adPackageRaw as AdPackageId)
+    : "cible";
+
   const payload = {
     id,
     name: String(formData.get("name") ?? "").trim(),
@@ -59,6 +65,7 @@ export async function saveAdCampaign(formData: FormData) {
     image_width: 728,
     image_height: 90,
     format_images: formatImagesToJson(formatImages),
+    ad_package,
     href: String(formData.get("href") ?? "").trim(),
     alt: String(formData.get("alt") ?? "").trim(),
     sponsor: String(formData.get("sponsor") ?? "").trim() || null,
@@ -111,35 +118,7 @@ export async function seedAdDefaults() {
   const supabase = getAdminSupabase();
   if (!supabase) throw new Error("Supabase admin non configuré");
 
-  const { DEFAULT_AD_CAMPAIGNS, DEFAULT_AD_SLOTS } = await import("@/lib/ads-defaults");
-  for (const c of Object.values(DEFAULT_AD_CAMPAIGNS)) {
-    const { error } = await supabase.from("ad_campaigns").upsert({
-      id: c.id,
-      name: c.name,
-      image: c.image,
-      image_width: c.imageWidth,
-      image_height: c.imageHeight,
-      format_images: campaignFormatImagesFromDefaults(c),
-      href: c.href,
-      alt: c.alt,
-      sponsor: c.sponsor ?? null,
-      active: c.active,
-    });
-    if (error) throw new Error(error.message);
-  }
-  for (const s of DEFAULT_AD_SLOTS) {
-    const { error } = await supabase.from("ad_slots").upsert({
-      id: s.id,
-      label: s.label,
-      format: s.format as AdFormat,
-      campaign_id: s.campaignId || null,
-      enabled: s.enabled !== false,
-      sort_order: s.sortOrder ?? 0,
-    });
-    if (error) throw new Error(error.message);
-  }
-
-  await supabase.from("ad_slots").delete().eq("id", "footer-sponsors");
+  await seedAdsSafe(supabase);
 
   revalidateAds();
   redirect("/admin/ads?seeded=1");
