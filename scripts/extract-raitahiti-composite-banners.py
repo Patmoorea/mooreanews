@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bannières RAI TAHITI : renomme separees/ selon dimensions réelles, export IAB proportionnel."""
+"""Bannières RAI TAHITI — export IAB plein cadre (sans bandes blanches)."""
 
 from __future__ import annotations
 
@@ -10,9 +10,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "public/images/ads/rai-tahiti"
 SEP = OUT / "separees"
-BG = (255, 255, 255)
 
-# clé de recherche → nom canonique (sans dimensions)
 SLOT_NAMES: dict[str, str] = {
     "01": "01-leaderboard",
     "02": "02-inline",
@@ -48,23 +46,22 @@ def rename_with_actual_size(path: Path, canonical: str) -> Path:
     return target
 
 
-def fit_width_pad(src: Image.Image, w: int, h: int) -> Image.Image:
+def fit_cover(src: Image.Image, w: int, h: int) -> Image.Image:
+    """Remplit tout le cadre IAB — recadre si besoin, pas de bandes vides."""
     sw, sh = src.size
-    nh = max(1, int(sh * w / sw))
-    resized = src.resize((w, nh), Image.Resampling.LANCZOS)
-    canvas = Image.new("RGB", (w, h), BG)
-    canvas.paste(resized, (0, (h - nh) // 2))
-    return canvas
-
-
-def fit_contain(src: Image.Image, w: int, h: int) -> Image.Image:
-    sw, sh = src.size
-    scale = min(w / sw, h / sh)
+    scale = max(w / sw, h / sh)
     nw, nh = max(1, int(sw * scale)), max(1, int(sh * scale))
     resized = src.resize((nw, nh), Image.Resampling.LANCZOS)
-    canvas = Image.new("RGB", (w, h), BG)
-    canvas.paste(resized, ((w - nw) // 2, (h - nh) // 2))
-    return canvas
+    left = max(0, (nw - w) // 2)
+    top = max(0, (nh - h) // 2)
+    return resized.crop((left, top, left + w, top + h))
+
+
+def pick(*keys: str, loaded: dict[str, Image.Image]) -> Image.Image | None:
+    for key in keys:
+        if key in loaded:
+            return loaded[key]
+    return None
 
 
 def main() -> None:
@@ -84,35 +81,32 @@ def main() -> None:
     if "01" not in loaded:
         raise SystemExit("Bannière 01-leaderboard introuvable dans separees/")
 
-    lb = loaded["01"]
-    inline = loaded.get("02")
-
     exports: list[tuple[str, Image.Image]] = [
-        ("rai-tahiti-ad-leaderboard-728x90.png", fit_width_pad(lb, 728, 90)),
+        (
+            "rai-tahiti-ad-leaderboard-728x90.png",
+            fit_cover(loaded["01"], 728, 90),
+        ),
+        (
+            "rai-tahiti-ad-ribbon-468x60.png",
+            fit_cover(pick("02", "03", loaded=loaded) or loaded["01"], 468, 60),
+        ),
+        (
+            "rai-tahiti-ad-rectangle-300x250.png",
+            fit_cover(pick("05", "04", "08", loaded=loaded) or loaded["01"], 300, 250),
+        ),
+        (
+            "rai-tahiti-ad-rectangle-compact-300x250.png",
+            fit_cover(pick("04", "05", loaded=loaded) or loaded["01"], 300, 250),
+        ),
+        (
+            "rai-tahiti-ad-card-300x200.png",
+            fit_cover(pick("06-card", "04", "09", loaded=loaded) or loaded["01"], 300, 200),
+        ),
+        (
+            "rai-tahiti-ad-billboard-970x250.png",
+            fit_cover(pick("08", "01", "05", loaded=loaded) or loaded["01"], 970, 250),
+        ),
     ]
-
-    if inline:
-        exports.append(("rai-tahiti-ad-ribbon-468x60.png", fit_contain(inline, 468, 60)))
-    else:
-        sw, sh = lb.size
-        strip = lb.crop((int(sw * 0.52), 0, sw, sh))
-        exports.append(("rai-tahiti-ad-ribbon-468x60.png", fit_contain(strip, 468, 60)))
-
-    if "04" in loaded:
-        exports.append(("rai-tahiti-ad-rectangle-300x250.png", fit_contain(loaded["04"], 300, 250)))
-    if "05" in loaded:
-        exports.append(
-            ("rai-tahiti-ad-rectangle-compact-300x250.png", fit_contain(loaded["05"], 300, 250))
-        )
-    if "06-card" in loaded:
-        exports.append(("rai-tahiti-ad-card-300x200.png", fit_contain(loaded["06-card"], 300, 200)))
-    elif "04" in loaded:
-        exports.append(("rai-tahiti-ad-card-300x200.png", fit_contain(loaded["04"], 300, 200)))
-
-    # Grand encart 970×250 — source la plus large disponible (Facebook / half-page)
-    billboard_src = loaded.get("08") or loaded.get("05") or loaded.get("06-half")
-    if billboard_src:
-        exports.append(("rai-tahiti-ad-billboard-970x250.png", fit_contain(billboard_src, 970, 250)))
 
     for name, img in exports:
         img.save(OUT / name, optimize=True, quality=95)
