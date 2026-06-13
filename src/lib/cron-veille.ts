@@ -1,11 +1,17 @@
 /**
- * Veille horaire légère — RSS + Facebook uniquement (sans OCR, digests, Telegram…).
+ * Veille horaire légère — RSS + Facebook + garde week-end (ven–dim).
  * Appelée par GitHub Actions toutes les heures et /api/cron/aggregate.
  */
 
 import { revalidatePath } from "next/cache";
 import { aggregateAll } from "@/lib/aggregator";
+import {
+  getTahitiClock,
+  shouldPublishGardeWeekend,
+  shouldSyncGardeOnVeille,
+} from "@/lib/cron-tahiti";
 import { refreshFacebookUserTokenInProcess } from "@/lib/facebook-token";
+import { syncHealthOnCall } from "@/lib/health-on-call";
 import { syncUtilityOutages } from "@/lib/utility-outages-sync";
 
 export type VeilleCronResult = {
@@ -16,12 +22,14 @@ export type VeilleCronResult = {
   articlesCreated: number;
   alertsCreated: number;
   utilityOutages: Awaited<ReturnType<typeof syncUtilityOutages>>;
+  healthOnCall?: Awaited<ReturnType<typeof syncHealthOnCall>> | { skipped: true; reason: string };
   errors: string[];
   bySource: Awaited<ReturnType<typeof aggregateAll>>;
 };
 
 export async function runVeilleCron(): Promise<VeilleCronResult> {
   const start = Date.now();
+  const clock = getTahitiClock();
   await refreshFacebookUserTokenInProcess();
   const results = await aggregateAll();
 
@@ -61,6 +69,25 @@ export async function runVeilleCron(): Promise<VeilleCronResult> {
     revalidatePath("/", "layout");
   }
 
+  let healthOnCall: VeilleCronResult["healthOnCall"];
+  if (shouldSyncGardeOnVeille(clock)) {
+    try {
+      healthOnCall = await syncHealthOnCall({
+        fullWeekendPipeline: shouldPublishGardeWeekend(clock),
+      });
+      if (healthOnCall.found) {
+        revalidatePath("/sante-garde");
+        revalidatePath("/actualites");
+        revalidatePath("/", "layout");
+      }
+    } catch (e) {
+      errors.push(`garde: ${String(e)}`);
+      healthOnCall = { ok: false, found: false, pharmacy: null, doctor: null, articleSlug: null, ocrUsed: false, posterGenerated: false };
+    }
+  } else {
+    healthOnCall = { skipped: true, reason: "hors créneau garde (jeu 17h – dim Tahiti)" };
+  }
+
   const blockingErrors = errors.filter(
     (e) =>
       !e.includes("CommuneMooreaMaiao") &&
@@ -79,6 +106,7 @@ export async function runVeilleCron(): Promise<VeilleCronResult> {
     articlesCreated,
     alertsCreated,
     utilityOutages,
+    healthOnCall,
     errors,
     bySource: results,
   };

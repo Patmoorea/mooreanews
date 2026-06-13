@@ -55,6 +55,12 @@ export function shouldPublishGardeWeekend(clock: TahitiClock): boolean {
   return clock.weekday === 5 && clock.hour >= 5 && clock.hour <= 8;
 }
 
+/** Veille horaire : sync garde ven–dim (+ jeu ≥17h si commune publie tôt). */
+export function shouldSyncGardeOnVeille(clock: TahitiClock): boolean {
+  if (clock.weekday === 4 && clock.hour >= 17) return true;
+  return clock.weekday === 5 || clock.weekday === 6 || clock.weekday === 0;
+}
+
 /** Récap semaine Moorea : lundi matin Tahiti (agenda + actu). */
 export function shouldPublishWeeklyRecap(clock: TahitiClock): boolean {
   return clock.weekday === 1 && clock.hour >= 5 && clock.hour <= 9;

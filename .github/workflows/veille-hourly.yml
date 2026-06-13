@@ -16,7 +16,7 @@ concurrency:
 jobs:
   veille:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - name: Appeler /api/cron/aggregate
         env:
@@ -27,7 +27,7 @@ jobs:
             exit 1
           fi
           url="https://www.mooreanews.com/api/cron/aggregate?secret=${CRON_SECRET}"
-          code=$(curl -sS -o /tmp/veille.json -w "%{http_code}" --max-time 280 "$url")
+          code=$(curl -sS -o /tmp/veille.json -w "%{http_code}" --http1.1 --max-time 420 "$url")
           echo "HTTP ${code}"
           cat /tmp/veille.json | head -c 4000
           echo ""
