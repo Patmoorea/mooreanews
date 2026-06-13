@@ -4,7 +4,12 @@
 
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import type { GardeMooreaSnapshot } from "@/lib/garde-moorea-auto";
+import {
+  mergeGardeSnapshotForDisplay,
+  readGardeFileSnapshot,
+} from "@/lib/garde-moorea-data";
 import { resolveGardePosterPublicUrl } from "@/lib/garde-poster-url";
+import { SITE } from "@/lib/constants";
 
 export function gardeArticleSlug(validFrom: string): string {
   return `garde-moorea-${validFrom}`;
@@ -16,7 +21,17 @@ function formatDoctorName(name: string): string {
 }
 
 export function buildGardeArticleTitle(snap: GardeMooreaSnapshot): string {
-  return `Garde week-end Moorea — ${snap.label}`;
+  const label = snap.label?.includes("->")
+    ? `Samedi ${snap.validFrom.slice(8, 10)} / Dimanche ${snap.validTo.slice(8, 10)}`
+    : snap.label;
+  return `Garde week-end Moorea — ${label}`;
+}
+
+function gardeArticleCoverUrl(snap: GardeMooreaSnapshot): string {
+  return (
+    resolveGardePosterPublicUrl(snap.posterImageUrl ?? snap.communePosterUrl) ??
+    `${SITE.url.replace(/\/$/, "")}/api/garde-weekend/poster/${snap.validFrom}`
+  );
 }
 
 export function buildGardeArticleExcerpt(snap: GardeMooreaSnapshot): string {
@@ -102,11 +117,17 @@ export async function upsertGardeWeekendArticle(
     return { slug, created: false, updated: false, error: "supabase_admin_missing" };
   }
 
-  const title = buildGardeArticleTitle(snap).slice(0, 200);
-  const excerpt = buildGardeArticleExcerpt(snap).slice(0, 280);
-  const body = buildGardeArticleBody(snap);
-  const coverUrl = resolveGardePosterPublicUrl(snap.posterImageUrl);
-  const publishedAt = `${snap.validFrom}T06:00:00.000Z`;
+  const file = await readGardeFileSnapshot();
+  const merged = mergeGardeSnapshotForDisplay(
+    snap,
+    file?.validFrom === snap.validFrom ? file : null,
+  );
+
+  const title = buildGardeArticleTitle(merged).slice(0, 200);
+  const excerpt = buildGardeArticleExcerpt(merged).slice(0, 280);
+  const body = buildGardeArticleBody(merged);
+  const coverUrl = gardeArticleCoverUrl(merged);
+  const publishedAt = `${merged.validFrom}T06:00:00.000Z`;
 
   const { data: existing } = await supabase
     .from("articles")

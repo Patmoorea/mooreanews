@@ -51,6 +51,8 @@ import type {
 } from "@/lib/supabase/types";
 import { normalizeTitleKey } from "@/lib/cover-image";
 import { dedupeArticlesForDisplay } from "@/lib/article-dedupe";
+import { resolveGardePosterPublicUrl } from "@/lib/garde-poster-url";
+import { SITE } from "@/lib/constants";
 
 // =====================================================================
 // Articles
@@ -254,6 +256,13 @@ export async function getAllInfoPratiqueSlugs(): Promise<string[]> {
 // =====================================================================
 
 function articleFromRow(r: ArticleRow): Article {
+  let image = r.cover_url ?? undefined;
+  if (!image?.trim() && r.slug?.startsWith("garde-moorea-")) {
+    const validFrom = r.slug.slice("garde-moorea-".length);
+    image =
+      resolveGardePosterPublicUrl(r.cover_url) ??
+      `${SITE.url.replace(/\/$/, "")}/api/garde-weekend/poster/${validFrom}`;
+  }
   return {
     slug: r.slug,
     title: r.title,
@@ -261,7 +270,7 @@ function articleFromRow(r: ArticleRow): Article {
     body: r.body,
     category: r.category as Article["category"],
     tags: r.tags ?? undefined,
-    image: r.cover_url ?? undefined,
+    image,
     author: r.author ?? undefined,
     featured: r.featured,
     publishedAt: r.published_at,

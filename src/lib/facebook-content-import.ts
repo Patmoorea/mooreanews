@@ -7,6 +7,7 @@ import type { FacebookPageImportConfig } from "@/lib/facebook-article-import";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import {
   isFacebookArticleNeedsRepair,
+  isFacebookCoverMissingRepair,
   isFacebookCoverNeedsPersistOnly,
   isFacebookJunkText,
   isEmptyFacebookArticleShell,
@@ -23,6 +24,7 @@ import {
   coverPersistUserMessage,
   coverUrlForDatabase,
   isFacebookCdnCoverUrl,
+  persistFacebookCoverForPost,
   persistFacebookCoverUrl,
   repairPendingFbcdnCoversFromDb,
 } from "@/lib/facebook-cover-persist";
@@ -368,7 +370,11 @@ async function importAsArticle(
   );
   if (isDuplicate) return { ok: false, reason: "duplicate" };
 
-  const persist = await persistFacebookCoverUrl(post.full_picture, post.id);
+  const persist = await persistFacebookCoverForPost(
+    { id: post.id, full_picture: post.full_picture, permalink_url: permalink },
+    slug,
+    config.graphPageId ?? "350029589936",
+  );
   const cover = coverUrlForDatabase(persist);
   const excerpt =
     message.slice(0, 280) ||
@@ -376,6 +382,7 @@ async function importAsArticle(
   const body = buildBody(message, permalink, config.pageName);
 
   if (
+    !config.importAllFeedPosts &&
     isEmptyFacebookArticleShell({
       title,
       excerpt,
@@ -439,9 +446,14 @@ async function repairFacebookArticle(
   const hasImage = Boolean(post.full_picture?.trim());
   const title = articleTitleFromPost(message, config, hasImage, publishedAt);
   const timeLabel = tahitiTimeLabel(publishedAt);
-  const persist = await persistFacebookCoverUrl(
-    post.full_picture ?? existingCoverUrl ?? undefined,
-    post.id,
+  const persist = await persistFacebookCoverForPost(
+    {
+      id: post.id,
+      full_picture: post.full_picture ?? existingCoverUrl,
+      permalink_url: permalink,
+    },
+    slug,
+    config.graphPageId ?? "350029589936",
   );
   const cover = coverUrlForDatabase(persist);
 
@@ -481,6 +493,55 @@ async function repairFacebookArticle(
     };
   }
   return { ok: true, title, slug };
+}
+
+/** Graph/OG + copie Supabase quand l’affiche manque en base. */
+async function repairFacebookCoverFromGraph(
+  articleId: string,
+  slug: string,
+  post: FacebookPostForImport,
+  config: FacebookPageImportConfig,
+): Promise<{ ok: true; slug: string } | { ok: false; reason: string }> {
+  const supabase = getAdminSupabase();
+  if (!supabase) return { ok: false, reason: "Supabase absent" };
+
+  const enriched = await enrichPost(post, config);
+  const remote = enriched.full_picture?.trim();
+  const persist = remote
+    ? await persistFacebookCoverForPost(
+        {
+          id: post.id,
+          full_picture: remote,
+          permalink_url: enriched.permalink_url,
+        },
+        slug,
+        config.graphPageId ?? "350029589936",
+      )
+    : await persistFacebookCoverForPost(
+        {
+          id: post.id,
+          full_picture: null,
+          permalink_url: enriched.permalink_url ?? post.permalink_url,
+        },
+        slug,
+        config.graphPageId ?? "350029589936",
+      );
+  const cover = coverUrlForDatabase(persist);
+  if (!cover) {
+    return { ok: false, reason: persist.reason };
+  }
+
+  const { error } = await supabase
+    .from("articles")
+    .update({
+      cover_url: cover,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", articleId);
+
+  if (error) return { ok: false, reason: error.message };
+  await hideExternalArticlesForArticleSlug(slug);
+  return { ok: true, slug };
 }
 
 /** Recopie fbcdn → Supabase sans enrichissement Graph/OG (cron rapide). */
@@ -610,6 +671,25 @@ export async function importFacebookPostsAsContent(
       const existing = existingBySlug.get(slug);
 
       if (existing && !isFacebookArticleNeedsRepair({ ...existing, slug })) {
+        if (
+          isFacebookCoverMissingRepair({ ...existing, slug }) &&
+          coverPersistsThisRun < maxCoverPersists
+        ) {
+          const r = await repairFacebookCoverFromGraph(
+            existing.id,
+            slug,
+            raw,
+            config,
+          );
+          if (r.ok) {
+            result.articlesRepaired = (result.articlesRepaired ?? 0) + 1;
+            result.coversPersisted = (result.coversPersisted ?? 0) + 1;
+            coverPersistsThisRun += 1;
+          } else if (r.reason !== "missing_url") {
+            result.coversFailed = (result.coversFailed ?? 0) + 1;
+            result.warnings.push(coverPersistUserMessage(slug, r.reason));
+          }
+        }
         result.skipped += 1;
         continue;
       }

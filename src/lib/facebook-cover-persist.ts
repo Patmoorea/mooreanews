@@ -36,6 +36,74 @@ export function postIdFromMooreaNewsSlug(slug: string): string {
   return slug.replace(/^mooreanews-fb-/, "").replace(/-/g, "_");
 }
 
+async function remoteCoverFromOpenGraph(slug: string): Promise<string | null> {
+  const m = slug.match(/mooreanews-fb-(\d+)-(\d+)$/);
+  if (!m) return null;
+  const [, pageId, postId] = m;
+  return remoteCoverFromFacebookPost(pageId, postId);
+}
+
+export async function remoteCoverFromFacebookPost(
+  pageId: string,
+  postId: string,
+  permalink?: string | null,
+): Promise<string | null> {
+  const { fetchOpenGraph } = await import("@/lib/open-graph");
+  const candidates = [
+    permalink?.trim(),
+    `https://www.facebook.com/${pageId}/posts/${postId}`,
+    `https://www.facebook.com/photo?fbid=${postId}&set=a.${pageId}`,
+    `https://www.facebook.com/photo?fbid=${postId}`,
+  ].filter((u): u is string => Boolean(u?.startsWith("http")));
+
+  for (const url of [...new Set(candidates)]) {
+    try {
+      const og = await fetchOpenGraph(url);
+      const img = og?.imageUrl?.trim();
+      if (img?.startsWith("http")) return img;
+    } catch {
+      /* essai suivant */
+    }
+  }
+  return null;
+}
+
+/** Tente toutes les sources (Graph, OG) puis copie vers Supabase Storage. */
+export async function persistFacebookCoverForPost(
+  post: {
+    id: string;
+    full_picture?: string | null;
+    permalink_url?: string | null;
+  },
+  slug: string,
+  pageId = "350029589936",
+): Promise<CoverPersistResult> {
+  const candidates: string[] = [];
+  const pic = post.full_picture?.trim();
+  if (pic?.startsWith("http")) candidates.push(pic);
+
+  const m = slug.match(/mooreanews-fb-(\d+)-(\d+)$/);
+  const ogPageId = m?.[1] ?? pageId;
+  const ogPostId = m?.[2] ?? post.id.split("_").pop() ?? "";
+  const ogCover = await remoteCoverFromFacebookPost(
+    ogPageId,
+    ogPostId,
+    post.permalink_url,
+  );
+  if (ogCover) candidates.push(ogCover);
+
+  let last: CoverPersistResult = {
+    url: null,
+    persisted: false,
+    reason: "missing_url",
+  };
+  for (const url of [...new Set(candidates)]) {
+    last = await persistFacebookCoverUrl(url, post.id);
+    if (coverUrlForDatabase(last)) return last;
+  }
+  return last;
+}
+
 /** Télécharge l’image distante et renvoie l’URL publique Supabase. */
 export async function persistFacebookCoverUrl(
   remoteUrl: string | undefined | null,
@@ -133,7 +201,7 @@ export function coverPersistUserMessage(
   return `Affiche non copiée vers Supabase — ${slug} : ${detail}`;
 }
 
-/** Rattrape les cover_url fbcdn encore en base (hors top 20 Graph). */
+/** Rattrape les cover_url fbcdn ou absents encore en base (hors top 20 Graph). */
 export async function repairPendingFbcdnCoversFromDb(limit = 8): Promise<{
   repaired: number;
   failed: number;
@@ -151,7 +219,10 @@ export async function repairPendingFbcdnCoversFromDb(limit = 8): Promise<{
     .from("articles")
     .select("id, slug, cover_url")
     .like("slug", "mooreanews-fb-%")
-    .or("cover_url.ilike.%fbcdn.net%,cover_url.ilike.%fbsbx.com%")
+    .or(
+      "cover_url.is.null,cover_url.eq.,cover_url.ilike.%fbcdn.net%,cover_url.ilike.%fbsbx.com%",
+    )
+    .order("published_at", { ascending: false })
     .limit(limit);
 
   if (error) {
@@ -160,9 +231,20 @@ export async function repairPendingFbcdnCoversFromDb(limit = 8): Promise<{
   }
 
   for (const row of data ?? []) {
-    const cover = row.cover_url?.trim();
     const slug = row.slug ?? "";
-    if (!cover || !slug) continue;
+    if (!slug) continue;
+
+    let cover = row.cover_url?.trim() ?? "";
+    if (!cover || isFacebookCdnCoverUrl(cover)) {
+      if (!cover) {
+        const m = slug.match(/mooreanews-fb-(\d+)-(\d+)$/);
+        if (m) {
+          const ogCover = await remoteCoverFromFacebookPost(m[1], m[2]);
+          if (ogCover) cover = ogCover;
+        }
+      }
+      if (!cover) continue;
+    }
 
     const postId = postIdFromMooreaNewsSlug(slug);
     const persisted = await persistFacebookCoverUrl(cover, postId);
@@ -171,13 +253,15 @@ export async function repairPendingFbcdnCoversFromDb(limit = 8): Promise<{
     if (!nextCover) {
       out.failed += 1;
       out.warnings.push(coverPersistUserMessage(slug, persisted.reason));
-      await supabase
-        .from("articles")
-        .update({
-          cover_url: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", row.id);
+      if (isFacebookCdnCoverUrl(row.cover_url)) {
+        await supabase
+          .from("articles")
+          .update({
+            cover_url: null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", row.id);
+      }
       continue;
     }
 

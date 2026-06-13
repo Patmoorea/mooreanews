@@ -98,14 +98,6 @@ export function shouldImportFacebookPost(
     if (!post?.id?.trim()) {
       return { ok: false, reason: "missing_post_id" };
     }
-    if (
-      !facebookPostHasPublishableContent(
-        { ...post, message },
-        options,
-      )
-    ) {
-      return { ok: false, reason: "no_publishable_content" };
-    }
     return { ok: true, publishedAt };
   }
 
@@ -194,52 +186,39 @@ function isGenericFacebookExcerpt(excerpt: string | null | undefined): boolean {
   return /^Publication repérée sur la page Facebook/i.test(e);
 }
 
-/** Fiche créée sans texte ni affiche exploitable (coquille vide). */
+/** Fiche sans texte ni affiche (erreur API Meta uniquement). */
 export function isEmptyFacebookArticleShell(row: {
   title: string;
   excerpt: string | null;
   body: string;
   cover_url?: string | null;
 }): boolean {
-  if (isFacebookJunkText(row.title)) return true;
+  const hasCover = Boolean(row.cover_url?.trim());
+  if (hasCover) return false;
 
-  const title = row.title.trim();
-  const isGenericAffiche = /— affiche\s·/i.test(title);
-  if (isGenericAffiche) return true;
+  if (isFacebookJunkText(row.title)) return true;
 
   const core = facebookArticleBodyWithoutFooter(row.body);
   const stripped = core
     .replace(/^Publication Facebook — [^.]+\.?\s*$/i, "")
     .trim();
 
-  const isGenericPublication =
-    /— publication$/i.test(title) || /— publication\s·/i.test(title);
-  if (isGenericPublication) {
-    return stripped.length < 20;
-  }
-
-  const hasCover = Boolean(row.cover_url?.trim());
-  if (hasCover) return false;
-
   const excerptLen = (row.excerpt ?? "").trim().length;
   if (isGenericFacebookExcerpt(row.excerpt)) {
-    return stripped.length < 20;
+    return stripped.length < 8;
   }
 
-  return stripped.length < 15 && excerptLen < 15;
+  return stripped.length < 8 && excerptLen < 8;
 }
 
-/** Article visible sur le site avec contenu exploitable (pas une coquille vide). */
+/** Article visible sur le site avec affiche persistée Supabase. */
 export function isFacebookArticleCompleteOnSite(row: {
   title: string;
   excerpt: string | null;
   body: string;
   cover_url?: string | null;
 }): boolean {
-  if (isEmptyFacebookArticleShell(row)) return false;
   if (isFacebookJunkText(row.title)) return false;
-  if (/— affiche\s·/i.test(row.title.trim())) return false;
-  if (/— publication\s·/i.test(row.title.trim())) return false;
   const cover = row.cover_url?.trim() ?? "";
   if (
     !cover ||
@@ -261,11 +240,7 @@ export function facebookPostHasPublishableContent(
 ): boolean {
   if (options?.importAllFeedPosts) {
     if (!post.id?.trim() || !post.created_time?.trim()) return false;
-    const pic = post.full_picture?.trim() ?? "";
-    const msg = post.message?.trim() ?? "";
-    if (pic.length > 0) return true;
-    if (msg && !isFacebookJunkText(msg) && msg.length >= 20) return true;
-    return false;
+    return true;
   }
 
   const pic = post.full_picture?.trim() ?? "";
@@ -307,6 +282,27 @@ export function isFacebookArticleNeedsRepair(row: {
     return true;
   }
   return false;
+}
+
+/** Article MooreaNews sans affiche persistée — rattrapage Graph/OG. */
+export function isFacebookCoverMissingRepair(row: {
+  title: string;
+  excerpt: string | null;
+  body: string;
+  cover_url?: string | null;
+  slug?: string | null;
+}): boolean {
+  const slug = row.slug ?? "";
+  if (!slug.startsWith("mooreanews-fb-")) return false;
+  const cover = row.cover_url?.trim() ?? "";
+  if (
+    cover &&
+    !cover.includes("fbcdn.net") &&
+    !cover.includes("fbsbx.com")
+  ) {
+    return false;
+  }
+  return true;
 }
 
 /** Affiche fbcdn mais texte déjà OK — recopie Supabase sans Graph/OG. */
