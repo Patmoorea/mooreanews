@@ -15,6 +15,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const force = url.searchParams.get("force") === "1";
   const preview = url.searchParams.get("preview") === "1";
+  const testEmail = url.searchParams.get("test")?.trim().toLowerCase();
   const clock = getTahitiClock();
 
   if (preview) {
@@ -26,6 +27,25 @@ export async function GET(req: Request) {
       `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"/><title>Aperçu newsletter</title></head><body style="margin:0;background:#bae6fd">${html}</body></html>`,
       { headers: { "Content-Type": "text/html; charset=utf-8" } },
     );
+  }
+
+  if (testEmail) {
+    try {
+      const result = await sendWeeklyNewsletter({ testTo: [testEmail] });
+      return NextResponse.json({
+        ok: true,
+        tahiti: clock.label,
+        test: testEmail,
+        ...result,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[cron/weekly-newsletter/test]", message);
+      return NextResponse.json(
+        { ok: false, error: message.slice(0, 500), tahiti: clock.label },
+        { status: 500 },
+      );
+    }
   }
 
   if (!force && !shouldSendWeeklyNewsletter(clock)) {

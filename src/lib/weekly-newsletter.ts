@@ -275,48 +275,74 @@ export function buildWeeklyNewsletterText(data: WeeklyNewsletterData): string {
   return lines.join("\n");
 }
 
-export async function sendWeeklyNewsletter(): Promise<{
+export async function sendWeeklyNewsletter(options?: {
+  /** Envoi test — une ou plusieurs adresses uniquement. */
+  testTo?: string[];
+}): Promise<{
   sent: number;
   skipped: boolean;
   error?: string;
   week?: string;
   events?: number;
+  test?: boolean;
+  recipients?: string[];
 }> {
   if (!ENV.resendKey) {
     return { sent: 0, skipped: true, error: "Resend non configuré" };
   }
 
-  const admin = getAdminSupabase();
-  if (!admin) {
-    return { sent: 0, skipped: true, error: "Supabase non configuré" };
-  }
+  const testRecipients = options?.testTo?.map((e) => e.trim().toLowerCase()).filter(Boolean);
+  const isTest = Boolean(testRecipients?.length);
 
-  const { data: subscribers } = await admin
-    .from("newsletter_subscribers")
-    .select("email")
-    .eq("confirmed", true);
+  let recipients: string[];
 
-  if (!subscribers?.length) {
-    return { sent: 0, skipped: true, error: "Aucun abonné confirmé" };
+  if (isTest) {
+    recipients = testRecipients!;
+  } else {
+    const admin = getAdminSupabase();
+    if (!admin) {
+      return { sent: 0, skipped: true, error: "Supabase non configuré" };
+    }
+
+    const { data: subscribers } = await admin
+      .from("newsletter_subscribers")
+      .select("email")
+      .eq("confirmed", true);
+
+    if (!subscribers?.length) {
+      return { sent: 0, skipped: true, error: "Aucun abonné confirmé" };
+    }
+
+    recipients = subscribers.map((r) => r.email);
   }
 
   const data = await gatherWeeklyNewsletterData();
   const html = buildWeeklyNewsletterHtml(data);
   const text = buildWeeklyNewsletterText(data);
-  const subject = `🌺 Ia ora na — votre semaine à Moorea (${data.events.length} sortie${data.events.length > 1 ? "s" : ""})`;
+  const subjectBase = `🌺 Ia ora na — votre semaine à Moorea (${data.events.length} sortie${data.events.length > 1 ? "s" : ""})`;
+  const subject = isTest ? `[TEST] ${subjectBase}` : subjectBase;
 
   const resend = new Resend(ENV.resendKey);
   let sent = 0;
 
-  for (const row of subscribers) {
+  for (const email of recipients) {
     const result = await resend.emails.send({
       from: ENV.resendFrom,
-      to: [row.email],
+      to: [email],
       subject,
       html,
-      text,
+      text: isTest ? `[TEST — envoi manuel]\n\n${text}` : text,
     });
     if (!result.error) sent += 1;
+    else if (isTest) {
+      return {
+        sent,
+        skipped: false,
+        error: result.error.message,
+        test: true,
+        recipients,
+      };
+    }
   }
 
   return {
@@ -324,5 +350,7 @@ export async function sendWeeklyNewsletter(): Promise<{
     skipped: false,
     week: data.week.label,
     events: data.events.length,
+    test: isTest,
+    recipients: isTest ? recipients : undefined,
   };
 }
