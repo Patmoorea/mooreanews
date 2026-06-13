@@ -197,9 +197,9 @@ async function fetchCommuneRssGarde(): Promise<GardeMooreaSnapshot | null> {
 
 export async function fetchLiveGardeMooreaSnapshot(): Promise<GardeMooreaSnapshot | null> {
   const [site, fb, rss] = await Promise.all([
-    fetchGardeFromImportedArticles(),
-    fetchGardeFromFacebookPages(),
-    fetchCommuneRssGarde(),
+    fetchGardeFromImportedArticles().catch(() => null),
+    fetchGardeFromFacebookPages().catch(() => null),
+    fetchCommuneRssGarde().catch(() => null),
   ]);
   const candidates = [site, fb, rss].filter(Boolean) as GardeMooreaSnapshot[];
   return pickBestGardeSnapshot(candidates);
