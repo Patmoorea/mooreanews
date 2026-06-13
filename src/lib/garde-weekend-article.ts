@@ -8,7 +8,12 @@ import {
   mergeGardeSnapshotForDisplay,
   readGardeFileSnapshot,
 } from "@/lib/garde-moorea-data";
+import {
+  coverUrlForDatabase,
+  persistFacebookCoverUrl,
+} from "@/lib/facebook-cover-persist";
 import { resolveGardePosterPublicUrl } from "@/lib/garde-poster-url";
+import { renderAndUploadMooreaNewsGardePoster } from "@/lib/garde-weekend-poster-sync";
 import { SITE } from "@/lib/constants";
 
 export function gardeArticleSlug(validFrom: string): string {
@@ -27,11 +32,29 @@ export function buildGardeArticleTitle(snap: GardeMooreaSnapshot): string {
   return `Garde week-end Moorea — ${label}`;
 }
 
-function gardeArticleCoverUrl(snap: GardeMooreaSnapshot): string {
-  return (
-    resolveGardePosterPublicUrl(snap.posterImageUrl ?? snap.communePosterUrl) ??
-    `${SITE.url.replace(/\/$/, "")}/api/garde-weekend/poster/${snap.validFrom}`
-  );
+async function resolveGardeArticleCoverUrl(
+  snap: GardeMooreaSnapshot,
+): Promise<string> {
+  const poster = resolveGardePosterPublicUrl(snap.posterImageUrl);
+  if (poster?.includes("supabase.co/storage/")) return poster;
+
+  const commune = snap.communePosterUrl?.trim();
+  if (commune?.startsWith("http")) {
+    const persisted = await persistFacebookCoverUrl(
+      commune,
+      `garde-commune-${snap.validFrom}`,
+    );
+    const url = coverUrlForDatabase(persisted);
+    if (url) return url;
+  }
+
+  const uploaded = await renderAndUploadMooreaNewsGardePoster(snap);
+  if (uploaded?.includes("supabase.co/storage/")) return uploaded;
+  if (uploaded?.startsWith("http")) return uploaded;
+
+  if (poster?.startsWith("http")) return poster;
+
+  return `${SITE.url.replace(/\/$/, "")}/api/garde-weekend/poster/${snap.validFrom}`;
 }
 
 export function buildGardeArticleExcerpt(snap: GardeMooreaSnapshot): string {
@@ -103,6 +126,49 @@ export function buildGardeArticleBody(snap: GardeMooreaSnapshot): string {
   return blocks.join("\n\n");
 }
 
+/** Met à jour les articles Facebook garde récents avec le même contenu que l'article officiel. */
+export async function repairMooreaNewsGardeFbArticles(
+  snap: GardeMooreaSnapshot,
+  coverUrl: string,
+): Promise<number> {
+  const supabase = getAdminSupabase();
+  if (!supabase) return 0;
+
+  const since = new Date(Date.now() - 14 * 86400000).toISOString();
+  const { data } = await supabase
+    .from("articles")
+    .select("id, slug, title, body")
+    .like("slug", "mooreanews-fb-%")
+    .gte("published_at", since)
+    .eq("published", true);
+
+  const title = buildGardeArticleTitle(snap);
+  const excerpt = buildGardeArticleExcerpt(snap);
+  const body = buildGardeArticleBody(snap);
+  let repaired = 0;
+
+  for (const row of data ?? []) {
+    const corpus = `${row.title} ${row.body}`.toLowerCase();
+    if (!/garde|medecin|médecin|pharmacie|week[- ]?end/.test(corpus)) continue;
+
+    const { error } = await supabase
+      .from("articles")
+      .update({
+        title: title.slice(0, 500),
+        excerpt,
+        body,
+        cover_url: coverUrl,
+        category: "sante",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", row.id);
+
+    if (!error) repaired += 1;
+  }
+
+  return repaired;
+}
+
 export async function upsertGardeWeekendArticle(
   snap: GardeMooreaSnapshot,
 ): Promise<{
@@ -110,6 +176,7 @@ export async function upsertGardeWeekendArticle(
   created: boolean;
   updated: boolean;
   error?: string;
+  fbRepaired?: number;
 }> {
   const slug = gardeArticleSlug(snap.validFrom);
   const supabase = getAdminSupabase();
@@ -126,7 +193,7 @@ export async function upsertGardeWeekendArticle(
   const title = buildGardeArticleTitle(merged).slice(0, 200);
   const excerpt = buildGardeArticleExcerpt(merged).slice(0, 280);
   const body = buildGardeArticleBody(merged);
-  const coverUrl = gardeArticleCoverUrl(merged);
+  const coverUrl = await resolveGardeArticleCoverUrl(merged);
   const publishedAt = `${merged.validFrom}T06:00:00.000Z`;
 
   const { data: existing } = await supabase
@@ -147,33 +214,30 @@ export async function upsertGardeWeekendArticle(
     featured: false,
     published: true,
     published_at: publishedAt,
+    updated_at: new Date().toISOString(),
   };
+
+  let created = false;
+  let updated = false;
+  let error: string | undefined;
 
   if (existing) {
-    const { error } = await supabase.from("articles").update(row).eq("slug", slug);
-    return {
-      slug,
-      created: false,
-      updated: !error,
-      error: error?.message,
-    };
+    const { error: updErr } = await supabase.from("articles").update(row).eq("slug", slug);
+    updated = !updErr;
+    error = updErr?.message;
+  } else {
+    const { error: insErr } = await supabase.from("articles").insert(row);
+    if (insErr?.code === "23505") {
+      const { error: updErr } = await supabase.from("articles").update(row).eq("slug", slug);
+      updated = !updErr;
+      error = updErr?.message;
+    } else {
+      created = !insErr;
+      error = insErr?.message;
+    }
   }
 
-  const { error } = await supabase.from("articles").insert(row);
-  if (error?.code === "23505") {
-    const { error: updateErr } = await supabase.from("articles").update(row).eq("slug", slug);
-    return {
-      slug,
-      created: false,
-      updated: !updateErr,
-      error: updateErr?.message,
-    };
-  }
+  const fbRepaired = await repairMooreaNewsGardeFbArticles(merged, coverUrl);
 
-  return {
-    slug,
-    created: !error,
-    updated: false,
-    error: error?.message,
-  };
+  return { slug, created, updated, error, fbRepaired };
 }

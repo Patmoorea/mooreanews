@@ -31,6 +31,7 @@ import {
   pickBestGardeSnapshot,
   readGardeFileSnapshot,
 } from "@/lib/garde-moorea-data";
+import { mergeGardeSnapshots } from "@/lib/garde-ordre-pharmaciens";
 import { MOOREA_PHARMACIES } from "@/lib/moorea-pharmacies";
 import {
   gardeArticleSlug,
@@ -161,6 +162,19 @@ function parseCommunePostToSnapshot(
   if (!parsed) {
     const partial = parseGardeFromSiteContent(msg, post.created_time, Boolean(picture));
     if (partial) parsed = partial;
+  }
+
+  if (!parsed && picture && post.created_time) {
+    const weekend = inferWeekendFromPostDate(post.created_time);
+    if (weekend) {
+      parsed = {
+        validFrom: weekend.validFrom,
+        validTo: weekend.validTo,
+        label: weekend.label,
+        doctor: null,
+        pharmacy: null,
+      };
+    }
   }
 
   const hasContent =
@@ -332,19 +346,24 @@ async function resolveSnapshotForSync(): Promise<GardeMooreaSnapshot | null> {
 
   if (!best) return null;
 
-  if (fileCandidate && fileCandidate.validFrom === best.validFrom) {
-    return {
-      ...best,
-      communePosterUrl:
-        live?.communePosterUrl ??
-        best.communePosterUrl ??
-        (best.posterImageUrl?.startsWith("http") ? best.posterImageUrl : null),
-      sourceUrl: live?.sourceUrl ?? best.sourceUrl,
-      syncedAt: new Date().toISOString(),
-    };
+  let merged = best;
+  for (const c of [live, fileCandidate].filter(Boolean) as GardeMooreaSnapshot[]) {
+    if (c.validFrom === merged.validFrom) {
+      merged = mergeGardeSnapshots(merged, c);
+    }
   }
-
-  return best;
+  if (fileCandidate && fileCandidate.validFrom === merged.validFrom) {
+    merged = mergeGardeSnapshots(merged, fileCandidate);
+  }
+  return {
+    ...merged,
+    communePosterUrl:
+      live?.communePosterUrl ??
+      merged.communePosterUrl ??
+      (merged.posterImageUrl?.startsWith("http") ? merged.posterImageUrl : null),
+    sourceUrl: live?.sourceUrl ?? merged.sourceUrl,
+    syncedAt: new Date().toISOString(),
+  };
 }
 
 async function enrichFromCoppfImage(
@@ -494,23 +513,18 @@ export async function syncGardeMooreaFromCommune(
     }
   }
 
+  const fileSnap = await readGardeFileSnapshot();
+  if (fileSnap?.validFrom === snap.validFrom) {
+    snap = mergeGardeSnapshots(snap, fileSnap);
+  }
+
   snap.syncedAt = new Date().toISOString();
 
-  const keepImportedArticle =
-    snap.articleSlug?.startsWith("mooreanews-fb-") ||
-    snap.articleSlug?.startsWith("commune-fb-");
-
-  let articleCreated: boolean | undefined;
-  let articleUpdated: boolean | undefined;
-  let articleError: string | undefined;
-
-  if (!keepImportedArticle) {
-    const article = await upsertGardeWeekendArticle(snap);
-    snap.articleSlug = article.slug;
-    articleCreated = article.created;
-    articleUpdated = article.updated;
-    articleError = article.error;
-  }
+  const article = await upsertGardeWeekendArticle(snap);
+  snap.articleSlug = article.slug;
+  const articleCreated = article.created;
+  const articleUpdated = article.updated;
+  const articleError = article.error;
 
   await writeGardeMooreaCache(snap);
 

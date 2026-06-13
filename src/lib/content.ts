@@ -257,15 +257,16 @@ export async function getAllInfoPratiqueSlugs(): Promise<string[]> {
 
 function articleFromRow(r: ArticleRow): Article {
   let image = r.cover_url ?? undefined;
-  if (!image?.trim() && r.slug?.startsWith("garde-moorea-")) {
+  const isBrokenCover =
+    !image?.trim() ||
+    image.includes("fbcdn.net") ||
+    image.includes("fbsbx.com");
+  if (r.slug?.startsWith("garde-moorea-") && isBrokenCover) {
     const validFrom = r.slug.slice("garde-moorea-".length);
     image =
       resolveGardePosterPublicUrl(r.cover_url) ??
       `${SITE.url.replace(/\/$/, "")}/api/garde-weekend/poster/${validFrom}`;
-  } else if (
-    !image?.trim() &&
-    r.slug?.startsWith("mooreanews-fb-")
-  ) {
+  } else if (r.slug?.startsWith("mooreanews-fb-") && isBrokenCover) {
     image = `/api/facebook-cover?slug=${encodeURIComponent(r.slug)}`;
   }
   return {
