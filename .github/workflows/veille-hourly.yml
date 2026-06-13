@@ -44,11 +44,17 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          set +e
           fb_url="https://www.mooreanews.com/api/cron/facebook?secret=${CRON_SECRET}"
           code=$(curl -sS -o /tmp/fb-cron.json -w "%{http_code}" --http1.1 --max-time 30 "$fb_url")
-          echo "Facebook cron HTTP ${code}"
-          cat /tmp/fb-cron.json | head -c 800
-          echo ""
-          if [ "$code" != "202" ] && [ "$code" != "200" ]; then
-            echo "Avertissement: cron Facebook HTTP ${code} (non bloquant)"
+          curl_exit=$?
+          echo "Facebook cron HTTP ${code} (curl exit ${curl_exit})"
+          if [ -f /tmp/fb-cron.json ]; then
+            cat /tmp/fb-cron.json | head -c 800
+            echo ""
+          fi
+          if [ "$curl_exit" -eq 28 ]; then
+            echo "Avertissement: timeout 30s (ancien cron synchrone ou cold start) — non bloquant"
+          elif [ "$code" != "202" ] && [ "$code" != "200" ]; then
+            echo "Avertissement: cron Facebook HTTP ${code} — non bloquant"
           fi

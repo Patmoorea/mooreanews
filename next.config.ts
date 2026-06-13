@@ -31,6 +31,15 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
+    localPatterns: [
+      {
+        pathname: "/api/facebook-cover",
+        // slug=… pour les articles mooreanews-fb-* sans cover Supabase
+      },
+      {
+        pathname: "/api/garde-weekend/poster/**",
+      },
+    ],
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "**.fbcdn.net" },
