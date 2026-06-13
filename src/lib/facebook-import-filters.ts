@@ -98,6 +98,14 @@ export function shouldImportFacebookPost(
     if (!post?.id?.trim()) {
       return { ok: false, reason: "missing_post_id" };
     }
+    if (
+      !facebookPostHasPublishableContent(
+        { ...post, message },
+        options,
+      )
+    ) {
+      return { ok: false, reason: "no_publishable_content" };
+    }
     return { ok: true, publishedAt };
   }
 
@@ -154,6 +162,10 @@ const FB_API_BOILERPLATE_RE =
 const FB_GENERIC_TITLE_RE =
   /^[^—]+ — publication$/i;
 
+/** Notifications système Facebook — pas des actualités. */
+const FB_STATUS_UPDATE_RE =
+  /updated their status|changed their profile picture|updated their profile picture|changed the group photo|changed their cover photo|updated their cover photo|added a cover photo|added a profile picture|a (?:changé|modifié) (?:sa|leur|son) (?:photo|couverture)|nouvelle photo de (?:profil|couverture)|est (?:à|en) [^.!?]{0,40}$|is feeling|added a (?:new )?video|a ajouté une vidéo|shared a (?:post|link) to the group/i;
+
 /** Texte ou titre inutilisable (erreur Facebook, coquille générique). */
 export function isFacebookJunkText(text: string): boolean {
   const t = text.trim();
@@ -162,6 +174,7 @@ export function isFacebookJunkText(text: string): boolean {
   if (/facebook\.com\/(share|share\/p)/i.test(t)) return true;
   if (FB_UNAVAILABLE_RE.test(t)) return true;
   if (FB_API_BOILERPLATE_RE.test(t)) return true;
+  if (FB_STATUS_UPDATE_RE.test(t)) return true;
   if (isFacebookPageBoilerplate(t)) return true;
   if (FB_GENERIC_TITLE_RE.test(t) && t.length < 80) return true;
   if (/^facebook$/i.test(t)) return true;
@@ -247,7 +260,12 @@ export function facebookPostHasPublishableContent(
   options?: FacebookImportFilterOptions,
 ): boolean {
   if (options?.importAllFeedPosts) {
-    return Boolean(post.id?.trim() && post.created_time?.trim());
+    if (!post.id?.trim() || !post.created_time?.trim()) return false;
+    const pic = post.full_picture?.trim() ?? "";
+    const msg = post.message?.trim() ?? "";
+    if (pic.length > 0) return true;
+    if (msg && !isFacebookJunkText(msg) && msg.length >= 20) return true;
+    return false;
   }
 
   const pic = post.full_picture?.trim() ?? "";

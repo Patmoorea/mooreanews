@@ -9,6 +9,7 @@ import {
   isFacebookArticleNeedsRepair,
   isFacebookCoverNeedsPersistOnly,
   isFacebookJunkText,
+  isEmptyFacebookArticleShell,
   isRecentFacebookPost,
   facebookCronMaxRepairsPerRun,
   publishedAtFromFacebookPost,
@@ -369,16 +370,29 @@ async function importAsArticle(
 
   const persist = await persistFacebookCoverUrl(post.full_picture, post.id);
   const cover = coverUrlForDatabase(persist);
+  const excerpt =
+    message.slice(0, 280) ||
+    `Publication Facebook ${config.pageName} · ${timeLabel}`;
+  const body = buildBody(message, permalink, config.pageName);
+
+  if (
+    isEmptyFacebookArticleShell({
+      title,
+      excerpt,
+      body,
+      cover_url: cover,
+    })
+  ) {
+    return { ok: false, reason: "empty_shell" };
+  }
 
   const { data, error } = await supabase
     .from("articles")
     .insert({
       slug,
       title: title.slice(0, 500),
-      excerpt:
-        message.slice(0, 280) ||
-        `Publication Facebook ${config.pageName} · ${timeLabel}`,
-      body: buildBody(message, permalink, config.pageName),
+      excerpt,
+      body,
       category: "actualites",
       tags: ["facebook-import", config.tag],
       cover_url: cover,
@@ -698,7 +712,7 @@ export async function importFacebookPostsAsContent(
         } else if (post.full_picture?.trim()) {
           result.coversPersisted = (result.coversPersisted ?? 0) + 1;
         }
-      } else if (r.reason === "duplicate") {
+      } else if (r.reason === "duplicate" || r.reason === "empty_shell") {
         result.skipped += 1;
       } else {
         pushImportFailure(result, `article ${post.id}`, r.reason);
@@ -756,7 +770,7 @@ export async function importFacebookPostsAsContent(
           id: r.id,
           date: r.date,
         });
-      } else if (r.reason === "duplicate") {
+      } else if (r.reason === "duplicate" || r.reason === "empty_shell") {
         result.skipped += 1;
       } else {
         pushImportFailure(result, `event ${post.id}`, r.reason);
@@ -769,7 +783,7 @@ export async function importFacebookPostsAsContent(
       if (r.ok) {
         result.announcementsCreated += 1;
         result.createdAnnouncements.push({ title: r.title, id: r.id });
-      } else if (r.reason === "duplicate") {
+      } else if (r.reason === "duplicate" || r.reason === "empty_shell") {
         result.skipped += 1;
       } else {
         pushImportFailure(result, `announcement ${post.id}`, r.reason);
