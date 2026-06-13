@@ -22,11 +22,10 @@ export async function GET(req: Request) {
     const { gatherWeeklyNewsletterData, buildWeeklyNewsletterHtml } =
       await import("@/lib/weekly-newsletter");
     const data = await gatherWeeklyNewsletterData();
-    const html = buildWeeklyNewsletterHtml(data);
-    return new Response(
-      `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"/><title>Aperçu newsletter</title></head><body style="margin:0;background:#bae6fd">${html}</body></html>`,
-      { headers: { "Content-Type": "text/html; charset=utf-8" } },
-    );
+    const html = buildWeeklyNewsletterHtml(data, { inlineImages: false });
+    return new Response(html, {
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
   }
 
   if (testEmail) {

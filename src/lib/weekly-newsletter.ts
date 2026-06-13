@@ -3,6 +3,8 @@
  * Récap de la semaine suivante : événements, alertes, annonces, actus, coupures, emploi.
  */
 
+import { readFile } from "fs/promises";
+import path from "path";
 import { Resend } from "resend";
 import { ENV, SITE } from "@/lib/constants";
 import { escapeHtml } from "@/lib/telegram";
@@ -31,6 +33,62 @@ export type WeeklyNewsletterData = {
   outages: UtilityOutage[];
   jobs: Awaited<ReturnType<typeof getRecentMooreaJobOffers>>;
 };
+
+const NEWSLETTER_BANNER_CID = "moorea-newsletter-banner";
+const NEWSLETTER_LOGO_CID = "moorea-newsletter-logo";
+
+function newsletterBaseUrl(): string {
+  const raw = SITE.url.replace(/\/$/, "");
+  if (raw.includes("mooreanews.com") && !raw.includes("www.")) {
+    return raw.replace("://mooreanews.com", "://www.mooreanews.com");
+  }
+  return raw;
+}
+
+function newsletterImageSrc(inlineImages: boolean, kind: "banner" | "logo"): string {
+  const base = newsletterBaseUrl();
+  if (inlineImages) {
+    return kind === "banner" ? `cid:${NEWSLETTER_BANNER_CID}` : `cid:${NEWSLETTER_LOGO_CID}`;
+  }
+  return `${base}${kind === "banner" ? SITE.banner : SITE.logo}`;
+}
+
+async function getNewsletterInlineAttachments(): Promise<
+  { filename: string; content: Buffer; content_id: string }[]
+> {
+  const brandDir = path.join(process.cwd(), "public", "brand");
+  const [banner, logo] = await Promise.all([
+    readFile(path.join(brandDir, "banner.png")),
+    readFile(path.join(brandDir, "logo.png")),
+  ]);
+  return [
+    {
+      filename: "banner.png",
+      content: banner,
+      content_id: NEWSLETTER_BANNER_CID,
+    },
+    {
+      filename: "logo.png",
+      content: logo,
+      content_id: NEWSLETTER_LOGO_CID,
+    },
+  ];
+}
+
+function wrapNewsletterDocument(body: string): string {
+  return `<!DOCTYPE html>
+<html lang="fr" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="x-apple-disable-message-reformatting" />
+<title>MooreaNews — votre semaine à Moorea</title>
+</head>
+<body style="margin:0;padding:0;background:#e0f2fe;-webkit-text-size-adjust:100%;">
+${body}
+</body>
+</html>`;
+}
 
 function formatEventDate(iso: string, time?: string): string {
   const d = new Date(`${iso}T12:00:00`).toLocaleDateString("fr-FR", {
@@ -144,40 +202,62 @@ function listItems(items: string[], empty: string): string {
   return `<ul style="margin:0;padding-left:0;list-style:none;line-height:1.55">${items.join("")}</ul>`;
 }
 
-function newsletterHeader(base: string, weekLabel: string): string {
-  const banner = `${base}${SITE.banner}`;
-  const logo = `${base}${SITE.logo}`;
+function newsletterHeader(
+  base: string,
+  weekLabel: string,
+  inlineImages: boolean,
+): string {
+  const banner = newsletterImageSrc(inlineImages, "banner");
+  const logo = newsletterImageSrc(inlineImages, "logo");
   return `
-    <div style="border-radius:20px 20px 0 0;overflow:hidden;background:linear-gradient(135deg,#0ea5e9 0%,#0369a1 55%,#0f766e 100%)">
-      <a href="${base}" style="display:block;text-decoration:none">
-        <img src="${banner}" alt="MooreaNews — L'info de Moorea" width="640" style="display:block;width:100%;max-width:640px;height:auto;border:0" />
-      </a>
-    </div>
-    <div style="background:linear-gradient(180deg,#fffbeb 0%,#ffffff 100%);padding:28px 24px 8px;text-align:center;border-left:1px solid #e0f2fe;border-right:1px solid #e0f2fe">
-      <img src="${logo}" alt="" width="56" height="56" style="width:56px;height:56px;border-radius:50%;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,0.12);margin-bottom:12px" />
-      <p style="margin:0 0 6px;font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#0891b2">Ia ora na ! 🌺</p>
-      <h1 style="font-family:Georgia,serif;color:#0c4a6e;margin:0 0 8px;font-size:26px;line-height:1.2">Votre semaine à Moorea</h1>
-      <p style="color:#0369a1;font-size:15px;margin:0 0 6px;font-weight:600">${escapeHtml(weekLabel)}</p>
-      <p style="color:#64748b;font-size:14px;margin:0;line-height:1.5;max-width:480px;margin-left:auto;margin-right:auto">
-        Sorties, alertes, actus et bons plans — tout ce qu'il faut pour profiter de l'île la semaine prochaine.
-      </p>
-    </div>`;
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background:#e0f2fe;">
+      <tr>
+        <td align="center" style="padding:16px 8px 24px;">
+          <table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;max-width:640px;width:100%;">
+            <tr>
+              <td style="padding:0;line-height:0;font-size:0;border-radius:20px 20px 0 0;overflow:hidden;background:#0369a1;">
+                <a href="${base}" style="display:block;text-decoration:none;">
+                  <img src="${banner}" alt="MooreaNews — L'info de Moorea et de la Polynésie française" width="640" height="auto" style="display:block;width:100%;max-width:640px;height:auto;border:0;outline:none;text-decoration:none;" />
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#fffbeb;padding:28px 24px 8px;text-align:center;border-left:1px solid #e0f2fe;border-right:1px solid #e0f2fe;">
+                <img src="${logo}" alt="MooreaNews" width="56" height="56" style="display:block;width:56px;height:56px;border-radius:50%;border:3px solid #ffffff;margin:0 auto 12px;outline:none;" />
+                <p style="margin:0 0 6px;font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#0891b2;font-family:Arial,Helvetica,sans-serif;">Ia ora na ! 🌺</p>
+                <h1 style="font-family:Georgia,'Times New Roman',serif;color:#0c4a6e;margin:0 0 8px;font-size:26px;line-height:1.2;font-weight:700;">Votre semaine à Moorea</h1>
+                <p style="color:#0369a1;font-size:15px;margin:0 0 6px;font-weight:600;font-family:Arial,Helvetica,sans-serif;">${escapeHtml(weekLabel)}</p>
+                <p style="color:#64748b;font-size:14px;margin:0;line-height:1.5;font-family:Arial,Helvetica,sans-serif;">
+                  Sorties, alertes, actus et bons plans — tout ce qu'il faut pour profiter de l'île la semaine prochaine.
+                </p>
+              </td>
+            </tr>`;
 }
 
 function newsletterFooter(base: string): string {
   return `
-    <div style="background:#f0f9ff;border-radius:0 0 20px 20px;padding:22px 24px 28px;text-align:center;border:1px solid #e0f2fe;border-top:none">
-      <p style="margin:0 0 12px;font-size:15px;color:#0c4a6e;font-weight:600">E māuruuru — à très vite sur l'île ! 🌴</p>
-      <a href="${base}" style="display:inline-block;background:linear-gradient(90deg,#f97316,#ec4899);color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 28px;border-radius:999px;box-shadow:0 4px 14px rgba(249,115,22,0.35)">Ouvrir MooreaNews →</a>
-      <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;line-height:1.6">
-        Vous recevez cet email car vous êtes inscrit à la newsletter MooreaNews.<br>
-        <a href="${base}" style="color:#0891b2">mooreanews.com</a> — l'info locale de Moorea
-      </p>
-    </div>`;
+            <tr>
+              <td style="background:#f0f9ff;padding:22px 24px 28px;text-align:center;border:1px solid #e0f2fe;border-top:none;border-radius:0 0 20px 20px;">
+                <p style="margin:0 0 12px;font-size:15px;color:#0c4a6e;font-weight:600;font-family:Arial,Helvetica,sans-serif;">E māuruuru — à très vite sur l'île ! 🌴</p>
+                <a href="${base}" style="display:inline-block;background:#f97316;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 28px;border-radius:999px;font-family:Arial,Helvetica,sans-serif;">Ouvrir MooreaNews →</a>
+                <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;line-height:1.6;font-family:Arial,Helvetica,sans-serif;">
+                  Vous recevez cet email car vous êtes inscrit à la newsletter MooreaNews.<br />
+                  <a href="${base}" style="color:#0891b2;text-decoration:underline;">mooreanews.com</a> — l'info locale de Moorea
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>`;
 }
 
-export function buildWeeklyNewsletterHtml(data: WeeklyNewsletterData): string {
-  const base = SITE.url.replace(/\/$/, "");
+export function buildWeeklyNewsletterHtml(
+  data: WeeklyNewsletterData,
+  options?: { inlineImages?: boolean },
+): string {
+  const base = newsletterBaseUrl();
+  const inlineImages = options?.inlineImages ?? false;
 
   const eventsHtml = listItems(
     data.events.map((e) => {
@@ -236,10 +316,9 @@ export function buildWeeklyNewsletterHtml(data: WeeklyNewsletterData): string {
     "Pas de nouvelle offre cette semaine — consultez la page emploi.",
   );
 
-  return `
-    <div style="font-family:Inter,Segoe UI,sans-serif;max-width:640px;margin:0 auto;background:#e0f2fe;padding:16px 8px 24px">
-      ${newsletterHeader(base, data.week.label)}
-      <div style="background:#ffffff;padding:8px 20px 12px;border-left:1px solid #e0f2fe;border-right:1px solid #e0f2fe">
+  const sections = `
+            <tr>
+              <td style="background:#ffffff;padding:8px 20px 12px;border-left:1px solid #e0f2fe;border-right:1px solid #e0f2fe;font-family:Arial,Helvetica,sans-serif;">
 
       ${sectionBlock("📅", `Agenda (${data.events.length})`, eventsHtml, "#a855f7", { href: `${base}/evenements`, label: "Tout l'agenda →" })}
 
@@ -253,14 +332,15 @@ export function buildWeeklyNewsletterHtml(data: WeeklyNewsletterData): string {
 
       ${sectionBlock("💼", "Emploi & formation", jobsHtml, "#14b8a6", { href: `${base}/emploi-formation`, label: "Offres Moorea →" })}
 
-      </div>
-      ${newsletterFooter(base)}
-    </div>
-  `;
+              </td>
+            </tr>`;
+
+  const body = `${newsletterHeader(base, data.week.label, inlineImages)}${sections}${newsletterFooter(base)}`;
+  return wrapNewsletterDocument(body);
 }
 
 export function buildWeeklyNewsletterText(data: WeeklyNewsletterData): string {
-  const base = SITE.url.replace(/\/$/, "");
+  const base = newsletterBaseUrl();
   const lines = [
     `MooreaNews — Semaine ${data.week.label}`,
     "",
@@ -317,10 +397,17 @@ export async function sendWeeklyNewsletter(options?: {
   }
 
   const data = await gatherWeeklyNewsletterData();
-  const html = buildWeeklyNewsletterHtml(data);
+  const html = buildWeeklyNewsletterHtml(data, { inlineImages: true });
   const text = buildWeeklyNewsletterText(data);
   const subjectBase = `🌺 Ia ora na — votre semaine à Moorea (${data.events.length} sortie${data.events.length > 1 ? "s" : ""})`;
   const subject = isTest ? `[TEST] ${subjectBase}` : subjectBase;
+
+  let attachments: Awaited<ReturnType<typeof getNewsletterInlineAttachments>> = [];
+  try {
+    attachments = await getNewsletterInlineAttachments();
+  } catch {
+    /* secours : images distantes si fichiers indisponibles */
+  }
 
   const resend = new Resend(ENV.resendKey);
   let sent = 0;
@@ -330,8 +417,12 @@ export async function sendWeeklyNewsletter(options?: {
       from: ENV.resendFrom,
       to: [email],
       subject,
-      html,
+      html:
+        attachments.length > 0
+          ? html
+          : buildWeeklyNewsletterHtml(data, { inlineImages: false }),
       text: isTest ? `[TEST — envoi manuel]\n\n${text}` : text,
+      attachments: attachments.length > 0 ? attachments : undefined,
     });
     if (!result.error) sent += 1;
     else if (isTest) {
