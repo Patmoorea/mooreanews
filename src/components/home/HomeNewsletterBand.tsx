@@ -26,7 +26,7 @@ export function HomeNewsletterBand() {
       const json = (await res.json().catch(() => null)) as { ok?: boolean } | null;
       if (!res.ok || !json?.ok) throw new Error("fail");
       setStatus("success");
-      setMessage("Inscrit — brief matin dans votre boîte mail.");
+      setMessage("Inscrit — récap chaque dimanche à 18h dans votre boîte mail.");
       setEmail("");
     } catch {
       setStatus("error");
@@ -45,7 +45,7 @@ export function HomeNewsletterBand() {
           <div className="max-w-xl">
             <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-lagon-700">
               <Mail size={14} aria-hidden />
-              Gratuit · 1 email / jour
+              Gratuit · email le dimanche soir
             </p>
             <h2
               id="home-newsletter-title"
@@ -54,8 +54,8 @@ export function HomeNewsletterBand() {
               Ne ratez rien à Moorea
             </h2>
             <p className="mt-2 text-sm sm:text-base text-ocean-600 text-pretty">
-              Ferry, alertes coupures, agenda du week-end et temps fort de l’île —
-              le brief matin MooreaNews.
+              Chaque dimanche à 18h : événements, alertes, actus et coupes de la
+              semaine à venir — plus le brief matin au fil de l’actualité.
             </p>
           </div>
 

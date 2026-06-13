@@ -68,11 +68,11 @@ export async function POST(req: Request) {
           <div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;padding:24px">
             <h1 style="color:#0c4a6e;font-family:Marcellus,serif">Ia ora na, ${escapeHtml(email)} !</h1>
             <p>Merci de votre inscription à la newsletter de <strong>MooreaNews</strong>.</p>
-            <p>Vous recevrez le <strong>brief matinal</strong> (ferries, alertes, météo) et le récap des actus de l'île sur mooreanews.com.</p>
+            <p>Vous recevrez chaque <strong>dimanche à 18h</strong> le récap de la semaine à venir (événements, alertes, actus) et le brief matinal au fil de l'actualité sur mooreanews.com.</p>
             <p style="color:#075985">À très vite,<br>L'équipe MooreaNews</p>
           </div>
         `,
-        text: `Merci de votre inscription à MooreaNews ! Vous recevrez chaque semaine un récap des actus de l'île.`,
+        text: `Merci de votre inscription à MooreaNews ! Chaque dimanche à 18h : récap de la semaine à venir. mooreanews.com`,
       })
       .then(() => ({ ok: true as const }))
       .catch((err) => ({ ok: false as const, error: String(err) }));

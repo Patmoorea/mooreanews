@@ -16,6 +16,10 @@
     {
       "path": "/api/cron/facebook",
       "schedule": "30 17 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-newsletter",
+      "schedule": "0 4 * * 1"
     }
   ],
   "functions": {
@@ -38,6 +42,10 @@
       "maxDuration": 300
     },
     "src/app/api/cron/weekly-recap/route.ts": {
+      "memory": 1024,
+      "maxDuration": 300
+    },
+    "src/app/api/cron/weekly-newsletter/route.ts": {
       "memory": 1024,
       "maxDuration": 300
     }
