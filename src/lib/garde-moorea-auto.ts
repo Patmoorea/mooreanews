@@ -21,6 +21,7 @@ import {
 } from "@/lib/garde-weekend-poster-sync";
 import {
   isGardeWeekActive,
+  pickBestGardeSnapshot,
   readGardeFileSnapshot,
 } from "@/lib/garde-moorea-data";
 import { MOOREA_PHARMACIES } from "@/lib/moorea-pharmacies";
@@ -100,55 +101,70 @@ function snapshotToDuties(
   };
 }
 
+function parseCommunePostToSnapshot(
+  post: {
+    created_time?: string;
+    message?: string;
+    permalink_url?: string;
+    full_picture?: string;
+  },
+): GardeMooreaSnapshot | null {
+  const msg = post.message ?? "";
+  const picture = post.full_picture?.trim() || null;
+  let parsed = parseGardePost(msg, post.created_time);
+
+  if (!parsed && picture && isGardeImagePost(msg, post.created_time, true)) {
+    const inferred = post.created_time
+      ? inferWeekendFromPostDate(post.created_time)
+      : null;
+    if (inferred) {
+      parsed = { ...inferred, doctor: null, pharmacy: null };
+    }
+  }
+
+  if (!parsed) {
+    const partial = parseGardePost(msg);
+    const inferred =
+      partial && post.created_time
+        ? inferWeekendFromPostDate(post.created_time)
+        : null;
+    if (partial && inferred) {
+      parsed = { ...inferred, ...partial };
+    }
+  }
+
+  const hasContent =
+    parsed &&
+    (parsed.doctor ||
+      parsed.pharmacy ||
+      (picture && isGardeImagePost(msg, post.created_time, true)));
+
+  if (!hasContent || !parsed) return null;
+
+  return {
+    ...parsed,
+    communePosterUrl: picture,
+    posterImageUrl: null,
+    sourceUrl: post.permalink_url ?? COMMUNE_FB,
+    syncedAt: new Date().toISOString(),
+  };
+}
+
 async function fetchGardeFromCommuneFacebook(): Promise<GardeMooreaSnapshot | null> {
   const posts = await listCommuneMooreaGraphPosts();
   const cutoff = Date.now() - 21 * 86400000;
+  const now = new Date();
+  const candidates: GardeMooreaSnapshot[] = [];
 
   for (const post of posts) {
     const t = Date.parse(post.created_time ?? "");
     if (t && t < cutoff) continue;
 
-    const msg = post.message ?? "";
-    const picture = post.full_picture?.trim() || null;
-    let parsed = parseGardePost(msg, post.created_time);
-
-    if (!parsed && picture && isGardeImagePost(msg, post.created_time, true)) {
-      const inferred = post.created_time
-        ? inferWeekendFromPostDate(post.created_time)
-        : null;
-      if (inferred) {
-        parsed = { ...inferred, doctor: null, pharmacy: null };
-      }
-    }
-
-    if (!parsed) {
-      const partial = parseGardePost(msg);
-      const inferred = partial && post.created_time
-        ? inferWeekendFromPostDate(post.created_time)
-        : null;
-      if (partial && inferred) {
-        parsed = { ...inferred, ...partial };
-      }
-    }
-
-    const hasContent =
-      parsed &&
-      (parsed.doctor ||
-        parsed.pharmacy ||
-        (picture && isGardeImagePost(msg, post.created_time, true)));
-
-    if (!hasContent || !parsed) continue;
-
-    return {
-      ...parsed,
-      communePosterUrl: picture,
-      posterImageUrl: null,
-      sourceUrl: post.permalink_url ?? COMMUNE_FB,
-      syncedAt: new Date().toISOString(),
-    };
+    const snap = parseCommunePostToSnapshot(post);
+    if (snap) candidates.push(snap);
   }
 
-  return null;
+  return pickBestGardeSnapshot(candidates, now);
 }
 
 async function fetchCommuneRssGarde(): Promise<GardeMooreaSnapshot | null> {
@@ -185,7 +201,8 @@ export async function fetchLiveGardeMooreaSnapshot(): Promise<GardeMooreaSnapsho
     fetchGardeFromCommuneFacebook(),
     fetchCommuneRssGarde(),
   ]);
-  return fb ?? rss;
+  const candidates = [fb, rss].filter(Boolean) as GardeMooreaSnapshot[];
+  return pickBestGardeSnapshot(candidates);
 }
 
 const getCachedLiveGarde = unstable_cache(
@@ -266,20 +283,29 @@ async function resolveSnapshotForSync(): Promise<GardeMooreaSnapshot | null> {
   ]);
 
   const now = new Date();
+  const fileCandidate =
+    file && isGardeWeekActive(now, file.validFrom, file.validTo) ? file : null;
 
-  if (file && isGardeWeekActive(now, file.validFrom, file.validTo)) {
+  const best = pickBestGardeSnapshot(
+    [live, fileCandidate].filter(Boolean) as GardeMooreaSnapshot[],
+    now,
+  );
+
+  if (!best) return null;
+
+  if (fileCandidate && fileCandidate.validFrom === best.validFrom) {
     return {
-      ...file,
+      ...best,
       communePosterUrl:
         live?.communePosterUrl ??
-        file.communePosterUrl ??
-        (file.posterImageUrl?.startsWith("http") ? file.posterImageUrl : null),
-      sourceUrl: live?.sourceUrl ?? file.sourceUrl,
+        best.communePosterUrl ??
+        (best.posterImageUrl?.startsWith("http") ? best.posterImageUrl : null),
+      sourceUrl: live?.sourceUrl ?? best.sourceUrl,
       syncedAt: new Date().toISOString(),
     };
   }
 
-  return live ?? file;
+  return best;
 }
 
 async function enrichFromCommuneImage(
@@ -355,6 +381,20 @@ export async function syncGardeMooreaFromCommune(
       doctor: null,
       weekend: null,
       articleSlug: null,
+      ocrUsed: false,
+      posterGenerated: false,
+    };
+  }
+
+  const now = new Date();
+  if (!isGardeWeekActive(now, snap.validFrom, snap.validTo)) {
+    return {
+      ok: true,
+      found: false,
+      pharmacy: null,
+      doctor: null,
+      weekend: snap.label,
+      articleSlug: gardeArticleSlug(snap.validFrom),
       ocrUsed: false,
       posterGenerated: false,
     };

@@ -53,6 +53,29 @@ export function isGardeWeekActive(
   return false;
 }
 
+/** Choisit le snapshot garde le plus pertinent (WE en cours / à venir, puis le plus récent). */
+export function pickBestGardeSnapshot(
+  candidates: GardeMooreaSnapshot[],
+  now = new Date(),
+): GardeMooreaSnapshot | null {
+  if (!candidates.length) return null;
+
+  const ranked = candidates
+    .map((snap) => ({
+      snap,
+      active: isGardeWeekActive(now, snap.validFrom, snap.validTo),
+      validFrom: snap.validFrom,
+      synced: Date.parse(snap.syncedAt) || 0,
+    }))
+    .sort((a, b) => {
+      if (a.active !== b.active) return a.active ? -1 : 1;
+      if (a.validFrom !== b.validFrom) return b.validFrom.localeCompare(a.validFrom);
+      return b.synced - a.synced;
+    });
+
+  return ranked[0]?.snap ?? null;
+}
+
 function phoneHref(phone: string): string {
   let d = phone.replace(/\D/g, "");
   if (d.startsWith("689") && d.length >= 11) d = d.slice(3);
@@ -175,15 +198,20 @@ function snapshotHasContent(snap: GardeMooreaSnapshot): boolean {
   );
 }
 
-export async function resolveGardeWeekendSnapshot(): Promise<GardeMooreaSnapshot | null> {
+export async function resolveGardeWeekendSnapshot(
+  now = new Date(),
+): Promise<GardeMooreaSnapshot | null> {
   const [cached, file] = await Promise.all([
     readGardeMooreaFromCache(),
     readGardeFileSnapshot(),
   ]);
 
-  if (cached && snapshotHasContent(cached)) return cached;
-  if (file && snapshotHasContent(file)) return file;
-  return cached ?? file;
+  const candidates = [cached, file].filter(
+    (s): s is GardeMooreaSnapshot =>
+      s != null && snapshotHasContent(s) && isGardeWeekActive(now, s.validFrom, s.validTo),
+  );
+
+  return pickBestGardeSnapshot(candidates, now);
 }
 
 /** Snapshot pour affiche dynamique /api/garde-weekend/poster/[validFrom] */
