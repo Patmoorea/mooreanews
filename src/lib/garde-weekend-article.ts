@@ -35,9 +35,6 @@ export function buildGardeArticleTitle(snap: GardeMooreaSnapshot): string {
 async function resolveGardeArticleCoverUrl(
   snap: GardeMooreaSnapshot,
 ): Promise<string> {
-  const poster = resolveGardePosterPublicUrl(snap.posterImageUrl);
-  if (poster?.includes("supabase.co/storage/")) return poster;
-
   const commune = snap.communePosterUrl?.trim();
   if (commune?.startsWith("http")) {
     const persisted = await persistFacebookCoverUrl(
@@ -48,11 +45,16 @@ async function resolveGardeArticleCoverUrl(
     if (url) return url;
   }
 
+  const poster = resolveGardePosterPublicUrl(snap.posterImageUrl);
+  if (poster?.includes("supabase.co/storage/")) return poster;
+
   const uploaded = await renderAndUploadMooreaNewsGardePoster(snap);
   if (uploaded?.includes("supabase.co/storage/")) return uploaded;
   if (uploaded?.startsWith("http")) return uploaded;
 
-  if (poster?.startsWith("http")) return poster;
+  if (poster?.startsWith("http") && !poster.includes("ordre-pharmaciens")) {
+    return poster;
+  }
 
   return `${SITE.url.replace(/\/$/, "")}/api/garde-weekend/poster/${snap.validFrom}`;
 }
