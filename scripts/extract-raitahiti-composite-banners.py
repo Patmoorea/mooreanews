@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 from PIL import Image
@@ -10,6 +11,9 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "public/images/ads/rai-tahiti"
 SEP = OUT / "separees"
+# Dossier Bureau où vous déposez les visuels découpés (non lu par le site seul).
+DESK_SEP = Path("/Users/patricejourdan/Desktop/Rai-Tahiti-ads/separees")
+DESK_OUT = Path("/Users/patricejourdan/Desktop/Rai-Tahiti-ads")
 
 SLOT_NAMES: dict[str, str] = {
     "01": "01-leaderboard",
@@ -23,16 +27,53 @@ SLOT_NAMES: dict[str, str] = {
     "08": "08-facebook",
     "09": "09-instagram",
     "10": "10-pinterest",
+    "10-van": "10-billboard-van",
 }
+
+
+def sync_desk_separees() -> int:
+    """Copie les PNG du Bureau → moorea-hub/public/.../separees (plus récent gagne)."""
+    if not DESK_SEP.is_dir():
+        return 0
+    SEP.mkdir(parents=True, exist_ok=True)
+    copied = 0
+    for src in sorted(DESK_SEP.glob("*.png")):
+        dest = SEP / src.name
+        if not dest.exists() or src.stat().st_mtime > dest.stat().st_mtime:
+            shutil.copy2(src, dest)
+            print(f"  sync {src.name}")
+            copied += 1
+    return copied
+
+
+def sync_desk_exports() -> int:
+    """Copie les exports IAB finis du Bureau → public/images/ads/rai-tahiti/."""
+    if not DESK_OUT.is_dir():
+        return 0
+    copied = 0
+    for src in sorted(DESK_OUT.glob("rai-tahiti-ad-*.png")):
+        dest = OUT / src.name
+        if not dest.exists() or src.stat().st_mtime > dest.stat().st_mtime:
+            shutil.copy2(src, dest)
+            print(f"  import {src.name}")
+            copied += 1
+    return copied
 
 
 def find_separee(key: str) -> Path | None:
     name = SLOT_NAMES[key]
-    matches = sorted(SEP.glob(f"rai-tahiti-{name}-*.png"))
-    if matches:
-        return matches[0]
-    matches = sorted(SEP.glob(f"rai-tahiti-{key}-*.png"))
-    return matches[0] if matches else None
+    candidates: list[Path] = []
+    for pattern in (
+        f"rai-tahiti-{name}-*.png",
+        f"rai-tahiti-{name}.png",
+        f"rai-tahiti-{key}-*.png",
+        f"rai-tahiti-{key}.png",
+    ):
+        candidates.extend(SEP.glob(pattern))
+    if not candidates:
+        return None
+    # Fichier le plus récent (ex. nouveau dépôt Bureau sans suffixe -WxH).
+    return max(candidates, key=lambda p: p.stat().st_mtime)
 
 
 def rename_with_actual_size(path: Path, canonical: str) -> Path:
@@ -65,6 +106,22 @@ def pick(*keys: str, loaded: dict[str, Image.Image]) -> Image.Image | None:
 
 
 def main() -> None:
+    import os
+
+    print("Sync Bureau/separees → projet…")
+    n_sep = sync_desk_separees()
+    if n_sep:
+        print(f"  {n_sep} fichier(s) copiés depuis {DESK_SEP}")
+    elif DESK_SEP.is_dir():
+        print("  (separees déjà à jour)")
+
+    if os.environ.get("RAI_IMPORT_DESK_EXPORTS") == "1":
+        n_out = sync_desk_exports()
+        if n_out:
+            print(f"  {n_out} export(s) IAB importés depuis {DESK_OUT}")
+        print("OK (import exports Bureau uniquement)")
+        return
+
     SEP.mkdir(parents=True, exist_ok=True)
     loaded: dict[str, Image.Image] = {}
 
@@ -110,6 +167,8 @@ def main() -> None:
 
     for name, img in exports:
         img.save(OUT / name, optimize=True, quality=95)
+        DESK_OUT.mkdir(parents=True, exist_ok=True)
+        img.save(DESK_OUT / name, optimize=True, quality=95)
         print(f"  → {name}  {img.size[0]}×{img.size[1]}")
 
     print("OK")
