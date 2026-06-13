@@ -4,7 +4,11 @@
 
 import { readFile } from "fs/promises";
 import path from "path";
-import { resolveGardeMooreaAuto, readGardeMooreaFromCache, type GardeMooreaSnapshot } from "@/lib/garde-moorea-auto";
+import {
+  readGardeMooreaFromCache,
+  snapshotToPublicDuties,
+  type GardeMooreaSnapshot,
+} from "@/lib/garde-moorea-auto";
 import { gardeArticleSlug } from "@/lib/garde-weekend-article";
 import { resolveGardePosterPublicUrl } from "@/lib/garde-poster-url";
 import { tahitiDateKey, tahitiParts } from "@/lib/tahiti-holidays";
@@ -254,16 +258,18 @@ export async function getGardeMooreaForNow(now = new Date()): Promise<{
   weekendLabel: string | null;
   posterImageUrl: string | null;
 }> {
-  const auto = await resolveGardeMooreaAuto(now);
-  const snap = await resolveGardeWeekendSnapshot();
+  const snap = await resolveGardeWeekendSnapshot(now);
   const posterImageUrl = resolveGardePosterPublicUrl(
     snap?.posterImageUrl ?? snap?.communePosterUrl,
   );
 
-  if (auto.pharmacy || auto.doctor) {
-    return { ...auto, posterImageUrl };
+  if (snap) {
+    const duties = snapshotToPublicDuties(snap, now);
+    if (duties.weekendLabel || duties.doctor || duties.pharmacy) {
+      return { ...duties, posterImageUrl };
+    }
   }
 
   const file = await fromFile(now);
-  return { ...file, posterImageUrl };
+  return { ...file, posterImageUrl: file.weekendLabel ? posterImageUrl : null };
 }

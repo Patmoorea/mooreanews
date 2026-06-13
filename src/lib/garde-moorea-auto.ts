@@ -86,7 +86,31 @@ function toDuty(
   };
 }
 
-function snapshotToDuties(
+function pharmacyDutyFromSnapshot(
+  snap: GardeMooreaSnapshot,
+  source: string,
+): OnCallDuty | null {
+  if (snap.pharmacy?.name) {
+    return toDuty("pharmacy", snap.pharmacy, source, snap.sourceUrl);
+  }
+  const hours = snap.pharmacyHours;
+  if (!hours?.length) return null;
+  const summary = hours
+    .map((h) => `${h.district} ${h.phone}`)
+    .join(" · ");
+  const first = hours[0]!;
+  return {
+    name: "Pharmacies de garde (Afareaitu, Maharepa, Haapiti)",
+    phone: first.phone,
+    phoneHref: first.phone ? phoneHref(first.phone) : "",
+    address: summary,
+    source,
+    sourceUrl: snap.sourceUrl,
+  };
+}
+
+/** Médecin / pharmacie affichés sur le site à partir du snapshot garde. */
+export function snapshotToPublicDuties(
   snap: GardeMooreaSnapshot,
   now: Date,
 ): { pharmacy: OnCallDuty | null; doctor: OnCallDuty | null; weekendLabel: string | null } {
@@ -99,7 +123,7 @@ function snapshotToDuties(
     : "Commune Moorea-Maiao";
   return {
     weekendLabel: snap.label,
-    pharmacy: toDuty("pharmacy", snap.pharmacy, source, snap.sourceUrl),
+    pharmacy: pharmacyDutyFromSnapshot(snap, source),
     doctor: toDuty(
       "doctor",
       snap.doctor,
@@ -108,6 +132,14 @@ function snapshotToDuties(
       snap.doctorAddress,
     ),
   };
+}
+
+function phoneHref(phone: string): string {
+  let d = phone.replace(/\D/g, "");
+  if (d.startsWith("689") && d.length >= 11) d = d.slice(3);
+  if (d.length < 8) return "";
+  d = d.slice(-8);
+  return `tel:+689${d}`;
 }
 
 function parseCommunePostToSnapshot(
@@ -440,10 +472,7 @@ export async function syncGardeMooreaFromCommune(
   );
   snap = enriched.snap;
 
-  const coppfEnriched = await enrichFromCoppfImage(
-    snap,
-    Boolean(options.fullWeekendPipeline) && !snap.doctor?.name,
-  );
+  const coppfEnriched = await enrichFromCoppfImage(snap, !snap.doctor?.name);
   snap = coppfEnriched.snap;
 
   const ocrUsed = enriched.ocrUsed || coppfEnriched.ocrUsed;
@@ -512,7 +541,7 @@ export async function resolveGardeMooreaAuto(now = new Date()): Promise<{
     return { pharmacy: null, doctor: null, weekendLabel: null };
   }
 
-  return snapshotToDuties(snap, now);
+  return snapshotToPublicDuties(snap, now);
 }
 
 /** Export cron uniquement — ne pas appeler depuis les pages. */

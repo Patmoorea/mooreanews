@@ -7,7 +7,7 @@ import { HealthOnCallPanel } from "@/components/health/HealthOnCallPanel";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { getHealthOnCall } from "@/lib/health-on-call";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Pharmacie & médecin de garde — Moorea",
