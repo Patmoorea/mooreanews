@@ -7,6 +7,7 @@
 import { revalidatePath } from "next/cache";
 import { expirePastAlerts } from "@/lib/alert-schedule";
 import { expireStaleAnnouncements } from "@/lib/announcement-expiry";
+import { expirePastEvents } from "@/lib/event-expiry";
 import { aggregateAll } from "@/lib/aggregator";
 import {
   getTahitiClock,
@@ -59,6 +60,11 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   const expiredAlerts = await expirePastAlerts();
   jobs.expiredAlerts = expiredAlerts;
   jobs.expiredAnnouncements = await expireStaleAnnouncements();
+  jobs.expiredEvents = await expirePastEvents();
+  if ((jobs.expiredEvents as number) > 0) {
+    revalidatePath("/evenements");
+    revalidatePath("/", "layout");
+  }
   if (expiredAlerts > 0) {
     revalidatePath("/alertes");
     revalidatePath("/", "layout");

@@ -45,6 +45,7 @@ import {
 import { routeFacebookImport } from "@/lib/facebook-content-route";
 import { facebookStoryIdFromPostId } from "@/lib/article-dedupe";
 import { normalizeTitleKey } from "@/lib/cover-image";
+import { isTransientSupabaseError } from "@/lib/feed-errors";
 
 export type FacebookContentImportResult = {
   eventsCreated: number;
@@ -63,6 +64,19 @@ export type FacebookContentImportResult = {
   coversFailed?: number;
   warnings: string[];
 };
+
+function pushImportFailure(
+  result: FacebookContentImportResult,
+  label: string,
+  reason: string,
+): void {
+  const msg = `${label}: ${reason}`;
+  if (isTransientSupabaseError(reason)) {
+    result.warnings.push(msg);
+  } else {
+    result.errors.push(msg);
+  }
+}
 
 function importEnabled(): boolean {
   return process.env.FACEBOOK_IMPORT_AS_ARTICLES === "true";
@@ -649,7 +663,7 @@ export async function importFacebookPostsAsContent(
           }
           repairsThisRun += 1;
         } else {
-          result.errors.push(`repair ${post.id}: ${r.reason}`);
+          pushImportFailure(result, `repair ${post.id}`, r.reason);
         }
         continue;
       }
@@ -687,7 +701,7 @@ export async function importFacebookPostsAsContent(
       } else if (r.reason === "duplicate") {
         result.skipped += 1;
       } else {
-        result.errors.push(`article ${post.id}: ${r.reason}`);
+        pushImportFailure(result, `article ${post.id}`, r.reason);
       }
       continue;
     }
@@ -745,7 +759,7 @@ export async function importFacebookPostsAsContent(
       } else if (r.reason === "duplicate") {
         result.skipped += 1;
       } else {
-        result.errors.push(`event ${post.id}: ${r.reason}`);
+        pushImportFailure(result, `event ${post.id}`, r.reason);
       }
       continue;
     }
@@ -758,7 +772,7 @@ export async function importFacebookPostsAsContent(
       } else if (r.reason === "duplicate") {
         result.skipped += 1;
       } else {
-        result.errors.push(`announcement ${post.id}: ${r.reason}`);
+        pushImportFailure(result, `announcement ${post.id}`, r.reason);
       }
       continue;
     }
@@ -776,7 +790,7 @@ export async function importFacebookPostsAsContent(
     } else if (r.reason === "duplicate") {
       result.skipped += 1;
     } else {
-      result.errors.push(`article ${post.id}: ${r.reason}`);
+      pushImportFailure(result, `article ${post.id}`, r.reason);
     }
   }
 

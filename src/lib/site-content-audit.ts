@@ -12,6 +12,7 @@ import {
 } from "@/lib/facebook-import-filters";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { ALL_EMPLOYMENT_SOURCE_IDS } from "@/lib/employment-sources";
+import { pastEventCutoffIso } from "@/lib/event-expiry";
 
 export type ContentAuditFinding = {
   kind: "article" | "event" | "announcement" | "external";
@@ -46,9 +47,7 @@ export async function auditPublicContent(): Promise<ContentAuditReport | null> {
   if (!admin) return null;
 
   const findings: ContentAuditFinding[] = [];
-  const pastEventCutoff = new Date();
-  pastEventCutoff.setDate(pastEventCutoff.getDate() - 14);
-  const pastEventIso = pastEventCutoff.toISOString().slice(0, 10);
+  const pastEventIso = pastEventCutoffIso();
 
   const { data: articles } = await admin
     .from("articles")

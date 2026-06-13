@@ -189,8 +189,14 @@ async function fetchGraphPostRawById(
 
   const res = await fetch(apiUrl.toString(), { cache: "no-store" });
   if (!res.ok) return null;
-  const json = (await res.json()) as GraphPostRaw;
-  return json?.id ? json : null;
+  const body = await res.text();
+  if (!body.trim()) return null;
+  try {
+    const json = JSON.parse(body) as GraphPostRaw;
+    return json?.id ? json : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Détail complet d’un post via Graph API (image + texte manquants sur /posts). */

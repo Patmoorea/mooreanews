@@ -69,22 +69,48 @@ function findFirstImage(xml: string): string | undefined {
   return undefined;
 }
 
+function rssFetchHeaders(referer?: string): HeadersInit {
+  const headers: Record<string, string> = {
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 MooreaNews/1.0 (+https://www.mooreanews.com)",
+    Accept:
+      "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
+    "Accept-Language": "fr-FR,fr;q=0.9",
+  };
+  if (referer) headers.Referer = referer;
+  return headers;
+}
+
 export async function fetchRssFeed(
   url: string,
   options?: { fresh?: boolean }
 ): Promise<RssItem[]> {
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (compatible; MooreaNews/1.0; +https://www.mooreanews.com)",
-      Accept:
-        "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
-    },
-    ...(options?.fresh ? { cache: "no-store" as const } : { next: { revalidate: 600 } }),
-  });
-  if (!res.ok) throw new Error(`RSS ${url}: HTTP ${res.status}`);
-  const xml = await res.text();
-  return parseRss(xml);
+  const fetchOpts = options?.fresh
+    ? { cache: "no-store" as const }
+    : { next: { revalidate: 600 } };
+  const referer = (() => {
+    try {
+      return new URL(url).origin + "/";
+    } catch {
+      return undefined;
+    }
+  })();
+
+  let lastStatus = 0;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await fetch(url, {
+      headers: rssFetchHeaders(attempt === 0 ? referer : undefined),
+      ...fetchOpts,
+    });
+    lastStatus = res.status;
+    if (res.ok) {
+      const xml = await res.text();
+      return parseRss(xml);
+    }
+    if (res.status !== 403 || attempt > 0) break;
+  }
+
+  throw new Error(`RSS ${url}: HTTP ${lastStatus}`);
 }
 
 function parseRss(xml: string): RssItem[] {

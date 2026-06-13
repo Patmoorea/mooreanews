@@ -16,6 +16,11 @@ import {
   type GardePharmacyHours,
 } from "@/lib/garde-announcement-parse";
 import { fetchGardeFromImportedArticles } from "@/lib/garde-site-articles";
+import {
+  COPPF_MEDECINS_GARDE_URL,
+  fetchCoppfGardeImageUrl,
+  pickGardeWithCoppf,
+} from "@/lib/garde-ordre-pharmaciens";
 import { ocrGardePosterImage } from "@/lib/garde-poster-ocr";
 import {
   gardePosterHasContent,
@@ -89,7 +94,9 @@ function snapshotToDuties(
     return { pharmacy: null, doctor: null, weekendLabel: null };
   }
 
-  const source = "Commune Moorea-Maiao";
+  const source = snap.sourceUrl?.includes("ordre-pharmaciens")
+    ? "Ordre des médecins (COPPF)"
+    : "Commune Moorea-Maiao";
   return {
     weekendLabel: snap.label,
     pharmacy: toDuty("pharmacy", snap.pharmacy, source, snap.sourceUrl),
@@ -202,7 +209,7 @@ export async function fetchLiveGardeMooreaSnapshot(): Promise<GardeMooreaSnapsho
     fetchCommuneRssGarde().catch(() => null),
   ]);
   const candidates = [site, fb, rss].filter(Boolean) as GardeMooreaSnapshot[];
-  return pickBestGardeSnapshot(candidates);
+  return pickGardeWithCoppf(candidates);
 }
 
 const getCachedLiveGarde = unstable_cache(
@@ -286,7 +293,7 @@ async function resolveSnapshotForSync(): Promise<GardeMooreaSnapshot | null> {
   const fileCandidate =
     file && isGardeWeekActive(now, file.validFrom, file.validTo) ? file : null;
 
-  const best = pickBestGardeSnapshot(
+  const best = await pickGardeWithCoppf(
     [live, fileCandidate].filter(Boolean) as GardeMooreaSnapshot[],
     now,
   );
@@ -306,6 +313,29 @@ async function resolveSnapshotForSync(): Promise<GardeMooreaSnapshot | null> {
   }
 
   return best;
+}
+
+async function enrichFromCoppfImage(
+  snap: GardeMooreaSnapshot,
+  runOcr: boolean,
+): Promise<{ snap: GardeMooreaSnapshot; ocrUsed: boolean; ocrError?: string }> {
+  if (!runOcr || snap.doctor?.name) return { snap, ocrUsed: false };
+
+  const coppf = await fetchCoppfGardeImageUrl().catch(() => null);
+  if (!coppf?.imageUrl) return { snap, ocrUsed: false };
+
+  const ocr = await ocrGardePosterImage(coppf.imageUrl);
+  if (!ocr.ok || !ocr.text) {
+    return { snap, ocrUsed: false, ocrError: ocr.error ?? "ocr coppf vide" };
+  }
+
+  return {
+    snap: {
+      ...mergeGardeOcrIntoSnapshot(snap, ocr.text),
+      sourceUrl: snap.sourceUrl ?? COPPF_MEDECINS_GARDE_URL,
+    },
+    ocrUsed: true,
+  };
 }
 
 async function enrichFromCommuneImage(
@@ -410,6 +440,15 @@ export async function syncGardeMooreaFromCommune(
   );
   snap = enriched.snap;
 
+  const coppfEnriched = await enrichFromCoppfImage(
+    snap,
+    Boolean(options.fullWeekendPipeline) && !snap.doctor?.name,
+  );
+  snap = coppfEnriched.snap;
+
+  const ocrUsed = enriched.ocrUsed || coppfEnriched.ocrUsed;
+  const ocrError = enriched.ocrError ?? coppfEnriched.ocrError;
+
   const shouldMakePoster =
     options.fullWeekendPipeline ||
     !snap.posterImageUrl ||
@@ -453,9 +492,9 @@ export async function syncGardeMooreaFromCommune(
     doctor: snap.doctor?.name ?? null,
     weekend: snap.label,
     articleSlug: snap.articleSlug ?? gardeArticleSlug(snap.validFrom),
-    ocrUsed: enriched.ocrUsed,
+    ocrUsed,
     posterGenerated: Boolean(snap.posterImageUrl),
-    ocrError: enriched.ocrError,
+    ocrError,
     articleCreated,
     articleUpdated,
     articleError,

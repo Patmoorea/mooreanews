@@ -75,6 +75,20 @@ export function parseWeekendDatesFromText(text: string): {
     };
   }
 
+  const coppfRange = n.match(
+    /samedi\s+(\d{1,2})\s+(\w+)(?:\s+(\d{4}))?\s*(?:\/|et|au|-)\s*dimanche\s+(\d{1,2})\s+(\w+)(?:\s+(\d{4}))?/i,
+  );
+  if (coppfRange) {
+    const year = Number(coppfRange[3] ?? coppfRange[6] ?? new Date().getFullYear());
+    const month = FRENCH_MONTHS[stripAccents(coppfRange[2]!)];
+    if (!month) return null;
+    return {
+      validFrom: dateKey(year, month, Number(coppfRange[1])),
+      validTo: dateKey(year, month, Number(coppfRange[4])),
+      label: `Samedi ${coppfRange[1]} / Dimanche ${coppfRange[4]} ${coppfRange[5]} ${year}`,
+    };
+  }
+
   const single = n.match(
     /(?:week[- ]?end|we)\s*(?:du|de|le)?\s*(\d{1,2})\s*(?:et|\/|au|-)\s*(\d{1,2})\s+(\w+)(?:\s+(\d{4}))?/i,
   );
@@ -145,19 +159,29 @@ export function mergeGardeOcrIntoSnapshot<
     pharmacyHours?: GardePharmacyHours[];
   },
 >(snap: T, ocrText: string): T {
+  const coppf = parseCoppfMooreaGarde(ocrText);
   const dates = parseWeekendDatesFromText(ocrText);
   const fromPoster = parseGardeFromPosterText(ocrText);
   const pharmacyHours = parsePharmacyHoursFromText(ocrText);
   const doctorHours = parseDoctorHoursFromText(ocrText);
   const doctorAddress = parseDoctorAddressFromText(ocrText);
 
+  const mergedDates = coppf?.dates ?? dates;
+
   return {
     ...snap,
-    ...(dates ?? {}),
-    doctor: snap.doctor?.name ? snap.doctor : fromPoster.doctor ?? snap.doctor,
+    ...(mergedDates ?? {}),
+    doctor:
+      snap.doctor?.name
+        ? snap.doctor
+        : coppf?.doctor ?? fromPoster.doctor ?? snap.doctor,
     pharmacy: snap.pharmacy?.name ? snap.pharmacy : fromPoster.pharmacy ?? snap.pharmacy,
     doctorAddress: snap.doctorAddress ?? doctorAddress,
-    doctorHours: snap.doctorHours ?? doctorHours,
+    doctorHours:
+      snap.doctorHours ??
+      (coppf?.doctorHours.saturday || coppf?.doctorHours.sunday
+        ? coppf.doctorHours
+        : doctorHours),
     pharmacyHours:
       snap.pharmacyHours && snap.pharmacyHours.length > 0
         ? snap.pharmacyHours
@@ -301,6 +325,90 @@ export function parseGardePost(
   if (!parsed) return null;
   if (!parsed.doctor && !parsed.pharmacy) return null;
   return parsed;
+}
+
+/** Affiche officielle médecins généralistes (COPPF / Ordre des médecins). */
+export function parseCoppfMooreaGarde(text: string): {
+  dates: { validFrom: string; validTo: string; label: string };
+  doctor: ParsedOnCall | null;
+  doctorHours: { saturday?: string; sunday?: string };
+} | null {
+  const n = stripAccents(text);
+  if (!/ordre des medecins|tour de garde officiel|medecins generalistes/.test(n)) {
+    return null;
+  }
+
+  const dates = parseWeekendDatesFromText(text);
+  if (!dates) return null;
+
+  const doctor = parseMooreaDoctorFromCoppfText(text);
+  const doctorHours = doctor
+    ? parseDoctorHoursNearName(text, doctor.name.replace(/^Dr\.?\s+/i, ""))
+    : {};
+
+  return { dates, doctor, doctorHours };
+}
+
+function parseDoctorHoursNearName(text: string, namePart: string): {
+  saturday?: string;
+  sunday?: string;
+} {
+  const token = stripAccents(namePart).split(/\s+/)[0] ?? "";
+  const idx = token ? stripAccents(text).indexOf(token) : -1;
+  if (idx < 0) return parseDoctorHoursFromText(text);
+  return parseDoctorHoursFromText(text.slice(idx, idx + 220));
+}
+
+/** Extrait le médecin de garde Moorea depuis l'OCR COPPF. */
+export function parseMooreaDoctorFromCoppfText(text: string): ParsedOnCall | null {
+  const n = stripAccents(text);
+
+  const mooreaBlock = text.match(/(?:ile\s+)?moorea[\s-]*maiao?[\s\S]{0,320}/i);
+  if (mooreaBlock) {
+    const d = parseDoctorFromText(mooreaBlock[0]);
+    if (isPlausibleDoctor(d)) return d;
+  }
+
+  const sectorRe = /(?:secteur|ile|presqu.?ile|commune)\s[^\n]{0,70}/gi;
+  let match: RegExpExecArray | null;
+  while ((match = sectorRe.exec(text)) !== null) {
+    const sector = stripAccents(match[0]);
+    if (!/moorea|maiao/.test(sector)) continue;
+    const block = text.slice(match.index, match.index + 320);
+    const d = parseDoctorFromText(block);
+    if (isPlausibleDoctor(d)) return d;
+  }
+
+  const fougerouse = text.match(
+    /(?:Dr\s+)?(?:FOUGEROUSE|Fougerouse)[^\n]{0,120}?((?:87|40)\s?[\d\s]{7,12})/i,
+  );
+  if (fougerouse) {
+    const phone = cleanPhone(fougerouse[1]!);
+    return {
+      name: "Dr Fougerouse Pierre Antoine",
+      phone: phone || "—",
+      phoneHref: phone ? phoneHref(phone) : "",
+    };
+  }
+
+  const appietto = text.match(
+    /Dr\s+APPIETTO\s+Audrey[\s\S]{0,90}?((?:40|87)\s?[\d\s]{7,12})/i,
+  );
+  if (appietto) {
+    const phone = cleanPhone(appietto[1]!);
+    return {
+      name: "Dr APPIETTO Audrey",
+      phone: phone || "—",
+      phoneHref: phone ? phoneHref(phone) : "",
+    };
+  }
+
+  if (/moorea|maiao/.test(n)) {
+    const d = parseDoctorFromText(text);
+    if (isPlausibleDoctor(d)) return d;
+  }
+
+  return null;
 }
 
 function isPlausibleDoctor(entry: ParsedOnCall | null): boolean {

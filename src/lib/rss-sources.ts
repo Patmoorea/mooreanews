@@ -56,6 +56,8 @@ export const RSS_SOURCES: RssSource[] = [
     acceptAll: true,
     autoPublishAsArticles: true,
     priority: 100,
+    /** RSS parfois 403 depuis Vercel — couvert par Facebook + web-watch. */
+    optional: true,
   },
   {
     id: "tahiti-infos",
