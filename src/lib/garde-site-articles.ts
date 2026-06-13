@@ -94,21 +94,33 @@ function rowToSnapshot(row: {
 export async function fetchGardeFromImportedArticles(
   now = new Date(),
 ): Promise<GardeMooreaSnapshot | null> {
-  const supabase = getPublicSupabase() ?? getAdminSupabase();
+  const supabase = getAdminSupabase() ?? getPublicSupabase();
   if (!supabase) return null;
 
   const cutoff = new Date(now.getTime() - LOOKBACK_MS).toISOString();
+  const select =
+    "slug, title, excerpt, body, cover_url, published_at, created_at";
 
-  const { data: rows } = await supabase
-    .from("articles")
-    .select("slug, title, excerpt, body, cover_url, published_at, created_at")
-    .eq("published", true)
-    .gte("published_at", cutoff)
-    .or(
-      GARDE_SLUG_PREFIXES.map((p) => `slug.like.${p}%`).join(","),
-    )
-    .order("published_at", { ascending: false })
-    .limit(60);
+  const [mooreaFb, communeFb] = await Promise.all([
+    supabase
+      .from("articles")
+      .select(select)
+      .eq("published", true)
+      .like("slug", "mooreanews-fb-%")
+      .gte("published_at", cutoff)
+      .order("published_at", { ascending: false })
+      .limit(40),
+    supabase
+      .from("articles")
+      .select(select)
+      .eq("published", true)
+      .like("slug", "commune-fb-%")
+      .gte("published_at", cutoff)
+      .order("published_at", { ascending: false })
+      .limit(40),
+  ]);
+
+  const rows = [...(mooreaFb.data ?? []), ...(communeFb.data ?? [])];
 
   const candidates: GardeMooreaSnapshot[] = [];
 
