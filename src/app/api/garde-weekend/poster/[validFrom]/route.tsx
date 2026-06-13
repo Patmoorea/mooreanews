@@ -4,6 +4,7 @@ import { resolveGardeSnapshotForPoster } from "@/lib/garde-moorea-data";
 import {
   GardeWeekendPosterElement,
   GARDE_WEEKEND_POSTER_SIZE,
+  posterHasDisplayContent,
 } from "@/lib/garde-weekend-poster";
 
 export const runtime = "nodejs";
@@ -18,7 +19,7 @@ export async function GET(
   }
 
   const snap = await resolveGardeSnapshotForPoster(validFrom);
-  if (!snap) {
+  if (!snap || !posterHasDisplayContent(snap)) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 

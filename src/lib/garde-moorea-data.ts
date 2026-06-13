@@ -80,6 +80,39 @@ export function pickBestGardeSnapshot(
   return ranked[0]?.snap ?? null;
 }
 
+function isWeakGardeLabel(label: string): boolean {
+  return /week[- ]?end.*->/i.test(label) || /^\d{4}-\d{2}-\d{2}/.test(label.trim());
+}
+
+/** Complète cache OCR incomplet avec fichier secours (même week-end). */
+export function mergeGardeSnapshotForDisplay(
+  primary: GardeMooreaSnapshot,
+  fallback: GardeMooreaSnapshot | null | undefined,
+): GardeMooreaSnapshot {
+  if (!fallback || fallback.validFrom !== primary.validFrom) return primary;
+
+  const label =
+    primary.label && !isWeakGardeLabel(primary.label)
+      ? primary.label
+      : fallback.label || primary.label;
+
+  return {
+    ...primary,
+    label,
+    doctor: primary.doctor?.name ? primary.doctor : fallback.doctor ?? primary.doctor,
+    pharmacy: primary.pharmacy?.name ? primary.pharmacy : fallback.pharmacy ?? primary.pharmacy,
+    doctorHours:
+      primary.doctorHours?.saturday || primary.doctorHours?.sunday
+        ? primary.doctorHours
+        : fallback.doctorHours ?? primary.doctorHours,
+    doctorAddress: primary.doctorAddress ?? fallback.doctorAddress,
+    pharmacyHours:
+      primary.pharmacyHours && primary.pharmacyHours.length > 0
+        ? primary.pharmacyHours
+        : fallback.pharmacyHours ?? primary.pharmacyHours,
+  };
+}
+
 function phoneHref(phone: string): string {
   let d = phone.replace(/\D/g, "");
   if (d.startsWith("689") && d.length >= 11) d = d.slice(3);
@@ -215,20 +248,38 @@ export async function resolveGardeWeekendSnapshot(
       s != null && snapshotHasContent(s) && isGardeWeekActive(now, s.validFrom, s.validTo),
   );
 
-  return pickBestGardeSnapshot(candidates, now);
+  const best = pickBestGardeSnapshot(candidates, now);
+  return enrichSnapshotFromFile(best, file);
+}
+
+function enrichSnapshotFromFile(
+  snap: GardeMooreaSnapshot | null,
+  file: GardeMooreaSnapshot | null,
+): GardeMooreaSnapshot | null {
+  if (!snap) return file;
+  if (file?.validFrom === snap.validFrom) {
+    return mergeGardeSnapshotForDisplay(snap, file);
+  }
+  return snap;
 }
 
 /** Snapshot pour affiche dynamique /api/garde-weekend/poster/[validFrom] */
 export async function resolveGardeSnapshotForPoster(
   validFrom: string,
 ): Promise<GardeMooreaSnapshot | null> {
-  const cached = await readGardeMooreaFromCache();
-  if (cached?.validFrom === validFrom) return cached;
+  const [cached, file] = await Promise.all([
+    readGardeMooreaFromCache(),
+    readGardeFileSnapshot(),
+  ]);
 
-  const file = await readGardeFileSnapshot();
-  if (file?.validFrom === validFrom) return file;
+  const candidates = [cached, file].filter(
+    (s): s is GardeMooreaSnapshot => s?.validFrom === validFrom,
+  );
+  if (candidates.length === 0) return null;
 
-  return null;
+  const best = pickBestGardeSnapshot(candidates) ?? candidates[0]!;
+  const other = candidates.find((c) => c !== best) ?? null;
+  return mergeGardeSnapshotForDisplay(best, other);
 }
 
 export function clearGardeMooreaMemoryCache(): void {

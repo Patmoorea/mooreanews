@@ -4,16 +4,12 @@
 
 import { SITE } from "@/lib/constants";
 import type { GardeMooreaSnapshot } from "@/lib/garde-moorea-auto";
-import { renderGardeWeekendPosterPng } from "@/lib/garde-weekend-poster";
+import { renderGardeWeekendPosterPng, posterHasDisplayContent } from "@/lib/garde-weekend-poster";
 import { uploadBufferToMedia } from "@/lib/media-upload";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 
 export function gardePosterHasContent(snap: GardeMooreaSnapshot): boolean {
-  return Boolean(
-    snap.doctor?.name ||
-      snap.pharmacy?.name ||
-      (snap.pharmacyHours && snap.pharmacyHours.length > 0),
-  );
+  return posterHasDisplayContent(snap);
 }
 
 export async function renderAndUploadMooreaNewsGardePoster(
