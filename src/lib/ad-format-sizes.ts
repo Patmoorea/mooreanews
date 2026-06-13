@@ -22,8 +22,8 @@ export const AD_FORMAT_DISPLAY: Record<AdFormat, AdFormatDisplay> = {
     width: 728,
     height: 90,
     maxWidthClass: "max-w-[728px]",
-    objectFit: "cover",
-    objectPosition: "center 35%",
+    objectFit: "contain",
+    objectPosition: "center center",
   },
   billboard: {
     label: "Billboard 970×250",
@@ -31,8 +31,8 @@ export const AD_FORMAT_DISPLAY: Record<AdFormat, AdFormatDisplay> = {
     width: 970,
     height: 250,
     maxWidthClass: "max-w-[970px]",
-    objectFit: "cover",
-    objectPosition: "center 40%",
+    objectFit: "contain",
+    objectPosition: "center center",
   },
   rectangle: {
     label: "Rectangle 300×250",

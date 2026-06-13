@@ -104,7 +104,7 @@ def main() -> None:
         ),
         (
             "rai-tahiti-ad-billboard-970x250.png",
-            fit_cover(pick("08", "01", "05", loaded=loaded) or loaded["01"], 970, 250),
+            fit_cover(pick("01", "08", "05", loaded=loaded) or loaded["01"], 970, 250),
         ),
     ]
 

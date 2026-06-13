@@ -10,7 +10,7 @@ type Props = {
   className?: string;
 };
 
-/** Cadre IAB : visuel natif aux pixels exacts, ratio verrouillé. */
+/** Cadre IAB : visuel natif aux pixels exacts, sans recadrage CSS. */
 export function AdBannerFrame({ src, alt, format, className }: Props) {
   const spec = AD_FORMAT_DISPLAY[format];
 
@@ -22,8 +22,12 @@ export function AdBannerFrame({ src, alt, format, className }: Props) {
         width={spec.width}
         height={spec.height}
         sizes={`(max-width: 768px) 100vw, ${spec.width}px`}
-        className="block h-auto w-full max-w-full object-cover object-center"
-        style={{ aspectRatio: `${spec.width} / ${spec.height}` }}
+        className="block h-auto w-full max-w-full object-contain object-center"
+        style={
+          spec.objectPosition
+            ? { objectPosition: spec.objectPosition }
+            : undefined
+        }
         priority={format === "leaderboard"}
       />
     </div>
