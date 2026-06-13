@@ -100,9 +100,9 @@ export function isHealthOnCallPeriod(d = new Date()): boolean {
   // Vendredi à partir de 17h : préparation week-end
   if (dow === 5) {
     const hour = Number(
-      new Intl.DateTimeFormat("fr-FR", {
+      new Intl.DateTimeFormat("en-US", {
         timeZone: TZ,
-        hour: "numeric",
+        hour: "2-digit",
         hour12: false,
       }).format(d),
     );
