@@ -122,9 +122,13 @@ function articleTitleFromPost(
   imageCaption?: string,
 ): string {
   const clean = message.trim();
-  if (clean && !isFacebookJunkText(clean)) {
+  const relaxed = Boolean(config.importAllFeedPosts);
+  if (clean && (relaxed || !isFacebookJunkText(clean))) {
     const fromMsg = titleFromMessage(clean, "");
-    if (fromMsg && !isFacebookJunkText(fromMsg)) return fromMsg;
+    if (fromMsg && (relaxed || !isFacebookJunkText(fromMsg))) return fromMsg;
+    if (relaxed && clean.length >= 3) {
+      return clean.split("\n")[0]?.trim().slice(0, 200) || fromMsg || clean.slice(0, 200);
+    }
   }
   const cap = imageCaption?.trim() ?? "";
   if (cap && !isFacebookJunkText(cap) && cap.length >= 8) {
@@ -629,11 +633,11 @@ export async function importFacebookPostsAsContent(
   let repairsThisRun = 0;
   let coverPersistsThisRun = 0;
   const maxFullRepairs = config.cronLight
-    ? 12
+    ? 30
     : config.importAllFeedPosts
       ? facebookCronMaxRepairsPerRun()
       : posts.length;
-  const maxCoverPersists = config.cronLight ? 10 : 40;
+  const maxCoverPersists = config.cronLight ? 30 : 50;
 
   const sortedPosts =
     config.cronLight && config.importAllFeedPosts

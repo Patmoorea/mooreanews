@@ -22,14 +22,14 @@ export function facebookImportMaxAgeDays(): number {
 /** Posts récents traités par cron (évite timeout Vercel ~60 s). */
 export function facebookCronRecentPostLimit(): number {
   const raw = process.env.FACEBOOK_CRON_RECENT_LIMIT?.trim();
-  const n = raw ? Number(raw) : 20;
-  return Number.isFinite(n) && n > 0 ? Math.min(Math.floor(n), 50) : 20;
+  const n = raw ? Number(raw) : 50;
+  return Number.isFinite(n) && n > 0 ? Math.min(Math.floor(n), 80) : 50;
 }
 
 export function facebookCronMaxRepairsPerRun(): number {
   const raw = process.env.FACEBOOK_CRON_MAX_REPAIRS?.trim();
-  const n = raw ? Number(raw) : 15;
-  return Number.isFinite(n) && n > 0 ? Math.min(Math.floor(n), 40) : 15;
+  const n = raw ? Number(raw) : 40;
+  return Number.isFinite(n) && n > 0 ? Math.min(Math.floor(n), 80) : 40;
 }
 
 function maxAgeMs(): number {
@@ -179,36 +179,15 @@ export function facebookArticleBodyWithoutFooter(body: string): string {
   return body.replace(FB_SOURCE_FOOTER_RE, "").trim();
 }
 
-/** Extrait auto-généré sans contenu réel. */
-function isGenericFacebookExcerpt(excerpt: string | null | undefined): boolean {
-  const e = (excerpt ?? "").trim();
-  if (!e) return true;
-  return /^Publication repérée sur la page Facebook/i.test(e);
-}
-
-/** Fiche sans texte ni affiche (erreur API Meta uniquement). */
+/** Fiche sans contenu (erreur API Meta uniquement — pas les affiches seules). */
 export function isEmptyFacebookArticleShell(row: {
   title: string;
   excerpt: string | null;
   body: string;
   cover_url?: string | null;
 }): boolean {
-  const hasCover = Boolean(row.cover_url?.trim());
-  if (hasCover) return false;
-
-  if (isFacebookJunkText(row.title)) return true;
-
-  const core = facebookArticleBodyWithoutFooter(row.body);
-  const stripped = core
-    .replace(/^Publication Facebook — [^.]+\.?\s*$/i, "")
-    .trim();
-
-  const excerptLen = (row.excerpt ?? "").trim().length;
-  if (isGenericFacebookExcerpt(row.excerpt)) {
-    return stripped.length < 8;
-  }
-
-  return stripped.length < 8 && excerptLen < 8;
+  if (Boolean(row.cover_url?.trim())) return false;
+  return isFacebookJunkText(row.title);
 }
 
 /** Article visible sur le site avec affiche persistée Supabase. */
@@ -349,7 +328,11 @@ export function isStaleFacebookImportRow(row: {
   published_at?: string | null;
   cover_url?: string | null;
 }): boolean {
-  if (isEmptyFacebookArticleShell(row)) return true;
+  if (row.slug.startsWith("mooreanews-fb-")) {
+    if (isFacebookJunkText(row.title) && !row.cover_url?.trim()) return true;
+  } else if (isEmptyFacebookArticleShell(row)) {
+    return true;
+  }
 
   const corpus = `${row.title} ${row.excerpt ?? ""} ${row.body}`;
   if (contentReferencesStaleYear(corpus)) return true;

@@ -262,6 +262,11 @@ function articleFromRow(r: ArticleRow): Article {
     image =
       resolveGardePosterPublicUrl(r.cover_url) ??
       `${SITE.url.replace(/\/$/, "")}/api/garde-weekend/poster/${validFrom}`;
+  } else if (
+    !image?.trim() &&
+    r.slug?.startsWith("mooreanews-fb-")
+  ) {
+    image = `/api/facebook-cover?slug=${encodeURIComponent(r.slug)}`;
   }
   return {
     slug: r.slug,
