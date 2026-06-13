@@ -1,6 +1,7 @@
 /**
- * Job cron unique (compatible Vercel Hobby = 1×/jour).
+ * Job cron quotidien complet (veille, digests, garde, audit, Telegram).
  * Planifié 16:05 UTC ≈ 6:05 heure de Tahiti.
+ * Veille horaire : GitHub Actions → /api/cron/aggregate.
  */
 
 import { revalidatePath } from "next/cache";
@@ -60,7 +61,7 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   jobs.expiredAnnouncements = await expireStaleAnnouncements();
   if (expiredAlerts > 0) {
     revalidatePath("/alertes");
-    revalidatePath("/");
+    revalidatePath("/", "layout");
   }
 
   jobs.meteoVigilance = await syncMeteoVigilanceAlert();
@@ -72,7 +73,7 @@ export async function runDailyCron(): Promise<DailyCronResult> {
     const action = (jobs.meteoVigilance as { action: string }).action;
     if (action === "created" || action === "updated" || action === "cleared") {
       revalidatePath("/alertes");
-      revalidatePath("/");
+      revalidatePath("/", "layout");
     }
   }
 
@@ -135,7 +136,7 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   );
   if (alertsCreated > 0) {
     revalidatePath("/alertes");
-    revalidatePath("/");
+    revalidatePath("/", "layout");
   }
 
   const articlesCreated = results.reduce(
@@ -144,25 +145,19 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   );
   if (articlesCreated > 0) {
     revalidatePath("/actualites");
-    revalidatePath("/");
+    revalidatePath("/", "layout");
   }
 
   jobs.utilityOutages = await syncUtilityOutages();
-  if (shouldPublishGardeWeekend(clock)) {
-    jobs.healthOnCall = await syncHealthOnCall({ fullWeekendPipeline: true });
-    revalidatePath("/sante-garde");
-    revalidatePath("/");
-  } else {
-    jobs.healthOnCall = {
-      skipped: true,
-      reason: "garde/OCR uniquement le vendredi matin Tahiti — données en cache le reste de la semaine",
-    };
-  }
+  jobs.healthOnCall = await syncHealthOnCall({
+    fullWeekendPipeline: shouldPublishGardeWeekend(clock),
+  });
+  revalidatePath("/sante-garde");
 
   if (shouldPublishWeeklyRecap(clock)) {
     jobs.weeklyRecap = await syncWeeklyRecapFromMooreaNews();
     revalidatePath("/actualites");
-    revalidatePath("/");
+    revalidatePath("/", "layout");
   }
   const utilitySync = jobs.utilityOutages as {
     created?: number;
@@ -176,7 +171,7 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   ) {
     revalidatePath("/alertes");
     revalidatePath("/coupures");
-    revalidatePath("/");
+    revalidatePath("/", "layout");
   }
 
   const aggErrors = results.flatMap((r) =>
@@ -198,13 +193,14 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   if (facebookPurge.deleted > 0 || facebookEventsPurge.unpublished > 0) {
     revalidatePath("/actualites");
     revalidatePath("/evenements");
-    revalidatePath("/");
+    revalidatePath("/", "layout");
   }
 
+  revalidatePath("/");
+  revalidatePath("/api/ferries");
+
   jobs.ferrySync = await checkFerryScheduleSync();
-  jobs.audit = shouldPublishWeeklyRecap(clock)
-    ? await auditPublicContent()
-    : { skipped: true, findings: [], totals: { articles: 0, events: 0, announcements: 0, external: 0 } };
+  jobs.audit = await auditPublicContent();
 
   const facebookHealth = await checkFacebookTokenHealth();
   if (fbRefresh.refreshed) facebookHealth.refreshedThisRun = true;
