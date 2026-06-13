@@ -40,7 +40,7 @@ const LINKS = [
 export function HomeSectionNav() {
   return (
     <nav
-      className="sticky top-14 md:top-[7.25rem] z-40 bg-white/95 backdrop-blur-md border-b border-ocean-100 shadow-sm"
+      className="sticky top-14 md:top-[7.25rem] z-40 bg-white border-b border-ocean-100 shadow-sm"
       aria-label="Rubriques de l’accueil"
     >
       <Container className="py-2.5">

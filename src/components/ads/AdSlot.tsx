@@ -1,7 +1,6 @@
 import { Megaphone } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { cn } from "@/lib/utils";
-import { AD_FORMAT_DISPLAY } from "@/lib/ad-format-sizes";
 import { getCampaignImageForSlot } from "@/lib/ads-campaign-images";
 import { resolveAdSlot } from "@/lib/ads-data";
 import { AdBannerLink } from "@/components/ads/AdBannerLink";
@@ -24,7 +23,6 @@ export async function AdSlot({
   if (!resolved) return null;
 
   const { slot, campaign } = resolved;
-  const spec = AD_FORMAT_DISPLAY[slot.format];
   const bannerSrc = getCampaignImageForSlot(campaign, slot.format, slot.id);
   if (!bannerSrc) return null;
   const isCard = slot.format === "card";
@@ -47,7 +45,6 @@ export async function AdSlot({
               · {campaign.sponsor}
             </span>
           ) : null}
-          <span className="text-ocean-300 hidden sm:inline">· {spec.label}</span>
         </p>
       )}
 
