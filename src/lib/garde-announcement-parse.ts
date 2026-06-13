@@ -297,20 +297,65 @@ export function parseGardePost(
   text: string,
   postDateIso?: string,
 ): ParsedGardeWeekend | null {
-  const parsed = parseGardeAnnouncement(text);
+  const parsed = parseGardeFromSiteContent(text, postDateIso, false);
+  if (!parsed) return null;
   if (!parsed.doctor && !parsed.pharmacy) return null;
+  return parsed;
+}
 
+function isPlausibleDoctor(entry: ParsedOnCall | null): boolean {
+  if (!entry?.name?.trim()) return false;
+  const name = entry.name.trim();
+  if (name.length > 48) return false;
+  if (/service essentiel|continuit[eé] des soins|horaires habituels|disposition/i.test(name)) {
+    return false;
+  }
+  return true;
+}
+
+/** Post / article Facebook déjà importé — accepte affiche seule + dates déduites. */
+export function parseGardeFromSiteContent(
+  text: string,
+  postDateIso?: string,
+  hasCover = false,
+): ParsedGardeWeekend | null {
+  const parsed = parseGardeAnnouncement(text);
   let dates = parseWeekendDatesFromText(text);
   if (!dates && postDateIso) {
     dates = inferWeekendFromPostDate(postDateIso);
   }
+
+  const doctor = isPlausibleDoctor(parsed.doctor) ? parsed.doctor : null;
+  const pharmacy = parsed.pharmacy;
+
+  if (doctor || pharmacy) {
+    if (!dates) return null;
+    return {
+      ...dates,
+      doctor,
+      pharmacy,
+    };
+  }
+
+  const n = stripAccents(text);
+  if (!/garde|medecin|pharmacie|week[- ]?end|\bwe\b|docteur/.test(n)) {
+    return null;
+  }
+
   if (!dates) return null;
 
-  return {
-    ...dates,
-    doctor: parsed.doctor,
-    pharmacy: parsed.pharmacy,
-  };
+  if (
+    hasCover ||
+    /medecin de garde|pharmacie de garde|pharmacies de garde/.test(n)
+  ) {
+    return {
+      ...dates,
+      doctor: null,
+      pharmacy: null,
+    };
+  }
+
+  return null;
 }
 
 export function isGardeImagePost(

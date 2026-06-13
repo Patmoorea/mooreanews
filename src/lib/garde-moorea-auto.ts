@@ -5,15 +5,17 @@
 import path from "path";
 import { access } from "fs/promises";
 import { unstable_cache } from "next/cache";
-import { listCommuneMooreaGraphPosts } from "@/lib/facebook-watch";
+import { listCommuneMooreaGraphPosts, listMooreaNewsGraphPosts } from "@/lib/facebook-watch";
 import {
   inferWeekendFromPostDate,
   isGardeImagePost,
   mergeGardeOcrIntoSnapshot,
+  parseGardeFromSiteContent,
   parseGardePost,
   type ParsedGardeWeekend,
   type GardePharmacyHours,
 } from "@/lib/garde-announcement-parse";
+import { fetchGardeFromImportedArticles } from "@/lib/garde-site-articles";
 import { ocrGardePosterImage } from "@/lib/garde-poster-ocr";
 import {
   gardePosterHasContent,
@@ -114,23 +116,12 @@ function parseCommunePostToSnapshot(
   let parsed = parseGardePost(msg, post.created_time);
 
   if (!parsed && picture && isGardeImagePost(msg, post.created_time, true)) {
-    const inferred = post.created_time
-      ? inferWeekendFromPostDate(post.created_time)
-      : null;
-    if (inferred) {
-      parsed = { ...inferred, doctor: null, pharmacy: null };
-    }
+    parsed = parseGardeFromSiteContent(msg, post.created_time, true);
   }
 
   if (!parsed) {
-    const partial = parseGardePost(msg);
-    const inferred =
-      partial && post.created_time
-        ? inferWeekendFromPostDate(post.created_time)
-        : null;
-    if (partial && inferred) {
-      parsed = { ...inferred, ...partial };
-    }
+    const partial = parseGardeFromSiteContent(msg, post.created_time, Boolean(picture));
+    if (partial) parsed = partial;
   }
 
   const hasContent =
@@ -150,13 +141,21 @@ function parseCommunePostToSnapshot(
   };
 }
 
-async function fetchGardeFromCommuneFacebook(): Promise<GardeMooreaSnapshot | null> {
-  const posts = await listCommuneMooreaGraphPosts();
+async function fetchGardeFromFacebookPages(): Promise<GardeMooreaSnapshot | null> {
+  const [communePosts, mooreaNewsPosts] = await Promise.all([
+    listCommuneMooreaGraphPosts(),
+    listMooreaNewsGraphPosts(),
+  ]);
+  const posts = [...communePosts, ...mooreaNewsPosts];
   const cutoff = Date.now() - 21 * 86400000;
   const now = new Date();
   const candidates: GardeMooreaSnapshot[] = [];
+  const seen = new Set<string>();
 
   for (const post of posts) {
+    if (seen.has(post.id)) continue;
+    seen.add(post.id);
+
     const t = Date.parse(post.created_time ?? "");
     if (t && t < cutoff) continue;
 
@@ -197,11 +196,12 @@ async function fetchCommuneRssGarde(): Promise<GardeMooreaSnapshot | null> {
 }
 
 export async function fetchLiveGardeMooreaSnapshot(): Promise<GardeMooreaSnapshot | null> {
-  const [fb, rss] = await Promise.all([
-    fetchGardeFromCommuneFacebook(),
+  const [site, fb, rss] = await Promise.all([
+    fetchGardeFromImportedArticles(),
+    fetchGardeFromFacebookPages(),
     fetchCommuneRssGarde(),
   ]);
-  const candidates = [fb, rss].filter(Boolean) as GardeMooreaSnapshot[];
+  const candidates = [site, fb, rss].filter(Boolean) as GardeMooreaSnapshot[];
   return pickBestGardeSnapshot(candidates);
 }
 
@@ -427,8 +427,22 @@ export async function syncGardeMooreaFromCommune(
   }
 
   snap.syncedAt = new Date().toISOString();
-  const article = await upsertGardeWeekendArticle(snap);
-  snap.articleSlug = article.slug;
+
+  const keepImportedArticle =
+    snap.articleSlug?.startsWith("mooreanews-fb-") ||
+    snap.articleSlug?.startsWith("commune-fb-");
+
+  let articleCreated: boolean | undefined;
+  let articleUpdated: boolean | undefined;
+  let articleError: string | undefined;
+
+  if (!keepImportedArticle) {
+    const article = await upsertGardeWeekendArticle(snap);
+    snap.articleSlug = article.slug;
+    articleCreated = article.created;
+    articleUpdated = article.updated;
+    articleError = article.error;
+  }
 
   await writeGardeMooreaCache(snap);
 
@@ -442,9 +456,9 @@ export async function syncGardeMooreaFromCommune(
     ocrUsed: enriched.ocrUsed,
     posterGenerated: Boolean(snap.posterImageUrl),
     ocrError: enriched.ocrError,
-    articleCreated: article.created,
-    articleUpdated: article.updated,
-    articleError: article.error,
+    articleCreated,
+    articleUpdated,
+    articleError,
     posterUrl: snap.posterImageUrl ?? null,
   };
 }
