@@ -264,8 +264,15 @@ export async function getGardeMooreaForNow(now = new Date()): Promise<{
   );
 
   if (snap) {
-    const duties = snapshotToPublicDuties(snap, now);
+    let duties = snapshotToPublicDuties(snap, now);
     if (duties.weekendLabel || duties.doctor || duties.pharmacy) {
+      if (!duties.doctor) {
+        const file = await fromFile(now);
+        if (file.doctor) duties = { ...duties, doctor: file.doctor };
+        if (!duties.pharmacy && file.pharmacy) {
+          duties = { ...duties, pharmacy: file.pharmacy };
+        }
+      }
       return { ...duties, posterImageUrl };
     }
   }
