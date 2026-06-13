@@ -1,12 +1,12 @@
 {
-  "validFrom": "2026-06-06",
-  "validTo": "2026-06-07",
-  "label": "Samedi 6 / Dimanche 7 juin 2026",
-  "posterImageUrl": "/images/garde/garde-2026-06-06.png",
+  "validFrom": "2026-06-13",
+  "validTo": "2026-06-14",
+  "label": "Samedi 13 / Dimanche 14 juin 2026",
+  "posterImageUrl": "/api/garde-weekend/poster/2026-06-13",
   "doctor": {
-    "name": "Fougerouse Pierre Antoine",
-    "phone": "87 00 08 00",
-    "address": "Temae — Centre Tumai PK 2,5 côté montagne",
+    "name": "APPIETTO Audrey",
+    "phone": "40 56 27 07",
+    "address": "Haapiti, Tiahura PK27,1 c/mer",
     "hours": {
       "saturday": "12h00 – 18h00",
       "sunday": "8h00 – 16h00"
