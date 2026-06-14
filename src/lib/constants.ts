@@ -23,17 +23,7 @@ export const SITE = {
   motto: "Votre source d'information locale et fiable",
   description:
     "L'info de Moorea en Polynésie française : actualités locales, vie locale & société, tourisme & loisirs, événements & culture, infos pratiques. Météo, ferries et marées en temps réel.",
-  url: (() => {
-    const raw =
-      process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "https://www.mooreanews.com";
-    try {
-      const u = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
-      if (u.hostname === "mooreanews.com") u.hostname = "www.mooreanews.com";
-      return u.origin;
-    } catch {
-      return "https://www.mooreanews.com";
-    }
-  })(),
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.mooreanews.com",
   locale: "fr_PF",
   timezone: "Pacific/Tahiti",
   email: SITE_EMAIL,

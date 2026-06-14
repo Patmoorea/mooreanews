@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound, permanentRedirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, User, Tag } from "lucide-react";
 import { ContentCoverImage } from "@/components/ContentCoverImage";
 import { Container } from "@/components/ui/Container";
@@ -9,7 +9,7 @@ import { resolveCoverImage } from "@/lib/cover-image";
 import { ShareButtons } from "@/components/ShareButtons";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { getArticles, resolvePublicArticle } from "@/lib/content";
+import { getArticleBySlug, getArticles } from "@/lib/content";
 import { formatDateFR } from "@/lib/utils";
 import { newsArticleJsonLd, absoluteUrl } from "@/lib/seo";
 
@@ -26,14 +26,8 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const resolved = await resolvePublicArticle(slug);
-  if (resolved.status === "redirect") {
-    return {
-      alternates: { canonical: `/actualites/${resolved.slug}` },
-    };
-  }
-  if (resolved.status === "missing") return { title: "Article introuvable" };
-  const article = resolved.article;
+  const article = await getArticleBySlug(slug);
+  if (!article) return { title: "Article introuvable" };
   const cover = resolveCoverImage({
     image: article.image,
     category: article.category,
@@ -57,12 +51,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ArticlePage({ params }: Props) {
   const { slug } = await params;
-  const resolved = await resolvePublicArticle(slug);
-  if (resolved.status === "redirect") {
-    permanentRedirect(`/actualites/${resolved.slug}`);
-  }
-  if (resolved.status === "missing") notFound();
-  const article = resolved.article;
+  const article = await getArticleBySlug(slug);
+  if (!article) notFound();
 
   const all = await getArticles();
   const related = all
