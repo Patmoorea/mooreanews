@@ -32,6 +32,7 @@ export type AggregationResult = {
   alertsCreated?: number;
   createdAlerts?: string[];
   createdArticles?: { title: string; slug: string }[];
+  repairedArticles?: { title: string; slug: string }[];
   createdEvents?: { title: string; id: string; date: string }[];
 };
 

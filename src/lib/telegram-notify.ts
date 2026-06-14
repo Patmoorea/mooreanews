@@ -136,8 +136,11 @@ function formatSourceScan(bySource: AggregationResult[]): string {
 }
 
 function formatAuditBlock(audit: ContentAuditReport | null | undefined): string {
+  if (audit === undefined) {
+    return "";
+  }
   if (!audit) {
-    return "\n<b>🔍 Audit site</b> : non exécuté (Supabase admin absent)";
+    return "\n<b>🔍 Audit site</b> : indisponible (Supabase admin absent)";
   }
 
   const base = siteUrl();
@@ -212,6 +215,8 @@ export async function notifyVeilleReport(input: {
   errors: string[];
   bySource: AggregationResult[];
   createdArticles?: CreatedArticleNotice[];
+  repairedArticles?: CreatedArticleNotice[];
+  articlesRepaired?: number;
   createdEvents?: { title: string; id: string; date: string }[];
   audit?: ContentAuditReport | null;
   facebookHealth?: FacebookTokenHealth | null;
@@ -290,6 +295,23 @@ export async function notifyVeilleReport(input: {
       lines.push(
         `• <a href="${base}/evenements/${encodeURIComponent(e.id)}">${escapeHtml(truncate(e.title, 80))}</a> (${e.date})`,
       );
+    }
+  }
+
+  if (input.articlesRepaired && input.articlesRepaired > 0) {
+    lines.push(`\n🔧 <b>${input.articlesRepaired}</b> publication(s) réparée(s)`);
+  }
+
+  if (input.repairedArticles && input.repairedArticles.length > 0) {
+    lines.push("\n<b>🔧 Publications réparées :</b>");
+    const base = siteUrl();
+    for (const a of input.repairedArticles.slice(0, 6)) {
+      lines.push(
+        `• <a href="${base}/actualites/${encodeURIComponent(a.slug)}">${escapeHtml(truncate(a.title, 80))}</a>`,
+      );
+    }
+    if (input.repairedArticles.length > 6) {
+      lines.push(`… +${input.repairedArticles.length - 6} autre(s)`);
     }
   }
 

@@ -2,6 +2,8 @@ import { after, NextResponse } from "next/server";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import { runVeilleCron } from "@/lib/cron-veille";
 import { notifyVeilleReport } from "@/lib/telegram-notify";
+import { auditPublicContent } from "@/lib/site-content-audit";
+import { checkFacebookTokenHealth } from "@/lib/facebook-token";
 
 /**
  * Veille horaire (RSS + Facebook + garde) — répond 202 par défaut (évite timeout ~300 s).
@@ -24,6 +26,10 @@ async function runVeilleAndNotify() {
     (s, r) => s + (r.announcementsCreated ?? 0),
     0,
   );
+  const articlesRepaired = result.bySource.reduce(
+    (s, r) => s + (r.articlesRepaired ?? 0),
+    0,
+  );
 
   await notifyVeilleReport({
     durationMs: result.durationMs,
@@ -31,13 +37,17 @@ async function runVeilleAndNotify() {
     totalInserted: result.totalInserted,
     articlesCreated: result.articlesCreated,
     articlesSkipped,
+    articlesRepaired,
     eventsCreated,
     announcementsCreated,
     alertsCreated: result.alertsCreated,
     errors: result.errors,
     bySource: result.bySource,
     createdArticles: result.bySource.flatMap((r) => r.createdArticles ?? []),
+    repairedArticles: result.bySource.flatMap((r) => r.repairedArticles ?? []),
     createdEvents: result.bySource.flatMap((r) => r.createdEvents ?? []),
+    audit: await auditPublicContent(),
+    facebookHealth: await checkFacebookTokenHealth(),
   });
 
   return result;

@@ -857,6 +857,12 @@ export async function aggregateFacebookPagesGraph(options?: {
         ...imported.createdArticles,
       ];
     }
+    if (imported.repairedArticles.length > 0) {
+      result.repairedArticles = [
+        ...(result.repairedArticles ?? []),
+        ...imported.repairedArticles,
+      ];
+    }
     if (imported.createdEvents.length > 0) {
       result.createdEvents = [
         ...(result.createdEvents ?? []),
