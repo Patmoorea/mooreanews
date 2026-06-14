@@ -8,24 +8,7 @@ import { fetchOpenGraph } from "@/lib/open-graph";
 import { cleanImportedText } from "@/lib/html-entities";
 
 export const GRAPH_POST_DETAIL_FIELDS =
-  "id,message,permalink_url,created_time,full_picture,picture,status_type,attachments{description,title,media_type,type,url,media{image{src}},subattachments{data{description,title,media_type,type,url,media{image{src}}}}}";
-
-function attachmentShareUrls(
-  attachments: GraphAttachment[] | undefined,
-): string[] {
-  const urls: string[] = [];
-  const walk = (items: GraphAttachment[] | undefined) => {
-    for (const att of items ?? []) {
-      const u = att.url?.trim();
-      if (u?.startsWith("http") && !urls.includes(u)) {
-        urls.push(u);
-      }
-      walk(att.subattachments?.data);
-    }
-  };
-  walk(attachments);
-  return urls;
-}
+  "id,message,permalink_url,created_time,full_picture,picture,status_type,attachments{description,title,media_type,type,url,unshimmed_url,target{id},media{image{src}},subattachments{data{description,title,media_type,type,url,unshimmed_url,target{id},media{image{src}}}}}";
 
 type GraphAttachment = {
   description?: string;
@@ -33,6 +16,8 @@ type GraphAttachment = {
   media_type?: string;
   type?: string;
   url?: string;
+  unshimmed_url?: string;
+  target?: { id?: string };
   media?: { image?: { src?: string } };
   subattachments?: { data?: GraphAttachment[] };
 };
@@ -84,6 +69,59 @@ function textFromAttachments(attachments: GraphAttachment[] | undefined): string
   };
   walk(attachments);
   return parts.join("\n\n");
+}
+
+function attachmentShareUrls(
+  attachments: GraphAttachment[] | undefined,
+): string[] {
+  const urls: string[] = [];
+  const walk = (items: GraphAttachment[] | undefined) => {
+    for (const att of items ?? []) {
+      for (const u of [att.unshimmed_url, att.url]) {
+        const t = u?.trim();
+        if (t?.startsWith("http") && !urls.includes(t)) urls.push(t);
+      }
+      walk(att.subattachments?.data);
+    }
+  };
+  walk(attachments);
+  return urls;
+}
+
+/** Partages Facebook : récupère texte + affiche du post d’origine. */
+async function enrichFromSharedAttachmentTargets(
+  attachments: GraphAttachment[] | undefined,
+  token: string,
+): Promise<{ message?: string; full_picture?: string }> {
+  const out: { message?: string; full_picture?: string } = {};
+  const seen = new Set<string>();
+
+  const walk = async (items: GraphAttachment[] | undefined) => {
+    for (const att of items ?? []) {
+      const targetId = att.target?.id?.trim();
+      if (
+        targetId &&
+        !seen.has(targetId) &&
+        (att.type === "share" || att.media_type === "share")
+      ) {
+        seen.add(targetId);
+        const shared = await fetchGraphPostById(targetId, token);
+        if (shared?.message?.trim() && !isFacebookJunkText(shared.message)) {
+          out.message = out.message
+            ? `${out.message}\n\n${shared.message.trim()}`
+            : shared.message.trim();
+        }
+        const pic = shared?.full_picture?.trim();
+        if (pic && (!out.full_picture || pic.length > out.full_picture.length)) {
+          out.full_picture = pic;
+        }
+      }
+      await walk(att.subattachments?.data);
+    }
+  };
+
+  await walk(attachments);
+  return out;
 }
 
 /** Normalise un post Graph (images subattachments + texte attachment). */
@@ -290,6 +328,21 @@ export async function enrichFacebookPostForImport(
     if (raw) {
       shareUrls = attachmentShareUrls(raw.attachments?.data);
       let detailed = normalizeGraphPostRaw(raw);
+      const shared = await enrichFromSharedAttachmentTargets(
+        raw.attachments?.data,
+        token,
+      );
+      if (shared.message && !isFacebookJunkText(shared.message)) {
+        detailed = {
+          ...detailed,
+          message: detailed.message
+            ? `${detailed.message}\n\n${shared.message}`
+            : shared.message,
+        };
+      }
+      if (shared.full_picture) {
+        detailed = { ...detailed, full_picture: shared.full_picture };
+      }
       if (!detailed.full_picture) {
         const attImg = await fetchGraphAttachmentImage(post.id, token);
         if (attImg) detailed = { ...detailed, full_picture: attImg };

@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { isPlaceholderContentImage } from "@/lib/cover-image";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +16,9 @@ type Props = {
 
 /** Affiche / flyer — img natif pour fiabilité (Supabase, local, Facebook…). */
 export function PosterImage({ src, alt, className }: Props) {
+  const [failed, setFailed] = useState(false);
+  if (failed || !src.trim()) return null;
+
   return (
     <div
       className={cn(
@@ -27,6 +33,7 @@ export function PosterImage({ src, alt, className }: Props) {
         className="w-full h-full object-contain"
         loading="lazy"
         decoding="async"
+        onError={() => setFailed(true)}
       />
     </div>
   );
