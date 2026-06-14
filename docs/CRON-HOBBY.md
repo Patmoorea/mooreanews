@@ -5,10 +5,10 @@
 | Tâche | Où | Horaire (Tahiti) |
 |-------|-----|------------------|
 | Job quotidien complet | **Vercel** (1 seul cron) | ~6h05 |
-| Veille RSS + Facebook + web | **GitHub Actions** | 5h–20h, toutes les heures |
-| Météo vigilance après-midi | **GitHub Actions** | ~15h |
-| Push digest soir | **GitHub Actions** | jeu–dim ~17h |
-| Newsletter abonnés | **GitHub Actions** | dim ~18h |
+| Veille RSS + Facebook + web | **GitHub Actions** ou **Mac crontab** | 5h–20h, toutes les heures |
+| Météo vigilance après-midi | **GitHub Actions** ou **Mac crontab** | ~15h |
+| Push digest soir | **GitHub Actions** ou **Mac crontab** | jeu–dim ~17h |
+| Newsletter abonnés | **GitHub Actions** ou **Mac crontab** | dim ~18h |
 | IA brouillons (optionnel) | **Mac** `npm run ai:moorea` | manuel ou cron Mac |
 
 Fichiers :
@@ -92,3 +92,57 @@ curl "https://www.mooreanews.com/api/cron/daily?secret=VOTRE_CRON_SECRET"
 Météo matin, veille complète, digests (si créneau), emploi, coupures, garde week-end, audit, Telegram, token Facebook.
 
 Les créneaux **après-midi météo**, **push soir** et **newsletter** sont couverts par GitHub Actions (ou cron-job.org).
+
+---
+
+## Mac — crontab (recommandé si le Mac reste allumé)
+
+Oui, vous pouvez **tout faire depuis votre Mac** sans GitHub ni cron-job.org.
+
+### 1. Afficher le crontab prêt à copier
+
+```bash
+cd ~/Desktop/moorea-hub
+chmod +x scripts/run-veille-chain.sh scripts/print-mac-crontab.sh
+bash scripts/print-mac-crontab.sh
+```
+
+### 2. Installer
+
+```bash
+crontab -e
+```
+
+Collez les lignes affichées, enregistrez. Vérifiez :
+
+```bash
+crontab -l
+```
+
+### 3. Test manuel avant le cron
+
+```bash
+cd ~/Desktop/moorea-hub
+bash scripts/run-veille-chain.sh
+tail -20 /tmp/moorea-veille.log
+npm run watch:site
+```
+
+### 4. Important — éviter le double
+
+Vos captures GitHub montrent **213 veilles horaires** déjà actives. Si vous passez au Mac :
+
+**GitHub → Actions → Veille horaire MooreaNews → ⋯ → Disable workflow**
+
+Sinon veille **2× par heure** (Mac + GitHub) → double charge Vercel.
+
+### Conditions Mac
+
+| Prérequis | Détail |
+|-----------|--------|
+| Mac allumé | Le cron ne tourne pas Mac éteint / dormi |
+| Fuseau Tahiti | Réglages → Date et heure → **Pacific/Tahiti** |
+| `.env.local` | `CRON_SECRET` identique à Vercel |
+| Permissions | Si rien ne part : Réglages → Confidentialité → **Accès complet au disque** pour `cron` (parfois requis sur macOS) |
+
+Alternative sans `crontab` : **Réglages → Général → Ouverture → Éléments ouverts au démarrage** + script Automator — même principe.
