@@ -53,11 +53,15 @@ const path =
   process.argv[3] === "facebook"
     ? "/api/cron/facebook"
     : "/api/cron/aggregate";
-const url = `${base}${path}?secret=${encodeURIComponent(secret)}`;
+const url = `${base}${path}?secret=${encodeURIComponent(secret)}&wait=1`;
 
 console.log(`Veille MooreaNews → ${url.replace(secret, "***")}\n`);
 
-const res = await fetch(url, { method: "GET", cache: "no-store" });
+const res = await fetch(url, {
+  method: "GET",
+  cache: "no-store",
+  signal: AbortSignal.timeout(360_000),
+});
 const text = await res.text();
 let json;
 try {
@@ -78,8 +82,15 @@ if (json?.error === "unauthorized") {
   process.exit(1);
 }
 
-if (!res.ok || (json.ok === false && !json.totalInserted)) {
-  process.exit(1);
+if (!res.ok && res.status !== 202) {
+  if (json.ok === false && !json.totalInserted && !json.started) {
+    process.exit(1);
+  }
+}
+
+if (json.started && json.async) {
+  console.log("\n✓ Veille lancée en arrière-plan sur Vercel (~2–5 min).");
+  process.exit(0);
 }
 
 console.log(

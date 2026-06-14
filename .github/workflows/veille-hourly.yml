@@ -16,45 +16,40 @@ concurrency:
 jobs:
   veille:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 5
     steps:
-      - name: Appeler /api/cron/aggregate
+      - name: Déclencher veille MooreaNews (async)
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          set +e
           if [ -z "$CRON_SECRET" ]; then
             echo "CRON_SECRET manquant dans les secrets GitHub du dépôt."
             exit 1
           fi
           url="https://www.mooreanews.com/api/cron/aggregate?secret=${CRON_SECRET}"
-          code=$(curl -sS -o /tmp/veille.json -w "%{http_code}" --http1.1 --max-time 420 "$url")
-          echo "HTTP ${code}"
-          cat /tmp/veille.json | head -c 4000
-          echo ""
-          if [ "$code" != "200" ]; then
-            echo "Échec HTTP ${code}"
-            exit 1
+          code=$(curl -sS -o /tmp/veille.json -w "%{http_code}" --http1.1 --max-time 45 "$url")
+          curl_exit=$?
+          echo "Veille HTTP ${code} (curl exit ${curl_exit})"
+          if [ -f /tmp/veille.json ]; then
+            cat /tmp/veille.json | head -c 800
+            echo ""
           fi
           if grep -q '"error":"unauthorized"' /tmp/veille.json 2>/dev/null; then
             echo "CRON_SECRET incorrect (unauthorized)"
             exit 1
           fi
-
-      - name: Déclencher import Facebook MooreaNews (async)
-        env:
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: |
-          set +e
-          fb_url="https://www.mooreanews.com/api/cron/facebook?secret=${CRON_SECRET}"
-          code=$(curl -sS -o /tmp/fb-cron.json -w "%{http_code}" --http1.1 --max-time 30 "$fb_url")
-          curl_exit=$?
-          echo "Facebook cron HTTP ${code} (curl exit ${curl_exit})"
-          if [ -f /tmp/fb-cron.json ]; then
-            cat /tmp/fb-cron.json | head -c 800
-            echo ""
+          if [ "$curl_exit" -ne 0 ] && [ "$curl_exit" -ne 28 ]; then
+            echo "Échec curl (exit ${curl_exit})"
+            exit 1
           fi
-          if [ "$curl_exit" -eq 28 ]; then
-            echo "Avertissement: timeout 30s (ancien cron synchrone ou cold start) — non bloquant"
-          elif [ "$code" != "202" ] && [ "$code" != "200" ]; then
-            echo "Avertissement: cron Facebook HTTP ${code} — non bloquant"
+          if [ "$code" = "202" ] || [ "$code" = "200" ]; then
+            echo "Veille déclenchée — traitement en arrière-plan sur Vercel (~2–5 min)."
+            exit 0
           fi
+          if [ "$code" = "504" ] || [ "$code" = "502" ]; then
+            echo "Avertissement: timeout gateway ${code} — relancer ou vérifier Vercel"
+            exit 0
+          fi
+          echo "Échec HTTP ${code}"
+          exit 1
