@@ -35,28 +35,38 @@ jobs:
             label="$1"
             endpoint="$2"
             extra="${3:-}"
+            optional="${4:-0}"
+            max_time="${5:-55}"
             url="${BASE}${endpoint}?secret=${CRON_SECRET}&wait=1"
             if [ -n "$extra" ]; then
               url="${url}&${extra}"
             fi
             echo ""
             echo "=== ${label} ==="
-            code=$(curl -sS -o /tmp/veille-step.json -w "%{http_code}" --http1.1 --max-time 55 "$url")
-            echo "HTTP ${code}"
+            set +e
+            code=$(curl -sS -o /tmp/veille-step.json -w "%{http_code}" --http1.1 --max-time "$max_time" "$url")
+            curl_exit=$?
+            set -e
+            echo "HTTP ${code} (curl exit ${curl_exit})"
             head -c 600 /tmp/veille-step.json || true
             echo ""
             if grep -q '"error":"unauthorized"' /tmp/veille-step.json 2>/dev/null; then
               echo "CRON_SECRET incorrect"
               exit 1
             fi
-            if [ "$code" != "200" ]; then
-              echo "Échec ${label} (HTTP ${code})"
-              exit 1
+            if [ "$code" = "200" ]; then
+              return 0
             fi
+            if [ "$optional" = "1" ]; then
+              echo "Avertissement ${label} — suite de la chaîne"
+              return 0
+            fi
+            echo "Échec ${label} (HTTP ${code})"
+            exit 1
           }
 
           run_step "RSS" "/api/cron/aggregate" "part=rss"
-          run_step "Facebook" "/api/cron/facebook" "chain=1"
+          run_step "Facebook" "/api/cron/facebook" "chain=1&limit=6" "1" "50"
           run_step "Web" "/api/cron/aggregate" "part=web"
           run_step "Finish + Telegram" "/api/cron/aggregate" "part=finish"
 

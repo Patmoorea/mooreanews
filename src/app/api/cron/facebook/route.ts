@@ -47,19 +47,30 @@ function buildSummary(input: {
 
 async function runFacebookImport(
   forcePhotoFbids?: string[],
-  options?: { skipTelegram?: boolean },
+  options?: {
+    skipTelegram?: boolean;
+    skipUtility?: boolean;
+    skipStatus?: boolean;
+    recentImportLimit?: number;
+  },
 ) {
   const start = Date.now();
+  const recentLimit =
+    options?.recentImportLimit ?? facebookCronRecentPostLimit();
   const result = await aggregateFacebookPagesGraph({
     light: true,
-    recentImportLimit: facebookCronRecentPostLimit(),
+    recentImportLimit: recentLimit,
     forcePhotoFbids:
       forcePhotoFbids && forcePhotoFbids.length > 0
         ? forcePhotoFbids
         : undefined,
   });
-  const utilityOutages = await syncUtilityOutages();
-  const fbcdnRemaining = await countFbcdnCoversInDb();
+  const utilityOutages = options?.skipUtility
+    ? { created: 0, updated: 0, cleared: 0, errors: [] as string[] }
+    : await syncUtilityOutages();
+  const fbcdnRemaining = options?.skipStatus
+    ? 0
+    : await countFbcdnCoversInDb();
   const warnings = result.warnings ?? [];
   const errors = result.errors ?? [];
   const durationMs = Date.now() - start;
@@ -107,18 +118,20 @@ async function runFacebookImport(
     }),
     durationMs,
     mode: "light" as const,
-    recentLimit: facebookCronRecentPostLimit(),
+    recentLimit,
     forcePhotoFbids:
       forcePhotoFbids && forcePhotoFbids.length > 0
         ? forcePhotoFbids
         : undefined,
-    importProcessed: result.importProcessed ?? facebookCronRecentPostLimit(),
+    importProcessed: result.importProcessed ?? recentLimit,
     graphFetched: result.fetched,
     fbcdnRemaining,
     coversPersisted: result.coversPersisted ?? 0,
     coversFailed: result.coversFailed ?? 0,
     warnings,
-    status: await getFacebookImportStatus(5),
+    status: options?.skipStatus
+      ? null
+      : await getFacebookImportStatus(5),
     utilityOutages,
     ...result,
   };
@@ -151,9 +164,21 @@ export async function GET(req: Request) {
   }
 
   try {
+    const limitRaw = url.searchParams.get("limit");
+    const recentImportLimit = limitRaw
+      ? Math.min(Math.max(1, Math.floor(Number(limitRaw))), 80)
+      : chain
+        ? 6
+        : undefined;
+
     const payload = await runFacebookImport(
       forcePhotoFbids.length > 0 ? forcePhotoFbids : undefined,
-      { skipTelegram: chain },
+      {
+        skipTelegram: chain,
+        skipUtility: chain,
+        skipStatus: chain,
+        recentImportLimit,
+      },
     );
     return NextResponse.json(payload);
   } catch (err) {
