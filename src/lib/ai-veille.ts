@@ -2,16 +2,10 @@
  * Agent IA Moorea — résumé veille + brouillons d’articles.
  */
 
-import {
-  aiDraftSlug,
-  aiSourceTag,
-  draftArticleFromExternal,
-  isAiVeilleEnabled,
-  summarizeMooreaHeadlines,
-  type ExternalArticleInput,
-} from "@/lib/ai-moorea";
-import { SITE } from "@/lib/constants";
 import { getAdminSupabase } from "@/lib/supabase/admin";
+import { aiDraftSlug, aiSourceTag, draftArticleFromExternal, isAiVeilleEnabled, summarizeMooreaHeadlines, type ExternalArticleInput } from "@/lib/ai-moorea";
+import { isSlugImportBlocked } from "@/lib/import-blocklist";
+import { SITE } from "@/lib/constants";
 import { escapeHtml, sendTelegramNotification } from "@/lib/telegram";
 
 const MAX_ITEMS_PER_RUN = 5;
@@ -136,6 +130,17 @@ export async function runAiVeilleProcessing(): Promise<AiVeilleResult> {
 
     const slug = aiDraftSlug(draft.title, item.source_id);
     const tag = aiSourceTag(item.source_id, item.external_id);
+
+    if (await isSlugImportBlocked(slug)) {
+      drafts.push({
+        slug,
+        title: draft.title,
+        excerpt: draft.excerpt,
+        created: false,
+        skipped: true,
+      });
+      continue;
+    }
 
     const { error: insertErr } = await supabase.from("articles").insert({
       slug,

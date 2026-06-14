@@ -120,8 +120,27 @@ export async function upsertExternalArticleRows(
   let inserted = 0;
   const errors: string[] = [];
 
-  for (let i = 0; i < normalized.length; i += CHUNK_SIZE) {
-    const chunk = normalized.slice(i, i + CHUNK_SIZE);
+  const hiddenKeys = new Set<string>();
+  if (normalized.length > 0) {
+    const sourceIds = [...new Set(normalized.map((r) => r.source_id))];
+    const { data: existingRows } = await supabase
+      .from("external_articles")
+      .select("source_id, external_id, hidden")
+      .in("source_id", sourceIds)
+      .eq("hidden", true);
+    for (const row of existingRows ?? []) {
+      hiddenKeys.add(`${row.source_id}\0${row.external_id}`);
+    }
+  }
+
+  const merged = normalized.map((row) => {
+    const key = `${row.source_id}\0${row.external_id}`;
+    if (hiddenKeys.has(key)) return { ...row, hidden: true };
+    return row;
+  });
+
+  for (let i = 0; i < merged.length; i += CHUNK_SIZE) {
+    const chunk = merged.slice(i, i + CHUNK_SIZE);
     const { error, count } = await supabase
       .from("external_articles")
       .upsert(chunk, { onConflict: "source_id,external_id" });

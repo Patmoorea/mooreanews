@@ -407,12 +407,19 @@ export async function deleteContent(table: TableName, id: string) {
   if (table === "articles") {
     const { data } = await supabase
       .from("articles")
-      .select("slug, tags")
+      .select("slug, tags, title")
       .eq("id", id)
       .maybeSingle();
     articleSlug = data?.slug;
-    if (data?.tags?.includes("facebook-import") && articleSlug) {
-      await hideExternalArticlesForArticleSlug(articleSlug);
+    if (data?.slug) {
+      const { blockArticleOnAdminDelete } = await import(
+        "@/lib/import-blocklist"
+      );
+      await blockArticleOnAdminDelete({
+        slug: data.slug,
+        title: data.title ?? data.slug,
+        tags: data.tags,
+      });
     }
   }
 

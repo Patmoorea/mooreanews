@@ -205,6 +205,14 @@ export type TelegramSignalementSessionRow = {
   updated_at: string;
 };
 
+export type ImportBlocklistRow = {
+  slug: string;
+  source_id: string | null;
+  external_id: string | null;
+  title: string | null;
+  blocked_at: string;
+};
+
 export type ExternalArticleRow = {
   id: string;
   source_id: string;
@@ -370,6 +378,7 @@ export type Database = {
       activities: TableDef<ActivityRow>;
       info_pratiques: TableDef<InfoRow>;
       submissions: TableDef<SubmissionRow>;
+      import_blocklist: TableDef<ImportBlocklistRow>;
       telegram_signalement_sessions: TableDef<TelegramSignalementSessionRow>;
       newsletter_subscribers: TableDef<NewsletterSubscriber>;
       external_articles: TableDef<ExternalArticleRow>;

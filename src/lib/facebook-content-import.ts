@@ -31,6 +31,7 @@ import {
   repairPendingFbcdnCoversFromDb,
 } from "@/lib/facebook-cover-persist";
 import { hideExternalArticlesForArticleSlug } from "@/lib/facebook-external-sync";
+import { isSlugImportBlocked } from "@/lib/import-blocklist";
 import { unpublishEmptyFacebookShells } from "@/lib/facebook-import-cleanup";
 import { cleanImportedText } from "@/lib/html-entities";
 import {
@@ -386,6 +387,10 @@ async function importAsArticle(
   );
   const message = post.message?.trim() ?? "";
   const slug = slugForPost(config.pageKey, post.id);
+
+  if (await isSlugImportBlocked(slug)) {
+    return { ok: false, reason: "blocked_by_admin" };
+  }
 
   const { data: existing } = await supabase
     .from("articles")

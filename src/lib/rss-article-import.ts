@@ -8,6 +8,7 @@ import { createHash } from "crypto";
 import type { RssItem } from "@/lib/rss-parser";
 import type { RssSource } from "@/lib/rss-sources";
 import { getAdminSupabase } from "@/lib/supabase/admin";
+import { isSlugImportBlocked } from "@/lib/import-blocklist";
 
 export type RssArticleImportResult = {
   created: number;
@@ -77,6 +78,11 @@ export async function importArticlesFromRssItems(
     if (title.length < 5) continue;
 
     const slug = slugForRssItem(source.id, item.guid);
+
+    if (await isSlugImportBlocked(slug)) {
+      result.skipped += 1;
+      continue;
+    }
 
     const { data: existing } = await supabase
       .from("articles")
