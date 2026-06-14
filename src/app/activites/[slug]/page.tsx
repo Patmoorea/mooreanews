@@ -16,7 +16,8 @@ import { getActivities, getActivityBySlug } from "@/lib/content";
 import { ACTIVITY_CATEGORY_LABELS } from "@/lib/content-labels";
 import { SITE } from "@/lib/constants";
 import { buildPageShareMetadata } from "@/lib/seo";
-import { PosterImage, hasPoster } from "@/components/PosterImage";
+import { PosterImage } from "@/components/PosterImage";
+import { hasPoster } from "@/lib/has-poster";
 
 type Props = { params: Promise<{ slug: string }> };
 

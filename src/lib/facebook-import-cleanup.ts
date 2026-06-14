@@ -152,7 +152,6 @@ export async function unpublishEmptyFacebookShells(): Promise<number> {
         excerpt: row.excerpt,
         body: row.body,
         cover_url: row.cover_url,
-        slug: row.slug,
       })
     ) {
       continue;

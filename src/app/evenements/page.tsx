@@ -8,7 +8,8 @@ import { AdSlot } from "@/components/ads/AdSlot";
 import { StayDateFilter } from "@/components/visiteurs/StayDateFilter";
 import { getEventsBetween, getUpcomingEvents } from "@/lib/content";
 import { listingPageMetadata } from "@/lib/seo";
-import { PosterImage, hasPoster } from "@/components/PosterImage";
+import { PosterImage } from "@/components/PosterImage";
+import { hasPoster } from "@/lib/has-poster";
 
 export const revalidate = 300;
 

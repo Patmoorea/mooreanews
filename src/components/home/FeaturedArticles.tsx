@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, Calendar, User } from "lucide-react";
 import { ContentCoverImage } from "@/components/ContentCoverImage";
-import { PosterImage, hasPoster } from "@/components/PosterImage";
+import { PosterImage } from "@/components/PosterImage";
+import { hasPoster } from "@/lib/has-poster";
 import { PublicationCard } from "@/components/PublicationCard";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";

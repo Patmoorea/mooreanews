@@ -20,7 +20,8 @@ import { formatDateFR } from "@/lib/utils";
 import { SITE } from "@/lib/constants";
 import { buildEventJsonLd } from "@/lib/event-jsonld";
 import { buildPageShareMetadata } from "@/lib/seo";
-import { PosterImage, hasPoster } from "@/components/PosterImage";
+import { PosterImage } from "@/components/PosterImage";
+import { hasPoster } from "@/lib/has-poster";
 
 type Props = {
   params: Promise<{ slug: string }>;

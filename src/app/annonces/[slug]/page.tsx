@@ -11,7 +11,8 @@ import { SITE } from "@/lib/constants";
 import { buildPageShareMetadata } from "@/lib/seo";
 import { timeAgo } from "@/lib/utils";
 import { BoostAnnouncementButton } from "@/components/commerce/BoostAnnouncementButton";
-import { hasPoster, PosterImage } from "@/components/PosterImage";
+import { PosterImage } from "@/components/PosterImage";
+import { hasPoster } from "@/lib/has-poster";
 
 function ogImageUrl(item: { image?: string }) {
   return hasPoster(item.image) ? item.image!.trim() : undefined;

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { PosterImage, hasPoster } from "@/components/PosterImage";
+import { PosterImage } from "@/components/PosterImage";
+import { hasPoster } from "@/lib/has-poster";
 import { cn } from "@/lib/utils";
 
 type Props = {

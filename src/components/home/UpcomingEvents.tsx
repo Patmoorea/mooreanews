@@ -3,7 +3,8 @@ import { ArrowRight, MapPin, Tag } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { getUpcomingEvents } from "@/lib/content";
-import { PosterImage, hasPoster } from "@/components/PosterImage";
+import { PosterImage } from "@/components/PosterImage";
+import { hasPoster } from "@/lib/has-poster";
 
 const CATEGORY_VARIANTS = {
   musique: "tiare",

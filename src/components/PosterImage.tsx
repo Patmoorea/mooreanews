@@ -1,12 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { isPlaceholderContentImage } from "@/lib/cover-image";
 import { cn } from "@/lib/utils";
-
-export function hasPoster(image?: string | null): boolean {
-  return !!image?.trim() && !isPlaceholderContentImage(image);
-}
 
 type Props = {
   src: string;

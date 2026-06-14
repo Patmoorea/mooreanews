@@ -1,5 +1,6 @@
 import { CoverPlaceholder } from "@/components/CoverPlaceholder";
-import { PosterImage, hasPoster } from "@/components/PosterImage";
+import { PosterImage } from "@/components/PosterImage";
+import { hasPoster } from "@/lib/has-poster";
 import type { CategorySlug } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
