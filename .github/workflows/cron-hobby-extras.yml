@@ -1,0 +1,60 @@
+# Crons Hobby — remplace les 5 crons Vercel Pro supprimés de vercel.json.
+# Secret : GitHub → Settings → Secrets → CRON_SECRET (identique à Vercel).
+#
+# Veille horaire (RSS + Facebook) : workflow veille-hourly.yml (déjà actif).
+
+name: Crons Hobby extras
+
+on:
+  schedule:
+    # Vigilance météo après-midi ~15h Tahiti (01:05 UTC)
+    - cron: "5 1 * * *"
+    # Push soir jeu–dim ~17h Tahiti (03:00 UTC)
+    - cron: "0 3 * * 4,5,6,0"
+    # Newsletter dimanche ~18h Tahiti (04:00 UTC lundi)
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: cron-hobby-extras
+  cancel-in-progress: false
+
+jobs:
+  meteo-afternoon:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '5 1 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Vigilance météo (après-midi)
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 55 \
+            "https://www.mooreanews.com/api/cron/meteo-vigilance?secret=${CRON_SECRET}"
+
+  evening-push:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 3 * * 4,5,6,0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Push digest soir
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 55 \
+            "https://www.mooreanews.com/api/cron/evening-push?secret=${CRON_SECRET}"
+
+  weekly-newsletter:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 4 * * 1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Newsletter hebdomadaire
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 300 \
+            "https://www.mooreanews.com/api/cron/weekly-newsletter?secret=${CRON_SECRET}&wait=1"

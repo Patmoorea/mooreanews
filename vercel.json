@@ -4,26 +4,6 @@
     {
       "path": "/api/cron/daily",
       "schedule": "5 16 * * *"
-    },
-    {
-      "path": "/api/cron/ai",
-      "schedule": "15 16 * * *"
-    },
-    {
-      "path": "/api/cron/meteo-vigilance",
-      "schedule": "5 15,1 * * *"
-    },
-    {
-      "path": "/api/cron/evening-push",
-      "schedule": "0 3 * * 0,4,5,6"
-    },
-    {
-      "path": "/api/cron/facebook",
-      "schedule": "30 17 * * *"
-    },
-    {
-      "path": "/api/cron/weekly-newsletter",
-      "schedule": "0 4 * * 1"
     }
   ],
   "functions": {

@@ -111,7 +111,7 @@ Checklist rapide :
 3. **Admin → Veille externe → Agréger maintenant** (première fois).
 4. Vérifier `/actualites` et l’accueil (bloc « Moorea sur le web & Facebook »).
 
-- **Fréquence** : cron `0 4 * * *` (UTC) = **18h00 Tahiti**, **1×/jour** — adapté au plan Hobby.
+- **Fréquence** : plan **Hobby** → 1 cron Vercel (`/api/cron/daily` ~6h Tahiti) + veille horaire **GitHub Actions**. Voir **[docs/CRON-HOBBY.md](./docs/CRON-HOBBY.md)**.
 - **Facebook** : commune + groupe + permalinks déjà dans le code ; jeton Meta optionnel pour la page Commune.
 
 ### Jeton Facebook qui expire en 1 h (erreur « Session has expired »)
