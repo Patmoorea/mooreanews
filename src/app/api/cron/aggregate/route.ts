@@ -1,13 +1,20 @@
-import { after, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import { runVeilleCron } from "@/lib/cron-veille";
+import {
+  runVeillePartFinish,
+  runVeillePartRss,
+  runVeillePartWeb,
+} from "@/lib/cron-veille-chain";
 import { notifyVeilleReport } from "@/lib/telegram-notify";
 import { auditPublicContent } from "@/lib/site-content-audit";
 import { checkFacebookTokenHealth } from "@/lib/facebook-token";
 
 /**
- * Veille horaire (RSS + Facebook + garde) — répond 202 par défaut (évite timeout ~300 s).
- * GitHub Actions + npm run veille : ajouter wait=1 pour attendre le JSON complet.
+ * Veille horaire (RSS + Facebook + garde).
+ * - Sans paramètre : async 202 (navigateur / test rapide).
+ * - part=rss|web|finish + wait=1 : étape synchrone (< 60 s, GitHub Actions).
+ * - wait=1 sans part : veille complète (Pro Vercel / local uniquement).
  */
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -60,39 +67,59 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const wait = url.searchParams.get("wait") === "1";
+  const part = url.searchParams.get("part")?.trim().toLowerCase() ?? "";
 
-  if (!wait) {
-    after(async () => {
-      try {
-        await runVeilleAndNotify();
-      } catch (err) {
-        console.error("[cron/aggregate async]", err);
-      }
-    });
-
-    return NextResponse.json(
-      {
-        ok: true,
-        started: true,
-        async: true,
-        hint: "Veille en cours (~2–5 min). Ajouter wait=1 pour attendre le JSON complet.",
-        legacyRoute: "/api/cron/aggregate",
-      },
-      { status: 202 },
-    );
+  if (part === "rss" && wait) {
+    try {
+      return NextResponse.json(await runVeillePartRss());
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return NextResponse.json({ ok: false, error: message.slice(0, 500) }, { status: 500 });
+    }
   }
 
-  try {
-    const result = await runVeilleAndNotify();
-    return NextResponse.json({ ...result, legacyRoute: "/api/cron/aggregate" });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[cron/aggregate]", message);
-    return NextResponse.json(
-      { ok: false, error: message.slice(0, 500) },
-      { status: 500 },
-    );
+  if (part === "web" && wait) {
+    try {
+      return NextResponse.json(await runVeillePartWeb());
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return NextResponse.json({ ok: false, error: message.slice(0, 500) }, { status: 500 });
+    }
   }
+
+  if (part === "finish" && wait) {
+    try {
+      return NextResponse.json(await runVeillePartFinish());
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return NextResponse.json({ ok: false, error: message.slice(0, 500) }, { status: 500 });
+    }
+  }
+
+  if (wait) {
+    try {
+      const result = await runVeilleAndNotify();
+      return NextResponse.json({ ...result, legacyRoute: "/api/cron/aggregate" });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[cron/aggregate]", message);
+      return NextResponse.json(
+        { ok: false, error: message.slice(0, 500) },
+        { status: 500 },
+      );
+    }
+  }
+
+  return NextResponse.json(
+    {
+      ok: false,
+      error: "async_disabled",
+      hint:
+        "Veille complète : wait=1 (local/Pro). GitHub : part=rss|web|finish + wait=1, puis /api/cron/facebook?wait=1&chain=1",
+      legacyRoute: "/api/cron/aggregate",
+    },
+    { status: 400 },
+  );
 }
 
 export const POST = GET;

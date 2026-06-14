@@ -1,5 +1,7 @@
 # Veille MooreaNews toutes les heures (alternative à cron-job.org).
 # Secret requis : Settings → Secrets → CRON_SECRET (même valeur que Vercel).
+#
+# Vercel Hobby = max 60 s par invocation → veille en 4 étapes synchrones.
 
 name: Veille horaire MooreaNews
 
@@ -16,40 +18,47 @@ concurrency:
 jobs:
   veille:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 12
     steps:
-      - name: Déclencher veille MooreaNews (async)
+      - name: Veille chainée (rss → facebook → web → telegram)
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          set +e
+          set -euo pipefail
           if [ -z "$CRON_SECRET" ]; then
             echo "CRON_SECRET manquant dans les secrets GitHub du dépôt."
             exit 1
           fi
-          url="https://www.mooreanews.com/api/cron/aggregate?secret=${CRON_SECRET}"
-          code=$(curl -sS -o /tmp/veille.json -w "%{http_code}" --http1.1 --max-time 45 "$url")
-          curl_exit=$?
-          echo "Veille HTTP ${code} (curl exit ${curl_exit})"
-          if [ -f /tmp/veille.json ]; then
-            cat /tmp/veille.json | head -c 800
+          BASE="https://www.mooreanews.com"
+
+          run_step() {
+            label="$1"
+            endpoint="$2"
+            extra="${3:-}"
+            url="${BASE}${endpoint}?secret=${CRON_SECRET}&wait=1"
+            if [ -n "$extra" ]; then
+              url="${url}&${extra}"
+            fi
             echo ""
-          fi
-          if grep -q '"error":"unauthorized"' /tmp/veille.json 2>/dev/null; then
-            echo "CRON_SECRET incorrect (unauthorized)"
-            exit 1
-          fi
-          if [ "$curl_exit" -ne 0 ] && [ "$curl_exit" -ne 28 ]; then
-            echo "Échec curl (exit ${curl_exit})"
-            exit 1
-          fi
-          if [ "$code" = "202" ] || [ "$code" = "200" ]; then
-            echo "Veille déclenchée — traitement en arrière-plan sur Vercel (~2–5 min)."
-            exit 0
-          fi
-          if [ "$code" = "504" ] || [ "$code" = "502" ]; then
-            echo "Avertissement: timeout gateway ${code} — relancer ou vérifier Vercel"
-            exit 0
-          fi
-          echo "Échec HTTP ${code}"
-          exit 1
+            echo "=== ${label} ==="
+            code=$(curl -sS -o /tmp/veille-step.json -w "%{http_code}" --http1.1 --max-time 55 "$url")
+            echo "HTTP ${code}"
+            head -c 600 /tmp/veille-step.json || true
+            echo ""
+            if grep -q '"error":"unauthorized"' /tmp/veille-step.json 2>/dev/null; then
+              echo "CRON_SECRET incorrect"
+              exit 1
+            fi
+            if [ "$code" != "200" ]; then
+              echo "Échec ${label} (HTTP ${code})"
+              exit 1
+            fi
+          }
+
+          run_step "RSS" "/api/cron/aggregate" "part=rss"
+          run_step "Facebook" "/api/cron/facebook" "chain=1"
+          run_step "Web" "/api/cron/aggregate" "part=web"
+          run_step "Finish + Telegram" "/api/cron/aggregate" "part=finish"
+
+          echo ""
+          echo "Veille terminée — rapport Telegram envoyé si configuré."

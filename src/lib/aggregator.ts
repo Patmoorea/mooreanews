@@ -134,6 +134,18 @@ export async function aggregateAll(): Promise<AggregationResult[]> {
   return [...rss, ...web];
 }
 
+/** RSS uniquement (étape 1 veille chainée GitHub — < 60 s Vercel Hobby). */
+export async function aggregateRssOnly(): Promise<AggregationResult[]> {
+  const sources = rssSourcesByPriority();
+  return Promise.all(sources.map(aggregateOne));
+}
+
+/** Pages web surveillées, sans Facebook (étape 3). */
+export async function aggregateWebPagesOnly(): Promise<AggregationResult[]> {
+  const { aggregateWebPagesWatch } = await import("@/lib/web-watch");
+  return [await aggregateWebPagesWatch()];
+}
+
 /**
  * Récupère les derniers articles externes pour affichage.
  */

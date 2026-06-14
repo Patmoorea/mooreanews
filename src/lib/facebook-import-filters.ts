@@ -22,8 +22,8 @@ export function facebookImportMaxAgeDays(): number {
 /** Posts récents traités par cron (évite timeout Vercel ~60 s). */
 export function facebookCronRecentPostLimit(): number {
   const raw = process.env.FACEBOOK_CRON_RECENT_LIMIT?.trim();
-  const n = raw ? Number(raw) : 50;
-  return Number.isFinite(n) && n > 0 ? Math.min(Math.floor(n), 80) : 50;
+  const n = raw ? Number(raw) : 15;
+  return Number.isFinite(n) && n > 0 ? Math.min(Math.floor(n), 80) : 15;
 }
 
 export function facebookCronMaxRepairsPerRun(): number {

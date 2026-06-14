@@ -1,4 +1,4 @@
-import { after, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import { aggregateFacebookPagesGraph } from "@/lib/facebook-watch";
@@ -45,7 +45,10 @@ function buildSummary(input: {
   return parts.join(" · ");
 }
 
-async function runFacebookImport(forcePhotoFbids?: string[]) {
+async function runFacebookImport(
+  forcePhotoFbids?: string[],
+  options?: { skipTelegram?: boolean },
+) {
   const start = Date.now();
   const result = await aggregateFacebookPagesGraph({
     light: true,
@@ -74,17 +77,19 @@ async function runFacebookImport(forcePhotoFbids?: string[]) {
     revalidatePath("/", "layout");
   }
 
-  await notifyFacebookImportReport({
-    durationMs,
-    articlesCreated: result.articlesCreated ?? 0,
-    articlesRepaired: result.articlesRepaired ?? 0,
-    articlesSkipped: result.articlesSkipped ?? 0,
-    coversPersisted: result.coversPersisted ?? 0,
-    coversFailed: result.coversFailed ?? 0,
-    fbcdnRemaining,
-    errors,
-    warnings,
-  });
+  if (!options?.skipTelegram) {
+    await notifyFacebookImportReport({
+      durationMs,
+      articlesCreated: result.articlesCreated ?? 0,
+      articlesRepaired: result.articlesRepaired ?? 0,
+      articlesSkipped: result.articlesSkipped ?? 0,
+      coversPersisted: result.coversPersisted ?? 0,
+      coversFailed: result.coversFailed ?? 0,
+      fbcdnRemaining,
+      errors,
+      warnings,
+    });
+  }
 
   return {
     ok:
@@ -126,6 +131,7 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const wait = url.searchParams.get("wait") === "1";
+  const chain = url.searchParams.get("chain") === "1";
   const forcePhotoFbids = [
     ...url.searchParams.getAll("fbid"),
     ...(url.searchParams.get("fbids")?.split(/[,;\s]+/) ?? []),
@@ -134,31 +140,20 @@ export async function GET(req: Request) {
     .filter((s) => /^\d+$/.test(s));
 
   if (!wait) {
-    after(async () => {
-      try {
-        await runFacebookImport(
-          forcePhotoFbids.length > 0 ? forcePhotoFbids : undefined,
-        );
-      } catch (err) {
-        console.error("[cron/facebook async]", err);
-      }
-    });
-
     return NextResponse.json(
       {
-        ok: true,
-        started: true,
-        async: true,
-        recentLimit: facebookCronRecentPostLimit(),
-        hint: "Import Facebook en cours (~1–3 min). Ajouter wait=1 pour attendre le JSON complet.",
+        ok: false,
+        error: "async_disabled",
+        hint: "Ajouter wait=1 (GitHub Actions : wait=1&chain=1)",
       },
-      { status: 202 },
+      { status: 400 },
     );
   }
 
   try {
     const payload = await runFacebookImport(
       forcePhotoFbids.length > 0 ? forcePhotoFbids : undefined,
+      { skipTelegram: chain },
     );
     return NextResponse.json(payload);
   } catch (err) {

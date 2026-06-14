@@ -221,6 +221,7 @@ export async function notifyVeilleReport(input: {
   audit?: ContentAuditReport | null;
   facebookHealth?: FacebookTokenHealth | null;
   facebookPurgeDeleted?: number;
+  headerNote?: string;
 }): Promise<{ sent: boolean; reason?: string }> {
   const alertsCreated = input.alertsCreated ?? 0;
   const expiredAlerts = input.expiredAlerts ?? 0;
@@ -254,8 +255,13 @@ export async function notifyVeilleReport(input: {
 
   const lines = [
     `${statusEmoji} <b>Veille MooreaNews</b>`,
-    `⏱ ${(input.durationMs / 1000).toFixed(1)} s · ${input.totalFetched} parcouru(s) · ${input.totalInserted} inséré(s)`,
   ];
+  if (input.headerNote?.trim()) {
+    lines.push(escapeHtml(input.headerNote.trim()));
+  }
+  lines.push(
+    `⏱ ${(input.durationMs / 1000).toFixed(1)} s · ${input.totalFetched} parcouru(s) · ${input.totalInserted} inséré(s)`,
+  );
 
   lines.push(formatSourceScan(input.bySource));
 
