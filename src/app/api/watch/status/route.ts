@@ -22,6 +22,12 @@ export async function GET() {
     facebookUserToken: Boolean(process.env.FACEBOOK_USER_ACCESS_TOKEN?.trim()),
     facebookAppId: Boolean(process.env.FACEBOOK_APP_ID?.trim()),
     facebookAppSecret: Boolean(process.env.FACEBOOK_APP_SECRET?.trim()),
+    openAiKey: Boolean(process.env.OPENAI_API_KEY?.trim()),
+    ollamaUrl: Boolean(process.env.OLLAMA_API_URL?.trim()),
+    aiVeilleEnabled:
+      process.env.AI_VEILLE_ENABLED !== "false" &&
+      (Boolean(process.env.OLLAMA_API_URL?.trim()) ||
+        Boolean(process.env.OPENAI_API_KEY?.trim())),
   };
 
   const ready =
@@ -61,6 +67,7 @@ export async function GET() {
       sunMoon: "6 h (/api/sun)",
       alerts: "30 s (/api/alerts)",
       tickerClient: "5 min (rafraîchissement navigateur)",
+      agentIa: "Mac local : npm run ai:moorea (Ollama) — Vercel sans coût API",
     },
   });
 }

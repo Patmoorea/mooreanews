@@ -16,6 +16,10 @@ import {
   type InfoPratiqueRowInput,
 } from "@/lib/supabase/info-pratiques-db";
 import { notifyAlertSubscribers } from "@/lib/push-notify";
+import {
+  alertTypeFromSignalement,
+  isSignalementBreaking,
+} from "@/lib/signalement-categories";
 import type { AlertRow } from "@/lib/supabase/types";
 import { slugify } from "@/lib/utils";
 
@@ -618,11 +622,12 @@ export async function approveSubmission(id: string, formData: FormData) {
     ]
       .filter(Boolean)
       .join("\n\n");
+    const categoryId =
+      (sub as { signalement_category?: string | null }).signalement_category ??
+      "autre";
     const descLower = `${sub.title} ${sub.description}`.toLowerCase();
-    const breaking =
-      /ferry|route|coupure|cyclone|méduse|meduse|urgent|annul/i.test(descLower);
-    const alertType =
-      /ferry/i.test(descLower) ? "ferry" : /route|coupure/i.test(descLower) ? "route" : "autre";
+    const alertType = alertTypeFromSignalement(categoryId, descLower);
+    const breaking = isSignalementBreaking(categoryId, descLower);
     const { data: created } = await supabase
       .from("alerts")
       .insert({

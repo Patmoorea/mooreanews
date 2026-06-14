@@ -10,7 +10,7 @@ export const revalidate = 600;
 export const metadata: Metadata = {
   title: "Signalements — alertes locales",
   description:
-    "Signalez coupure de route, ferry, méduse ou info urgente — modération MooreaNews avant alerte push.",
+    "Signalez accident, baleines, incendie, météo, route ou ferry — web ou Telegram, modération avant alerte push.",
   alternates: { canonical: "/signalements" },
 };
 
@@ -29,7 +29,7 @@ export default async function SignalementsPage() {
       <PageHeader
         badge="Communauté"
         title="Signalements"
-        description="Route, ferry, baignade, commerce — infos vérifiées avant alerte push quartier."
+        description="Accident, baleines, incendie, météo, route, ferry — vérifiés avant alerte push quartier."
         variant="tiare"
       />
       <Container className="py-12 sm:py-16 max-w-2xl">

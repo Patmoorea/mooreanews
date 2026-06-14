@@ -6,6 +6,10 @@
       "schedule": "5 16 * * *"
     },
     {
+      "path": "/api/cron/ai",
+      "schedule": "15 16 * * *"
+    },
+    {
       "path": "/api/cron/meteo-vigilance",
       "schedule": "5 15,1 * * *"
     },
@@ -27,6 +31,10 @@
       "memory": 1024,
       "maxDuration": 300,
       "includeFiles": "node_modules/tesseract.js-core/**"
+    },
+    "src/app/api/cron/ai/route.ts": {
+      "memory": 1024,
+      "maxDuration": 120
     },
     "src/app/api/cron/daily/route.ts": {
       "memory": 1024,

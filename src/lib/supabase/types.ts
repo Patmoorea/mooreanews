@@ -187,7 +187,22 @@ export type SubmissionRow = {
   reviewed_at: string | null;
   reviewed_by: string | null;
   admin_notes: string | null;
+  signalement_category: string | null;
+  source_channel: string | null;
   created_at: string;
+};
+
+export type TelegramSignalementSessionRow = {
+  chat_id: string;
+  step: string;
+  category_id: string | null;
+  description: string | null;
+  location: string | null;
+  district: string | null;
+  cover_url: string | null;
+  photo_file_id: string | null;
+  contact: string | null;
+  updated_at: string;
 };
 
 export type ExternalArticleRow = {
@@ -355,6 +370,7 @@ export type Database = {
       activities: TableDef<ActivityRow>;
       info_pratiques: TableDef<InfoRow>;
       submissions: TableDef<SubmissionRow>;
+      telegram_signalement_sessions: TableDef<TelegramSignalementSessionRow>;
       newsletter_subscribers: TableDef<NewsletterSubscriber>;
       external_articles: TableDef<ExternalArticleRow>;
       alerts: TableDef<AlertRow>;

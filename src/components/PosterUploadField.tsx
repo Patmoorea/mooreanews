@@ -10,6 +10,7 @@ type Props = {
   help?: string;
   uploadEndpoint?: string;
   required?: boolean;
+  onChange?: (url: string) => void;
 };
 
 function normalizeImageUrl(raw: string): string {
@@ -30,6 +31,7 @@ export function PosterUploadField({
   help = "JPEG, PNG, WebP ou GIF — max 5 Mo.",
   uploadEndpoint = "/api/admin/upload",
   required = false,
+  onChange,
 }: Props) {
   const [url, setUrl] = useState(
     defaultValue?.trim() ? normalizeImageUrl(defaultValue) : "",
@@ -71,6 +73,7 @@ export function PosterUploadField({
         throw new Error(msg);
       }
       setUrl(json.url);
+      onChange?.(json.url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");
     } finally {
@@ -140,11 +143,16 @@ export function PosterUploadField({
           value={url}
           onChange={(e) => {
             setError("");
-            setUrl(e.target.value);
+            const v = e.target.value;
+            setUrl(v);
+            onChange?.(v);
           }}
           onBlur={(e) => {
             const normalized = normalizeImageUrl(e.target.value);
-            if (normalized !== e.target.value) setUrl(normalized);
+            if (normalized !== e.target.value) {
+              setUrl(normalized);
+              onChange?.(normalized);
+            }
           }}
           placeholder="/images/… ou https://…"
           className="w-full px-3 py-2.5 bg-white border border-ocean-200 rounded-lg text-sm text-ocean-900 focus:outline-none focus:border-lagon-500 focus:ring-2 focus:ring-lagon-200"

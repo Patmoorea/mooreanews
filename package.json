@@ -13,6 +13,7 @@
     "check:push": "node scripts/check-push.mjs https://www.mooreanews.com",
     "push:keys": "web-push generate-vapid-keys",
     "veille": "node scripts/run-veille.mjs",
+    "ai:moorea": "tsx scripts/run-ai-moorea.ts",
     "facebook-backfill": "tsx scripts/run-facebook-backfill.ts",
     "ads:raitahiti:build": "python3 scripts/extract-raitahiti-composite-banners.py"
   },

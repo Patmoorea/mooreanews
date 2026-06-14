@@ -4,34 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Send, Check } from "lucide-react";
 import { MOOREA_DISTRICTS } from "@/lib/constants";
-
-const CATEGORIES = [
-  {
-    id: "route",
-    label: "Route / coupure",
-    title: "Signalement — coupure ou travaux route",
-  },
-  {
-    id: "ferry",
-    label: "Ferry annulé / retard",
-    title: "Signalement — ferry annulé ou retard important",
-  },
-  {
-    id: "meduse",
-    label: "Méduse / baignade",
-    title: "Signalement — méduse ou baignade dangereuse",
-  },
-  {
-    id: "resto",
-    label: "Restaurant complet / fermé",
-    title: "Signalement — restaurant complet ou fermé exceptionnellement",
-  },
-  {
-    id: "autre",
-    label: "Autre alerte locale",
-    title: "Signalement — information locale urgente",
-  },
-] as const;
+import {
+  SIGNALEMENT_CATEGORIES,
+  getSignalementCategory,
+  signalementCategoryRequiresPhoto,
+} from "@/lib/signalement-categories";
+import { PosterUploadField } from "@/components/PosterUploadField";
 
 export function QuickSignalementForm() {
   const [category, setCategory] = useState<string>("route");
@@ -40,32 +18,49 @@ export function QuickSignalementForm() {
   const [location, setLocation] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [coverUrl, setCoverUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const cat = CATEGORIES.find((c) => c.id === category) ?? CATEGORIES[0];
+  const cat = getSignalementCategory(category);
+  const photoRequired = signalementCategoryRequiresPhoto(category);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    if (photoRequired && !coverUrl.trim()) {
+      setError("Une photo est obligatoire pour cette catégorie.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const res = await fetch("/api/submit", {
+      const res = await fetch("/api/signalement", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          type: "signalement",
-          title: cat.title,
-          description: `[${cat.label}] ${description.trim()}`,
+          categoryId: category,
+          description: description.trim(),
           location: location.trim() || undefined,
           district,
-          user_name: name.trim() || "Anonyme",
-          user_email: email.trim(),
+          name: name.trim() || "Anonyme",
+          contact: email.trim(),
+          coverUrl: coverUrl.trim() || undefined,
         }),
       });
       const json = (await res.json()) as { ok?: boolean; error?: string };
-      if (!res.ok || !json.ok) throw new Error(json.error ?? "Échec envoi");
+      if (!res.ok || !json.ok) {
+        const msg =
+          json.error === "missing_photo"
+            ? "Ajoutez une photo pour cette catégorie."
+            : json.error === "description_too_short"
+              ? "Description trop courte (min. 5 caractères)."
+              : (json.error ?? "Échec envoi");
+        throw new Error(msg);
+      }
       setDone(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur");
@@ -94,7 +89,7 @@ export function QuickSignalementForm() {
       <div>
         <label className="block text-sm font-medium text-ocean-800 mb-2">Type</label>
         <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map((c) => (
+          {SIGNALEMENT_CATEGORIES.map((c) => (
             <button
               key={c.id}
               type="button"
@@ -105,11 +100,12 @@ export function QuickSignalementForm() {
                   : "bg-ocean-50 text-ocean-700 hover:bg-ocean-100"
               }`}
             >
-              {c.label}
+              {c.emoji} {c.label}
             </button>
           ))}
         </div>
       </div>
+
       <div>
         <label className="block text-sm font-medium text-ocean-800 mb-1">Détails *</label>
         <textarea
@@ -121,6 +117,15 @@ export function QuickSignalementForm() {
           className="w-full rounded-xl border border-ocean-200 px-4 py-3 text-sm"
         />
       </div>
+
+      <PosterUploadField
+        label={photoRequired ? "Photo *" : "Photo (recommandée)"}
+        help="JPEG, PNG, WebP ou GIF — max 5 Mo."
+        uploadEndpoint="/api/submit/upload"
+        required={photoRequired}
+        onChange={setCoverUrl}
+      />
+
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-ocean-800 mb-1">Lieu</label>
@@ -146,6 +151,7 @@ export function QuickSignalementForm() {
           </select>
         </div>
       </div>
+
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-ocean-800 mb-1">Votre nom</label>
@@ -166,6 +172,15 @@ export function QuickSignalementForm() {
           />
         </div>
       </div>
+
+      <div className="rounded-xl bg-lagon-50 border border-lagon-200 p-4 text-sm text-ocean-700">
+        <p className="font-semibold text-ocean-900 mb-1">Via Telegram</p>
+        <p>
+          Ouvrez Telegram et tapez <strong>/start</strong> au bot MooreaNews configuré pour
+          envoyer accident, baleines, incendie ou météo avec photo.
+        </p>
+      </div>
+
       {error && <p className="text-sm text-tiare-700">{error}</p>}
       <button
         type="submit"
@@ -177,7 +192,7 @@ export function QuickSignalementForm() {
       </button>
       <p className="text-xs text-ocean-500 flex items-start gap-2">
         <AlertTriangle size={14} className="shrink-0 mt-0.5" />
-        Vérification humaine avant publication. Pour une urgence vitale : appelez le 15 ou les secours.
+        {cat.label} — vérification humaine avant publication. Urgence vitale : 15 ou secours.
       </p>
     </form>
   );

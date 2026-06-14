@@ -362,6 +362,7 @@ export function isStaleFacebookImportRow(row: {
   cover_url?: string | null;
 }): boolean {
   if (row.slug.startsWith("mooreanews-fb-")) {
+    if (isEmptyFacebookArticleShell(row)) return true;
     if (isFacebookJunkText(row.title) && !row.cover_url?.trim()) return true;
   } else if (isEmptyFacebookArticleShell(row)) {
     return true;

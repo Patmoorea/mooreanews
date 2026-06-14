@@ -5,6 +5,7 @@ import {
   runVeillePartFinish,
   runVeillePartRss,
   runVeillePartWeb,
+  runVeillePartAi,
 } from "@/lib/cron-veille-chain";
 import { notifyVeilleReport } from "@/lib/telegram-notify";
 import { auditPublicContent } from "@/lib/site-content-audit";
@@ -96,6 +97,15 @@ export async function GET(req: Request) {
     }
   }
 
+  if (part === "ai" && wait) {
+    try {
+      return NextResponse.json(await runVeillePartAi());
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return NextResponse.json({ ok: false, error: message.slice(0, 500) }, { status: 500 });
+    }
+  }
+
   if (wait) {
     try {
       const result = await runVeilleAndNotify();
@@ -115,7 +125,7 @@ export async function GET(req: Request) {
       ok: false,
       error: "async_disabled",
       hint:
-        "Veille complète : wait=1 (local/Pro). GitHub : part=rss|web|finish + wait=1, puis /api/cron/facebook?wait=1&chain=1",
+        "Veille complète : wait=1 (local/Pro). GitHub : part=rss|web|finish|ai + wait=1, puis /api/cron/facebook?wait=1&chain=1",
       legacyRoute: "/api/cron/aggregate",
     },
     { status: 400 },

@@ -89,6 +89,8 @@ Le fichier `data/restaurants.json` sert de référence et de fallback local sans
 | Météo accueil (`/api/weather`) | `OPENWEATHERMAP_API_KEY` |
 | Contact (`/api/contact`) | `RESEND_*` |
 | Soumettre (`/api/submit`) | `RESEND_*`, `TELEGRAM_*` (opt.), Supabase |
+| Signalements (`/api/signalement`) + bot Telegram | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, Supabase + SQL `signalement-telegram-ai.sql` |
+| Agent IA veille | **Mac** : `npm run ai:moorea` + Ollama (gratuit) — voir [docs/SIGNALEMENT-IA.md](./docs/SIGNALEMENT-IA.md) |
 | Newsletter (`/api/newsletter`) | `RESEND_*`, Supabase |
 | Cron veille (`/api/cron/aggregate`) | `CRON_SECRET`, Supabase service role |
 | Facebook pages (posts récents) | `FACEBOOK_PAGE_ACCESS_TOKEN` (jeton **page longue durée**, voir ci-dessous) |

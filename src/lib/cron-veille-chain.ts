@@ -16,9 +16,11 @@ import {
 import { refreshFacebookUserTokenInProcess } from "@/lib/facebook-token";
 import { syncHealthOnCall } from "@/lib/health-on-call";
 import { syncUtilityOutages } from "@/lib/utility-outages-sync";
+import { cleanupPublishedFacebookEmptyShells } from "@/lib/facebook-import-cleanup";
 import { notifyVeilleReport } from "@/lib/telegram-notify";
 import { auditPublicContent } from "@/lib/site-content-audit";
 import { checkFacebookTokenHealth } from "@/lib/facebook-token";
+import { runAiVeilleProcessing } from "@/lib/ai-veille";
 
 function summarize(bySource: AggregationResult[]) {
   return {
@@ -123,6 +125,23 @@ export async function runVeillePartFinish() {
     };
   }
 
+  let facebookCleanup = { unpublished: 0, deleted: 0 };
+  try {
+    facebookCleanup = await cleanupPublishedFacebookEmptyShells();
+    if (facebookCleanup.unpublished > 0 || facebookCleanup.deleted > 0) {
+      revalidatePath("/actualites");
+      revalidatePath("/admin/articles");
+    }
+  } catch (e) {
+    bySource.push({
+      source: "facebook-cleanup",
+      fetched: 0,
+      matched: 0,
+      inserted: 0,
+      errors: [`facebook-cleanup: ${String(e)}`],
+    });
+  }
+
   const audit = await auditPublicContent();
   const facebookHealth = await checkFacebookTokenHealth();
   const durationMs = Date.now() - start;
@@ -142,6 +161,7 @@ export async function runVeillePartFinish() {
     audit,
     facebookHealth,
     headerNote: "🔗 Veille chaînée GitHub : rss → facebook → web → finish",
+    facebookCleanup,
   });
 
   return {
@@ -152,5 +172,15 @@ export async function runVeillePartFinish() {
     healthOnCall,
     telegram,
     auditFindings: audit?.findings.length ?? 0,
+    facebookCleanup,
   };
+}
+
+export async function runVeillePartAi() {
+  const ai = await runAiVeilleProcessing();
+  if (ai.draftsCreated > 0) {
+    revalidatePath("/actualites");
+    revalidatePath("/admin/articles");
+  }
+  return { part: "ai" as const, ...ai };
 }

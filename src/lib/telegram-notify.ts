@@ -221,6 +221,7 @@ export async function notifyVeilleReport(input: {
   audit?: ContentAuditReport | null;
   facebookHealth?: FacebookTokenHealth | null;
   facebookPurgeDeleted?: number;
+  facebookCleanup?: { unpublished: number; deleted: number };
   headerNote?: string;
 }): Promise<{ sent: boolean; reason?: string }> {
   const alertsCreated = input.alertsCreated ?? 0;
@@ -342,6 +343,15 @@ export async function notifyVeilleReport(input: {
   }
 
   lines.push(formatAuditBlock(input.audit));
+
+  if (
+    input.facebookCleanup &&
+    (input.facebookCleanup.unpublished > 0 || input.facebookCleanup.deleted > 0)
+  ) {
+    lines.push(
+      `\n🧹 <b>Nettoyage Facebook</b> : ${input.facebookCleanup.unpublished} dépubliée(s), ${input.facebookCleanup.deleted} supprimée(s) (coquilles vides)`,
+    );
+  }
 
   if (input.facebookHealth) {
     const h = input.facebookHealth;
