@@ -5,8 +5,19 @@ import { createServerClient } from "@supabase/ssr";
  * Refresh la session Supabase à chaque requête et protège /admin.
  * Si Supabase n'est pas configuré, le middleware est neutre.
  */
+const CANONICAL_HOST = "www.mooreanews.com";
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const host = request.headers.get("host")?.split(":")[0]?.toLowerCase() ?? "";
+
+  // Apex → www (308) pour éviter « Page avec redirection » en GSC
+  if (host === "mooreanews.com") {
+    const url = request.nextUrl.clone();
+    url.protocol = "https:";
+    url.host = CANONICAL_HOST;
+    return NextResponse.redirect(url, 308);
+  }
 
   // Supabase renvoie parfois vers la Site URL (/?code=…) au lieu de /auth/callback
   const authCode = request.nextUrl.searchParams.get("code");

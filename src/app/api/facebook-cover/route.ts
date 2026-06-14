@@ -14,6 +14,11 @@ import {
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+function noIndex(res: NextResponse): NextResponse {
+  res.headers.set("X-Robots-Tag", "noindex, nofollow");
+  return res;
+}
+
 export async function GET(req: Request) {
   const slug = new URL(req.url).searchParams.get("slug")?.trim() ?? "";
   if (!slug.startsWith("mooreanews-fb-")) {
@@ -37,7 +42,7 @@ export async function GET(req: Request) {
     !existing.includes("fbcdn.net") &&
     !existing.includes("fbsbx.com")
   ) {
-    return NextResponse.redirect(existing, 302);
+    return noIndex(NextResponse.redirect(existing, 302));
   }
 
   const postId = postIdFromMooreaNewsSlug(slug);
@@ -67,5 +72,5 @@ export async function GET(req: Request) {
     .update({ cover_url: cover, updated_at: new Date().toISOString() })
     .eq("slug", slug);
 
-  return NextResponse.redirect(cover, 302);
+  return noIndex(NextResponse.redirect(cover, 302));
 }
