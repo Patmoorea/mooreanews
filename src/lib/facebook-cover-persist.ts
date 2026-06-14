@@ -49,14 +49,15 @@ export async function remoteCoverFromFacebookPost(
   permalink?: string | null,
 ): Promise<string | null> {
   const { fetchOpenGraph } = await import("@/lib/open-graph");
-  const candidates = [
-    permalink?.trim(),
-    `https://www.facebook.com/${pageId}/posts/${postId}`,
-    `https://www.facebook.com/photo?fbid=${postId}&set=a.${pageId}`,
-    `https://www.facebook.com/photo?fbid=${postId}`,
-  ].filter((u): u is string => Boolean(u?.startsWith("http")));
+  const { openGraphUrlsForFacebookPost } = await import(
+    "@/lib/facebook-post-enrich"
+  );
+  const candidates = openGraphUrlsForFacebookPost(
+    { id: `${pageId}_${postId}`, permalink_url: permalink ?? undefined },
+    pageId,
+  );
 
-  for (const url of [...new Set(candidates)]) {
+  for (const url of candidates) {
     try {
       const og = await fetchOpenGraph(url);
       const img = og?.imageUrl?.trim();
