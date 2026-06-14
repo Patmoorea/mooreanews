@@ -32,13 +32,14 @@ const nextConfig: NextConfig = {
   },
   images: {
     localPatterns: [
+      { pathname: "/images/**" },
+      { pathname: "/brand/**" },
+      { pathname: "/partners/**" },
       {
         pathname: "/api/facebook-cover",
         // slug=… pour les articles mooreanews-fb-* sans cover Supabase
       },
-      {
-        pathname: "/api/garde-weekend/poster/**",
-      },
+      { pathname: "/api/garde-weekend/poster/**" },
     ],
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
