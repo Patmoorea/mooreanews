@@ -168,13 +168,13 @@ export async function GET(req: Request) {
     const recentImportLimit = limitRaw
       ? Math.min(Math.max(1, Math.floor(Number(limitRaw))), 80)
       : chain
-        ? 6
+        ? facebookCronRecentPostLimit()
         : undefined;
 
     const payload = await runFacebookImport(
       forcePhotoFbids.length > 0 ? forcePhotoFbids : undefined,
       {
-        skipTelegram: chain,
+        skipTelegram: false,
         skipUtility: chain,
         skipStatus: chain,
         recentImportLimit,

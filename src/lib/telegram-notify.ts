@@ -292,10 +292,7 @@ export async function notifyVeilleReport(input: {
   }
   if (input.headerNote?.includes("finish")) {
     lines.push(
-      `⏱ ${(input.durationMs / 1000).toFixed(1)} s · étape <b>finish</b> (audit + nettoyage)`,
-    );
-    lines.push(
-      "<i>L’import Facebook = étape « Facebook » juste avant (voir bloc 📘).</i>",
+      `⏱ ${(input.durationMs / 1000).toFixed(1)} s · étape finish (audit + nettoyage)`,
     );
   } else {
     lines.push(
