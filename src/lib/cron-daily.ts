@@ -11,6 +11,7 @@ import { expirePastEvents } from "@/lib/event-expiry";
 import { aggregateAll } from "@/lib/aggregator";
 import {
   getTahitiClock,
+  digestEmailsEnabled,
   shouldSendEveningDigest,
   shouldSendMorningDigest,
   shouldPublishGardeWeekend,
@@ -87,12 +88,14 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   revalidatePath("/trafic-ferry");
 
   if (shouldSendMorningDigest(clock)) {
-    jobs.morningDigest = await sendMorningDigest();
+    jobs.morningDigest = digestEmailsEnabled()
+      ? await sendMorningDigest()
+      : { skipped: true, reason: "digest email désactivé (newsletter dimanche seule)" };
     jobs.morningPush = await sendMorningDigestPush();
     jobs.publicTelegramBrief = await sendPublicMooreaBrief();
   } else {
-    jobs.morningDigest = { skipped: true, reason: "hors créneau 5h–10h Tahiti" };
-    jobs.morningPush = { skipped: true, reason: "hors créneau 5h–10h Tahiti" };
+    jobs.morningDigest = { skipped: true, reason: "hors créneau 7h Tahiti" };
+    jobs.morningPush = { skipped: true, reason: "hors créneau 7h Tahiti" };
   }
 
   if (shouldSendEveningDigest(clock)) {
@@ -105,7 +108,9 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   }
 
   if (shouldSendWeekendDigest(clock)) {
-    jobs.weekendDigest = await sendWeekendDigest();
+    jobs.weekendDigest = digestEmailsEnabled()
+      ? await sendWeekendDigest()
+      : { skipped: true, reason: "digest email désactivé (newsletter dimanche seule)" };
     jobs.weekendPush = await sendWeekendDigestPush();
   } else {
     jobs.weekendDigest = {

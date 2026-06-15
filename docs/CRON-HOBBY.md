@@ -6,11 +6,10 @@
 |-------|-----|------------------|
 | Job quotidien complet | **Vercel** (1 seul cron) | ~6h05 |
 | Veille RSS + Facebook + web | **GitHub Actions** `veille-hourly.yml` | 5h–20h, toutes les heures |
-| Digest matin + push | **GitHub Actions** `cron-hobby-extras.yml` | 7h05 Tahiti |
-| Digest week-end (email) | **GitHub Actions** `cron-hobby-extras.yml` | vendredi 7h05 |
 | Météo vigilance après-midi | **GitHub Actions** `cron-hobby-extras.yml` | ~15h |
-| Push digest soir | **GitHub Actions** `cron-hobby-extras.yml` | jeu–dim ~17h |
-| Newsletter abonnés | **GitHub Actions** `cron-hobby-extras.yml` | dimanche ~18h |
+| Push digest soir (mobile) | **GitHub Actions** `cron-hobby-extras.yml` | jeu–dim ~17h |
+| **Newsletter email abonnés** | **GitHub Actions** `cron-hobby-extras.yml` | **dimanche ~18h** |
+| Digests email matin / week-end | **Désactivés** | — |
 | IA brouillons (optionnel) | **Mac** `npm run ai:moorea` | manuel ou cron Mac |
 
 Fichiers :

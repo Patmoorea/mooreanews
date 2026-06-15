@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyCronAuth } from "@/lib/cron-auth";
-import { getTahitiClock, shouldSendMorningDigest } from "@/lib/cron-tahiti";
+import { getTahitiClock, shouldSendMorningDigest, digestEmailsEnabled } from "@/lib/cron-tahiti";
 import { sendMorningDigest } from "@/lib/morning-digest";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +13,14 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const force = url.searchParams.get("force") === "1";
   const clock = getTahitiClock();
+
+  if (!digestEmailsEnabled()) {
+    return NextResponse.json({
+      ok: true,
+      skipped: true,
+      reason: "Digests email désactivés — seule la newsletter du dimanche 18h est envoyée",
+    });
+  }
 
   if (!force && !shouldSendMorningDigest(clock)) {
     return NextResponse.json({

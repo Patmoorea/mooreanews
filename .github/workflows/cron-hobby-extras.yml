@@ -1,20 +1,15 @@
-# Crons Hobby — complète le cron Vercel unique (/api/cron/daily ~6h Tahiti).
-# Secret : GitHub → Settings → Secrets → CRON_SECRET (identique à Vercel).
-# Veille horaire : workflow veille-hourly.yml (5h–20h Tahiti).
+# Crons Hobby — météo, push soir, newsletter hebdo (emails digest matin/week-end désactivés).
+# Secret : GitHub → Settings → Secrets → CRON_SECRET
 
 name: Crons Hobby extras
 
 on:
   schedule:
-    # Digest matin + push 7h05 Tahiti (17:05 UTC)
-    - cron: "5 17 * * *"
-    # Digest week-end email — vendredi 7h05 Tahiti (17:05 UTC vendredi)
-    - cron: "5 17 * * 5"
     # Vigilance météo après-midi ~15h Tahiti (01:05 UTC)
     - cron: "5 1 * * *"
-    # Push soir jeu–dim ~17h Tahiti (03:00 UTC lendemain UTC)
+    # Push soir jeu–dim ~17h Tahiti (03:00 UTC)
     - cron: "0 3 * * 5,6,0,1"
-    # Newsletter dimanche ~18h Tahiti (04:00 UTC lundi)
+    # Newsletter abonnés — dimanche ~18h Tahiti (04:00 UTC lundi)
     - cron: "0 4 * * 1"
 
 concurrency:
@@ -22,38 +17,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  morning-digest:
-    if: github.event.schedule == '5 17 * * *'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Digest matin + push (7h Tahiti)
-        env:
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: |
-          set -euo pipefail
-          if [ -z "$CRON_SECRET" ]; then
-            echo "CRON_SECRET manquant"
-            exit 1
-          fi
-          curl -fsS --max-time 120 \
-            "https://www.mooreanews.com/api/cron/morning-digest?secret=${CRON_SECRET}"
-          curl -fsS --max-time 55 \
-            "https://www.mooreanews.com/api/cron/push-morning?secret=${CRON_SECRET}"
-
-  weekend-digest:
-    if: github.event.schedule == '5 17 * * 5'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Digest week-end email (vendredi 7h Tahiti)
-        env:
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: |
-          set -euo pipefail
-          curl -fsS --max-time 120 \
-            "https://www.mooreanews.com/api/cron/weekend-digest?secret=${CRON_SECRET}"
-
   meteo-afternoon:
     if: github.event.schedule == '5 1 * * *'
     runs-on: ubuntu-latest

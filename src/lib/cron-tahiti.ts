@@ -40,6 +40,11 @@ export function getTahitiClock(now = new Date()): TahitiClock {
   };
 }
 
+/** Digest matin / week-end email — désactivés par défaut (seule la newsletter dimanche est active). */
+export function digestEmailsEnabled(): boolean {
+  return process.env.ENABLE_DIGEST_EMAILS === "true";
+}
+
 /** Digest matin : 7h Tahiti (1×/jour — veille GitHub ~17h UTC). */
 export function shouldSendMorningDigest(clock: TahitiClock): boolean {
   return clock.hour === 7;
