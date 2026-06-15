@@ -5,12 +5,55 @@ import {
   getTelegramWebhookInfo,
   setTelegramWebhook,
 } from "@/lib/telegram-api";
-import { getPublicBotUsername } from "@/lib/telegram-config";
+import {
+  getPublicBotTokenStrict,
+  getPublicBotUsername,
+  getAdminBotToken,
+} from "@/lib/telegram-config";
+
+async function fetchWebhookInfo(token: string) {
+  if (!token) return { ok: false as const, url: undefined, error: "no_token" };
+  try {
+    const res = await fetch(
+      `https://api.telegram.org/bot${token}/getWebhookInfo`,
+    );
+    const json = (await res.json()) as {
+      ok?: boolean;
+      result?: { url?: string; last_error_message?: string };
+    };
+    return {
+      ok: Boolean(json.ok),
+      url: json.result?.url,
+      lastError: json.result?.last_error_message,
+    };
+  } catch (e) {
+    return {
+      ok: false as const,
+      url: undefined,
+      error: (e as Error).message,
+    };
+  }
+}
 
 /** Enregistre le webhook Telegram signalements (1× après deploy ou via cron). */
 export async function GET(req: Request) {
   if (!(await verifyCronAuth(req))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  const publicToken = getPublicBotTokenStrict();
+  const adminToken = getAdminBotToken();
+
+  if (!publicToken) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "TELEGRAM_PUBLIC_BOT_TOKEN manquant sur Vercel",
+        hint: "Ajoutez le token @MooreanewsPublic_bot (BotFather), Redeploy, relancez ce curl.",
+        bot: `@${getPublicBotUsername()}`,
+      },
+      { status: 400 },
+    );
   }
 
   const base = SITE.url.replace(/\/$/, "");
@@ -19,15 +62,23 @@ export async function GET(req: Request) {
 
   const set = await setTelegramWebhook(webhookUrl, secret);
   const info = await getTelegramWebhookInfo();
+  const adminHook = await fetchWebhookInfo(adminToken);
 
   return NextResponse.json({
     ok: set.ok,
     webhookUrl,
     bot: `@${getPublicBotUsername()}`,
+    publicTokenConfigured: true,
     secretConfigured: Boolean(secret),
     currentUrl: info.url,
+    lastWebhookError: info.error,
+    adminBotWebhookUrl: adminHook.url ?? null,
+    warning:
+      adminHook.url === webhookUrl
+        ? "Le bot ADMIN avait aussi ce webhook — normal si vous migrez. Le bot PUBLIC doit être celui utilisé par les citoyens."
+        : undefined,
     error: set.error,
-    hint: "Webhook enregistré sur le bot public (TELEGRAM_PUBLIC_BOT_TOKEN). Admin : TELEGRAM_BOT_TOKEN séparé.",
+    next: "Testez t.me/MooreanewsPublic_bot → /start",
   });
 }
 

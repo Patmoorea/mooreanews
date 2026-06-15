@@ -8,13 +8,14 @@ export function getAdminBotToken(): string {
   return process.env.TELEGRAM_BOT_TOKEN?.trim() ?? "";
 }
 
-/** Token du bot public citoyens (fallback : bot admin si un seul bot). */
+/** Token du bot public — obligatoire pour signalements / webhook (pas de fallback admin). */
+export function getPublicBotTokenStrict(): string {
+  return process.env.TELEGRAM_PUBLIC_BOT_TOKEN?.trim() ?? "";
+}
+
+/** Token du bot public citoyens (fallback admin : legacy, éviter pour webhook). */
 export function getPublicBotToken(): string {
-  return (
-    process.env.TELEGRAM_PUBLIC_BOT_TOKEN?.trim() ||
-    process.env.TELEGRAM_BOT_TOKEN?.trim() ||
-    ""
-  );
+  return getPublicBotTokenStrict() || getAdminBotToken();
 }
 
 export function getPublicBotUsername(): string {

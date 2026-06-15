@@ -2,10 +2,10 @@
  * API Telegram — bot public @MooreanewsPublic_bot (signalements + fichiers + webhook).
  */
 
-import { getPublicBotToken } from "@/lib/telegram-config";
+import { getPublicBotTokenStrict } from "@/lib/telegram-config";
 
 const API_BASE = () =>
-  `https://api.telegram.org/bot${getPublicBotToken()}`;
+  `https://api.telegram.org/bot${getPublicBotTokenStrict()}`;
 
 export type TelegramInlineButton = {
   text: string;
@@ -16,7 +16,7 @@ export async function telegramApi<T = unknown>(
   method: string,
   body?: Record<string, unknown>,
 ): Promise<{ ok: boolean; result?: T; error?: string }> {
-  const token = getPublicBotToken();
+  const token = getPublicBotTokenStrict();
   if (!token) {
     return { ok: false, error: "TELEGRAM_PUBLIC_BOT_TOKEN manquant" };
   }
@@ -87,7 +87,7 @@ export async function getTelegramFilePath(
 export async function downloadTelegramFile(
   fileId: string,
 ): Promise<{ buffer: Buffer; contentType: string } | null> {
-  const token = getPublicBotToken();
+  const token = getPublicBotTokenStrict();
   const path = await getTelegramFilePath(fileId);
   if (!path || !token) return null;
   const res = await fetch(
