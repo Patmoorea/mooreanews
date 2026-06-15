@@ -14,6 +14,7 @@ import { UpcomingEvents } from "@/components/home/UpcomingEvents";
 import { WeekendAgenda } from "@/components/home/WeekendAgenda";
 import { RecentAnnouncements } from "@/components/home/RecentAnnouncements";
 import { InteractiveMap } from "@/components/home/InteractiveMap";
+import { TelegramCommunityPromo } from "@/components/telegram/TelegramCommunityPromo";
 import { CommunityCTA } from "@/components/home/CommunityCTA";
 
 export const revalidate = 600;
@@ -30,6 +31,7 @@ export default function HomePage() {
     <>
       <Hero />
       <AlertsStrip />
+      <TelegramCommunityPromo variant="hero" />
       <AdSlot slotId="home-leaderboard" fullBleed />
       <SafetyCampaignSlot />
       <HealthOnCallSlot />

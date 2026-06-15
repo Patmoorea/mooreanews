@@ -3,11 +3,8 @@ import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 import { QuickSignalementForm } from "@/components/signalements/QuickSignalementForm";
+import { TelegramCommunityPromo } from "@/components/telegram/TelegramCommunityPromo";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
-import {
-  getPublicBotUrl,
-  getPublicChannelUrl,
-} from "@/lib/telegram-config";
 
 export const revalidate = 600;
 
@@ -36,11 +33,12 @@ export default async function SignalementsPage() {
         description="Accident, baleines, incendie, météo, route, ferry — vérifiés avant alerte push quartier."
         variant="tiare"
       />
-      <Container className="py-12 sm:py-16 max-w-2xl">
-        <QuickSignalementForm
-          telegramBotUrl={getPublicBotUrl()}
-          telegramChannelUrl={getPublicChannelUrl()}
-        />
+      <Container className="py-12 sm:py-16">
+        <div className="max-w-3xl mx-auto mb-8 -mt-2">
+          <TelegramCommunityPromo variant="page" />
+        </div>
+        <div className="max-w-2xl mx-auto">
+        <QuickSignalementForm />
 
         {community.length > 0 && (
           <section className="mt-12">
@@ -73,6 +71,10 @@ export default async function SignalementsPage() {
         )}
 
         <p className="mt-10 text-sm text-ocean-600 text-center">
+          <Link href="/alertes" className="text-lagon-700 font-semibold hover:underline">
+            Recevoir les alertes par quartier
+          </Link>
+          {" · "}
           <Link href="/assistant" className="text-lagon-700 font-semibold hover:underline">
             Assistant Moorea
           </Link>
@@ -81,6 +83,7 @@ export default async function SignalementsPage() {
             Autres soumissions
           </Link>
         </p>
+        </div>
       </Container>
     </>
   );

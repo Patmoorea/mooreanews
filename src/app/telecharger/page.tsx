@@ -9,6 +9,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
+import { TelegramCommunityPromo } from "@/components/telegram/TelegramCommunityPromo";
 import { ANDROID_APK, SITE } from "@/lib/constants";
 import { staticPageMetadata } from "@/lib/seo";
 
@@ -35,6 +36,10 @@ export default function TelechargerPage() {
           Ferries, alertes et météo en un coup d&apos;œil — puis le site complet
           en un clic.
         </p>
+
+        <div className="mt-8">
+          <TelegramCommunityPromo variant="page" mobileFocus />
+        </div>
 
         {/* APK — mis en avant */}
         <section className="mt-10 rounded-3xl bg-gradient-to-br from-ocean-800 to-ocean-950 text-white p-6 sm:p-8 shadow-[var(--shadow-tropical)]">
@@ -152,6 +157,16 @@ export default function TelechargerPage() {
               <a href={apkUrl} download className="text-lagon-700 font-semibold hover:underline">
                 APK Android direct
               </a>
+            </li>
+            <li>
+              <Link href="/alertes" className="text-lagon-700 font-semibold hover:underline">
+                Alertes par quartier (push / email)
+              </Link>
+            </li>
+            <li>
+              <Link href="/signalements" className="text-lagon-700 font-semibold hover:underline">
+                Signalements & Telegram
+              </Link>
             </li>
             <li>
               <Link href="/app" className="text-lagon-700 font-semibold hover:underline">

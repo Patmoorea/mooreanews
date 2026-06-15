@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 import { AlertesListClient } from "@/components/alerts/AlertesListClient";
+import { TelegramCommunityPromo } from "@/components/telegram/TelegramCommunityPromo";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
 import { expirePastAlerts } from "@/lib/alert-schedule";
 import { expireStaleAnnouncements } from "@/lib/announcement-expiry";
@@ -37,6 +38,9 @@ export default async function AlertesPage() {
         variant="tiare"
       />
       <Container className="py-12 sm:py-16">
+        <div className="mb-10">
+          <TelegramCommunityPromo variant="page" />
+        </div>
         <AlertesListClient alerts={rows} />
       </Container>
     </>
