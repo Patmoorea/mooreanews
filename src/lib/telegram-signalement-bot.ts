@@ -18,6 +18,7 @@ import {
   sendTelegramChatMessage,
   type TelegramInlineButton,
 } from "@/lib/telegram-api";
+import { getPublicChannelUrl } from "@/lib/telegram-config";
 import { MOOREA_DISTRICTS } from "@/lib/constants";
 
 export type TelegramUpdate = {
@@ -128,19 +129,32 @@ async function clearSession(chatId: string): Promise<void> {
 }
 
 async function sendWelcome(chatId: number | string): Promise<void> {
-  await sendTelegramChatMessage(
-    chatId,
-    [
-      "<b>🌺 MooreaNews — Signalement citoyen</b>",
-      "",
-      "Signalez une info locale : accident, route, baleines, incendie, météo…",
-      "",
-      "Choisissez une catégorie ci-dessous.",
-      "",
-      "<i>Modération humaine avant publication. Urgence vitale : appelez le 15.</i>",
-    ].join("\n"),
-    { replyMarkup: { inline_keyboard: categoryKeyboard() } },
+  const channelUrl = getPublicChannelUrl();
+  const lines = [
+    "<b>🌺 MooreaNews</b>",
+    "",
+    "• <b>Signaler</b> une info locale (accident, route, baleines, météo…)",
+    "• <b>Lire</b> l’actu Moorea sur le site",
+  ];
+  if (channelUrl) {
+    lines.push(`• <b>S’abonner</b> au canal : <a href="${channelUrl}">${channelUrl}</a>`);
+  } else {
+    lines.push(
+      "• Les nouveaux articles sont publiés sur le canal MooreaNews (bientôt lié ici)",
+    );
+  }
+  lines.push(
+    "",
+    "Choisissez une catégorie pour un signalement :",
+    "",
+    "<i>Modération avant publication sur le site. Urgence vitale : 15.</i>",
+    `<a href="https://www.mooreanews.com">mooreanews.com</a>`,
   );
+
+  await sendTelegramChatMessage(chatId, lines.join("\n"), {
+    replyMarkup: { inline_keyboard: categoryKeyboard() },
+    disableWebPagePreview: false,
+  });
   await upsertSession(String(chatId), { step: STEP.IDLE, category_id: null });
 }
 

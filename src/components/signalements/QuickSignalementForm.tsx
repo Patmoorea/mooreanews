@@ -11,7 +11,15 @@ import {
 } from "@/lib/signalement-categories";
 import { PosterUploadField } from "@/components/PosterUploadField";
 
-export function QuickSignalementForm() {
+type Props = {
+  telegramBotUrl?: string;
+  telegramChannelUrl?: string;
+};
+
+export function QuickSignalementForm({
+  telegramBotUrl = "https://t.me/MooreanewsPublic_bot",
+  telegramChannelUrl,
+}: Props) {
   const [category, setCategory] = useState<string>("route");
   const [district, setDistrict] = useState<string>("Toute l'île");
   const [description, setDescription] = useState("");
@@ -173,12 +181,32 @@ export function QuickSignalementForm() {
         </div>
       </div>
 
-      <div className="rounded-xl bg-lagon-50 border border-lagon-200 p-4 text-sm text-ocean-700">
-        <p className="font-semibold text-ocean-900 mb-1">Via Telegram</p>
+      <div className="rounded-xl bg-lagon-50 border border-lagon-200 p-4 text-sm text-ocean-700 space-y-3">
+        <p className="font-semibold text-ocean-900">Via Telegram — @MooreanewsPublic_bot</p>
         <p>
-          Ouvrez Telegram et tapez <strong>/start</strong> au bot MooreaNews configuré pour
-          envoyer accident, baleines, incendie ou météo avec photo.
+          Ouvrez le bot public MooreaNews : actualités, signalements (accident, baleines,
+          météo…) avec photo. Tapez <strong>/start</strong> pour le menu.
         </p>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href={telegramBotUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#229ED9] text-white text-sm font-semibold hover:opacity-90"
+          >
+            Ouvrir le bot Telegram
+          </a>
+          {telegramChannelUrl && (
+            <a
+              href={telegramChannelUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-lagon-300 text-lagon-800 text-sm font-semibold hover:bg-lagon-50"
+            >
+              Canal actualités
+            </a>
+          )}
+        </div>
       </div>
 
       {error && <p className="text-sm text-tiare-700">{error}</p>}

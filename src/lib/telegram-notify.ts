@@ -6,6 +6,10 @@ import type { AggregationResult } from "@/lib/aggregator";
 import type { FacebookTokenHealth } from "@/lib/facebook-token";
 import type { ContentAuditReport } from "@/lib/site-content-audit";
 import { escapeHtml, sendTelegramNotification } from "@/lib/telegram";
+import {
+  getPublicBotToken,
+  getPublicChatId,
+} from "@/lib/telegram-config";
 import { isOptionalVeilleWarning } from "@/lib/feed-errors";
 import { getMooreaDuJour } from "@/lib/moorea-du-jour";
 import { formatMorningBrief30s } from "@/lib/moorea-brief";
@@ -383,6 +387,11 @@ export async function notifyVeilleReport(input: {
 
   const message = truncate(lines.join("\n"), 3900);
   const result = await sendTelegramNotification(message);
+
+  if (input.createdArticles?.length) {
+    await notifyPublicNewArticles(input.createdArticles);
+  }
+
   return result.ok
     ? { sent: true }
     : { sent: false, reason: result.error ?? "telegram_failed" };
@@ -433,16 +442,64 @@ export async function notifyContentAuditOnly(
   return r.ok ? { sent: true } : { sent: false, reason: r.error };
 }
 
-/** Digest public Telegram / WhatsApp — 1 message matin max (canal public si configuré). */
+/** Posts nouveaux articles sur le canal public Telegram (si configuré). */
+export async function notifyPublicNewArticles(
+  articles: CreatedArticleNotice[],
+): Promise<{ sent: number; reason?: string }> {
+  if (process.env.TELEGRAM_PUBLIC_ARTICLE_POSTS === "false") {
+    return { sent: 0, reason: "disabled" };
+  }
+  const publicChat = getPublicChatId();
+  const token = getPublicBotToken();
+  if (!token || !publicChat || articles.length === 0) {
+    return { sent: 0, reason: "public_channel_not_configured" };
+  }
+
+  const base = siteUrl();
+  let sent = 0;
+
+  for (const a of articles.slice(0, 5)) {
+    const html = [
+      `<b>📰 MooreaNews</b>`,
+      escapeHtml(truncate(a.title, 120)),
+      `<a href="${base}/actualites/${encodeURIComponent(a.slug)}">Lire sur le site →</a>`,
+    ].join("\n");
+
+    try {
+      const res = await fetch(
+        `https://api.telegram.org/bot${token}/sendMessage`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: publicChat,
+            text: html,
+            parse_mode: "HTML",
+            disable_web_page_preview: false,
+          }),
+        },
+      );
+      if (res.ok) sent += 1;
+    } catch {
+      /* suite */
+    }
+  }
+
+  return { sent };
+}
+
+/** Digest public Telegram — 1 message matin max (canal public si configuré). */
 export async function sendPublicMooreaBrief(): Promise<{
   sent: boolean;
   reason?: string;
 }> {
-  const publicChat =
-    process.env.TELEGRAM_PUBLIC_CHAT_ID?.trim() ??
-    process.env.TELEGRAM_CHAT_ID?.trim();
-  if (!process.env.TELEGRAM_BOT_TOKEN?.trim() || !publicChat) {
-    return { sent: false, reason: "Telegram non configuré" };
+  const publicChat = getPublicChatId();
+  const token = getPublicBotToken();
+  if (!token || !publicChat) {
+    return {
+      sent: false,
+      reason: "Canal public non configuré (TELEGRAM_PUBLIC_CHAT_ID + TELEGRAM_PUBLIC_BOT_TOKEN)",
+    };
   }
 
   const digest = await getMooreaDuJour();
@@ -463,7 +520,7 @@ export async function sendPublicMooreaBrief(): Promise<{
   ].join("\n");
 
   try {
-    const url = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`;
+    const url = `https://api.telegram.org/bot${token}/sendMessage`;
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

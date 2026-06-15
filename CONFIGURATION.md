@@ -17,8 +17,13 @@
 | `NEXT_PUBLIC_SITE_EMAIL` | `postmaster@mooreanews.com` — **affiché** sur le site (footer, Contact). Pas `postmater` (faute de frappe). |
 
 Si le site affiche encore `contact@mooreanews.com`, le déploiement Vercel est obsolète : **Deployments → dernier commit → Redeploy** (ou définir `NEXT_PUBLIC_SITE_EMAIL=postmaster@mooreanews.com` puis redéployer).
-| `TELEGRAM_BOT_TOKEN` | token @BotFather (optionnel) |
-| `TELEGRAM_CHAT_ID` | id du chat / groupe (optionnel) |
+| `TELEGRAM_BOT_TOKEN` | token @BotFather — **bot admin** (veille → votre chat privé) |
+| `TELEGRAM_CHAT_ID` | id du chat / groupe admin (optionnel) |
+| `TELEGRAM_PUBLIC_BOT_TOKEN` | token **@MooreanewsPublic_bot** (signalements citoyens) |
+| `TELEGRAM_PUBLIC_BOT_USERNAME` | `MooreanewsPublic_bot` (défaut) |
+| `TELEGRAM_PUBLIC_CHAT_ID` | ID canal public `-100…` (articles + digest matin) |
+| `TELEGRAM_PUBLIC_CHANNEL_USERNAME` | ex. `MooreaNews` — lien t.me sur le site |
+| `TELEGRAM_WEBHOOK_SECRET` | secret webhook bot public (recommandé) |
 
 Alias acceptés : `OPENWEATHER_API_KEY` → météo ; `CONTACT_TO_EMAIL` → email admin contact.
 
@@ -89,7 +94,7 @@ Le fichier `data/restaurants.json` sert de référence et de fallback local sans
 | Météo accueil (`/api/weather`) | `OPENWEATHERMAP_API_KEY` |
 | Contact (`/api/contact`) | `RESEND_*` |
 | Soumettre (`/api/submit`) | `RESEND_*`, `TELEGRAM_*` (opt.), Supabase |
-| Signalements (`/api/signalement`) + bot Telegram | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, Supabase + SQL `signalement-telegram-ai.sql` |
+| Signalements (`/api/signalement`) + bot Telegram | `TELEGRAM_PUBLIC_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, Supabase + SQL `signalement-telegram-ai.sql` — voir [docs/TELEGRAM-PUBLIC.md](./docs/TELEGRAM-PUBLIC.md) |
 | Agent IA veille | **Mac** : `npm run ai:moorea` + Ollama (gratuit) — voir [docs/SIGNALEMENT-IA.md](./docs/SIGNALEMENT-IA.md) |
 | Newsletter (`/api/newsletter`) | `RESEND_*`, Supabase |
 | Cron veille (`/api/cron/aggregate`) | `CRON_SECRET`, Supabase service role |

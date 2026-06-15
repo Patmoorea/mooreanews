@@ -3,6 +3,7 @@
  */
 
 import { ENV } from "@/lib/constants";
+import { getAdminBotToken } from "@/lib/telegram-config";
 
 export function escapeHtml(str: string): string {
   return str
@@ -17,8 +18,9 @@ export async function sendTelegramNotification(
   if (!ENV.telegramBotToken || !ENV.telegramChatId) {
     return { ok: false, error: "Telegram non configuré" };
   }
+  const token = getAdminBotToken() || ENV.telegramBotToken;
   try {
-    const url = `https://api.telegram.org/bot${ENV.telegramBotToken}/sendMessage`;
+    const url = `https://api.telegram.org/bot${token}/sendMessage`;
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

@@ -1,11 +1,11 @@
 /**
- * API Telegram Bot (envoi, fichiers, webhook).
+ * API Telegram — bot public @MooreanewsPublic_bot (signalements + fichiers + webhook).
  */
 
-import { ENV } from "@/lib/constants";
+import { getPublicBotToken } from "@/lib/telegram-config";
 
 const API_BASE = () =>
-  `https://api.telegram.org/bot${ENV.telegramBotToken}`;
+  `https://api.telegram.org/bot${getPublicBotToken()}`;
 
 export type TelegramInlineButton = {
   text: string;
@@ -16,8 +16,9 @@ export async function telegramApi<T = unknown>(
   method: string,
   body?: Record<string, unknown>,
 ): Promise<{ ok: boolean; result?: T; error?: string }> {
-  if (!ENV.telegramBotToken) {
-    return { ok: false, error: "TELEGRAM_BOT_TOKEN manquant" };
+  const token = getPublicBotToken();
+  if (!token) {
+    return { ok: false, error: "TELEGRAM_PUBLIC_BOT_TOKEN manquant" };
   }
   try {
     const res = await fetch(`${API_BASE()}/${method}`, {
@@ -51,13 +52,14 @@ export async function sendTelegramChatMessage(
       one_time_keyboard?: boolean;
       remove_keyboard?: boolean;
     };
+    disableWebPagePreview?: boolean;
   },
 ): Promise<{ ok: boolean; error?: string }> {
   const r = await telegramApi("sendMessage", {
     chat_id: chatId,
     text,
     parse_mode: options?.parseMode ?? "HTML",
-    disable_web_page_preview: true,
+    disable_web_page_preview: options?.disableWebPagePreview ?? true,
     reply_markup: options?.replyMarkup,
   });
   return r.ok ? { ok: true } : { ok: false, error: r.error };
@@ -85,10 +87,11 @@ export async function getTelegramFilePath(
 export async function downloadTelegramFile(
   fileId: string,
 ): Promise<{ buffer: Buffer; contentType: string } | null> {
+  const token = getPublicBotToken();
   const path = await getTelegramFilePath(fileId);
-  if (!path || !ENV.telegramBotToken) return null;
+  if (!path || !token) return null;
   const res = await fetch(
-    `https://api.telegram.org/file/bot${ENV.telegramBotToken}/${path}`,
+    `https://api.telegram.org/file/bot${token}/${path}`,
   );
   if (!res.ok) return null;
   const buffer = Buffer.from(await res.arrayBuffer());

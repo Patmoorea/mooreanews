@@ -4,6 +4,10 @@ import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 import { QuickSignalementForm } from "@/components/signalements/QuickSignalementForm";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
+import {
+  getPublicBotUrl,
+  getPublicChannelUrl,
+} from "@/lib/telegram-config";
 
 export const revalidate = 600;
 
@@ -33,7 +37,10 @@ export default async function SignalementsPage() {
         variant="tiare"
       />
       <Container className="py-12 sm:py-16 max-w-2xl">
-        <QuickSignalementForm />
+        <QuickSignalementForm
+          telegramBotUrl={getPublicBotUrl()}
+          telegramChannelUrl={getPublicChannelUrl()}
+        />
 
         {community.length > 0 && (
           <section className="mt-12">

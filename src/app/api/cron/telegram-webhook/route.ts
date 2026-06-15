@@ -5,6 +5,7 @@ import {
   getTelegramWebhookInfo,
   setTelegramWebhook,
 } from "@/lib/telegram-api";
+import { getPublicBotUsername } from "@/lib/telegram-config";
 
 /** Enregistre le webhook Telegram signalements (1× après deploy ou via cron). */
 export async function GET(req: Request) {
@@ -22,10 +23,11 @@ export async function GET(req: Request) {
   return NextResponse.json({
     ok: set.ok,
     webhookUrl,
+    bot: `@${getPublicBotUsername()}`,
     secretConfigured: Boolean(secret),
     currentUrl: info.url,
     error: set.error,
-    hint: "Appelez cette URL après chaque deploy ou configurez TELEGRAM_WEBHOOK_SECRET sur Vercel.",
+    hint: "Webhook enregistré sur le bot public (TELEGRAM_PUBLIC_BOT_TOKEN). Admin : TELEGRAM_BOT_TOKEN séparé.",
   });
 }
 
