@@ -8,7 +8,7 @@
 | Veille RSS + Facebook + web | **GitHub Actions** `veille-hourly.yml` | 5h–20h, toutes les heures |
 | Météo vigilance après-midi | **GitHub Actions** `cron-hobby-extras.yml` | ~15h |
 | Push digest soir (mobile) | **GitHub Actions** `cron-hobby-extras.yml` | jeu–dim ~17h |
-| **Newsletter email abonnés** | **GitHub Actions** `cron-hobby-extras.yml` | **dimanche ~18h** |
+| **Newsletter email abonnés** | **GitHub Actions** `newsletter-sunday.yml` | **dimanche ~18h** |
 | Digests email matin / week-end | **Désactivés** | — |
 | IA brouillons (optionnel) | **Mac** `npm run ai:moorea` | manuel ou cron Mac |
 

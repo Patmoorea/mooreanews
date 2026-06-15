@@ -1,0 +1,26 @@
+# Newsletter abonnés — dimanche ~18h Tahiti (04:05 UTC lundi).
+# Workflow dédié (GitHub retarde souvent les crons groupés).
+# force=1 : envoi même si le cron arrive après 18h59 Tahiti.
+
+name: Newsletter dimanche
+
+on:
+  schedule:
+    - cron: "5 4 * * 1"
+
+concurrency:
+  group: newsletter-sunday
+  cancel-in-progress: false
+
+jobs:
+  weekly-newsletter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Newsletter hebdomadaire (dimanche 18h Tahiti)
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 300 \
+            "https://www.mooreanews.com/api/cron/weekly-newsletter?secret=${CRON_SECRET}&force=1&wait=1"

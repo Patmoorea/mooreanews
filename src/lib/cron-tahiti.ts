@@ -71,9 +71,9 @@ export function shouldPublishWeeklyRecap(clock: TahitiClock): boolean {
   return clock.weekday === 1 && clock.hour >= 5 && clock.hour <= 9;
 }
 
-/** Newsletter semaine suivante : dimanche 18h Tahiti. */
+/** Newsletter semaine suivante : dimanche 18h–19h59 Tahiti (tolère retard GitHub). */
 export function shouldSendWeeklyNewsletter(clock: TahitiClock): boolean {
-  return clock.weekday === 0 && clock.hour === 18;
+  return clock.weekday === 0 && clock.hour >= 18 && clock.hour < 20;
 }
 
 /** Push « Ce soir à Moorea » : jeu–dim entre 16h et 20h Tahiti (cron externe recommandé). */

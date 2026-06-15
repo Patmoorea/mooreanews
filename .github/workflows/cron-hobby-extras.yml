@@ -1,4 +1,4 @@
-# Crons Hobby — météo, push soir, newsletter hebdo (emails digest matin/week-end désactivés).
+# Crons Hobby — météo, push soir (newsletter dimanche → newsletter-sunday.yml).
 # Secret : GitHub → Settings → Secrets → CRON_SECRET
 
 name: Crons Hobby extras
@@ -9,8 +9,6 @@ on:
     - cron: "5 1 * * *"
     # Push soir jeu–dim ~17h Tahiti (03:00 UTC)
     - cron: "0 3 * * 5,6,0,1"
-    # Newsletter abonnés — dimanche ~18h Tahiti (04:00 UTC lundi)
-    - cron: "0 4 * * 1"
 
 concurrency:
   group: cron-hobby-extras
@@ -43,15 +41,3 @@ jobs:
           curl -fsS --max-time 55 \
             "https://www.mooreanews.com/api/cron/evening-push?secret=${CRON_SECRET}"
 
-  weekly-newsletter:
-    if: github.event.schedule == '0 4 * * 1'
-    runs-on: ubuntu-latest
-    timeout-minutes: 8
-    steps:
-      - name: Newsletter hebdomadaire (dimanche 18h Tahiti)
-        env:
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: |
-          set -euo pipefail
-          curl -fsS --max-time 300 \
-            "https://www.mooreanews.com/api/cron/weekly-newsletter?secret=${CRON_SECRET}&wait=1"
