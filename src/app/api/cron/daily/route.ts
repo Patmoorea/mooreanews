@@ -8,7 +8,7 @@ export const maxDuration = 300;
 /**
  * Cron UNIQUE Vercel Hobby (1×/jour).
  * 16:05 UTC ≈ 6:05 heure de Tahiti.
- * Enchaîne : météo, veille RSS, digests (si créneau), ferry, Telegram…
+ * Météo, expirations, récap lundi, emploi, ferry — sans veille RSS (GitHub horaire).
  */
 export async function GET(req: Request) {
   if (!(await verifyCronAuth(req))) {

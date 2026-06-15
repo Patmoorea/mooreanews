@@ -25,7 +25,7 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
-          curl -fsS --max-time 55 \
+          curl -fsS --max-time 55 --http1.1 \
             "https://www.mooreanews.com/api/cron/meteo-vigilance?secret=${CRON_SECRET}"
 
   evening-push:
@@ -38,6 +38,6 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
-          curl -fsS --max-time 55 \
+          curl -fsS --max-time 55 --http1.1 \
             "https://www.mooreanews.com/api/cron/evening-push?secret=${CRON_SECRET}"
 

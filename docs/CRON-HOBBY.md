@@ -95,7 +95,11 @@ curl "https://www.mooreanews.com/api/cron/daily?secret=VOTRE_CRON_SECRET"
 
 ## Ce que fait `/api/cron/daily` (1×/jour Vercel)
 
-Météo matin, veille complète, digests (si créneau), emploi, coupures, garde week-end, audit, Telegram, token Facebook.
+Météo, expirations alertes/événements, récap lundi (en tête), emploi, coupures, garde vendredi, ferry, purge Facebook.
+
+**La veille RSS + Facebook + web** est assurée par **GitHub Actions** (`veille-hourly.yml`), pas par le daily Vercel (évite timeout Hobby).
+
+Variable optionnelle `DAILY_AGGREGATE_VEILLE=true` pour réactiver la veille complète dans le daily (déconseillé Hobby).
 
 Les créneaux **après-midi météo**, **push soir** et **newsletter** sont couverts par GitHub Actions (ou cron-job.org).
 

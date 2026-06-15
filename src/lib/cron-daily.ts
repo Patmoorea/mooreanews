@@ -8,7 +8,10 @@ import { revalidatePath } from "next/cache";
 import { expirePastAlerts } from "@/lib/alert-schedule";
 import { expireStaleAnnouncements } from "@/lib/announcement-expiry";
 import { expirePastEvents } from "@/lib/event-expiry";
-import { aggregateAll } from "@/lib/aggregator";
+import {
+  aggregateAll,
+  type AggregationResult,
+} from "@/lib/aggregator";
 import {
   getTahitiClock,
   digestEmailsEnabled,
@@ -51,6 +54,11 @@ export type DailyCronResult = {
   jobs: Record<string, unknown>;
   errors: string[];
 };
+
+/** Veille RSS/FB/web = GitHub horaire. Daily Vercel ne refait pas aggregateAll (timeout Hobby). */
+function dailyRunsAggregateVeille(): boolean {
+  return process.env.DAILY_AGGREGATE_VEILLE === "true";
+}
 
 export async function runDailyCron(): Promise<DailyCronResult> {
   const start = Date.now();
@@ -97,7 +105,7 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   } else if (clock.weekday === 1) {
     jobs.weeklyRecap = {
       skipped: true,
-      reason: "hors créneau lundi 5h–9h Tahiti (GitHub weekly-recap lundi)",
+      reason: "hors créneau lundi 5h–11h Tahiti (GitHub weekly-recap lundi)",
     };
   }
 
@@ -148,12 +156,20 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   }
   errors.push(...employmentSync.errors);
 
-  const results = await aggregateAll();
-  jobs.aggregate = {
-    sources: results.length,
-    inserted: results.reduce((s, r) => s + r.inserted, 0),
-    alertsCreated: results.reduce((s, r) => s + (r.alertsCreated ?? 0), 0),
-  };
+  let results: AggregationResult[] = [];
+  if (dailyRunsAggregateVeille()) {
+    results = await aggregateAll();
+    jobs.aggregate = {
+      sources: results.length,
+      inserted: results.reduce((s, r) => s + r.inserted, 0),
+      alertsCreated: results.reduce((s, r) => s + (r.alertsCreated ?? 0), 0),
+    };
+  } else {
+    jobs.aggregate = {
+      skipped: true,
+      reason: "veille horaire GitHub (rss → facebook → web → finish)",
+    };
+  }
 
   const alertsCreated = results.reduce(
     (s, r) => s + (r.alertsCreated ?? 0),
@@ -222,42 +238,52 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   revalidatePath("/api/ferries");
 
   jobs.ferrySync = await checkFerryScheduleSync();
-  jobs.audit = await auditPublicContent();
 
-  const facebookHealth = await checkFacebookTokenHealth();
-  if (fbRefresh.refreshed) facebookHealth.refreshedThisRun = true;
+  if (dailyRunsAggregateVeille()) {
+    jobs.audit = await auditPublicContent();
+    const facebookHealth = await checkFacebookTokenHealth();
+    if (fbRefresh.refreshed) facebookHealth.refreshedThisRun = true;
 
-  jobs.telegram = await notifyVeilleReport({
-    durationMs: Date.now() - start,
-    totalFetched: results.reduce((s, r) => s + r.fetched, 0),
-    totalInserted: results.reduce((s, r) => s + r.inserted, 0),
-    articlesCreated: results.reduce(
-      (s, r) => s + (r.articlesCreated ?? 0),
-      0,
-    ),
-    articlesSkipped: results.reduce(
-      (s, r) => s + (r.articlesSkipped ?? 0),
-      0,
-    ),
-    eventsCreated: results.reduce(
-      (s, r) => s + (r.eventsCreated ?? 0),
-      0,
-    ),
-    announcementsCreated: results.reduce(
-      (s, r) => s + (r.announcementsCreated ?? 0),
-      0,
-    ),
-    alertsCreated,
-    expiredAlerts,
-    createdAlertTitles: results.flatMap((r) => r.createdAlerts ?? []),
-    errors: aggErrors,
-    bySource: results,
-    createdArticles: results.flatMap((r) => r.createdArticles ?? []),
-    createdEvents: results.flatMap((r) => r.createdEvents ?? []),
-    audit: jobs.audit as Awaited<ReturnType<typeof auditPublicContent>>,
-    facebookHealth,
-    facebookPurgeDeleted: facebookPurge.deleted,
-  });
+    jobs.telegram = await notifyVeilleReport({
+      durationMs: Date.now() - start,
+      totalFetched: results.reduce((s, r) => s + r.fetched, 0),
+      totalInserted: results.reduce((s, r) => s + r.inserted, 0),
+      articlesCreated: results.reduce(
+        (s, r) => s + (r.articlesCreated ?? 0),
+        0,
+      ),
+      articlesSkipped: results.reduce(
+        (s, r) => s + (r.articlesSkipped ?? 0),
+        0,
+      ),
+      eventsCreated: results.reduce(
+        (s, r) => s + (r.eventsCreated ?? 0),
+        0,
+      ),
+      announcementsCreated: results.reduce(
+        (s, r) => s + (r.announcementsCreated ?? 0),
+        0,
+      ),
+      alertsCreated,
+      expiredAlerts,
+      createdAlertTitles: results.flatMap((r) => r.createdAlerts ?? []),
+      errors: aggErrors,
+      bySource: results,
+      createdArticles: results.flatMap((r) => r.createdArticles ?? []),
+      createdEvents: results.flatMap((r) => r.createdEvents ?? []),
+      audit: jobs.audit as Awaited<ReturnType<typeof auditPublicContent>>,
+      facebookHealth,
+      facebookPurgeDeleted: facebookPurge.deleted,
+      headerNote: "Cron daily Vercel (veille complète)",
+    });
+  } else {
+    jobs.audit = { skipped: true, reason: "audit via GitHub finish horaire" };
+    jobs.telegram = {
+      skipped: true,
+      reason: "rapport veille via GitHub finish horaire",
+    };
+    jobs.facebookHealth = await checkFacebookTokenHealth();
+  }
 
   const blockingErrors = errors.filter(
     (e) =>

@@ -67,6 +67,65 @@ async function deleteInvalidPushRow(
   await admin.from("push_subscriptions").delete().eq("id", rowId);
 }
 
+function pushErrorStatusCode(err: unknown): number | undefined {
+  if (err && typeof err === "object") {
+    const o = err as { statusCode?: number; status?: number };
+    const code = o.statusCode ?? o.status;
+    if (typeof code === "number" && Number.isFinite(code)) return code;
+  }
+  const match = String(err).match(/response code[:\s]+(\d{3})/i);
+  if (match?.[1]) return Number(match[1]);
+  return undefined;
+}
+
+/** Abonnement révoqué / expiré (410, 404, 403 FCM, etc.) — à supprimer en base. */
+function isStalePushSubscriptionError(err: unknown): boolean {
+  const code = pushErrorStatusCode(err);
+  if (code === 410 || code === 404 || code === 403 || code === 401) return true;
+  const msg = String(err).toLowerCase();
+  return (
+    /410|404|403|401/.test(msg) ||
+    msg.includes("expired") ||
+    msg.includes("unsubscribed") ||
+    msg.includes("65 bytes") ||
+    (msg.includes("subscription") && msg.includes("not found"))
+  );
+}
+
+function formatPushError(err: unknown): string {
+  const code = pushErrorStatusCode(err);
+  const msg = err instanceof Error ? err.message : String(err);
+  return code ? `${code}: ${msg}` : msg;
+}
+
+async function sendPushToRow(
+  admin: NonNullable<ReturnType<typeof getAdminSupabase>>,
+  row: { id: string; endpoint: string; p256dh: string; auth: string },
+  payload: Record<string, unknown>,
+): Promise<"sent" | "purged" | "error"> {
+  if (!isValidPushSubscriptionKeys(row.p256dh, row.auth)) {
+    await deleteInvalidPushRow(admin, row.id);
+    return "purged";
+  }
+
+  try {
+    await webpush.sendNotification(
+      {
+        endpoint: row.endpoint,
+        keys: { p256dh: row.p256dh, auth: row.auth },
+      },
+      JSON.stringify(payload),
+    );
+    return "sent";
+  } catch (e) {
+    if (isStalePushSubscriptionError(e)) {
+      await deleteInvalidPushRow(admin, row.id);
+      return "purged";
+    }
+    throw e;
+  }
+}
+
 /** Supprime les abonnements corrompus (tests curl, anciennes clés…). */
 export async function purgeInvalidPushSubscriptions(): Promise<number> {
   const admin = getAdminSupabase();
@@ -180,27 +239,11 @@ export async function notifyAlertSubscribers(
       if (!subscriptionWantsTopic(row.topics, "alerts")) continue;
       if (!pushConfigured) break;
 
-      if (!isValidPushSubscriptionKeys(row.p256dh, row.auth)) {
-        await deleteInvalidPushRow(admin, row.id);
-        continue;
-      }
-
       try {
-        await webpush.sendNotification(
-          {
-            endpoint: row.endpoint,
-            keys: { p256dh: row.p256dh, auth: row.auth },
-          },
-          JSON.stringify(payload),
-        );
-        pushSent += 1;
+        const outcome = await sendPushToRow(admin, row, payload);
+        if (outcome === "sent") pushSent += 1;
       } catch (e) {
-        const msg = String(e);
-        if (/410|404|expired|unsubscribed|65 bytes/i.test(msg)) {
-          await deleteInvalidPushRow(admin, row.id);
-        } else {
-          errors.push(`push: ${msg.slice(0, 120)}`);
-        }
+        errors.push(formatPushError(e));
       }
     }
 
@@ -319,27 +362,12 @@ export async function sendTestPushNotification(): Promise<{
   const errors: string[] = [];
 
   for (const row of rows ?? []) {
-    if (!isValidPushSubscriptionKeys(row.p256dh, row.auth)) {
-      await deleteInvalidPushRow(admin, row.id);
-      continue;
-    }
-
     try {
-      await webpush.sendNotification(
-        {
-          endpoint: row.endpoint,
-          keys: { p256dh: row.p256dh, auth: row.auth },
-        },
-        JSON.stringify(payload),
-      );
-      sent += 1;
+      const outcome = await sendPushToRow(admin, row, payload);
+      if (outcome === "sent") sent += 1;
     } catch (e) {
-      const msg = String(e);
-      if (/410|404|expired|unsubscribed|65 bytes/i.test(msg)) {
-        await deleteInvalidPushRow(admin, row.id);
-      } else {
-        errors.push(msg.slice(0, 120));
-      }
+      const code = pushErrorStatusCode(e);
+      errors.push(`${code ?? "?"}: ${String(e).slice(0, 100)}`);
     }
   }
 
@@ -355,56 +383,46 @@ export async function sendTestPushNotification(): Promise<{
 async function sendDigestToTopic(
   topic: DigestTopic,
   payload: { title: string; body: string; url: string },
-): Promise<{ sent: number; errors: string[] }> {
+): Promise<{ sent: number; purged: number; errors: string[] }> {
   const admin = getAdminSupabase();
   if (!admin || !configureWebPush()) {
-    return { sent: 0, errors: ["Push non configuré"] };
+    return { sent: 0, purged: 0, errors: ["Push non configuré"] };
   }
 
-  await purgeInvalidPushSubscriptions();
+  const purgedInvalid = await purgeInvalidPushSubscriptions();
 
   const { data: rows } = await admin.from("push_subscriptions").select("*");
   let sent = 0;
+  let purgedStale = 0;
   const errors: string[] = [];
+
+  const pushPayload = {
+    title: payload.title,
+    body: payload.body,
+    url: payload.url,
+    tag: `digest-${topic}`,
+    urgent: false,
+  };
 
   for (const row of rows ?? []) {
     if (!subscriptionWantsTopic(row.topics, topic)) continue;
-    if (!isValidPushSubscriptionKeys(row.p256dh, row.auth)) {
-      await deleteInvalidPushRow(admin, row.id);
-      continue;
-    }
 
     try {
-      await webpush.sendNotification(
-        {
-          endpoint: row.endpoint,
-          keys: { p256dh: row.p256dh, auth: row.auth },
-        },
-        JSON.stringify({
-          title: payload.title,
-          body: payload.body,
-          url: payload.url,
-          tag: `digest-${topic}`,
-          urgent: false,
-        }),
-      );
-      sent += 1;
+      const outcome = await sendPushToRow(admin, row, pushPayload);
+      if (outcome === "sent") sent += 1;
+      else if (outcome === "purged") purgedStale += 1;
     } catch (e) {
-      const msg = String(e);
-      if (/410|404|expired|unsubscribed|65 bytes/i.test(msg)) {
-        await deleteInvalidPushRow(admin, row.id);
-      } else {
-        errors.push(msg.slice(0, 120));
-      }
+      errors.push(formatPushError(e));
     }
   }
 
-  return { sent, errors };
+  return { sent, purged: purgedInvalid + purgedStale, errors: errors.slice(0, 5) };
 }
 
 /** Push matin « Moorea en 30 secondes » (~7h Tahiti via cron). */
 export async function sendMorningDigestPush(): Promise<{
   sent: number;
+  purged: number;
   errors: string[];
 }> {
   const digest = await getMooreaDuJour();
@@ -420,6 +438,7 @@ export async function sendMorningDigestPush(): Promise<{
 /** Push « Ce soir à Moorea » (jeu–dim ~17h, cron externe ou fenêtre cron). */
 export async function sendEveningDigestPush(): Promise<{
   sent: number;
+  purged: number;
   errors: string[];
 }> {
   const digest = await getMooreaDuJour();
@@ -435,6 +454,7 @@ export async function sendEveningDigestPush(): Promise<{
 /** Push agenda week-end. */
 export async function sendWeekendDigestPush(): Promise<{
   sent: number;
+  purged: number;
   errors: string[];
 }> {
   const digest = await getMooreaDuJour();
