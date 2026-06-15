@@ -5,7 +5,7 @@ import { aggregateFacebookPagesGraph } from "@/lib/facebook-watch";
 import { facebookCronRecentPostLimit } from "@/lib/facebook-import-filters";
 import { countFbcdnCoversInDb } from "@/lib/facebook-cover-persist";
 import { getFacebookImportStatus } from "@/lib/facebook-import-status";
-import { notifyFacebookImportReport } from "@/lib/telegram-notify";
+import { notifyFacebookImportReport, notifyPublicNewArticles } from "@/lib/telegram-notify";
 import { syncUtilityOutages } from "@/lib/utility-outages-sync";
 
 /** Import Facebook MooreaNews — Hobby Vercel : 202 + after() si chain=1 (évite curl 52). */
@@ -100,6 +100,11 @@ async function runFacebookImport(
       errors,
       warnings,
     });
+  }
+
+  const newForChannel = result.createdArticles ?? [];
+  if (newForChannel.length > 0) {
+    await notifyPublicNewArticles(newForChannel);
   }
 
   return {
