@@ -54,7 +54,7 @@ jobs:
               echo "CRON_SECRET incorrect"
               exit 1
             fi
-            if [ "$code" = "200" ]; then
+            if [ "$code" = "200" ] || [ "$code" = "202" ]; then
               return 0
             fi
             if [ "$optional" = "1" ]; then
@@ -66,7 +66,7 @@ jobs:
           }
 
           run_step "RSS" "/api/cron/aggregate" "part=rss"
-          run_step "Facebook" "/api/cron/facebook" "chain=1&limit=20" "0" "180"
+          run_step "Facebook" "/api/cron/facebook" "chain=1&limit=12" "0" "45"
           run_step "Web" "/api/cron/aggregate" "part=web"
           run_step "IA brouillons" "/api/cron/aggregate" "part=ai" "1" "55"
           run_step "Finish + Telegram" "/api/cron/aggregate" "part=finish"

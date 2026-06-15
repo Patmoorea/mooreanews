@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import { aggregateFacebookPagesGraph } from "@/lib/facebook-watch";
@@ -8,7 +8,7 @@ import { getFacebookImportStatus } from "@/lib/facebook-import-status";
 import { notifyFacebookImportReport } from "@/lib/telegram-notify";
 import { syncUtilityOutages } from "@/lib/utility-outages-sync";
 
-/** Import Facebook MooreaNews — répond 202 puis traite en arrière-plan (évite timeout ~60 s). */
+/** Import Facebook MooreaNews — Hobby Vercel : 202 + after() si chain=1 (évite curl 52). */
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
@@ -152,12 +152,12 @@ export async function GET(req: Request) {
     .map((s) => s.trim())
     .filter((s) => /^\d+$/.test(s));
 
-  if (!wait) {
+  if (!wait && !chain) {
     return NextResponse.json(
       {
         ok: false,
         error: "async_disabled",
-        hint: "Ajouter wait=1 (GitHub Actions : wait=1&chain=1)",
+        hint: "Ajouter wait=1 (local/Pro) ou chain=1 (veille GitHub, réponse 202 immédiate)",
       },
       { status: 400 },
     );
@@ -171,14 +171,42 @@ export async function GET(req: Request) {
         ? facebookCronRecentPostLimit()
         : undefined;
 
+    const importOptions = {
+      skipTelegram: false,
+      skipUtility: chain,
+      skipStatus: chain,
+      recentImportLimit,
+    };
+
+    /** Veille chainée : Hobby coupe à ~60 s → async obligatoire (comme garde-weekend). */
+    if (chain) {
+      after(async () => {
+        try {
+          await runFacebookImport(
+            forcePhotoFbids.length > 0 ? forcePhotoFbids : undefined,
+            importOptions,
+          );
+        } catch (err) {
+          console.error("[cron/facebook/async]", err);
+        }
+      });
+
+      return NextResponse.json(
+        {
+          ok: true,
+          started: true,
+          async: true,
+          chain: true,
+          recentImportLimit,
+          hint: "Import Facebook en cours (~1–2 min). Rapport Telegram à la fin.",
+        },
+        { status: 202 },
+      );
+    }
+
     const payload = await runFacebookImport(
       forcePhotoFbids.length > 0 ? forcePhotoFbids : undefined,
-      {
-        skipTelegram: false,
-        skipUtility: chain,
-        skipStatus: chain,
-        recentImportLimit,
-      },
+      importOptions,
     );
     return NextResponse.json(payload);
   } catch (err) {
