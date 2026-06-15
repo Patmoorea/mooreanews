@@ -3,8 +3,6 @@
  * Récap de la semaine suivante : événements, alertes, annonces, actus, coupures, emploi.
  */
 
-import { readFile } from "fs/promises";
-import path from "path";
 import { Resend } from "resend";
 import { ENV, SITE } from "@/lib/constants";
 import { escapeHtml } from "@/lib/telegram";
@@ -34,9 +32,6 @@ export type WeeklyNewsletterData = {
   jobs: Awaited<ReturnType<typeof getRecentMooreaJobOffers>>;
 };
 
-const NEWSLETTER_BANNER_CID = "moorea-newsletter-banner";
-const NEWSLETTER_LOGO_CID = "moorea-newsletter-logo";
-
 function newsletterBaseUrl(): string {
   const raw = SITE.url.replace(/\/$/, "");
   if (raw.includes("mooreanews.com") && !raw.includes("www.")) {
@@ -45,34 +40,9 @@ function newsletterBaseUrl(): string {
   return raw;
 }
 
-function newsletterImageSrc(inlineImages: boolean, kind: "banner" | "logo"): string {
+function newsletterImageUrl(kind: "banner" | "logo"): string {
   const base = newsletterBaseUrl();
-  if (inlineImages) {
-    return kind === "banner" ? `cid:${NEWSLETTER_BANNER_CID}` : `cid:${NEWSLETTER_LOGO_CID}`;
-  }
   return `${base}${kind === "banner" ? SITE.banner : SITE.logo}`;
-}
-
-async function getNewsletterInlineAttachments(): Promise<
-  { filename: string; content: Buffer; content_id: string }[]
-> {
-  const brandDir = path.join(process.cwd(), "public", "brand");
-  const [banner, logo] = await Promise.all([
-    readFile(path.join(brandDir, "banner.png")),
-    readFile(path.join(brandDir, "logo.png")),
-  ]);
-  return [
-    {
-      filename: "banner.png",
-      content: banner,
-      content_id: NEWSLETTER_BANNER_CID,
-    },
-    {
-      filename: "logo.png",
-      content: logo,
-      content_id: NEWSLETTER_LOGO_CID,
-    },
-  ];
 }
 
 function wrapNewsletterDocument(body: string): string {
@@ -202,13 +172,9 @@ function listItems(items: string[], empty: string): string {
   return `<ul style="margin:0;padding-left:0;list-style:none;line-height:1.55">${items.join("")}</ul>`;
 }
 
-function newsletterHeader(
-  base: string,
-  weekLabel: string,
-  inlineImages: boolean,
-): string {
-  const banner = newsletterImageSrc(inlineImages, "banner");
-  const logo = newsletterImageSrc(inlineImages, "logo");
+function newsletterHeader(base: string, weekLabel: string): string {
+  const banner = newsletterImageUrl("banner");
+  const logo = newsletterImageUrl("logo");
   return `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background:#e0f2fe;">
       <tr>
@@ -235,9 +201,11 @@ function newsletterHeader(
 }
 
 function newsletterFooter(base: string): string {
+  const logo = newsletterImageUrl("logo");
   return `
             <tr>
               <td style="background:#f0f9ff;padding:22px 24px 28px;text-align:center;border:1px solid #e0f2fe;border-top:none;border-radius:0 0 20px 20px;">
+                <img src="${logo}" alt="MooreaNews" width="48" height="48" style="display:block;width:48px;height:48px;border-radius:50%;margin:0 auto 14px;border:0;outline:none;" />
                 <p style="margin:0 0 12px;font-size:15px;color:#0c4a6e;font-weight:600;font-family:Arial,Helvetica,sans-serif;">E māuruuru — à très vite sur l'île ! 🌴</p>
                 <a href="${base}" style="display:inline-block;background:#f97316;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 28px;border-radius:999px;font-family:Arial,Helvetica,sans-serif;">Ouvrir MooreaNews →</a>
                 <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;line-height:1.6;font-family:Arial,Helvetica,sans-serif;">
@@ -252,12 +220,8 @@ function newsletterFooter(base: string): string {
     </table>`;
 }
 
-export function buildWeeklyNewsletterHtml(
-  data: WeeklyNewsletterData,
-  options?: { inlineImages?: boolean },
-): string {
+export function buildWeeklyNewsletterHtml(data: WeeklyNewsletterData): string {
   const base = newsletterBaseUrl();
-  const inlineImages = options?.inlineImages ?? false;
 
   const eventsHtml = listItems(
     data.events.map((e) => {
@@ -335,7 +299,7 @@ export function buildWeeklyNewsletterHtml(
               </td>
             </tr>`;
 
-  const body = `${newsletterHeader(base, data.week.label, inlineImages)}${sections}${newsletterFooter(base)}`;
+  const body = `${newsletterHeader(base, data.week.label)}${sections}${newsletterFooter(base)}`;
   return wrapNewsletterDocument(body);
 }
 
@@ -397,17 +361,10 @@ export async function sendWeeklyNewsletter(options?: {
   }
 
   const data = await gatherWeeklyNewsletterData();
-  const html = buildWeeklyNewsletterHtml(data, { inlineImages: true });
+  const html = buildWeeklyNewsletterHtml(data);
   const text = buildWeeklyNewsletterText(data);
   const subjectBase = `🌺 Ia ora na — votre semaine à Moorea (${data.events.length} sortie${data.events.length > 1 ? "s" : ""})`;
   const subject = isTest ? `[TEST] ${subjectBase}` : subjectBase;
-
-  let attachments: Awaited<ReturnType<typeof getNewsletterInlineAttachments>> = [];
-  try {
-    attachments = await getNewsletterInlineAttachments();
-  } catch {
-    /* secours : images distantes si fichiers indisponibles */
-  }
 
   const resend = new Resend(ENV.resendKey);
   let sent = 0;
@@ -417,12 +374,8 @@ export async function sendWeeklyNewsletter(options?: {
       from: ENV.resendFrom,
       to: [email],
       subject,
-      html:
-        attachments.length > 0
-          ? html
-          : buildWeeklyNewsletterHtml(data, { inlineImages: false }),
+      html,
       text: isTest ? `[TEST — envoi manuel]\n\n${text}` : text,
-      attachments: attachments.length > 0 ? attachments : undefined,
     });
     if (!result.error) sent += 1;
     else if (isTest) {
