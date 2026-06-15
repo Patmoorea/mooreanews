@@ -61,38 +61,36 @@ export function AdminRowActions({
   }
 
   return (
-    <div className="inline-flex flex-wrap items-center justify-end gap-1.5 min-w-[9.5rem]">
+    <div className="inline-flex shrink-0 items-center justify-end gap-1">
       <button
         type="button"
         onClick={onToggle}
         title={published ? "Dépublier" : "Publier"}
-        className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-colors ${
+        aria-label={published ? "Dépublier" : "Publier"}
+        className={`inline-flex items-center justify-center p-1.5 rounded-lg transition-colors ${
           published
             ? "text-tipanier-700 bg-tipanier-50 hover:bg-tipanier-100"
             : "text-ocean-600 bg-ocean-50 hover:bg-ocean-100"
         }`}
       >
-        {published ? <Eye size={14} /> : <EyeOff size={14} />}
-        <span className="hidden sm:inline">
-          {published ? "Dépublier" : "Publier"}
-        </span>
+        {published ? <Eye size={15} /> : <EyeOff size={15} />}
       </button>
       <Link
         href={editHref}
         title="Éditer"
-        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-lagon-700 bg-lagon-50 hover:bg-lagon-100"
+        aria-label="Éditer"
+        className="inline-flex items-center justify-center p-1.5 rounded-lg text-lagon-700 bg-lagon-50 hover:bg-lagon-100"
       >
-        <Pencil size={14} />
-        <span className="hidden sm:inline">Éditer</span>
+        <Pencil size={15} />
       </Link>
       <button
         type="button"
         onClick={onDelete}
         title="Supprimer"
-        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-white bg-tiare-600 hover:bg-tiare-700"
+        aria-label="Supprimer"
+        className="inline-flex items-center justify-center p-1.5 rounded-lg text-white bg-tiare-600 hover:bg-tiare-700"
       >
-        <Trash2 size={14} />
-        <span>Supprimer</span>
+        <Trash2 size={15} />
       </button>
     </div>
   );

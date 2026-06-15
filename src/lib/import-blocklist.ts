@@ -2,9 +2,80 @@
  * Slugs d’articles auto-importés supprimés par l’admin — la veille ne les recrée pas.
  */
 
+import { createHash } from "crypto";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { hideExternalArticlesForArticleSlug } from "@/lib/facebook-external-sync";
 import { isFacebookImportArticle } from "@/lib/facebook-import-filters";
+
+function normalizeKey(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+/** Clé blocklist pour une alerte veille (URL source RSS / Facebook). */
+export function alertBlocklistSlug(sourceUrl: string): string {
+  const hash = createHash("sha256").update(sourceUrl.trim()).digest("hex").slice(0, 24);
+  return `alert-src:${hash}`;
+}
+
+/** Clé blocklist pour une alerte sans URL stable (titre normalisé). */
+export function alertTitleBlocklistSlug(title: string): string {
+  const key = normalizeKey(title).slice(0, 120);
+  const hash = createHash("sha256").update(key).digest("hex").slice(0, 24);
+  return `alert-title:${hash}`;
+}
+
+export async function isAlertImportBlocked(input: {
+  sourceUrl?: string | null;
+  title?: string | null;
+}): Promise<boolean> {
+  const admin = getAdminSupabase();
+  if (!admin) return false;
+
+  const slugs: string[] = [];
+  const url = input.sourceUrl?.trim();
+  if (url) slugs.push(alertBlocklistSlug(url));
+  const title = input.title?.trim();
+  if (title) slugs.push(alertTitleBlocklistSlug(title));
+  if (!slugs.length) return false;
+
+  const { data } = await admin
+    .from("import_blocklist")
+    .select("slug")
+    .in("slug", slugs)
+    .limit(1);
+  return Boolean(data?.length);
+}
+
+export async function blockAlertOnAdminDelete(row: {
+  title: string;
+  source_url?: string | null;
+}): Promise<void> {
+  const admin = getAdminSupabase();
+  if (!admin) return;
+
+  const title = row.title?.trim();
+  const sourceUrl = row.source_url?.trim();
+
+  if (sourceUrl) {
+    await blockImportedArticleSlug({
+      slug: alertBlocklistSlug(sourceUrl),
+      title,
+      sourceId: "alert",
+      externalId: sourceUrl,
+    });
+  }
+  if (title) {
+    await blockImportedArticleSlug({
+      slug: alertTitleBlocklistSlug(title),
+      title,
+      sourceId: "alert",
+    });
+  }
+}
 
 export function isAutoImportedArticle(slug: string, tags?: string[] | null): boolean {
   const t = tags ?? [];

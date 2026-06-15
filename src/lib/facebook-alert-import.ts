@@ -5,6 +5,8 @@
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import type { AlertSeverity, AlertType } from "@/lib/supabase/types";
 import { isCycloneMeteoNotice } from "@/lib/facebook-content-route";
+import { isRealHouleAlertNotice } from "@/lib/alert-auto-import";
+import { isAlertImportBlocked } from "@/lib/import-blocklist";
 import {
   isFacebookPageBoilerplate,
   isFerryPromoArticle,
@@ -41,6 +43,15 @@ async function insertFacebookAlert(opts: {
 
   if (existing) return { created: false };
 
+  if (
+    await isAlertImportBlocked({
+      sourceUrl: opts.sourceUrl,
+      title: opts.title,
+    })
+  ) {
+    return { created: false };
+  }
+
   const endsAt = new Date(
     Date.now() + opts.durationHours * 60 * 60 * 1000,
   ).toISOString();
@@ -74,6 +85,30 @@ async function insertFacebookAlert(opts: {
   }
 
   return { created: true, title: inserted.title };
+}
+
+/** Désactive les fausses alertes houle (articles sport / va'a mal classés). */
+export async function deactivateFalseHouleAlerts(): Promise<number> {
+  const admin = getAdminSupabase();
+  if (!admin) return 0;
+
+  const { data: rows } = await admin
+    .from("alerts")
+    .select("id, title, details")
+    .eq("type", "houle")
+    .eq("active", true);
+
+  let n = 0;
+  for (const row of rows ?? []) {
+    const corpus = `${row.title} ${row.details ?? ""}`;
+    if (isRealHouleAlertNotice(corpus)) continue;
+    const { error } = await admin
+      .from("alerts")
+      .update({ active: false, updated_at: new Date().toISOString() })
+      .eq("id", row.id);
+    if (!error) n += 1;
+  }
+  return n;
 }
 
 /** Désactive les alertes ferry invalides (coquille FB, promo, pas vraie coupure). */

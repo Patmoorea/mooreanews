@@ -423,6 +423,21 @@ export async function deleteContent(table: TableName, id: string) {
     }
   }
 
+  if (table === "alerts") {
+    const { data } = await supabase
+      .from("alerts")
+      .select("title, source_url")
+      .eq("id", id)
+      .maybeSingle();
+    if (data?.title) {
+      const { blockAlertOnAdminDelete } = await import("@/lib/import-blocklist");
+      await blockAlertOnAdminDelete({
+        title: data.title,
+        source_url: data.source_url,
+      });
+    }
+  }
+
   const { error } = await supabase.from(table).delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath(adminPathFor(table));

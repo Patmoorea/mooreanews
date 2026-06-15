@@ -8,6 +8,7 @@ import {
   isFerryPromoArticle,
   isFerryTransportNotice,
 } from "@/lib/ferry-notice-detect";
+import { isAlertImportBlocked } from "@/lib/import-blocklist";
 import { MOOREA_KEYWORDS } from "@/lib/rss-sources";
 import type { RssItem } from "@/lib/rss-parser";
 import { getAdminSupabase } from "@/lib/supabase/admin";
@@ -62,7 +63,14 @@ const RULES: {
     type: "houle",
     severity: "warning",
     pfWide: true,
-    keywords: ["alerte houle", "forte houle", "vagues inhabituelles", "swell"],
+    keywords: [
+      "alerte houle",
+      "forte houle",
+      "vagues inhabituelles",
+      "vigilance houle",
+      "houle anormale",
+      "submersion",
+    ],
   },
   {
     type: "ferry",
@@ -127,6 +135,33 @@ function isMooreaRelevant(corpus: string): boolean {
   return MOOREA_KEYWORDS.some((kw) => n.includes(normalize(kw)));
 }
 
+function isSportsOrRaceNotice(corpus: string): boolean {
+  const n = normalize(corpus);
+  return (
+    /\bva'?a\b|pirogue|shell\b|course de|regata|championnat|competition|compétition|surfe|surf\b|victoire|sport|regate|race va/i.test(
+      n,
+    ) || n.includes("shell va")
+  );
+}
+
+/** Vraie alerte houle météo — pas un article sport / va'a qui parle de vagues. */
+export function isRealHouleAlertNotice(corpus: string): boolean {
+  if (isSportsOrRaceNotice(corpus)) return false;
+  const n = normalize(corpus);
+  return (
+    n.includes("alerte houle") ||
+    n.includes("forte houle") ||
+    n.includes("vigilance houle") ||
+    n.includes("houle anormale") ||
+    n.includes("vagues inhabituelles") ||
+    (/\bswell\b/.test(n) &&
+      (n.includes("alerte") ||
+        n.includes("vigilance") ||
+        n.includes("meteo") ||
+        n.includes("météo")))
+  );
+}
+
 function detectAlertFromItem(item: RssItem): DetectedAlert | null {
   const corpus = `${item.title} ${item.description ?? ""}`.trim();
   if (!corpus) return null;
@@ -141,6 +176,9 @@ function detectAlertFromItem(item: RssItem): DetectedAlert | null {
         isFacebookPageBoilerplate(corpus) ||
         isFerryPromoArticle(corpus))
     ) {
+      continue;
+    }
+    if (rule.type === "houle" && !isRealHouleAlertNotice(corpus)) {
       continue;
     }
     if (!rule.pfWide && !isMooreaRelevant(corpus)) continue;
@@ -182,6 +220,15 @@ export async function importAlertsFromRssItems(
 
     const detected = detectAlertFromItem(item);
     if (!detected) continue;
+
+    if (
+      await isAlertImportBlocked({
+        sourceUrl: detected.source_url,
+        title: detected.title,
+      })
+    ) {
+      continue;
+    }
 
     const since = new Date(now - MAX_AGE_MS).toISOString();
     const { data: existing } = await admin

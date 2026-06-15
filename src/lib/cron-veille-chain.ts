@@ -17,6 +17,10 @@ import { refreshFacebookUserTokenInProcess } from "@/lib/facebook-token";
 import { syncHealthOnCall } from "@/lib/health-on-call";
 import { syncUtilityOutages } from "@/lib/utility-outages-sync";
 import { cleanupPublishedFacebookEmptyShells } from "@/lib/facebook-import-cleanup";
+import {
+  deactivateFalseFerryAlerts,
+  deactivateFalseHouleAlerts,
+} from "@/lib/facebook-alert-import";
 import { notifyVeilleReport } from "@/lib/telegram-notify";
 import { auditPublicContent } from "@/lib/site-content-audit";
 import { checkFacebookTokenHealth } from "@/lib/facebook-token";
@@ -143,6 +147,13 @@ export async function runVeillePartFinish() {
     });
   }
 
+  const falseHouleAlerts = await deactivateFalseHouleAlerts();
+  const falseFerryAlerts = await deactivateFalseFerryAlerts();
+  if (falseHouleAlerts > 0 || falseFerryAlerts > 0) {
+    revalidatePath("/");
+    revalidatePath("/alertes");
+  }
+
   const audit = await auditPublicContent();
   const facebookHealth = await checkFacebookTokenHealth();
   const facebookImportStatus = await getFacebookImportStatus(5);
@@ -177,6 +188,8 @@ export async function runVeillePartFinish() {
     auditFindings: audit?.findings.length ?? 0,
     facebookImportStatus,
     facebookCleanup,
+    falseHouleAlertsDeactivated: falseHouleAlerts,
+    falseFerryAlertsDeactivated: falseFerryAlerts,
   };
 }
 
