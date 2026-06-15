@@ -3,6 +3,7 @@
  */
 
 import type { AggregationResult } from "@/lib/aggregator";
+import type { FacebookImportStatus } from "@/lib/facebook-import-status";
 import type { FacebookTokenHealth } from "@/lib/facebook-token";
 import type { ContentAuditReport } from "@/lib/site-content-audit";
 import { escapeHtml, sendTelegramNotification } from "@/lib/telegram";
@@ -116,6 +117,30 @@ function formatErrors(errors: string[]): string {
   return lines.join("\n");
 }
 
+function formatFacebookImportBlock(
+  status: FacebookImportStatus | null | undefined,
+): string {
+  if (!status) return "";
+  const lines = ["\n<b>📘 Facebook MooreaNews → actualités</b>"];
+  if (status.ok) {
+    lines.push("✅ Derniers imports OK (texte + affiche visibles sur le site)");
+  } else {
+    lines.push(
+      `⚠️ ${status.incompleteArticles} incomplet(s) · ${status.shellArticles} coquille(s) · ${status.fbcdnCoversInDb} fbcdn bloqué(s)`,
+    );
+    lines.push(`<i>${escapeHtml(status.hint)}</i>`);
+    if (status.samples.length > 0) {
+      const base = siteUrl();
+      for (const s of status.samples.slice(0, 3)) {
+        lines.push(
+          `• <a href="${base}/actualites/${encodeURIComponent(s.slug)}">${escapeHtml(truncate(s.title, 60))}</a> (${escapeHtml(s.issue)})`,
+        );
+      }
+    }
+  }
+  return lines.join("\n");
+}
+
 function formatSourceScan(bySource: AggregationResult[]): string {
   if (bySource.length === 0) return "";
   const lines = ["\n<b>📡 Recherches effectuées</b>"];
@@ -224,6 +249,7 @@ export async function notifyVeilleReport(input: {
   createdEvents?: { title: string; id: string; date: string }[];
   audit?: ContentAuditReport | null;
   facebookHealth?: FacebookTokenHealth | null;
+  facebookImportStatus?: FacebookImportStatus | null;
   facebookPurgeDeleted?: number;
   facebookCleanup?: { unpublished: number; deleted: number };
   headerNote?: string;
@@ -264,9 +290,18 @@ export async function notifyVeilleReport(input: {
   if (input.headerNote?.trim()) {
     lines.push(escapeHtml(input.headerNote.trim()));
   }
-  lines.push(
-    `⏱ ${(input.durationMs / 1000).toFixed(1)} s · ${input.totalFetched} parcouru(s) · ${input.totalInserted} inséré(s)`,
-  );
+  if (input.headerNote?.includes("finish")) {
+    lines.push(
+      `⏱ ${(input.durationMs / 1000).toFixed(1)} s · étape <b>finish</b> (audit + nettoyage)`,
+    );
+    lines.push(
+      "<i>L’import Facebook = étape « Facebook » juste avant (voir bloc 📘).</i>",
+    );
+  } else {
+    lines.push(
+      `⏱ ${(input.durationMs / 1000).toFixed(1)} s · ${input.totalFetched} parcouru(s) · ${input.totalInserted} inséré(s)`,
+    );
+  }
 
   lines.push(formatSourceScan(input.bySource));
 
@@ -347,6 +382,7 @@ export async function notifyVeilleReport(input: {
   }
 
   lines.push(formatAuditBlock(input.audit));
+  lines.push(formatFacebookImportBlock(input.facebookImportStatus));
 
   if (
     input.facebookCleanup &&

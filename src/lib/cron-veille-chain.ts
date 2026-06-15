@@ -20,6 +20,7 @@ import { cleanupPublishedFacebookEmptyShells } from "@/lib/facebook-import-clean
 import { notifyVeilleReport } from "@/lib/telegram-notify";
 import { auditPublicContent } from "@/lib/site-content-audit";
 import { checkFacebookTokenHealth } from "@/lib/facebook-token";
+import { getFacebookImportStatus } from "@/lib/facebook-import-status";
 import { runAiVeilleProcessing } from "@/lib/ai-veille";
 
 function summarize(bySource: AggregationResult[]) {
@@ -144,6 +145,7 @@ export async function runVeillePartFinish() {
 
   const audit = await auditPublicContent();
   const facebookHealth = await checkFacebookTokenHealth();
+  const facebookImportStatus = await getFacebookImportStatus(5);
   const durationMs = Date.now() - start;
 
   const telegram = await notifyVeilleReport({
@@ -160,6 +162,7 @@ export async function runVeillePartFinish() {
     bySource,
     audit,
     facebookHealth,
+    facebookImportStatus,
     headerNote: "🔗 Veille chaînée GitHub : rss → facebook → web → finish",
     facebookCleanup,
   });
@@ -172,6 +175,7 @@ export async function runVeillePartFinish() {
     healthOnCall,
     telegram,
     auditFindings: audit?.findings.length ?? 0,
+    facebookImportStatus,
     facebookCleanup,
   };
 }

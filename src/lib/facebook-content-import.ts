@@ -116,7 +116,11 @@ function pushImportFailure(
   }
 }
 
-function importEnabled(): boolean {
+function importEnabled(config: FacebookPageImportConfig): boolean {
+  /** Page MooreaNews : tout le fil → articles (sans variable Vercel). */
+  if (config.importAllFeedPosts && config.pageKey === "mooreanews") {
+    return true;
+  }
   return process.env.FACEBOOK_IMPORT_AS_ARTICLES === "true";
 }
 
@@ -760,7 +764,7 @@ export async function importFacebookPostsAsContent(
     warnings: [],
   };
 
-  if (!importEnabled()) return result;
+  if (!importEnabled(config)) return result;
 
   const published = publishedByDefault();
 
