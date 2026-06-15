@@ -9,6 +9,7 @@
 | Météo vigilance après-midi | **GitHub Actions** `cron-hobby-extras.yml` | ~15h |
 | Push digest soir (mobile) | **GitHub Actions** `cron-hobby-extras.yml` | jeu–dim ~17h |
 | **Newsletter email abonnés** | **GitHub Actions** `newsletter-sunday.yml` | **dimanche ~18h** |
+| **Article « Agenda & actu »** | **GitHub Actions** `weekly-recap-monday.yml` | **lundi ~7h** |
 | Digests email matin / week-end | **Désactivés** | — |
 | IA brouillons (optionnel) | **Mac** `npm run ai:moorea` | manuel ou cron Mac |
 
@@ -16,6 +17,8 @@ Fichiers :
 - `vercel.json` → 1 cron : `/api/cron/daily`
 - `.github/workflows/veille-hourly.yml`
 - `.github/workflows/cron-hobby-extras.yml`
+- `.github/workflows/weekly-recap-monday.yml`
+- `.github/workflows/newsletter-sunday.yml`
 
 Secret requis : `CRON_SECRET` sur **Vercel** et **GitHub** (Settings → Secrets and variables → Actions).
 
@@ -36,7 +39,9 @@ Après push, vérifier : **GitHub → Actions**
 | Workflow | Rôle |
 |----------|------|
 | Veille horaire MooreaNews | RSS → Facebook → web → finish |
-| Crons Hobby extras | météo PM, push soir, newsletter |
+| Crons Hobby extras | météo PM, push soir |
+| Récap semaine lundi | article Agenda & actu + affiche |
+| Newsletter dimanche | email abonnés |
 
 Si `CRON_SECRET` manque sur GitHub : **Settings → Secrets → New repository secret**.
 

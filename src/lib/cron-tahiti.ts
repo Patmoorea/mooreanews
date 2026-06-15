@@ -66,9 +66,9 @@ export function shouldSyncGardeOnVeille(clock: TahitiClock): boolean {
   return clock.weekday === 5 || clock.weekday === 6 || clock.weekday === 0;
 }
 
-/** Récap semaine Moorea : lundi matin Tahiti (agenda + actu). */
+/** Récap semaine Moorea : lundi matin Tahiti (agenda + actu). Tolère retard Vercel/GitHub. */
 export function shouldPublishWeeklyRecap(clock: TahitiClock): boolean {
-  return clock.weekday === 1 && clock.hour >= 5 && clock.hour <= 9;
+  return clock.weekday === 1 && clock.hour >= 5 && clock.hour <= 11;
 }
 
 /** Newsletter semaine suivante : dimanche 18h–19h59 Tahiti (tolère retard GitHub). */

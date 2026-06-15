@@ -1,0 +1,32 @@
+# Article « Agenda & actu — votre semaine » — lundi matin Tahiti.
+# Workflow dédié : le cron Vercel daily est lourd et peut expirer avant le récap.
+# force=1 : génère même si le cron arrive après 11h Tahiti.
+
+name: Récap semaine lundi
+
+on:
+  schedule:
+    # ~7h05 Tahiti (17:05 UTC lundi)
+    - cron: "5 17 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: weekly-recap-monday
+  cancel-in-progress: false
+
+jobs:
+  weekly-recap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Article Agenda & actu (lundi matin Tahiti)
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET manquant dans les secrets GitHub du dépôt."
+            exit 1
+          fi
+          curl -fsS --max-time 300 \
+            "https://www.mooreanews.com/api/cron/weekly-recap?secret=${CRON_SECRET}&force=1"

@@ -90,6 +90,17 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   jobs.dpamStatsFreshness = await checkDpamStatsFreshness();
   revalidatePath("/trafic-ferry");
 
+  if (shouldPublishWeeklyRecap(clock)) {
+    jobs.weeklyRecap = await syncWeeklyRecapFromMooreaNews();
+    revalidatePath("/actualites");
+    revalidatePath("/", "layout");
+  } else if (clock.weekday === 1) {
+    jobs.weeklyRecap = {
+      skipped: true,
+      reason: "hors créneau lundi 5h–9h Tahiti (GitHub weekly-recap lundi)",
+    };
+  }
+
   if (shouldSendMorningDigest(clock)) {
     jobs.morningDigest = digestEmailsEnabled()
       ? await sendMorningDigest()
@@ -168,11 +179,6 @@ export async function runDailyCron(): Promise<DailyCronResult> {
   });
   revalidatePath("/sante-garde");
 
-  if (shouldPublishWeeklyRecap(clock)) {
-    jobs.weeklyRecap = await syncWeeklyRecapFromMooreaNews();
-    revalidatePath("/actualites");
-    revalidatePath("/", "layout");
-  }
   const utilitySync = jobs.utilityOutages as {
     created?: number;
     updated?: number;
