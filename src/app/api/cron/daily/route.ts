@@ -6,9 +6,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 /**
- * Cron UNIQUE Vercel Hobby (1×/jour).
- * 16:05 UTC ≈ 6:05 heure de Tahiti.
- * Météo, expirations, récap lundi, emploi, ferry — sans veille RSS (GitHub horaire).
+ * Job quotidien complet MooreaNews.
+ * Déclenché par GitHub Actions `cron-daily.yml` (~6h05 Tahiti), pas par Vercel cron.
  */
 export async function GET(req: Request) {
   if (!(await verifyCronAuth(req))) {

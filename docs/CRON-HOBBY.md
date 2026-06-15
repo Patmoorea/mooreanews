@@ -4,7 +4,7 @@
 
 | Tâche | Où | Horaire (Tahiti) |
 |-------|-----|------------------|
-| Job quotidien complet | **Vercel** (1 seul cron) | ~6h05 |
+| Job quotidien complet | **GitHub Actions** `cron-daily.yml` | ~6h05 |
 | Veille RSS + Facebook + web | **GitHub Actions** `veille-hourly.yml` | 5h–20h, toutes les heures |
 | Météo vigilance après-midi | **GitHub Actions** `cron-hobby-extras.yml` | ~15h |
 | Push digest soir (mobile) | **GitHub Actions** `cron-hobby-extras.yml` | jeu–dim ~17h |
@@ -14,7 +14,7 @@
 | IA brouillons (optionnel) | **Mac** `npm run ai:moorea` | manuel ou cron Mac |
 
 Fichiers :
-- `vercel.json` → 1 cron : `/api/cron/daily`
+- `.github/workflows/cron-daily.yml`
 - `.github/workflows/veille-hourly.yml`
 - `.github/workflows/cron-hobby-extras.yml`
 - `.github/workflows/weekly-recap-monday.yml`
@@ -24,11 +24,11 @@ Secret requis : `CRON_SECRET` sur **Vercel** et **GitHub** (Settings → Secrets
 
 ---
 
-## Vercel — downgrader en Hobby
+## Vercel — plan Hobby
 
-1. Vercel → **Settings → Billing** → **Downgrade to Hobby**
-2. Vérifier qu’il ne reste qu’**un** cron dans `vercel.json` (`/api/cron/daily`)
-3. Redéployer
+1. Vercel → **Settings → Billing** → **Hobby**
+2. **Aucun cron Vercel** (`vercel.json` → `"crons": []`) — tout passe par GitHub Actions
+3. Redéployer après modification de `vercel.json`
 
 ---
 
@@ -38,6 +38,7 @@ Après push, vérifier : **GitHub → Actions**
 
 | Workflow | Rôle |
 |----------|------|
+| Cron daily MooreaNews | job quotidien complet (veille, emploi, garde, audit, Telegram) |
 | Veille horaire MooreaNews | RSS → Facebook → web → finish |
 | Crons Hobby extras | météo PM, push soir |
 | Récap semaine lundi | article Agenda & actu + affiche |
@@ -93,15 +94,21 @@ curl "https://www.mooreanews.com/api/cron/daily?secret=VOTRE_CRON_SECRET"
 
 ---
 
-## Ce que fait `/api/cron/daily` (1×/jour Vercel)
+## Ce que fait `/api/cron/daily` (GitHub ~6h05 Tahiti)
 
-Météo, expirations alertes/événements, récap lundi (en tête), emploi, coupures, garde vendredi, ferry, purge Facebook.
+Job **complet** — rien n’est retiré :
 
-**La veille RSS + Facebook + web** est assurée par **GitHub Actions** (`veille-hourly.yml`), pas par le daily Vercel (évite timeout Hobby).
+- Token Facebook, expirations alertes / annonces / événements
+- Météo vigilance, trafic ferry (DPAM)
+- Récap semaine lundi (si créneau)
+- Digests matin / soir / week-end (si créneau Tahiti)
+- Emploi & formation
+- **Veille RSS + web complète** (`aggregateAll`)
+- Coupures eau/EDT, garde week-end
+- Nettoyage alertes ferry/houle, purge Facebook
+- Audit contenu, rapport Telegram admin
 
-Variable optionnelle `DAILY_AGGREGATE_VEILLE=true` pour réactiver la veille complète dans le daily (déconseillé Hobby).
-
-Les créneaux **après-midi météo**, **push soir** et **newsletter** sont couverts par GitHub Actions (ou cron-job.org).
+Les créneaux **après-midi météo**, **push soir** et **newsletter** restent sur leurs workflows GitHub dédiés.
 
 ---
 

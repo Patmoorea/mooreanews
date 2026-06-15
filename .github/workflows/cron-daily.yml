@@ -1,0 +1,45 @@
+# Job quotidien complet MooreaNews (~6h05 Tahiti).
+# Toutes les tâches daily (veille, emploi, garde, audit, Telegram…) — rien n'est supprimé.
+# Déclenché par GitHub (timeout 5 min) au lieu du cron Vercel Hobby (coupe souvent la connexion).
+
+name: Cron daily MooreaNews
+
+on:
+  schedule:
+    # ~6h05 Tahiti (16:05 UTC)
+    - cron: "5 16 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: cron-daily
+  cancel-in-progress: false
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Job quotidien complet (/api/cron/daily)
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET manquant dans les secrets GitHub du dépôt."
+            exit 1
+          fi
+          code=$(curl -sS -o /tmp/cron-daily.json -w "%{http_code}" \
+            --http1.1 --max-time 300 \
+            "https://www.mooreanews.com/api/cron/daily?secret=${CRON_SECRET}")
+          echo "HTTP ${code}"
+          head -c 1200 /tmp/cron-daily.json || true
+          echo ""
+          if grep -q '"error":"unauthorized"' /tmp/cron-daily.json 2>/dev/null; then
+            echo "CRON_SECRET incorrect"
+            exit 1
+          fi
+          if [ "$code" != "200" ]; then
+            echo "Échec cron daily (HTTP ${code})"
+            exit 1
+          fi
+          echo "Cron daily terminé."

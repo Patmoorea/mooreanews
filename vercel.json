@@ -1,11 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "crons": [
-    {
-      "path": "/api/cron/daily",
-      "schedule": "5 16 * * *"
-    }
-  ],
+  "crons": [],
   "functions": {
     "src/app/api/cron/garde-weekend/route.ts": {
       "memory": 1024,

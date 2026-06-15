@@ -1,6 +1,6 @@
 # Veille toutes les heures
 
-> Plan Hobby : voir **[docs/CRON-HOBBY.md](./docs/CRON-HOBBY.md)** (1 cron Vercel + GitHub Actions + cron-job.org en secours).
+> Plan Hobby : voir **[docs/CRON-HOBBY.md](./docs/CRON-HOBBY.md)** (crons GitHub Actions + cron-job.org en secours).
 
 ## Déjà actif : GitHub Actions (recommandé)
 

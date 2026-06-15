@@ -69,22 +69,17 @@ Cette page a été ajoutée récemment. Un **404** signifie que **Vercel n’a p
 
 ---
 
-## Étape 4 — Cron unique (Vercel Hobby)
+## Étape 4 — Cron daily (GitHub Actions)
 
-Un seul cron dans `vercel.json` :
+Workflow **`.github/workflows/cron-daily.yml`** — ~6h05 Tahiti (16:05 UTC).
 
-| Schedule UTC | Heure Tahiti | Route |
-|--------------|--------------|-------|
+| Schedule UTC | Heure Tahiti | Route appelée |
+|--------------|--------------|---------------|
 | `5 16 * * *` | ~6h05 | `/api/cron/daily` |
 
-**Ce job fait tout en une fois :**
-- Vigilance météo meteo.pf
-- Veille RSS + Facebook
-- Digest matin (si 5h–10h Tahiti)
-- Digest week-end (vendredi matin Tahiti)
-- Expiration alertes, ferry, Telegram
+**Ce job fait tout en une fois** (veille, emploi, garde, audit, Telegram…) — voir [CRON-HOBBY.md](./CRON-HOBBY.md).
 
-**Vigilance l’après-midi :** mise à jour aussi quand quelqu’un ouvre l’accueil ou `/alertes`.
+Pas de cron dans `vercel.json` (plan Hobby — déclenchement GitHub, timeout 5 min).
 
 ### Lancer le cron à la main (prod ou local)
 
