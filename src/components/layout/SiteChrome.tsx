@@ -14,11 +14,7 @@ import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import { PageViewTracker } from "@/components/analytics/PageViewTracker";
 
 function isMinimalChrome(pathname: string): boolean {
-  return (
-    pathname.startsWith("/app") ||
-    pathname.startsWith("/admin") ||
-    pathname.startsWith("/accueil-v2")
-  );
+  return pathname.startsWith("/app") || pathname.startsWith("/admin");
 }
 
 export function SiteChrome({
