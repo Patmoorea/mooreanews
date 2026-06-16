@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { expirePastAlerts } from "@/lib/alert-schedule";
 import { expireStaleAnnouncements } from "@/lib/announcement-expiry";
 import { expirePastEvents } from "@/lib/event-expiry";
-import { aggregateAll } from "@/lib/aggregator";
+import { aggregateRssOnly, aggregateWebPagesOnly } from "@/lib/aggregator";
 import {
   getTahitiClock,
   digestEmailsEnabled,
@@ -44,6 +44,13 @@ import { auditPublicContent } from "@/lib/site-content-audit";
 import { notifyVeilleReport, sendPublicMooreaBrief } from "@/lib/telegram-notify";
 import { sendWeekendDigest } from "@/lib/weekend-digest";
 import { syncEmploymentMoorea } from "@/lib/employment-sync";
+import {
+  aggregateFacebookWatchUrls,
+  aggregateFacebookPagesGraph,
+} from "@/lib/facebook-watch";
+import { facebookCronRecentPostLimit } from "@/lib/facebook-import-filters";
+import { getFacebookImportStatus } from "@/lib/facebook-import-status";
+import type { AggregationResult } from "@/lib/aggregator";
 
 export type DailyCronResult = {
   ok: boolean;
@@ -57,7 +64,9 @@ export const DAILY_CRON_PARTS = [
   "maintenance",
   "digests",
   "employment",
-  "aggregate",
+  "aggregate-rss",
+  "aggregate-facebook",
+  "aggregate-web",
   "services",
   "cleanup",
   "telegram",
@@ -85,6 +94,49 @@ function emptyResult(part: DailyCronPart, start: number): DailyCronResult {
     tahiti: clock.label,
     jobs: { tahiti: clock.label, part },
     errors: [],
+  };
+}
+
+function revalidateFromAggregation(results: AggregationResult[]): void {
+  const alertsCreated = results.reduce(
+    (s, r) => s + (r.alertsCreated ?? 0),
+    0,
+  );
+  if (alertsCreated > 0) {
+    revalidatePath("/alertes");
+    revalidatePath("/", "layout");
+  }
+  const articlesCreated = results.reduce(
+    (s, r) => s + (r.articlesCreated ?? 0),
+    0,
+  );
+  if (articlesCreated > 0) {
+    revalidatePath("/actualites");
+    revalidatePath("/", "layout");
+  }
+}
+
+function aggregationErrors(results: AggregationResult[]): string[] {
+  return results.flatMap((r) => r.errors.map((e) => `${r.source}: ${e}`));
+}
+
+function summarizeAggregation(results: AggregationResult[]) {
+  return {
+    sources: results.length,
+    inserted: results.reduce((s, r) => s + r.inserted, 0),
+    alertsCreated: results.reduce((s, r) => s + (r.alertsCreated ?? 0), 0),
+    articlesCreated: results.reduce((s, r) => s + (r.articlesCreated ?? 0), 0),
+    totalFetched: results.reduce((s, r) => s + r.fetched, 0),
+    totalInserted: results.reduce((s, r) => s + r.inserted, 0),
+    articlesSkipped: results.reduce((s, r) => s + (r.articlesSkipped ?? 0), 0),
+    eventsCreated: results.reduce((s, r) => s + (r.eventsCreated ?? 0), 0),
+    announcementsCreated: results.reduce(
+      (s, r) => s + (r.announcementsCreated ?? 0),
+      0,
+    ),
+    createdArticles: results.flatMap((r) => r.createdArticles ?? []),
+    createdEvents: results.flatMap((r) => r.createdEvents ?? []),
+    createdAlertTitles: results.flatMap((r) => r.createdAlerts ?? []),
   };
 }
 
@@ -196,35 +248,34 @@ export async function runDailyCronPart(
       break;
     }
 
-    case "aggregate": {
-      const results = await aggregateAll();
-      jobs.aggregate = {
-        sources: results.length,
-        inserted: results.reduce((s, r) => s + r.inserted, 0),
-        alertsCreated: results.reduce((s, r) => s + (r.alertsCreated ?? 0), 0),
-      };
+    case "aggregate-rss": {
+      const results = await aggregateRssOnly();
+      jobs.aggregateRss = summarizeAggregation(results);
+      revalidateFromAggregation(results);
+      errors.push(...aggregationErrors(results));
+      break;
+    }
 
-      const alertsCreated = results.reduce(
-        (s, r) => s + (r.alertsCreated ?? 0),
-        0,
-      );
-      if (alertsCreated > 0) {
-        revalidatePath("/alertes");
-        revalidatePath("/", "layout");
-      }
+    case "aggregate-facebook": {
+      const recentLimit = Math.min(facebookCronRecentPostLimit(), 5);
+      const results = await Promise.all([
+        aggregateFacebookWatchUrls(),
+        aggregateFacebookPagesGraph({
+          light: true,
+          recentImportLimit: recentLimit,
+        }),
+      ]);
+      jobs.aggregateFacebook = summarizeAggregation(results);
+      revalidateFromAggregation(results);
+      errors.push(...aggregationErrors(results));
+      break;
+    }
 
-      const articlesCreated = results.reduce(
-        (s, r) => s + (r.articlesCreated ?? 0),
-        0,
-      );
-      if (articlesCreated > 0) {
-        revalidatePath("/actualites");
-        revalidatePath("/", "layout");
-      }
-
-      errors.push(
-        ...results.flatMap((r) => r.errors.map((e) => `${r.source}: ${e}`)),
-      );
+    case "aggregate-web": {
+      const results = await aggregateWebPagesOnly();
+      jobs.aggregateWeb = summarizeAggregation(results);
+      revalidateFromAggregation(results);
+      errors.push(...aggregationErrors(results));
       break;
     }
 
@@ -282,52 +333,35 @@ export async function runDailyCronPart(
 
     case "telegram": {
       const expiredAlerts = await expirePastAlerts();
-      const results = await aggregateAll();
-      const aggErrors = results.flatMap((r) =>
-        r.errors.map((e) => `${r.source}: ${e}`),
-      );
+      const rssResults = await aggregateRssOnly();
+      const summary = summarizeAggregation(rssResults);
+      const aggErrors = aggregationErrors(rssResults);
       errors.push(...aggErrors);
-
-      const alertsCreated = results.reduce(
-        (s, r) => s + (r.alertsCreated ?? 0),
-        0,
-      );
 
       const fbRefresh = await refreshFacebookUserTokenInProcess();
       const facebookHealth = await checkFacebookTokenHealth();
       if (fbRefresh.refreshed) facebookHealth.refreshedThisRun = true;
+      const facebookImportStatus = await getFacebookImportStatus();
 
       jobs.telegram = await notifyVeilleReport({
         durationMs: Date.now() - start,
-        totalFetched: results.reduce((s, r) => s + r.fetched, 0),
-        totalInserted: results.reduce((s, r) => s + r.inserted, 0),
-        articlesCreated: results.reduce(
-          (s, r) => s + (r.articlesCreated ?? 0),
-          0,
-        ),
-        articlesSkipped: results.reduce(
-          (s, r) => s + (r.articlesSkipped ?? 0),
-          0,
-        ),
-        eventsCreated: results.reduce(
-          (s, r) => s + (r.eventsCreated ?? 0),
-          0,
-        ),
-        announcementsCreated: results.reduce(
-          (s, r) => s + (r.announcementsCreated ?? 0),
-          0,
-        ),
-        alertsCreated,
+        totalFetched: summary.totalFetched,
+        totalInserted: summary.totalInserted,
+        articlesCreated: summary.articlesCreated,
+        articlesSkipped: summary.articlesSkipped,
+        eventsCreated: summary.eventsCreated,
+        announcementsCreated: summary.announcementsCreated,
+        alertsCreated: summary.alertsCreated,
         expiredAlerts,
-        createdAlertTitles: results.flatMap((r) => r.createdAlerts ?? []),
+        createdAlertTitles: summary.createdAlertTitles,
         errors: aggErrors,
-        bySource: results,
-        createdArticles: results.flatMap((r) => r.createdArticles ?? []),
-        createdEvents: results.flatMap((r) => r.createdEvents ?? []),
+        bySource: rssResults,
+        createdArticles: summary.createdArticles,
+        createdEvents: summary.createdEvents,
         audit: await auditPublicContent(),
         facebookHealth,
-        facebookPurgeDeleted: 0,
-        headerNote: "Cron daily GitHub (~6h05 Tahiti)",
+        facebookImportStatus,
+        headerNote: "Cron daily GitHub (~6h05 Tahiti) — rapport RSS + statut FB",
       });
       break;
     }

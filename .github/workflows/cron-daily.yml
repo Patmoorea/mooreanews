@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Daily chainé (7 étapes — maintenance → telegram)
+      - name: Daily chainé (9 étapes — maintenance → telegram)
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
@@ -61,10 +61,12 @@ jobs:
           run_step "Maintenance" "maintenance"
           run_step "Digests" "digests" "1"
           run_step "Emploi & formation" "employment" "1"
-          run_step "Agrégation veille" "aggregate" "1"
+          run_step "Agrégation RSS" "aggregate-rss" "1"
+          run_step "Agrégation Facebook" "aggregate-facebook" "1"
+          run_step "Agrégation web" "aggregate-web" "1"
           run_step "Services (coupures, garde)" "services" "1"
           run_step "Nettoyage & audit" "cleanup" "1"
           run_step "Rapport Telegram" "telegram" "1"
 
           echo ""
-          echo "Cron daily terminé — 7 étapes exécutées."
+          echo "Cron daily terminé — 9 étapes exécutées."
