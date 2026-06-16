@@ -2,6 +2,7 @@
  * Veille Facebook : Open Graph sur URLs configurées + Graph API (optionnel).
  */
 
+import type { FacebookPostForImport } from "@/lib/facebook-article-import";
 import type { AggregationResult } from "@/lib/aggregator";
 import { externalIdFromFacebookUrl, isFacebookUrl } from "@/lib/facebook-url";
 import { fetchOpenGraph } from "@/lib/open-graph";
@@ -319,7 +320,7 @@ async function fetchPageUploadedPhotos(
 }
 
 /** Photo d’album par fbid (hors fil /posts). */
-async function fetchGraphPhotoById(
+export async function fetchGraphPhotoById(
   photoId: string,
   graphPageId: string,
   token: string,
@@ -361,7 +362,7 @@ function findGraphPostByFbid(
   );
 }
 
-async function graphPostFromPhotoFbidFallback(
+export async function graphPostFromPhotoFbidFallback(
   fbid: string,
   graphPageId: string,
 ): Promise<GraphPost | null> {
@@ -1053,6 +1054,90 @@ export async function listCommuneMooreaGraphPosts(): Promise<
     permalink_url: p.permalink_url,
     full_picture: p.full_picture,
   }));
+}
+
+/** Jeton page MooreaNews pour Graph API. */
+export async function getMooreaNewsPageAccessToken(): Promise<string | null> {
+  let fallbackPageToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim();
+  let userToken = process.env.FACEBOOK_USER_ACCESS_TOKEN?.trim();
+  if (!fallbackPageToken && !userToken) return null;
+
+  const page = FACEBOOK_PAGE_WATCHES.find((p) => p.id === "moorea-news");
+  if (!page) return null;
+
+  const perPageTokenByIdOrUsername = new Map<string, string>();
+  if (userToken) {
+    const refreshed = await refreshFacebookUserTokenInProcess();
+    if (refreshed.token) userToken = refreshed.token;
+    try {
+      for (const acc of await fetchMeAccounts(userToken)) {
+        if (acc.access_token && acc.id) {
+          perPageTokenByIdOrUsername.set(acc.id, acc.access_token);
+        }
+        if (acc.access_token && acc.username) {
+          perPageTokenByIdOrUsername.set(acc.username.toLowerCase(), acc.access_token);
+        }
+      }
+    } catch {
+      /* optional */
+    }
+  }
+
+  return pickTokenForPage({
+    page,
+    perPageTokenByIdOrUsername,
+    fallbackPageToken:
+      perPageTokenByIdOrUsername.size > 0 ? undefined : fallbackPageToken,
+  });
+}
+
+/** Charge un post MooreaNews par fbid (Graph + photo + Open Graph). */
+export async function fetchMooreaNewsPostByFbid(
+  fbid: string,
+  token: string,
+): Promise<FacebookPostForImport | null> {
+  const pageId = "350029589936";
+  const postId = `${pageId}_${fbid}`;
+  const { enrichFacebookPostForImport, fetchGraphPostById } = await import(
+    "@/lib/facebook-post-enrich"
+  );
+
+  let post: FacebookPostForImport | null = await fetchGraphPostById(postId, token);
+
+  if (!post?.message?.trim() && !post?.full_picture?.trim()) {
+    const photo = await fetchGraphPhotoById(fbid, pageId, token);
+    if (photo) {
+      post = {
+        id: photo.id,
+        message: photo.message,
+        full_picture: photo.full_picture,
+        permalink_url: photo.permalink_url,
+        created_time: photo.created_time,
+      };
+    }
+  }
+
+  if (!post?.message?.trim() && !post?.full_picture?.trim()) {
+    const ogPost = await graphPostFromPhotoFbidFallback(fbid, pageId);
+    if (ogPost) {
+      post = {
+        id: ogPost.id,
+        message: ogPost.message,
+        full_picture: ogPost.full_picture,
+        permalink_url: ogPost.permalink_url,
+        created_time: ogPost.created_time,
+      };
+    }
+  }
+
+  if (!post) return null;
+
+  post = {
+    ...post,
+    permalink_url: `https://www.facebook.com/MooreaNews/posts/${fbid}`,
+  };
+
+  return enrichFacebookPostForImport(post, token, { pageId, importAll: true });
 }
 
 export async function aggregateWebWatch(): Promise<AggregationResult[]> {

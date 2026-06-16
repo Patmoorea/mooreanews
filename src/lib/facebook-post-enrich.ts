@@ -6,10 +6,6 @@ import type { FacebookPostForImport } from "@/lib/facebook-article-import";
 import { isFacebookJunkText } from "@/lib/facebook-import-filters";
 import { fetchOpenGraph } from "@/lib/open-graph";
 import { cleanImportedText } from "@/lib/html-entities";
-import {
-  mooreaNewsGraphPageId,
-  mooreaNewsLinkPageId,
-} from "@/lib/facebook-mooreanews-id";
 
 export const GRAPH_POST_DETAIL_FIELDS =
   "id,message,permalink_url,created_time,full_picture,picture,status_type,attachments{description,title,media_type,type,url,unshimmed_url,target{id},media{image{src}},subattachments{data{description,title,media_type,type,url,unshimmed_url,target{id},media{image{src}}}}}";
@@ -161,40 +157,42 @@ export function normalizeGraphPostRaw(raw: GraphPostRaw): FacebookPostForImport 
 
 export function permalinkForPost(
   post: Pick<FacebookPostForImport, "id" | "permalink_url">,
-  pageId = mooreaNewsGraphPageId(),
+  pageId = "350029589936",
 ): string {
+  const numeric = post.id.split("_").pop() ?? post.id.replace(/\D/g, "");
+  if (pageId === "350029589936" && numeric) {
+    return `https://www.facebook.com/MooreaNews/posts/${numeric}`;
+  }
   const link = post.permalink_url?.trim();
   if (link?.startsWith("http")) return link;
-  const numeric = post.id.split("_").pop() ?? post.id;
-  const linkPageId = mooreaNewsLinkPageId();
-  return `https://www.facebook.com/${linkPageId}/posts/${numeric}`;
+  if (numeric) {
+    return `https://www.facebook.com/${pageId}/posts/${numeric}`;
+  }
+  return "https://www.facebook.com/MooreaNews";
 }
 
 /** Variantes d’URL pour récupérer texte + affiche via Open Graph. */
 export function openGraphUrlsForFacebookPost(
   post: Pick<FacebookPostForImport, "id" | "permalink_url">,
-  pageId = mooreaNewsGraphPageId(),
+  pageId = "350029589936",
 ): string[] {
   const numeric = post.id.split("_").pop() ?? post.id.replace(/\D/g, "");
-  const linkPageId = mooreaNewsLinkPageId();
+  const graphLink = post.permalink_url?.trim();
   const candidates = [
-    post.permalink_url?.trim(),
-    permalinkForPost(post, pageId),
-    numeric
-      ? `https://www.facebook.com/${linkPageId}/posts/${numeric}`
+    pageId === "350029589936" && numeric
+      ? `https://www.facebook.com/MooreaNews/posts/${numeric}`
       : undefined,
     numeric
       ? `https://www.facebook.com/permalink.php?story_fbid=${numeric}&id=${pageId}`
       : undefined,
-    numeric
-      ? `https://www.facebook.com/permalink.php?story_fbid=${numeric}&id=${linkPageId}`
-      : undefined,
-    numeric
-      ? `https://www.facebook.com/photo/?fbid=${numeric}&id=${pageId}`
-      : undefined,
-    numeric ? `https://www.facebook.com/photo/?fbid=${numeric}` : undefined,
+    numeric ? `https://www.facebook.com/photo/?fbid=${numeric}&id=${pageId}` : undefined,
     numeric
       ? `https://www.facebook.com/${pageId}/posts/${numeric}`
+      : undefined,
+    graphLink &&
+    graphLink.startsWith("http") &&
+    !graphLink.includes("1762281498446173")
+      ? graphLink
       : undefined,
   ].filter((u): u is string => Boolean(u?.startsWith("http")));
 
@@ -229,49 +227,6 @@ async function fetchGraphAttachmentImage(
     data?: GraphAttachment[];
   };
   return bestImageFromAttachments(json.data) || null;
-}
-
-type GraphUploadedPhoto = {
-  id: string;
-  created_time?: string;
-  link?: string;
-  name?: string;
-  alt_text?: string;
-  images?: { source?: string; width?: number; height?: number }[];
-};
-
-/** Photo album MooreaNews (texte + affiche hors fil /posts). */
-async function fetchGraphPhotoAsPost(
-  photoId: string,
-  graphPageId: string,
-  token: string,
-): Promise<FacebookPostForImport | null> {
-  for (const id of [...new Set([photoId, `${graphPageId}_${photoId}`])]) {
-    const apiUrl = new URL(`https://graph.facebook.com/v21.0/${encodeURIComponent(id)}`);
-    apiUrl.searchParams.set(
-      "fields",
-      "id,created_time,link,images,name,alt_text",
-    );
-    apiUrl.searchParams.set("access_token", token);
-    const res = await fetch(apiUrl.toString(), { cache: "no-store" });
-    if (!res.ok) continue;
-    const json = (await res.json()) as GraphUploadedPhoto;
-    if (!json.id) continue;
-    const bestImage = [...(json.images ?? [])].sort(
-      (a, b) => (b.width ?? 0) - (a.width ?? 0),
-    )[0]?.source?.trim();
-    const caption = cleanImportedText(
-      json.name?.trim() || json.alt_text?.trim() || "",
-    );
-    return {
-      id: `${graphPageId}_${json.id.replace(/^.*_/, "")}`,
-      created_time: json.created_time,
-      permalink_url: json.link?.trim() || permalinkForPost({ id: `${graphPageId}_${photoId}` }),
-      message: caption || undefined,
-      full_picture: bestImage || undefined,
-    };
-  }
-  return null;
 }
 
 /** Détail brut Graph (partages, pièces jointes). */
@@ -436,55 +391,10 @@ export async function enrichFacebookPostForImport(
     shareUrls,
   );
 
-  let result = enriched;
-  if (!result.full_picture?.trim() && listPicture) {
-    result = { ...result, full_picture: listPicture };
+  if (!enriched.full_picture?.trim() && listPicture) {
+    return { ...enriched, full_picture: listPicture };
   }
-
-  const needsMore =
-    Boolean(options.importAll) &&
-    Boolean(token) &&
-    (!result.message?.trim() || !result.full_picture?.trim());
-  if (needsMore) {
-    const numeric = post.id.split("_").pop() ?? post.id.replace(/\D/g, "");
-    if (numeric) {
-      const photoPost = await fetchGraphPhotoAsPost(numeric, pageId, token!);
-      if (photoPost) {
-        result = {
-          ...result,
-          message: result.message?.trim() || photoPost.message,
-          full_picture: result.full_picture?.trim() || photoPost.full_picture,
-          permalink_url:
-            result.permalink_url?.trim() ||
-            photoPost.permalink_url ||
-            permalinkForPost(result, pageId),
-          created_time: result.created_time ?? photoPost.created_time,
-        };
-      }
-      if (!result.message?.trim() || !result.full_picture?.trim()) {
-        const ogBoost = await enrichFromOpenGraph(
-          {
-            ...result,
-            permalink_url: result.permalink_url ?? permalinkForPost(result, pageId),
-          },
-          pageId,
-          true,
-          [
-            `https://www.facebook.com/photo/?fbid=${numeric}&id=${pageId}`,
-            `https://www.facebook.com/${mooreaNewsLinkPageId()}/posts/${numeric}`,
-          ],
-        );
-        result = {
-          ...result,
-          message: result.message?.trim() || ogBoost.message,
-          full_picture: result.full_picture?.trim() || ogBoost.full_picture,
-          permalink_url: ogBoost.permalink_url ?? result.permalink_url,
-        };
-      }
-    }
-  }
-
-  return result;
+  return enriched;
 }
 
 /** Limite URL couverture (PostgREST / affichage). */

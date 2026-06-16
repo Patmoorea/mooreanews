@@ -7,8 +7,6 @@ import { countFbcdnCoversInDb } from "@/lib/facebook-cover-persist";
 import { getFacebookImportStatus } from "@/lib/facebook-import-status";
 import { notifyFacebookImportReport, notifyPublicNewArticles } from "@/lib/telegram-notify";
 import { syncUtilityOutages } from "@/lib/utility-outages-sync";
-import { getAdminSupabase } from "@/lib/supabase/admin";
-import { mooreaNewsGraphPageId } from "@/lib/facebook-mooreanews-id";
 
 /** Import Facebook MooreaNews — veille GitHub : wait=1 synchrone (enrichissement complet). */
 export const dynamic = "force-dynamic";
@@ -163,11 +161,8 @@ export async function GET(req: Request) {
   const wait = url.searchParams.get("wait") === "1";
   const chain = url.searchParams.get("chain") === "1";
   const repairOnly = url.searchParams.get("repairOnly") === "1";
-  const forceReimport = url.searchParams.get("forceReimport") === "1";
   const newPostsOnly =
     !repairOnly &&
-    !forceReimport &&
-    forcePhotoFbids.length === 0 &&
     (url.searchParams.get("newOnly") === "1" ||
       url.searchParams.get("newPostsOnly") === "1" ||
       chain);
@@ -198,7 +193,7 @@ export async function GET(req: Request) {
         : facebookCronRecentPostLimit();
 
     const importOptions = {
-      skipTelegram: chain && !repairOnly && !forceReimport,
+      skipTelegram: chain && !repairOnly,
       skipUtility: chain,
       skipStatus: chain,
       recentImportLimit: Math.max(newPostsLimit, 25),
@@ -206,17 +201,6 @@ export async function GET(req: Request) {
       newPostsLimit,
       repairOnly,
     };
-
-    if (forceReimport && forcePhotoFbids.length > 0) {
-      const supabase = getAdminSupabase();
-      if (supabase) {
-        const graphId = mooreaNewsGraphPageId();
-        for (const fbid of forcePhotoFbids) {
-          const slug = `mooreanews-fb-${graphId}-${fbid}`;
-          await supabase.from("articles").delete().eq("slug", slug);
-        }
-      }
-    }
 
     /** Sans wait=1 : async (tests manuels uniquement). Veille GitHub passe toujours wait=1. */
     if (!wait) {
