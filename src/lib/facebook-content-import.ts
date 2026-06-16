@@ -448,6 +448,15 @@ async function importAsArticle(
     return { ok: false, reason: "empty_shell" };
   }
 
+  if (
+    config.importAllFeedPosts &&
+    !message &&
+    !post.full_picture?.trim() &&
+    !cover
+  ) {
+    return { ok: false, reason: "meta_content_unavailable" };
+  }
+
   const { data, error } = await supabase
     .from("articles")
     .insert({

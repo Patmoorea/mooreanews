@@ -52,6 +52,46 @@ export async function GET(req: Request) {
     og[u] = await fetchOpenGraph(u);
   }
 
+  const altPostIds = [
+    postId,
+    `1762281498446173_${fbid}`,
+    fbid,
+  ];
+  const altGraph: Record<string, unknown> = {};
+  for (const id of altPostIds) {
+    const u = new URL(`https://graph.facebook.com/v21.0/${id}`);
+    u.searchParams.set("fields", GRAPH_POST_DETAIL_FIELDS);
+    u.searchParams.set("access_token", token);
+    const r = await fetch(u.toString(), { cache: "no-store" });
+    altGraph[id] = {
+      status: r.status,
+      body: (await r.text()).slice(0, 1500),
+    };
+  }
+
+  let tokenDebug: unknown = null;
+  const appId = process.env.FACEBOOK_APP_ID?.trim();
+  const appSecret = process.env.FACEBOOK_APP_SECRET?.trim();
+  if (appId && appSecret) {
+    const du = new URL("https://graph.facebook.com/v21.0/debug_token");
+    du.searchParams.set("input_token", token);
+    du.searchParams.set("access_token", `${appId}|${appSecret}`);
+    const dr = await fetch(du.toString(), { cache: "no-store" });
+    tokenDebug = await dr.json();
+  }
+
+  const oembedUrl = new URL("https://graph.facebook.com/v21.0/oembed_post");
+  oembedUrl.searchParams.set(
+    "url",
+    `https://www.facebook.com/MooreaNews/posts/${fbid}`,
+  );
+  oembedUrl.searchParams.set("access_token", token);
+  const oembedRes = await fetch(oembedUrl.toString(), { cache: "no-store" });
+  const oembed = {
+    status: oembedRes.status,
+    body: (await oembedRes.text()).slice(0, 1500),
+  };
+
   return NextResponse.json({
     fbid,
     postId,
@@ -61,5 +101,8 @@ export async function GET(req: Request) {
     photo,
     ogFallback,
     og,
+    altGraph,
+    tokenDebug,
+    oembed,
   });
 }
