@@ -501,7 +501,11 @@ export async function deleteLegacyFacebookImports(): Promise<{
   const { purgeStaleFacebookImports, purgeStaleFacebookEvents } = await import(
     "@/lib/facebook-import-cleanup"
   );
+  const { purgeDuplicateArticles } = await import(
+    "@/lib/article-duplicate-cleanup"
+  );
   const { deleted } = await purgeStaleFacebookImports();
+  const { deleted: duplicatesDeleted } = await purgeDuplicateArticles();
   const eventsCleanup = await purgeStaleFacebookEvents();
 
   const { data: externalRows } = await admin
@@ -524,7 +528,11 @@ export async function deleteLegacyFacebookImports(): Promise<{
   revalidatePath("/evenements");
   revalidateArticlePublicPaths();
   return {
-    deleted: deleted + eventsCleanup.unpublished + eventsCleanup.deleted,
+    deleted:
+      deleted +
+      duplicatesDeleted +
+      eventsCleanup.unpublished +
+      eventsCleanup.deleted,
   };
 }
 

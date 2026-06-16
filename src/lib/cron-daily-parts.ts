@@ -21,7 +21,7 @@ import {
   deactivateFalseHouleAlerts,
 } from "@/lib/facebook-alert-import";
 import {
-  purgeStaleFacebookImports,
+  cleanupPublishedFacebookEmptyShells,
   purgeStaleFacebookEvents,
 } from "@/lib/facebook-import-cleanup";
 import {
@@ -313,11 +313,17 @@ export async function runDailyCronPart(
         revalidatePath("/alertes");
       }
 
-      const facebookPurge = await purgeStaleFacebookImports();
-      jobs.facebookPurge = facebookPurge;
       const facebookEventsPurge = await purgeStaleFacebookEvents();
       jobs.facebookEventsPurge = facebookEventsPurge;
-      if (facebookPurge.deleted > 0 || facebookEventsPurge.unpublished > 0) {
+      const facebookHygiene = await cleanupPublishedFacebookEmptyShells();
+      jobs.facebookHygiene = facebookHygiene;
+      if (
+        facebookEventsPurge.unpublished > 0 ||
+        facebookEventsPurge.deleted > 0 ||
+        facebookHygiene.unpublished > 0 ||
+        facebookHygiene.deleted > 0 ||
+        facebookHygiene.duplicatesDeleted > 0
+      ) {
         revalidatePath("/actualites");
         revalidatePath("/evenements");
         revalidatePath("/", "layout");

@@ -252,7 +252,11 @@ export async function notifyVeilleReport(input: {
   facebookHealth?: FacebookTokenHealth | null;
   facebookImportStatus?: FacebookImportStatus | null;
   facebookPurgeDeleted?: number;
-  facebookCleanup?: { unpublished: number; deleted: number };
+  facebookCleanup?: {
+    unpublished: number;
+    deleted: number;
+    duplicatesDeleted?: number;
+  };
   headerNote?: string;
 }): Promise<{ sent: boolean; reason?: string }> {
   const alertsCreated = input.alertsCreated ?? 0;
@@ -384,10 +388,13 @@ export async function notifyVeilleReport(input: {
 
   if (
     input.facebookCleanup &&
-    (input.facebookCleanup.unpublished > 0 || input.facebookCleanup.deleted > 0)
+    (input.facebookCleanup.unpublished > 0 ||
+      input.facebookCleanup.deleted > 0 ||
+      (input.facebookCleanup.duplicatesDeleted ?? 0) > 0)
   ) {
+    const dup = input.facebookCleanup.duplicatesDeleted ?? 0;
     lines.push(
-      `\n🧹 <b>Nettoyage Facebook</b> : ${input.facebookCleanup.unpublished} dépubliée(s), ${input.facebookCleanup.deleted} supprimée(s) (coquilles vides)`,
+      `\n🧹 <b>Nettoyage Facebook</b> : ${input.facebookCleanup.unpublished} dépubliée(s), ${input.facebookCleanup.deleted} supprimée(s) (coquilles vides)${dup > 0 ? `, ${dup} doublon(s)` : ""}`,
     );
   }
 
