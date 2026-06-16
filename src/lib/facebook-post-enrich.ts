@@ -308,7 +308,7 @@ async function enrichFromOpenGraph(
 export async function enrichFacebookPostForImport(
   post: FacebookPostForImport,
   token: string | undefined,
-  options: { pageId?: string; importAll?: boolean; skipOg?: boolean } = {},
+  options: { pageId?: string; importAll?: boolean } = {},
 ): Promise<FacebookPostForImport> {
   const pageId = options.pageId ?? "350029589936";
   const listPicture = post.full_picture?.trim() ?? "";
@@ -360,13 +360,6 @@ export async function enrichFacebookPostForImport(
 
   if (isFacebookJunkText(current.message?.trim() ?? "")) {
     current = { ...current, message: undefined };
-  }
-
-  if (options.skipOg) {
-    if (!current.full_picture?.trim() && listPicture) {
-      return { ...current, full_picture: listPicture };
-    }
-    return current;
   }
 
   const stillNeedsOg =

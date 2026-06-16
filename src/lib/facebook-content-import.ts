@@ -150,7 +150,6 @@ async function enrichPost(
   return enrichFacebookPostForImport(cleaned, config.pageAccessToken, {
     pageId: config.graphPageId ?? "350029589936",
     importAll: true,
-    skipOg: config.chainFast === true,
   });
 }
 
@@ -804,11 +803,8 @@ export async function importFacebookPostsAsContent(
 
   let repairsThisRun = 0;
   let coverPersistsThisRun = 0;
-  const skipRepairs = config.chainFast === true;
-  const deadline =
-    config.timeBudgetMs && config.timeBudgetMs > 0
-      ? Date.now() + config.timeBudgetMs
-      : null;
+  const skipRepairs =
+    config.skipRepairs === true || config.newPostsOnly === true;
   const maxFullRepairs = config.cronLight
     ? 30
     : config.importAllFeedPosts
@@ -837,11 +833,15 @@ export async function importFacebookPostsAsContent(
         })
       : posts;
 
-  for (const raw of sortedPosts) {
-    if (deadline && Date.now() >= deadline) {
-      result.warnings.push("time_budget_exceeded");
-      break;
-    }
+  let toProcess = sortedPosts;
+  if (config.newPostsOnly) {
+    const cap = Math.max(1, config.newPostsLimit ?? 3);
+    toProcess = sortedPosts
+      .filter((raw) => !existingBySlug.has(slugForPost(config.pageKey, raw.id)))
+      .slice(0, cap);
+  }
+
+  for (const raw of toProcess) {
     const slug = slugForPost(config.pageKey, raw.id);
     const filterOpts = config.importAllFeedPosts
       ? { importAllFeedPosts: true as const }

@@ -8,7 +8,7 @@ import { getFacebookImportStatus } from "@/lib/facebook-import-status";
 import { notifyFacebookImportReport, notifyPublicNewArticles } from "@/lib/telegram-notify";
 import { syncUtilityOutages } from "@/lib/utility-outages-sync";
 
-/** Import Facebook MooreaNews — Hobby Vercel : 202 + after() si chain=1 (évite curl 52). */
+/** Import Facebook MooreaNews — veille GitHub : wait=1 synchrone (enrichissement complet). */
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
@@ -52,19 +52,19 @@ async function runFacebookImport(
     skipUtility?: boolean;
     skipStatus?: boolean;
     recentImportLimit?: number;
-    chainFast?: boolean;
-    timeBudgetMs?: number;
+    newPostsOnly?: boolean;
+    newPostsLimit?: number;
   },
 ) {
   const start = Date.now();
   const recentLimit =
     options?.recentImportLimit ?? facebookCronRecentPostLimit();
-  const chainFast = options?.chainFast === true;
+  const newPostsOnly = options?.newPostsOnly === true;
   const result = await aggregateFacebookPagesGraph({
     light: true,
     recentImportLimit: recentLimit,
-    chainFast,
-    timeBudgetMs: options?.timeBudgetMs,
+    newPostsOnly,
+    newPostsLimit: options?.newPostsLimit ?? recentLimit,
     forcePhotoFbids:
       forcePhotoFbids && forcePhotoFbids.length > 0
         ? forcePhotoFbids
@@ -130,7 +130,7 @@ async function runFacebookImport(
     durationMs,
     mode: "light" as const,
     recentLimit,
-    chainFast,
+    newPostsOnly,
     forcePhotoFbids:
       forcePhotoFbids && forcePhotoFbids.length > 0
         ? forcePhotoFbids
@@ -158,6 +158,10 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const wait = url.searchParams.get("wait") === "1";
   const chain = url.searchParams.get("chain") === "1";
+  const newPostsOnly =
+    url.searchParams.get("newOnly") === "1" ||
+    url.searchParams.get("newPostsOnly") === "1" ||
+    chain;
   const forcePhotoFbids = [
     ...url.searchParams.getAll("fbid"),
     ...(url.searchParams.get("fbids")?.split(/[,;\s]+/) ?? []),
@@ -170,7 +174,7 @@ export async function GET(req: Request) {
       {
         ok: false,
         error: "async_disabled",
-        hint: "Ajouter wait=1 (local/Pro) ou chain=1 (veille GitHub, réponse 202 immédiate)",
+        hint: "Ajouter wait=1 (veille GitHub) ou chain=1",
       },
       { status: 400 },
     );
@@ -178,26 +182,23 @@ export async function GET(req: Request) {
 
   try {
     const limitRaw = url.searchParams.get("limit");
-    const chainFast = chain || url.searchParams.get("fast") === "1";
-    const recentImportLimit = limitRaw
-      ? Math.min(Math.max(1, Math.floor(Number(limitRaw))), 80)
-      : chainFast
-        ? 5
-        : chain
-          ? facebookCronRecentPostLimit()
-          : undefined;
+    const newPostsLimit = limitRaw
+      ? Math.min(Math.max(1, Math.floor(Number(limitRaw))), 10)
+      : newPostsOnly
+        ? 1
+        : facebookCronRecentPostLimit();
 
     const importOptions = {
       skipTelegram: false,
       skipUtility: chain,
       skipStatus: chain,
-      recentImportLimit,
-      chainFast,
-      timeBudgetMs: chainFast ? 48_000 : undefined,
+      recentImportLimit: Math.max(newPostsLimit, 20),
+      newPostsOnly,
+      newPostsLimit,
     };
 
-    /** Veille chainée : Hobby coupe à ~60 s → async obligatoire (comme garde-weekend). */
-    if (chain) {
+    /** Sans wait=1 : async (tests manuels uniquement). Veille GitHub passe toujours wait=1. */
+    if (!wait) {
       after(async () => {
         try {
           await runFacebookImport(
@@ -214,12 +215,9 @@ export async function GET(req: Request) {
           ok: true,
           started: true,
           async: true,
-          chain: true,
-          chainFast,
-          recentImportLimit,
-          hint: chainFast
-            ? "Import Facebook rapide (~30–50 s). Rapport Telegram à la fin."
-            : "Import Facebook en cours (~1–2 min). Rapport Telegram à la fin.",
+          newPostsOnly,
+          newPostsLimit,
+          hint: "Import Facebook en arrière-plan.",
         },
         { status: 202 },
       );

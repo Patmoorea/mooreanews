@@ -32,10 +32,12 @@ export type FacebookPageImportConfig = {
   graphPageId?: string;
   /** Cron Vercel : réparations légères (persist cover sans Graph/OG). */
   cronLight?: boolean;
-  /** Veille GitHub (Hobby ~60 s) : pas de réparations, enrich Graph sans OG. */
-  chainFast?: boolean;
-  /** Arrêt import après ce délai (ms) — évite kill Vercel. */
-  timeBudgetMs?: number;
+  /** Veille sync : uniquement posts absents du site. */
+  newPostsOnly?: boolean;
+  /** Nombre max de nouveaux posts par run (veille Hobby). */
+  newPostsLimit?: number;
+  /** Pas de réparations (veille sync ~60 s). */
+  skipRepairs?: boolean;
 };
 
 /** @deprecated Utiliser importFacebookPostsAsContent */
