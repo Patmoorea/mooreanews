@@ -1098,11 +1098,11 @@ export async function fetchMooreaNewsPostByFbid(
 ): Promise<FacebookPostForImport | null> {
   const pageId = "350029589936";
   const postId = `${pageId}_${fbid}`;
-  const { enrichFacebookPostForImport, fetchGraphPostById } = await import(
-    "@/lib/facebook-post-enrich"
-  );
+  const { enrichFacebookPostForImport, fetchMooreaNewsGraphPostByFbid } =
+    await import("@/lib/facebook-post-enrich");
 
-  let post: FacebookPostForImport | null = await fetchGraphPostById(postId, token);
+  let post: FacebookPostForImport | null =
+    await fetchMooreaNewsGraphPostByFbid(fbid, token);
 
   if (!post?.message?.trim() && !post?.full_picture?.trim()) {
     const photo = await fetchGraphPhotoById(fbid, pageId, token);

@@ -10,6 +10,44 @@ import { cleanImportedText } from "@/lib/html-entities";
 export const GRAPH_POST_DETAIL_FIELDS =
   "id,message,permalink_url,created_time,full_picture,picture,status_type,attachments{description,title,media_type,type,url,unshimmed_url,target{id},media{image{src}},subattachments{data{description,title,media_type,type,url,unshimmed_url,target{id},media{image{src}}}}}";
 
+export const MOOREANEWS_PAGE_ID = "350029589936";
+/** Propriétaire alternatif dans les permaliens Graph — le texte y est parfois seulement lisible. */
+export const MOOREANEWS_GRAPH_ALT_OWNER_ID = "1762281498446173";
+
+export function mooreaNewsPostIdsFromFbid(fbid: string): string[] {
+  const id = fbid.trim();
+  if (!/^\d+$/.test(id)) return [];
+  return [`${MOOREANEWS_PAGE_ID}_${id}`, `${MOOREANEWS_GRAPH_ALT_OWNER_ID}_${id}`];
+}
+
+function mergeFacebookPostsForImport(
+  base: FacebookPostForImport,
+  extra: FacebookPostForImport,
+): FacebookPostForImport {
+  const baseMsg = base.message?.trim() ?? "";
+  const extraMsg = extra.message?.trim() ?? "";
+  const baseJunk = !baseMsg || isFacebookJunkText(baseMsg);
+  const extraJunk = !extraMsg || isFacebookJunkText(extraMsg);
+  let message = base.message;
+  if (extraJunk && !baseJunk) message = base.message;
+  else if (baseJunk && !extraJunk) message = extra.message;
+  else if (extraMsg.length > baseMsg.length) message = extra.message;
+  else message = base.message ?? extra.message;
+
+  const basePic = base.full_picture?.trim() ?? "";
+  const extraPic = extra.full_picture?.trim() ?? "";
+  const full_picture =
+    extraPic.length > basePic.length ? extra.full_picture : base.full_picture ?? extra.full_picture;
+
+  return {
+    ...base,
+    message,
+    full_picture,
+    created_time: base.created_time ?? extra.created_time,
+    permalink_url: base.permalink_url ?? extra.permalink_url,
+  };
+}
+
 type GraphAttachment = {
   description?: string;
   title?: string;
@@ -265,6 +303,20 @@ export async function fetchGraphPostById(
   return post;
 }
 
+/** MooreaNews : essaie l’ID page canonique + l’ID propriétaire des permaliens Graph. */
+export async function fetchMooreaNewsGraphPostByFbid(
+  fbid: string,
+  token: string,
+): Promise<FacebookPostForImport | null> {
+  let best: FacebookPostForImport | null = null;
+  for (const postId of mooreaNewsPostIdsFromFbid(fbid)) {
+    const post = await fetchGraphPostById(postId, token);
+    if (!post) continue;
+    best = best ? mergeFacebookPostsForImport(best, post) : post;
+  }
+  return best;
+}
+
 async function enrichFromOpenGraph(
   post: FacebookPostForImport,
   pageId: string,
@@ -337,9 +389,16 @@ export async function enrichFacebookPostForImport(
 
   let shareUrls: string[] = [];
   if (needsGraph && token) {
-    const raw = await fetchGraphPostRawById(post.id, token);
-    if (raw) {
-      shareUrls = attachmentShareUrls(raw.attachments?.data);
+    const fbid = post.id.split("_").pop() ?? "";
+    const postIds =
+      pageId === MOOREANEWS_PAGE_ID && /^\d+$/.test(fbid)
+        ? mooreaNewsPostIdsFromFbid(fbid)
+        : [post.id];
+
+    for (const graphPostId of postIds) {
+      const raw = await fetchGraphPostRawById(graphPostId, token);
+      if (!raw) continue;
+      shareUrls.push(...attachmentShareUrls(raw.attachments?.data));
       let detailed = normalizeGraphPostRaw(raw);
       const shared = await enrichFromSharedAttachmentTargets(
         raw.attachments?.data,
@@ -357,18 +416,27 @@ export async function enrichFacebookPostForImport(
         detailed = { ...detailed, full_picture: shared.full_picture };
       }
       if (!detailed.full_picture) {
-        const attImg = await fetchGraphAttachmentImage(post.id, token);
+        const attImg = await fetchGraphAttachmentImage(graphPostId, token);
         if (attImg) detailed = { ...detailed, full_picture: attImg };
       }
       const detailedJunk = isFacebookJunkText(detailed.message?.trim() ?? "");
-      current = {
-        ...current,
+      const candidate: FacebookPostForImport = {
+        id: post.id,
         message: detailedJunk ? undefined : detailed.message,
-        full_picture: detailed.full_picture ?? current.full_picture,
-        permalink_url: detailed.permalink_url ?? current.permalink_url,
-        created_time: detailed.created_time ?? current.created_time,
+        full_picture: detailed.full_picture,
+        permalink_url: detailed.permalink_url,
+        created_time: detailed.created_time,
       };
+      current = mergeFacebookPostsForImport(current, candidate);
+      if (
+        current.message?.trim() &&
+        !isFacebookJunkText(current.message) &&
+        current.full_picture?.trim()
+      ) {
+        break;
+      }
     }
+    shareUrls = [...new Set(shareUrls)];
   }
 
   if (isFacebookJunkText(current.message?.trim() ?? "")) {
