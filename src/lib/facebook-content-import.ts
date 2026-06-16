@@ -996,6 +996,18 @@ export async function importFacebookPostsAsContent(
 
     const post = await enrichPost(raw, config);
     const message = post.message?.trim() ?? "";
+    if (
+      config.importAllFeedPosts &&
+      !message &&
+      !post.full_picture?.trim()
+    ) {
+      pushImportFailure(
+        result,
+        raw.id,
+        "Graph/OG sans texte ni affiche — publication non créée",
+      );
+      continue;
+    }
     const freshness = shouldImportFacebookPost(
       message,
       post.created_time,
