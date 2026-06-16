@@ -5,6 +5,7 @@ import {
   getTelegramWebhookInfo,
   setTelegramWebhook,
 } from "@/lib/telegram-api";
+import { sendTestPublicChannelPost } from "@/lib/telegram-notify";
 import {
   getPublicBotTokenStrict,
   getPublicBotUsername,
@@ -59,10 +60,12 @@ export async function GET(req: Request) {
   const base = SITE.url.replace(/\/$/, "");
   const webhookUrl = `${base}/api/webhooks/telegram`;
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
+  const testChannel = new URL(req.url).searchParams.get("testChannel") === "1";
 
   const set = await setTelegramWebhook(webhookUrl, secret);
   const info = await getTelegramWebhookInfo();
   const adminHook = await fetchWebhookInfo(adminToken);
+  const channelTest = testChannel ? await sendTestPublicChannelPost() : undefined;
 
   return NextResponse.json({
     ok: set.ok,
@@ -73,12 +76,15 @@ export async function GET(req: Request) {
     currentUrl: info.url,
     lastWebhookError: info.error,
     adminBotWebhookUrl: adminHook.url ?? null,
+    channelTest,
     warning:
       adminHook.url === webhookUrl
         ? "Le bot ADMIN avait aussi ce webhook — normal si vous migrez. Le bot PUBLIC doit être celui utilisé par les citoyens."
         : undefined,
     error: set.error,
-    next: "Testez t.me/MooreanewsPublic_bot → /start",
+    next: testChannel
+      ? "Vérifiez @MooreaNews — message test si channelTest.ok"
+      : "Test canal : ajouter &testChannel=1 — puis t.me/MooreanewsPublic_bot → /start",
   });
 }
 

@@ -103,8 +103,9 @@ async function runFacebookImport(
   }
 
   const newForChannel = result.createdArticles ?? [];
+  let telegramChannel = { sent: 0, failed: 0, errors: [] as string[] };
   if (newForChannel.length > 0) {
-    await notifyPublicNewArticles(newForChannel);
+    telegramChannel = await notifyPublicNewArticles(newForChannel);
   }
 
   return {
@@ -138,6 +139,7 @@ async function runFacebookImport(
       ? null
       : await getFacebookImportStatus(5),
     utilityOutages,
+    telegramChannel,
     ...result,
   };
 }

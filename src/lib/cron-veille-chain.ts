@@ -21,7 +21,7 @@ import {
   deactivateFalseFerryAlerts,
   deactivateFalseHouleAlerts,
 } from "@/lib/facebook-alert-import";
-import { notifyVeilleReport } from "@/lib/telegram-notify";
+import { notifyVeilleReport, notifyPublicNewArticles } from "@/lib/telegram-notify";
 import { auditPublicContent } from "@/lib/site-content-audit";
 import { checkFacebookTokenHealth } from "@/lib/facebook-token";
 import { getFacebookImportStatus } from "@/lib/facebook-import-status";
@@ -61,7 +61,20 @@ export async function runVeillePartRss() {
     revalidatePath("/alertes");
     revalidatePath("/", "layout");
   }
-  return { ok: true, part: "rss" as const, durationMs: Date.now() - start, bySource, ...s };
+
+  let telegramChannel = { sent: 0, failed: 0, errors: [] as string[] };
+  if (s.createdArticles.length > 0) {
+    telegramChannel = await notifyPublicNewArticles(s.createdArticles);
+  }
+
+  return {
+    ok: true,
+    part: "rss" as const,
+    durationMs: Date.now() - start,
+    bySource,
+    telegramChannel,
+    ...s,
+  };
 }
 
 export async function runVeillePartWeb() {

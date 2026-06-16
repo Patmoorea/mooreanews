@@ -7,10 +7,7 @@ import type { FacebookImportStatus } from "@/lib/facebook-import-status";
 import type { FacebookTokenHealth } from "@/lib/facebook-token";
 import type { ContentAuditReport } from "@/lib/site-content-audit";
 import { escapeHtml, sendTelegramNotification } from "@/lib/telegram";
-import {
-  getPublicBotToken,
-  getPublicChatId,
-} from "@/lib/telegram-config";
+import { getPublicBotTokenStrict, getPublicChatId } from "@/lib/telegram-config";
 import { isOptionalVeilleWarning } from "@/lib/feed-errors";
 import { getMooreaDuJour } from "@/lib/moorea-du-jour";
 import { formatMorningBrief30s } from "@/lib/moorea-brief";
@@ -478,18 +475,41 @@ export async function notifyContentAuditOnly(
 /** Posts nouveaux articles sur le canal public Telegram (si configuré). */
 export async function notifyPublicNewArticles(
   articles: CreatedArticleNotice[],
-): Promise<{ sent: number; reason?: string }> {
+): Promise<{
+  sent: number;
+  failed: number;
+  reason?: string;
+  errors: string[];
+}> {
   if (process.env.TELEGRAM_PUBLIC_ARTICLE_POSTS === "false") {
-    return { sent: 0, reason: "disabled" };
+    return { sent: 0, failed: 0, reason: "disabled", errors: [] };
   }
   const publicChat = getPublicChatId();
-  const token = getPublicBotToken();
-  if (!token || !publicChat || articles.length === 0) {
-    return { sent: 0, reason: "public_channel_not_configured" };
+  const token = getPublicBotTokenStrict();
+  if (!token) {
+    return {
+      sent: 0,
+      failed: 0,
+      reason: "TELEGRAM_PUBLIC_BOT_TOKEN manquant sur Vercel",
+      errors: [],
+    };
+  }
+  if (!publicChat) {
+    return {
+      sent: 0,
+      failed: 0,
+      reason: "TELEGRAM_PUBLIC_CHAT_ID manquant sur Vercel",
+      errors: [],
+    };
+  }
+  if (articles.length === 0) {
+    return { sent: 0, failed: 0, reason: "no_articles", errors: [] };
   }
 
   const base = siteUrl();
   let sent = 0;
+  let failed = 0;
+  const errors: string[] = [];
 
   for (const a of articles.slice(0, 5)) {
     const html = [
@@ -512,13 +532,75 @@ export async function notifyPublicNewArticles(
           }),
         },
       );
-      if (res.ok) sent += 1;
-    } catch {
-      /* suite */
+      const json = (await res.json()) as {
+        ok?: boolean;
+        description?: string;
+      };
+      if (res.ok && json.ok) {
+        sent += 1;
+      } else {
+        failed += 1;
+        const msg = json.description ?? `HTTP ${res.status}`;
+        errors.push(msg);
+        console.error("[telegram channel]", msg, a.slug);
+      }
+    } catch (e) {
+      failed += 1;
+      const msg = e instanceof Error ? e.message : String(e);
+      errors.push(msg);
+      console.error("[telegram channel]", msg, a.slug);
     }
   }
 
-  return { sent };
+  return { sent, failed, errors: errors.slice(0, 5) };
+}
+
+/** Message test canal public — diagnostic config. */
+export async function sendTestPublicChannelPost(): Promise<{
+  ok: boolean;
+  reason?: string;
+  telegramError?: string;
+}> {
+  const token = getPublicBotTokenStrict();
+  const chatId = getPublicChatId();
+  if (!token) {
+    return { ok: false, reason: "TELEGRAM_PUBLIC_BOT_TOKEN manquant" };
+  }
+  if (!chatId) {
+    return { ok: false, reason: "TELEGRAM_PUBLIC_CHAT_ID manquant" };
+  }
+
+  const base = siteUrl();
+  try {
+    const res = await fetch(
+      `https://api.telegram.org/bot${token}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: `✅ Test canal MooreaNews — ${new Date().toISOString()}\n<a href="${base}/">mooreanews.com</a>`,
+          parse_mode: "HTML",
+        }),
+      },
+    );
+    const json = (await res.json()) as {
+      ok?: boolean;
+      description?: string;
+    };
+    if (res.ok && json.ok) return { ok: true };
+    return {
+      ok: false,
+      reason: "telegram_api_error",
+      telegramError: json.description ?? `HTTP ${res.status}`,
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      reason: "fetch_failed",
+      telegramError: e instanceof Error ? e.message : String(e),
+    };
+  }
 }
 
 /** Digest public Telegram — 1 message matin max (canal public si configuré). */
@@ -527,7 +609,7 @@ export async function sendPublicMooreaBrief(): Promise<{
   reason?: string;
 }> {
   const publicChat = getPublicChatId();
-  const token = getPublicBotToken();
+  const token = getPublicBotTokenStrict();
   if (!token || !publicChat) {
     return {
       sent: false,

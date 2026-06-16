@@ -44,7 +44,19 @@ Les **articles** ne partent pas en DM à tous les abonnés du bot — il faut un
 
 Le site envoie alors :
 - **Digest matin** « Moorea en 30 secondes »
-- **Nouveaux articles** après chaque veille (titre + lien)
+- **Nouveaux articles** après import Facebook **et** veille RSS (titre + lien, max 5/passage)
+
+### Test canal (diagnostic)
+
+```bash
+curl "https://www.mooreanews.com/api/cron/telegram-webhook?secret=VOTRE_CRON_SECRET&testChannel=1"
+```
+
+Réponse `"channelTest": { "ok": true }` → un message test apparaît sur @MooreaNews.
+
+Erreurs fréquentes :
+- `chat not found` → mauvais `TELEGRAM_PUBLIC_CHAT_ID`
+- `bot is not a member` / `need administrator rights` → ajouter **@MooreanewsPublic_bot** comme admin du canal avec droit **Publier des messages**
 
 Désactiver les posts articles : `TELEGRAM_PUBLIC_ARTICLE_POSTS=false`
 
