@@ -1254,19 +1254,51 @@ export async function forceRepairMooreaNewsByFbid(fbids: string[]): Promise<{
   for (const fbid of fbids) {
     const slug = `mooreanews-fb-350029589936-${fbid}`;
     const post = await fetchMooreaNewsPostByFbid(fbid, token);
+    const permalink = `https://www.facebook.com/MooreaNews/posts/${fbid}`;
+
+    const { data: existing } = await supabase
+      .from("articles")
+      .select("id, cover_url")
+      .eq("slug", slug)
+      .maybeSingle();
+
     if (!post) {
+      if (existing?.id) {
+        await supabase.from("articles").delete().eq("id", existing.id);
+        await hideExternalArticlesForArticleSlug(slug);
+      }
       results.push({
         fbid,
         slug,
         ok: false,
         hasText: false,
         hasCover: false,
-        reason: "post_facebook_introuvable",
+        permalink,
+        reason: "meta_api_contenu_indisponible",
       });
       continue;
     }
 
     const message = post.message?.trim() ?? "";
+    const hasCover = Boolean(post.full_picture?.trim());
+
+    if (!message && !hasCover) {
+      if (existing?.id) {
+        await supabase.from("articles").delete().eq("id", existing.id);
+        await hideExternalArticlesForArticleSlug(slug);
+      }
+      results.push({
+        fbid,
+        slug,
+        ok: false,
+        hasText: false,
+        hasCover: false,
+        permalink,
+        reason: "meta_api_contenu_indisponible",
+      });
+      continue;
+    }
+
     const freshness = shouldImportFacebookPost(
       message,
       post.created_time,
@@ -1279,18 +1311,12 @@ export async function forceRepairMooreaNewsByFbid(fbids: string[]): Promise<{
         slug,
         ok: false,
         hasText: Boolean(message),
-        hasCover: Boolean(post.full_picture?.trim()),
+        hasCover: hasCover,
+        permalink,
         reason: freshness.reason,
       });
       continue;
     }
-
-    const permalink = permalinkForPost(post, config.graphPageId);
-    const { data: existing } = await supabase
-      .from("articles")
-      .select("id, cover_url")
-      .eq("slug", slug)
-      .maybeSingle();
 
     if (existing?.id) {
       const r = await repairFacebookArticle(

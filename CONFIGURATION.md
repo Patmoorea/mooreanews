@@ -124,7 +124,7 @@ Checklist rapide :
 Le token copié depuis l’**Explorateur Graph** (`350029589936?fields=access_token`) est **court** (~1–2 h). Pour Vercel :
 
 1. [developers.facebook.com](https://developers.facebook.com) → votre app → **Outils** → **Explorateur Graph**
-2. Générer un jeton **utilisateur** avec : `pages_read_engagement`, `pages_show_list`
+2. Générer un jeton **utilisateur** avec : `pages_read_engagement`, `pages_read_user_content`, `pages_show_list`
 3. Échanger en jeton long : `GET https://graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token&client_id=APP_ID&client_secret=APP_SECRET&fb_exchange_token=JETON_COURT`
 4. `GET https://graph.facebook.com/v21.0/me/accounts?access_token=JETON_LONG` → copier `access_token` de la page **MooreaNews** (ou Commune)
 5. Coller dans Vercel `FACEBOOK_PAGE_ACCESS_TOKEN` → **Redeploy**

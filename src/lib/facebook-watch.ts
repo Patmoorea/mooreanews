@@ -1137,7 +1137,14 @@ export async function fetchMooreaNewsPostByFbid(
     permalink_url: `https://www.facebook.com/MooreaNews/posts/${fbid}`,
   };
 
-  return enrichFacebookPostForImport(post, token, { pageId, importAll: true });
+  const enriched = await enrichFacebookPostForImport(post, token, {
+    pageId,
+    importAll: true,
+  });
+  if (!enriched.message?.trim() && !enriched.full_picture?.trim()) {
+    return null;
+  }
+  return enriched;
 }
 
 export async function aggregateWebWatch(): Promise<AggregationResult[]> {
