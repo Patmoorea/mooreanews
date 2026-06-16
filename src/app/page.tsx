@@ -16,6 +16,7 @@ import { RecentAnnouncements } from "@/components/home/RecentAnnouncements";
 import { InteractiveMap } from "@/components/home/InteractiveMap";
 import { TelegramCommunityPromo } from "@/components/telegram/TelegramCommunityPromo";
 import { CommunityCTA } from "@/components/home/CommunityCTA";
+import { HomeV2TrialBanner } from "@/components/home-v2/HomeV2TrialBanner";
 
 export const revalidate = 600;
 
@@ -29,6 +30,7 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
+      <HomeV2TrialBanner />
       <Hero />
       <AlertsStrip />
       <TelegramCommunityPromo variant="hero" />
