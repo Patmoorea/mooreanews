@@ -52,14 +52,19 @@ async function runFacebookImport(
     skipUtility?: boolean;
     skipStatus?: boolean;
     recentImportLimit?: number;
+    chainFast?: boolean;
+    timeBudgetMs?: number;
   },
 ) {
   const start = Date.now();
   const recentLimit =
     options?.recentImportLimit ?? facebookCronRecentPostLimit();
+  const chainFast = options?.chainFast === true;
   const result = await aggregateFacebookPagesGraph({
     light: true,
     recentImportLimit: recentLimit,
+    chainFast,
+    timeBudgetMs: options?.timeBudgetMs,
     forcePhotoFbids:
       forcePhotoFbids && forcePhotoFbids.length > 0
         ? forcePhotoFbids
@@ -125,6 +130,7 @@ async function runFacebookImport(
     durationMs,
     mode: "light" as const,
     recentLimit,
+    chainFast,
     forcePhotoFbids:
       forcePhotoFbids && forcePhotoFbids.length > 0
         ? forcePhotoFbids
@@ -172,17 +178,22 @@ export async function GET(req: Request) {
 
   try {
     const limitRaw = url.searchParams.get("limit");
+    const chainFast = chain || url.searchParams.get("fast") === "1";
     const recentImportLimit = limitRaw
       ? Math.min(Math.max(1, Math.floor(Number(limitRaw))), 80)
-      : chain
-        ? facebookCronRecentPostLimit()
-        : undefined;
+      : chainFast
+        ? 5
+        : chain
+          ? facebookCronRecentPostLimit()
+          : undefined;
 
     const importOptions = {
       skipTelegram: false,
       skipUtility: chain,
       skipStatus: chain,
       recentImportLimit,
+      chainFast,
+      timeBudgetMs: chainFast ? 48_000 : undefined,
     };
 
     /** Veille chainée : Hobby coupe à ~60 s → async obligatoire (comme garde-weekend). */
@@ -204,8 +215,11 @@ export async function GET(req: Request) {
           started: true,
           async: true,
           chain: true,
+          chainFast,
           recentImportLimit,
-          hint: "Import Facebook en cours (~1–2 min). Rapport Telegram à la fin.",
+          hint: chainFast
+            ? "Import Facebook rapide (~30–50 s). Rapport Telegram à la fin."
+            : "Import Facebook en cours (~1–2 min). Rapport Telegram à la fin.",
         },
         { status: 202 },
       );

@@ -134,12 +134,19 @@ export async function unpublishEmptyFacebookShells(): Promise<number> {
 
   const { data: rows } = await admin
     .from("articles")
-    .select("id, slug, title, excerpt, body, cover_url, published")
+    .select("id, slug, title, excerpt, body, cover_url, published, published_at")
     .eq("published", true)
     .like("slug", "mooreanews-fb-%");
 
   let unpublished = 0;
+  const graceMs = 6 * 3600 * 1000;
   for (const row of rows ?? []) {
+    if (row.published_at) {
+      const ms = Date.parse(row.published_at);
+      if (!Number.isNaN(ms) && Date.now() - ms < graceMs) {
+        continue;
+      }
+    }
     if (
       !isEmptyFacebookArticleShell({
         title: row.title,

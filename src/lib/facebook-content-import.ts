@@ -150,6 +150,7 @@ async function enrichPost(
   return enrichFacebookPostForImport(cleaned, config.pageAccessToken, {
     pageId: config.graphPageId ?? "350029589936",
     importAll: true,
+    skipOg: config.chainFast === true,
   });
 }
 
@@ -445,7 +446,11 @@ async function importAsArticle(
     !cover &&
     isEmptyFacebookArticleShell({ title, excerpt, body, cover_url: cover })
   ) {
-    return { ok: false, reason: "empty_shell" };
+    const recentMs = Date.now() - Date.parse(publishedAt);
+    const hasPermalink = permalink.startsWith("http");
+    if (!(hasPermalink && recentMs < 48 * 3600 * 1000)) {
+      return { ok: false, reason: "empty_shell" };
+    }
   }
 
   const { data, error } = await supabase
@@ -799,6 +804,11 @@ export async function importFacebookPostsAsContent(
 
   let repairsThisRun = 0;
   let coverPersistsThisRun = 0;
+  const skipRepairs = config.chainFast === true;
+  const deadline =
+    config.timeBudgetMs && config.timeBudgetMs > 0
+      ? Date.now() + config.timeBudgetMs
+      : null;
   const maxFullRepairs = config.cronLight
     ? 30
     : config.importAllFeedPosts
@@ -828,6 +838,10 @@ export async function importFacebookPostsAsContent(
       : posts;
 
   for (const raw of sortedPosts) {
+    if (deadline && Date.now() >= deadline) {
+      result.warnings.push("time_budget_exceeded");
+      break;
+    }
     const slug = slugForPost(config.pageKey, raw.id);
     const filterOpts = config.importAllFeedPosts
       ? { importAllFeedPosts: true as const }
@@ -841,7 +855,11 @@ export async function importFacebookPostsAsContent(
     if (config.importAllFeedPosts) {
       const existing = existingBySlug.get(slug);
 
-      if (existing && !isFacebookArticleNeedsRepair({ ...existing, slug })) {
+      if (
+        !skipRepairs &&
+        existing &&
+        !isFacebookArticleNeedsRepair({ ...existing, slug })
+      ) {
         if (
           isFacebookCoverMissingRepair({ ...existing, slug }) &&
           coverPersistsThisRun < maxCoverPersists
@@ -865,7 +883,11 @@ export async function importFacebookPostsAsContent(
         continue;
       }
 
-      if (existing && isFacebookArticleNeedsRepair({ ...existing, slug })) {
+      if (
+        !skipRepairs &&
+        existing &&
+        isFacebookArticleNeedsRepair({ ...existing, slug })
+      ) {
         if (isFacebookCoverNeedsPersistOnly({ ...existing, slug })) {
           if (coverPersistsThisRun >= maxCoverPersists) {
             result.skipped += 1;

@@ -624,6 +624,9 @@ export async function aggregateFacebookPagesGraph(options?: {
   recentImportLimit?: number;
   /** fbids album à forcer (ex. affiche Fête des pères). */
   forcePhotoFbids?: string[];
+  /** Veille GitHub Hobby : import rapide sans réparations ni OG. */
+  chainFast?: boolean;
+  timeBudgetMs?: number;
 }): Promise<AggregationResult> {
   const result: AggregationResult = {
     source: "facebook-pages",
@@ -781,6 +784,8 @@ export async function aggregateFacebookPagesGraph(options?: {
             pageAccessToken: tokenForPage,
             graphPageId: isMooreaNews ? "350029589936" : page.pageId,
             cronLight: options?.light === true,
+            chainFast: options?.chainFast === true,
+            timeBudgetMs: options?.timeBudgetMs,
           },
         });
       }
