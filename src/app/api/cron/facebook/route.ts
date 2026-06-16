@@ -196,7 +196,8 @@ export async function GET(req: Request) {
       skipTelegram: chain && !repairOnly,
       skipUtility: chain,
       skipStatus: chain,
-      recentImportLimit: Math.max(newPostsLimit, 25),
+      recentImportLimit:
+        newPostsOnly || repairOnly ? newPostsLimit : Math.max(newPostsLimit, 25),
       newPostsOnly,
       newPostsLimit,
       repairOnly,

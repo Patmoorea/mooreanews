@@ -66,12 +66,9 @@ jobs:
           }
 
           run_step "RSS" "/api/cron/aggregate" "part=rss"
-          for n in 1 2 3 4 5; do
-            run_step "FB nouveau $n" "/api/cron/facebook" "chain=1&newOnly=1&limit=1" "1" "58"
-          done
-          for n in 1 2 3 4 5; do
-            run_step "FB réparation $n" "/api/cron/facebook" "chain=1&repairOnly=1&limit=1" "1" "58"
-          done
+          # Hobby Vercel ≈ 60 s max / appel — 1 post suffit par heure (5×58 s = 10 min perdues en timeout)
+          run_step "FB nouveau" "/api/cron/facebook" "chain=1&newOnly=1&limit=1" "1" "58"
+          run_step "FB réparation" "/api/cron/facebook" "chain=1&repairOnly=1&limit=1" "1" "58"
           run_step "Web" "/api/cron/aggregate" "part=web"
           run_step "IA brouillons" "/api/cron/aggregate" "part=ai" "1" "55"
           run_step "Finish + Telegram" "/api/cron/aggregate" "part=finish"
