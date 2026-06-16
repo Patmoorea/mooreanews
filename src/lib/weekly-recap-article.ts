@@ -53,6 +53,26 @@ export function buildWeeklyRecapBody(snap: WeeklyRecapSnapshot): string {
   return blocks.join("\n\n");
 }
 
+/** Retire « à la une » des agendas des semaines précédentes. */
+async function unfeaturePreviousWeeklyRecapArticles(
+  supabase: NonNullable<ReturnType<typeof getAdminSupabase>>,
+  keepSlug: string,
+): Promise<number> {
+  const { data, error } = await supabase
+    .from("articles")
+    .update({ featured: false, updated_at: new Date().toISOString() })
+    .like("slug", "agenda-semaine-%")
+    .neq("slug", keepSlug)
+    .eq("featured", true)
+    .select("slug");
+
+  if (error) {
+    console.warn("[weekly-recap] unfeature previous", error.message);
+    return 0;
+  }
+  return data?.length ?? 0;
+}
+
 export async function upsertWeeklyRecapArticle(
   snap: WeeklyRecapSnapshot,
 ): Promise<{
@@ -72,6 +92,8 @@ export async function upsertWeeklyRecapArticle(
   const body = buildWeeklyRecapBody(snap);
   const coverUrl = resolvePosterCoverUrl(snap.posterImageUrl, snap.syncedAt);
   const publishedAt = `${snap.weekStart}T07:00:00.000Z`;
+
+  await unfeaturePreviousWeeklyRecapArticles(supabase, slug);
 
   const { data: existing } = await supabase
     .from("articles")
