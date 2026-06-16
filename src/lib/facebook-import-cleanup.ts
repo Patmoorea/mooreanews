@@ -7,7 +7,6 @@ import {
   isFacebookArticleCompleteOnSite,
   isEmptyFacebookArticleShell,
 } from "@/lib/facebook-import-filters";
-import { purgeDuplicateArticles } from "@/lib/article-duplicate-cleanup";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { isStaleFacebookEvent } from "@/lib/facebook-event-filters";
 
@@ -174,16 +173,23 @@ export async function unpublishEmptyFacebookShells(): Promise<number> {
 }
 
 /**
- * Hygiène imports Facebook — dépublie coquilles, supprime obsolètes et doublons.
- * Appelé à chaque finish veille + cron daily cleanup.
+ * Hygiène imports Facebook — dépublie, supprime coquilles vides et doublons.
+ * Appelé à chaque finish veille (pas seulement quand le cron Facebook tourne).
  */
 export async function cleanupPublishedFacebookEmptyShells(): Promise<{
   unpublished: number;
   deleted: number;
-  duplicatesDeleted: number;
+  duplicatesRemoved: number;
 }> {
   const unpublished = await unpublishEmptyFacebookShells();
   const { deleted } = await purgeStaleFacebookImports();
-  const { deleted: duplicatesDeleted } = await purgeDuplicateArticles();
-  return { unpublished, deleted, duplicatesDeleted };
+  const { purgeDuplicateArticles } = await import(
+    "@/lib/article-duplicate-cleanup"
+  );
+  const dupes = await purgeDuplicateArticles();
+  return {
+    unpublished,
+    deleted,
+    duplicatesRemoved: dupes.deleted,
+  };
 }

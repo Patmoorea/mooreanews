@@ -44,7 +44,8 @@ export function CleanupDuplicateArticlesButton({ count: initialCount }: Props) {
       <p className="mt-1 text-sm text-ocean-700">
         Même publication Facebook importée plusieurs fois (posts / feed Meta).
         Le nettoyage garde l&apos;article le plus complet (affiche, texte) et
-        supprime les copies.
+        supprime les copies. Le cron horaire tente aussi de les retirer
+        automatiquement.
       </p>
       <button
         type="button"

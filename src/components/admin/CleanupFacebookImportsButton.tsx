@@ -44,6 +44,8 @@ export function CleanupFacebookImportsButton({ count: initialCount }: Props) {
       <p className="mt-1 text-sm text-ocean-700">
         Coquilles sans texte ni affiche, posts trop anciens, ou événements Facebook
         avec date recalée (ex. « ce vendredi » d&apos;un post 2022).
+        Le cron horaire tente de les supprimer automatiquement ; ce bandeau
+        réapparaît tant qu&apos;il en reste en base.
       </p>
       <button
         type="button"

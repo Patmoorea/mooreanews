@@ -143,17 +143,13 @@ export async function runVeillePartFinish() {
     };
   }
 
-  let facebookCleanup: {
-    unpublished: number;
-    deleted: number;
-    duplicatesDeleted: number;
-  } = { unpublished: 0, deleted: 0, duplicatesDeleted: 0 };
+  let facebookCleanup = { unpublished: 0, deleted: 0, duplicatesRemoved: 0 };
   try {
     facebookCleanup = await cleanupPublishedFacebookEmptyShells();
     if (
       facebookCleanup.unpublished > 0 ||
       facebookCleanup.deleted > 0 ||
-      (facebookCleanup.duplicatesDeleted ?? 0) > 0
+      facebookCleanup.duplicatesRemoved > 0
     ) {
       revalidatePath("/actualites");
       revalidatePath("/admin/articles");
