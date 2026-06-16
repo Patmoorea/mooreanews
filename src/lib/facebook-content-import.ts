@@ -34,6 +34,7 @@ import { hideExternalArticlesForArticleSlug } from "@/lib/facebook-external-sync
 import { isSlugImportBlocked } from "@/lib/import-blocklist";
 import { unpublishEmptyFacebookShells } from "@/lib/facebook-import-cleanup";
 import { cleanImportedText } from "@/lib/html-entities";
+import { truncate } from "@/lib/utils";
 import {
   announcementCategoryFromMessage,
   eventCategoryFromMessage,
@@ -165,7 +166,10 @@ function articleTitleFromPost(
     const fromMsg = titleFromMessage(clean, "");
     if (fromMsg && (relaxed || !isFacebookJunkText(fromMsg))) return fromMsg;
     if (relaxed && clean.length >= 3) {
-      return clean.split("\n")[0]?.trim().slice(0, 200) || fromMsg || clean.slice(0, 200);
+      return (
+        fromMsg ||
+        truncate(clean.split("\n")[0]?.trim() || clean.replace(/\s+/g, " "), 120)
+      );
     }
   }
   const cap = imageCaption?.trim() ?? "";
@@ -201,6 +205,12 @@ function graphPostIdFromMooreaNewsSlug(slug: string): string | null {
   const tail = slug.match(/(\d{10,})$/);
   if (tail) return `350029589936_${tail[1]}`;
   return null;
+}
+
+function facebookExcerpt(message: string, fallback: string): string {
+  const flat = message.replace(/\n+/g, " ").replace(/\s+/g, " ").trim();
+  if (!flat) return fallback;
+  return truncate(flat, 280);
 }
 
 function buildBody(
@@ -431,8 +441,7 @@ async function importAsArticle(
   );
   const cover = coverUrlForDatabase(persist);
   const excerpt =
-    message.slice(0, 280) ||
-    `Publication Facebook ${config.pageName} · ${timeLabel}`;
+    facebookExcerpt(message, `Publication Facebook ${config.pageName} · ${timeLabel}`);
   const body = buildBody(message, permalink, config.pageName);
 
   if (
@@ -528,9 +537,10 @@ async function repairFacebookArticle(
     cover_url?: string | null;
   } = {
     title: title.slice(0, 500),
-    excerpt:
-      message.slice(0, 280) ||
+    excerpt: facebookExcerpt(
+      message,
       `Publication Facebook ${config.pageName} · ${timeLabel}`,
+    ),
     body: buildBody(message, permalink, config.pageName),
     updated_at: new Date().toISOString(),
   };

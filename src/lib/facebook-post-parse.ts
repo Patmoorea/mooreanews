@@ -251,6 +251,8 @@ export function classifyFacebookPost(
   return "article";
 }
 
+import { truncate } from "@/lib/utils";
+
 export function titleFromMessage(message: string, fallback: string): string {
   const lines = message
     .split("\n")
@@ -259,7 +261,15 @@ export function titleFromMessage(message: string, fallback: string): string {
   for (const line of lines) {
     if (/^https?:\/\//i.test(line)) continue;
     if (/facebook\.com/i.test(line) && line.length < 150) continue;
-    return line.slice(0, 200);
+    const sentence = line.match(/^[^.!?…]+[.!?…]/)?.[0]?.trim();
+    if (sentence && sentence.length >= 10 && sentence.length <= 120) {
+      return truncate(sentence, 120);
+    }
+    return truncate(line, 120);
   }
-  return fallback;
+  const flat = message.replace(/\s+/g, " ").trim();
+  if (!flat) return fallback;
+  const sentence = flat.match(/^[^.!?…]+[.!?…]/)?.[0]?.trim();
+  if (sentence && sentence.length >= 10) return truncate(sentence, 120);
+  return truncate(flat, 120) || fallback;
 }
