@@ -12,6 +12,7 @@ import {
 import { refreshFacebookUserTokenInProcess } from "@/lib/facebook-token";
 import {
   outageFromText,
+  isTeItoRauOutageMessage,
   type OutageTextSource,
 } from "@/lib/outage-text-parse";
 import type { UtilityOutage } from "@/lib/utility-outages";
@@ -20,7 +21,10 @@ import {
   TE_ITO_RAU_FACEBOOK_PAGE,
   type FacebookPageWatch,
 } from "@/lib/watch-sources";
-import { teItoRauWatchUrls } from "@/lib/outage-te-ito-fallback";
+import {
+  importTeItoRauOutageArticlesFromFallback,
+  teItoRauWatchUrls,
+} from "@/lib/outage-te-ito-fallback";
 
 const OUTAGE_FACEBOOK_PAGES: FacebookPageWatch[] = [
   ...FACEBOOK_PAGE_WATCHES,
@@ -37,26 +41,7 @@ type MeAccountsPage = {
   access_token?: string;
 };
 
-function isTeItoRauOutageMessage(message: string): boolean {
-  const n = message
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-  if (!/coupure|panne|entretien de poste|entretien poste/.test(n)) return false;
-  return (
-    n.includes("ito rau") ||
-    n.includes("te ito") ||
-    n.includes("moorea") ||
-    n.includes("tiahura") ||
-    n.includes("maharepa") ||
-    n.includes("afareaitu") ||
-    n.includes("paopao") ||
-    n.includes("papetoai") ||
-    n.includes("haapiti") ||
-    n.includes("temae") ||
-    n.includes("vaiare")
-  );
-}
+export { isTeItoRauOutageMessage } from "@/lib/outage-text-parse";
 
 async function fetchMeAccounts(userToken: string): Promise<MeAccountsPage[]> {
   const apiUrl = new URL(`https://graph.facebook.com/${GRAPH_VERSION}/me/accounts`);
@@ -307,6 +292,7 @@ export async function fetchOutagesFromFacebookFeeds(): Promise<{
   }
 
   let postsImported = 0;
+  let teItoPostsImported = 0;
   if (postsForImport.length > 0) {
     for (const batch of postsForImport) {
       const isTeIto = batch.page.id === "te-ito-rau";
@@ -338,6 +324,7 @@ export async function fetchOutagesFromFacebookFeeds(): Promise<{
           graphPageId: batch.page.pageId,
         });
         postsImported += imported.articlesCreated;
+        if (isTeIto) teItoPostsImported += imported.articlesCreated;
       } catch (e) {
         errors.push(`import ${batch.page.id}: ${String(e)}`);
       }
@@ -359,6 +346,16 @@ export async function fetchOutagesFromFacebookFeeds(): Promise<{
       errors.push(
         `Te Ito Rau OG: ${fallback.urlsTried} URL(s) sans coupure parseable (${fallback.sources.join(", ") || "aucune source"})`,
       );
+    }
+  }
+
+  if (teItoPostsImported === 0) {
+    const ogImport = await importTeItoRauOutageArticlesFromFallback({
+      userToken,
+    });
+    postsImported += ogImport.articlesCreated;
+    if (ogImport.errors.length > 0) {
+      errors.push(...ogImport.errors.slice(0, 3));
     }
   }
 

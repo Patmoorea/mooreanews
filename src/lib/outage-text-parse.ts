@@ -163,6 +163,27 @@ export function parseOutageDatesFromText(corpus: string): {
   return { startsAt, endsAt };
 }
 
+export function isTeItoRauOutageMessage(message: string): boolean {
+  const n = message
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  if (!/coupure|panne|entretien de poste|entretien poste/.test(n)) return false;
+  return (
+    n.includes("ito rau") ||
+    n.includes("te ito") ||
+    n.includes("moorea") ||
+    n.includes("tiahura") ||
+    n.includes("maharepa") ||
+    n.includes("afareaitu") ||
+    n.includes("paopao") ||
+    n.includes("papetoai") ||
+    n.includes("haapiti") ||
+    n.includes("temae") ||
+    n.includes("vaiare")
+  );
+}
+
 export function isMooreaOutageText(corpus: string): boolean {
   const n = normalizeOutageKey(corpus);
   if (!detectOutageKind(corpus)) return false;

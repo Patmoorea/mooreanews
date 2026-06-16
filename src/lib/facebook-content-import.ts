@@ -116,11 +116,16 @@ function pushImportFailure(
   }
 }
 
+/** Pages dont le fil est importé automatiquement (sans FACEBOOK_IMPORT_AS_ARTICLES). */
+function isAutoImportFeedPage(config: FacebookPageImportConfig): boolean {
+  return (
+    Boolean(config.importAllFeedPosts) &&
+    (config.pageKey === "mooreanews" || config.pageKey === "te-ito-rau")
+  );
+}
+
 function importEnabled(config: FacebookPageImportConfig): boolean {
-  /** Page MooreaNews : tout le fil → articles (sans variable Vercel). */
-  if (config.importAllFeedPosts && config.pageKey === "mooreanews") {
-    return true;
-  }
+  if (isAutoImportFeedPage(config)) return true;
   return process.env.FACEBOOK_IMPORT_AS_ARTICLES === "true";
 }
 
@@ -264,6 +269,22 @@ async function findExistingFacebookArticle(
     for (const row of sameDay ?? []) {
       if (normalizeTitleKey(row.title.slice(0, 160)) === titleKey) {
         return true;
+      }
+    }
+
+    // Coupure Te Ito Rau déjà republiée par MooreaNews (ou l’inverse).
+    if (/info coupure|coupure d['']?[ée]lectricit/i.test(title)) {
+      const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: coupureRows } = await supabase
+        .from("articles")
+        .select("id, title")
+        .gte("published_at", since)
+        .or("title.ilike.%INFO COUPURE%,title.ilike.%COUPURE D%ÉLECTRICIT%,title.ilike.%COUPURE D%ELECTRICIT%")
+        .limit(40);
+      for (const row of coupureRows ?? []) {
+        if (normalizeTitleKey(row.title.slice(0, 160)) === titleKey) {
+          return true;
+        }
       }
     }
   }
@@ -809,10 +830,7 @@ export async function importFacebookPostsAsContent(
 
   if (!importEnabled(config)) return result;
 
-  const published =
-    config.importAllFeedPosts && config.pageKey === "mooreanews"
-      ? true
-      : publishedByDefault();
+  const published = isAutoImportFeedPage(config) ? true : publishedByDefault();
 
   type ExistingRow = {
     id: string;

@@ -2,8 +2,12 @@
  * Coupures Te Ito Rau sans Graph API — OG, base veille, mbasic Facebook.
  */
 
+import type { FacebookPostForImport } from "@/lib/facebook-article-import";
+import { importFacebookPostsAsContent } from "@/lib/facebook-content-import";
+import { externalIdFromFacebookUrl } from "@/lib/facebook-url";
+import { cleanImportedText } from "@/lib/html-entities";
 import { getAdminSupabase } from "@/lib/supabase/admin";
-import { outageFromText } from "@/lib/outage-text-parse";
+import { outageFromText, isTeItoRauOutageMessage } from "@/lib/outage-text-parse";
 import type { UtilityOutage } from "@/lib/utility-outages";
 import { TE_ITO_RAU_FACEBOOK_PAGE } from "@/lib/watch-sources";
 
@@ -156,28 +160,98 @@ async function outagesFromOgUrls(urls: string[]): Promise<UtilityOutage[]> {
   return outages;
 }
 
+async function collectTeItoRauPostUrls(): Promise<string[]> {
+  const [dbUrls, mbasicUrls] = await Promise.all([
+    teItoPostUrlsFromDatabase(),
+    teItoPostUrlsFromMbasic(),
+  ]);
+  return uniqueUrls([
+    ...teItoRauWatchUrls(),
+    ...dbUrls,
+    ...mbasicUrls,
+  ]).slice(0, 25);
+}
+
+/** Importe les posts coupures Te Ito Rau via OG / mbasic (sans Graph API). */
+export async function importTeItoRauOutageArticlesFromFallback(options?: {
+  userToken?: string;
+}): Promise<{ articlesCreated: number; errors: string[] }> {
+  const errors: string[] = [];
+  const urls = await collectTeItoRauPostUrls();
+  if (urls.length === 0) {
+    return { articlesCreated: 0, errors };
+  }
+
+  const { fetchOpenGraph } = await import("@/lib/open-graph");
+  const posts: FacebookPostForImport[] = [];
+  const token =
+    options?.userToken?.trim() ??
+    process.env.FACEBOOK_USER_ACCESS_TOKEN?.trim() ??
+    process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim() ??
+    "";
+
+  for (const url of urls) {
+    try {
+      const og = await fetchOpenGraph(url);
+      if (!og) continue;
+      const corpus = cleanImportedText(`${og.title} ${og.description}`).trim();
+      if (!corpus || !isTeItoRauOutageMessage(corpus)) continue;
+      if (!outageFromText({
+        id: `teito-check-${externalIdFromFacebookUrl(url)}`,
+        title: og.title,
+        corpus,
+        sourceUrl: og.url || url,
+        sourceLabel: "Te Ito Rau — Facebook",
+      })) {
+        continue;
+      }
+      posts.push({
+        id: `${TE_ITO_RAU_FACEBOOK_PAGE.pageId}_${externalIdFromFacebookUrl(url)}`,
+        message: corpus,
+        permalink_url: og.url || url,
+        full_picture: og.imageUrl?.trim() || undefined,
+        created_time: new Date().toISOString(),
+      });
+    } catch (e) {
+      errors.push(`og ${url}: ${String(e)}`);
+    }
+  }
+
+  if (posts.length === 0) {
+    return { articlesCreated: 0, errors };
+  }
+
+  try {
+    const imported = await importFacebookPostsAsContent(posts, {
+      pageKey: "te-ito-rau",
+      pageName: TE_ITO_RAU_FACEBOOK_PAGE.name,
+      homepage: TE_ITO_RAU_FACEBOOK_PAGE.homepage,
+      authorLabel: `${TE_ITO_RAU_FACEBOOK_PAGE.name} (Facebook)`,
+      tag: "te-ito-rau",
+      importAllFeedPosts: true,
+      pageAccessToken: token,
+      graphPageId: TE_ITO_RAU_FACEBOOK_PAGE.pageId,
+    });
+    errors.push(...imported.errors);
+    return { articlesCreated: imported.articlesCreated, errors };
+  } catch (e) {
+    errors.push(String(e));
+    return { articlesCreated: 0, errors };
+  }
+}
+
 /** Repli Te Ito Rau quand Graph API indisponible ou vide. */
 export async function fetchOutagesFromTeItoRauFallback(): Promise<{
   outages: UtilityOutage[];
   urlsTried: number;
   sources: string[];
 }> {
-  const [dbUrls, mbasicUrls] = await Promise.all([
-    teItoPostUrlsFromDatabase(),
-    teItoPostUrlsFromMbasic(),
-  ]);
-
-  const urls = uniqueUrls([
-    ...teItoRauWatchUrls(),
-    ...dbUrls,
-    ...mbasicUrls,
-  ]).slice(0, 25);
+  const urls = await collectTeItoRauPostUrls();
 
   const outages = await outagesFromOgUrls(urls);
 
   const sources: string[] = [];
-  if (dbUrls.length > 0) sources.push(`db:${dbUrls.length}`);
-  if (mbasicUrls.length > 0) sources.push(`mbasic:${mbasicUrls.length}`);
+  if (urls.length > 0) sources.push(`urls:${urls.length}`);
   if (outages.length > 0) sources.push(`parsed:${outages.length}`);
 
   return { outages, urlsTried: urls.length, sources };
