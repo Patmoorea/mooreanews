@@ -196,6 +196,14 @@ function slugForPost(pageKey: string, postId: string): string {
   return `${pageKey}-fb-${safe}`;
 }
 
+function graphPostIdFromMooreaNewsSlug(slug: string): string | null {
+  const m = slug.match(/^mooreanews-fb-(\d+)-(\d{8,})$/);
+  if (m) return `${m[1]}_${m[2]}`;
+  const tail = slug.match(/(\d{10,})$/);
+  if (tail) return `350029589936_${tail[1]}`;
+  return null;
+}
+
 function buildBody(
   message: string,
   permalink: string,
@@ -776,18 +784,33 @@ export async function importFacebookPostsAsContent(
   if (config.importAllFeedPosts) {
     const supabase = getAdminSupabase();
     if (supabase) {
-      const batchSlugs = posts.map((raw) => slugForPost(config.pageKey, raw.id));
-      let query = supabase
-        .from("articles")
-        .select("id, slug, title, excerpt, body, cover_url");
-      if (config.cronLight && batchSlugs.length > 0) {
-        query = query.in("slug", batchSlugs);
+      if (config.repairOnly) {
+        const { data: repairRows } = await supabase
+          .from("articles")
+          .select("id, slug, title, excerpt, body, cover_url")
+          .like("slug", "mooreanews-fb-%")
+          .order("published_at", { ascending: false })
+          .limit(80);
+        for (const row of repairRows ?? []) {
+          if (!row.slug) continue;
+          if (isFacebookArticleNeedsRepair({ ...row, slug: row.slug })) {
+            existingBySlug.set(row.slug, row);
+          }
+        }
       } else {
-        query = query.like("slug", `${config.pageKey}-fb-%`);
-      }
-      const { data } = await query;
-      for (const row of data ?? []) {
-        if (row.slug) existingBySlug.set(row.slug, row);
+        const batchSlugs = posts.map((raw) => slugForPost(config.pageKey, raw.id));
+        let query = supabase
+          .from("articles")
+          .select("id, slug, title, excerpt, body, cover_url");
+        if (config.cronLight && batchSlugs.length > 0) {
+          query = query.in("slug", batchSlugs);
+        } else {
+          query = query.like("slug", `${config.pageKey}-fb-%`);
+        }
+        const { data } = await query;
+        for (const row of data ?? []) {
+          if (row.slug) existingBySlug.set(row.slug, row);
+        }
       }
     }
   }
@@ -827,17 +850,25 @@ export async function importFacebookPostsAsContent(
 
   let toProcess = sortedPosts;
   if (config.repairOnly) {
-    const cap = Math.max(1, config.newPostsLimit ?? 3);
-    toProcess = sortedPosts
-      .filter((raw) => {
-        const slug = slugForPost(config.pageKey, raw.id);
-        const ex = existingBySlug.get(slug);
-        return (
-          Boolean(ex) &&
-          isFacebookArticleNeedsRepair({ ...ex!, slug })
-        );
-      })
-      .slice(0, cap);
+    const cap = Math.max(1, config.newPostsLimit ?? 1);
+    const postsBySlug = new Map(
+      sortedPosts.map((raw) => [slugForPost(config.pageKey, raw.id), raw]),
+    );
+    const repairSlugs = [...existingBySlug.keys()].slice(0, cap);
+    const resolved: FacebookPostForImport[] = [];
+    for (const slug of repairSlugs) {
+      const fromBatch = postsBySlug.get(slug);
+      if (fromBatch) {
+        resolved.push(fromBatch);
+        continue;
+      }
+      const graphId = graphPostIdFromMooreaNewsSlug(slug);
+      if (graphId && config.pageAccessToken) {
+        const fetched = await fetchGraphPostById(graphId, config.pageAccessToken);
+        if (fetched) resolved.push(fetched);
+      }
+    }
+    toProcess = resolved;
   } else if (config.newPostsOnly) {
     const cap = Math.max(1, config.newPostsLimit ?? 3);
     toProcess = sortedPosts
