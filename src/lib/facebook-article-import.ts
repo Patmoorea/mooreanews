@@ -38,6 +38,9 @@ export type FacebookPageImportConfig = {
   newPostsLimit?: number;
   /** Pas de réparations (veille sync ~60 s). */
   skipRepairs?: boolean;
+  /** Uniquement réparer les articles MooreaNews incomplets. */
+  repairOnly?: boolean;
+  repairLimit?: number;
 };
 
 /** @deprecated Utiliser importFacebookPostsAsContent */

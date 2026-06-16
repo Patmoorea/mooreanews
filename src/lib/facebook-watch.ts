@@ -627,6 +627,8 @@ export async function aggregateFacebookPagesGraph(options?: {
   /** Veille : n'importer que les posts absents du site. */
   newPostsOnly?: boolean;
   newPostsLimit?: number;
+  repairOnly?: boolean;
+  repairLimit?: number;
 }): Promise<AggregationResult> {
   const result: AggregationResult = {
     source: "facebook-pages",
@@ -786,7 +788,11 @@ export async function aggregateFacebookPagesGraph(options?: {
             cronLight: options?.light === true,
             newPostsOnly: options?.newPostsOnly === true,
             newPostsLimit: options?.newPostsLimit,
-            skipRepairs: options?.newPostsOnly === true,
+            skipRepairs: options?.repairOnly
+              ? false
+              : options?.newPostsOnly === true,
+            repairOnly: options?.repairOnly === true,
+            repairLimit: options?.repairLimit,
           },
         });
       }

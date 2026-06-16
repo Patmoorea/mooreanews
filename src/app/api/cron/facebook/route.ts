@@ -54,17 +54,20 @@ async function runFacebookImport(
     recentImportLimit?: number;
     newPostsOnly?: boolean;
     newPostsLimit?: number;
+    repairOnly?: boolean;
+    repairLimit?: number;
   },
 ) {
   const start = Date.now();
   const recentLimit =
     options?.recentImportLimit ?? facebookCronRecentPostLimit();
-  const newPostsOnly = options?.newPostsOnly === true;
   const result = await aggregateFacebookPagesGraph({
     light: true,
     recentImportLimit: recentLimit,
-    newPostsOnly,
-    newPostsLimit: options?.newPostsLimit ?? recentLimit,
+    newPostsOnly: options?.newPostsOnly,
+    newPostsLimit: options?.newPostsLimit,
+    repairOnly: options?.repairOnly,
+    repairLimit: options?.repairLimit,
     forcePhotoFbids:
       forcePhotoFbids && forcePhotoFbids.length > 0
         ? forcePhotoFbids
@@ -130,7 +133,8 @@ async function runFacebookImport(
     durationMs,
     mode: "light" as const,
     recentLimit,
-    newPostsOnly,
+    newPostsOnly: options?.newPostsOnly === true,
+    repairOnly: options?.repairOnly === true,
     forcePhotoFbids:
       forcePhotoFbids && forcePhotoFbids.length > 0
         ? forcePhotoFbids
@@ -158,10 +162,12 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const wait = url.searchParams.get("wait") === "1";
   const chain = url.searchParams.get("chain") === "1";
+  const repairOnly = url.searchParams.get("repair") === "1";
   const newPostsOnly =
-    url.searchParams.get("newOnly") === "1" ||
-    url.searchParams.get("newPostsOnly") === "1" ||
-    chain;
+    !repairOnly &&
+    (url.searchParams.get("newOnly") === "1" ||
+      url.searchParams.get("newPostsOnly") === "1" ||
+      chain);
   const forcePhotoFbids = [
     ...url.searchParams.getAll("fbid"),
     ...(url.searchParams.get("fbids")?.split(/[,;\s]+/) ?? []),
@@ -184,17 +190,21 @@ export async function GET(req: Request) {
     const limitRaw = url.searchParams.get("limit");
     const newPostsLimit = limitRaw
       ? Math.min(Math.max(1, Math.floor(Number(limitRaw))), 10)
-      : newPostsOnly
+      : repairOnly
         ? 1
-        : facebookCronRecentPostLimit();
+        : newPostsOnly
+          ? 1
+          : facebookCronRecentPostLimit();
 
     const importOptions = {
       skipTelegram: false,
       skipUtility: chain,
       skipStatus: chain,
       recentImportLimit: Math.max(newPostsLimit, 20),
-      newPostsOnly,
+      newPostsOnly: repairOnly ? false : newPostsOnly,
       newPostsLimit,
+      repairOnly,
+      repairLimit: repairOnly ? newPostsLimit : undefined,
     };
 
     /** Sans wait=1 : async (tests manuels uniquement). Veille GitHub passe toujours wait=1. */

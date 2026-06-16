@@ -66,8 +66,11 @@ jobs:
           }
 
           run_step "RSS" "/api/cron/aggregate" "part=rss"
-          for n in 1 2 3 4 5; do
-            run_step "Facebook $n" "/api/cron/facebook" "chain=1&newOnly=1&limit=1" "1" "58"
+          for n in 1 2 3; do
+            run_step "Facebook nouveau $n" "/api/cron/facebook" "chain=1&newOnly=1&limit=1" "1" "58"
+          done
+          for n in 1 2 3 4 5 6; do
+            run_step "Facebook réparation $n" "/api/cron/facebook" "chain=1&repair=1&limit=1" "1" "58"
           done
           run_step "Web" "/api/cron/aggregate" "part=web"
           run_step "IA brouillons" "/api/cron/aggregate" "part=ai" "1" "55"

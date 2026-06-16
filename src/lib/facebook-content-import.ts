@@ -141,16 +141,29 @@ async function enrichPost(
     ...post,
     message: post.message ? cleanImportedText(post.message) : post.message,
   };
+  const pageId = config.graphPageId ?? "350029589936";
+  const opts = {
+    pageId,
+    importAll: Boolean(config.importAllFeedPosts),
+  };
   if (!config.importAllFeedPosts) {
-    return enrichFacebookPostForImport(cleaned, config.pageAccessToken, {
-      pageId: config.graphPageId,
-      importAll: false,
-    });
+    return enrichFacebookPostForImport(cleaned, config.pageAccessToken, opts);
   }
-  return enrichFacebookPostForImport(cleaned, config.pageAccessToken, {
-    pageId: config.graphPageId ?? "350029589936",
-    importAll: true,
-  });
+  let enriched = await enrichFacebookPostForImport(
+    cleaned,
+    config.pageAccessToken,
+    opts,
+  );
+  const stillEmpty =
+    !enriched.message?.trim() && !enriched.full_picture?.trim();
+  if (stillEmpty) {
+    enriched = await enrichFacebookPostForImport(
+      enriched,
+      config.pageAccessToken,
+      opts,
+    );
+  }
+  return enriched;
 }
 
 function articleTitleFromPost(
@@ -440,15 +453,11 @@ async function importAsArticle(
     return { ok: false, reason: "empty_shell" };
   }
 
-  if (
-    config.importAllFeedPosts &&
-    !cover &&
-    isEmptyFacebookArticleShell({ title, excerpt, body, cover_url: cover })
-  ) {
-    const recentMs = Date.now() - Date.parse(publishedAt);
-    const hasPermalink = permalink.startsWith("http");
-    if (!(hasPermalink && recentMs < 48 * 3600 * 1000)) {
-      return { ok: false, reason: "empty_shell" };
+  if (config.importAllFeedPosts) {
+    const hasText = message.length >= 3 && !isFacebookJunkText(message);
+    const hasImage = Boolean(cover) || Boolean(post.full_picture?.trim());
+    if (!hasText && !hasImage) {
+      return { ok: false, reason: "enrich_pending" };
     }
   }
 
@@ -789,7 +798,7 @@ export async function importFacebookPostsAsContent(
       let query = supabase
         .from("articles")
         .select("id, slug, title, excerpt, body, cover_url");
-      if (config.cronLight && batchSlugs.length > 0) {
+      if (config.cronLight && batchSlugs.length > 0 && !config.repairOnly) {
         query = query.in("slug", batchSlugs);
       } else {
         query = query.like("slug", `${config.pageKey}-fb-%`);
@@ -804,7 +813,8 @@ export async function importFacebookPostsAsContent(
   let repairsThisRun = 0;
   let coverPersistsThisRun = 0;
   const skipRepairs =
-    config.skipRepairs === true || config.newPostsOnly === true;
+    config.skipRepairs === true ||
+    (config.newPostsOnly === true && !config.repairOnly);
   const maxFullRepairs = config.cronLight
     ? 30
     : config.importAllFeedPosts
@@ -839,6 +849,15 @@ export async function importFacebookPostsAsContent(
     toProcess = sortedPosts
       .filter((raw) => !existingBySlug.has(slugForPost(config.pageKey, raw.id)))
       .slice(0, cap);
+  } else if (config.repairOnly) {
+    const cap = Math.max(1, config.repairLimit ?? 1);
+    toProcess = sortedPosts
+      .filter((raw) => {
+        const slug = slugForPost(config.pageKey, raw.id);
+        const ex = existingBySlug.get(slug);
+        return ex && isFacebookArticleNeedsRepair({ ...ex, slug });
+      })
+      .slice(0, cap);
   }
 
   for (const raw of toProcess) {
@@ -849,6 +868,51 @@ export async function importFacebookPostsAsContent(
 
     if (config.importAllFeedPosts && !isRecentFacebookPost(raw.created_time)) {
       result.skippedStale += 1;
+      continue;
+    }
+
+    if (config.repairOnly) {
+      const existing = existingBySlug.get(slug);
+      if (!existing || !isFacebookArticleNeedsRepair({ ...existing, slug })) {
+        continue;
+      }
+      const post = await enrichPost(raw, config);
+      const freshness = shouldImportFacebookPost(
+        post.message?.trim() ?? "",
+        post.created_time,
+        post,
+        filterOpts,
+      );
+      if (!freshness.ok) {
+        result.skippedStale += 1;
+        continue;
+      }
+      const r = await repairFacebookArticle(
+        existing.id,
+        slug,
+        post,
+        config,
+        freshness.publishedAt,
+        existing.cover_url,
+      );
+      if (r.ok) {
+        result.articlesRepaired = (result.articlesRepaired ?? 0) + 1;
+        pushRepairedArticleNotice(
+          result,
+          r.title,
+          r.slug,
+          existing.excerpt,
+          existing.body,
+        );
+        if ("coverWarning" in r && r.coverWarning) {
+          result.warnings.push(r.coverWarning);
+          result.coversFailed = (result.coversFailed ?? 0) + 1;
+        } else if (post.full_picture?.trim()) {
+          result.coversPersisted = (result.coversPersisted ?? 0) + 1;
+        }
+      } else {
+        pushImportFailure(result, `repair ${post.id}`, r.reason);
+      }
       continue;
     }
 
@@ -989,8 +1053,17 @@ export async function importFacebookPostsAsContent(
         } else if (post.full_picture?.trim()) {
           result.coversPersisted = (result.coversPersisted ?? 0) + 1;
         }
-      } else if (r.reason === "duplicate" || r.reason === "empty_shell") {
+      } else if (
+        r.reason === "duplicate" ||
+        r.reason === "empty_shell" ||
+        r.reason === "enrich_pending"
+      ) {
         result.skipped += 1;
+        if (r.reason === "enrich_pending") {
+          result.warnings.push(
+            `Enrichissement incomplet (${post.id}) — nouvel essai au prochain passage`,
+          );
+        }
       } else {
         pushImportFailure(result, `article ${post.id}`, r.reason);
       }
