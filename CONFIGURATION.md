@@ -119,7 +119,23 @@ Checklist rapide :
 - **Fréquence** : plan **Hobby** → crons **GitHub Actions** (daily ~6h, veille horaire, newsletter, etc.). Voir **[docs/CRON-HOBBY.md](./docs/CRON-HOBBY.md)**.
 - **Facebook** : commune + groupe + permalinks déjà dans le code ; jeton Meta optionnel pour la page Commune.
 
-### Jeton Facebook qui expire en 1 h (erreur « Session has expired »)
+### Jeton Facebook — renouvellement automatique (plus toutes les 30 min)
+
+Le jeton **page** (`FACEBOOK_PAGE_ACCESS_TOKEN`) copié depuis l’Explorateur Graph **expire en 1–2 h** — c’est normal Meta, pas un bug MooreaNews.
+
+**Depuis juin 2026**, le site **régénère le jeton page automatiquement** à chaque cron à partir de `FACEBOOK_USER_ACCESS_TOKEN` (longue durée ~60 j). Vous n’avez **plus besoin** de mettre à jour `FACEBOOK_PAGE_ACCESS_TOKEN` sur Vercel en permanence.
+
+**Configuration une seule fois** (≈ 30 min, puis ~60 jours) :
+
+1. Explorateur Graph → jeton **utilisateur** : `pages_show_list`, `pages_read_engagement`, **`pages_read_user_content`**
+2. Échange long : `oauth/access_token?grant_type=fb_exchange_token&...`
+3. Vercel : `FACEBOOK_USER_ACCESS_TOKEN` = jeton utilisateur long + `FACEBOOK_APP_ID` + `FACEBOOK_APP_SECRET`
+4. `FACEBOOK_PAGE_ACCESS_TOKEN` = **optionnel** (secours seulement)
+5. **Redeploy** une fois
+
+Vérification : `/api/watch/facebook-health?secret=CRON_SECRET` → `"pageTokenValid": true`.
+
+### Jeton Facebook qui expire en 1 h (ancienne procédure manuelle)
 
 Le token copié depuis l’**Explorateur Graph** (`350029589936?fields=access_token`) est **court** (~1–2 h). Pour Vercel :
 

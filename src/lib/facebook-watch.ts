@@ -20,7 +20,9 @@ import {
   normalizeGraphPostRaw,
   type GraphPostRaw,
 } from "@/lib/facebook-post-enrich";
-import { refreshFacebookUserTokenInProcess } from "@/lib/facebook-token";
+import {
+  ensureFacebookTokensInProcess,
+} from "@/lib/facebook-token";
 import { importFacebookOgAsArticles } from "@/lib/og-article-import";
 import { facebookStoryIdFromPostId } from "@/lib/article-dedupe";
 import {
@@ -587,20 +589,14 @@ async function fetchMeAccounts(userToken: string): Promise<MeAccountsPage[]> {
 }
 
 /** Permissions granulaires Meta : /me/accounts vide → jeton via ID ou username page. */
-async function fetchPageAccessTokenViaUserToken(
+async function fetchPageAccessTokenViaUserTokenLocal(
   userToken: string,
   pageId: string,
 ): Promise<string | null> {
-  const apiUrl = new URL(
-    `https://graph.facebook.com/v21.0/${encodeURIComponent(pageId)}`,
+  const { fetchPageAccessTokenViaUserToken } = await import(
+    "@/lib/facebook-token"
   );
-  apiUrl.searchParams.set("fields", "access_token");
-  apiUrl.searchParams.set("access_token", userToken);
-
-  const res = await fetch(apiUrl.toString(), { cache: "no-store" });
-  if (!res.ok) return null;
-  const json = (await res.json()) as { access_token?: string };
-  return json.access_token?.trim() ?? null;
+  return fetchPageAccessTokenViaUserToken(userToken, pageId);
 }
 
 function pickTokenForPage(options: {
@@ -650,13 +646,10 @@ export async function aggregateFacebookPagesGraph(options?: {
   }
 
   if (userToken) {
-    const refreshed = await refreshFacebookUserTokenInProcess();
-    if (refreshed.token) userToken = refreshed.token;
-    if (refreshed.refreshed) {
-      result.errors.push(
-        "Jeton utilisateur Facebook renouvelé pour ce cron (mettez à jour FACEBOOK_USER_ACCESS_TOKEN sur Vercel)",
-      );
-    }
+    await ensureFacebookTokensInProcess();
+    userToken = process.env.FACEBOOK_USER_ACCESS_TOKEN?.trim() ?? userToken;
+    fallbackPageToken =
+      process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim() ?? fallbackPageToken;
   }
 
   const perPageTokenByIdOrUsername = new Map<string, string>();
@@ -691,7 +684,7 @@ export async function aggregateFacebookPagesGraph(options?: {
   for (const page of FACEBOOK_PAGE_WATCHES) {
     try {
       if (userToken && !perPageTokenByIdOrUsername.has(page.pageId)) {
-        const viaUser = await fetchPageAccessTokenViaUserToken(
+        const viaUser = await fetchPageAccessTokenViaUserTokenLocal(
           userToken,
           page.pageId,
         );
@@ -976,8 +969,7 @@ export async function listMooreaNewsGraphPosts(): Promise<
 
   const perPageTokenByIdOrUsername = new Map<string, string>();
   if (userToken) {
-    const refreshed = await refreshFacebookUserTokenInProcess();
-    if (refreshed.token) userToken = refreshed.token;
+    await ensureFacebookTokensInProcess();
     try {
       for (const acc of await fetchMeAccounts(userToken)) {
         if (acc.access_token && acc.id) {
@@ -1022,8 +1014,7 @@ export async function listCommuneMooreaGraphPosts(): Promise<
 
   const perPageTokenByIdOrUsername = new Map<string, string>();
   if (userToken) {
-    const refreshed = await refreshFacebookUserTokenInProcess();
-    if (refreshed.token) userToken = refreshed.token;
+    await ensureFacebookTokensInProcess();
     try {
       for (const acc of await fetchMeAccounts(userToken)) {
         if (acc.access_token && acc.id) {
@@ -1067,8 +1058,7 @@ export async function getMooreaNewsPageAccessToken(): Promise<string | null> {
 
   const perPageTokenByIdOrUsername = new Map<string, string>();
   if (userToken) {
-    const refreshed = await refreshFacebookUserTokenInProcess();
-    if (refreshed.token) userToken = refreshed.token;
+    await ensureFacebookTokensInProcess();
     try {
       for (const acc of await fetchMeAccounts(userToken)) {
         if (acc.access_token && acc.id) {

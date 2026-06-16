@@ -13,7 +13,7 @@ import {
   shouldPublishGardeWeekend,
   shouldSyncGardeOnVeille,
 } from "@/lib/cron-tahiti";
-import { refreshFacebookUserTokenInProcess } from "@/lib/facebook-token";
+import { ensureFacebookTokensInProcess } from "@/lib/facebook-token";
 import { syncHealthOnCall } from "@/lib/health-on-call";
 import { syncUtilityOutages } from "@/lib/utility-outages-sync";
 import { cleanupPublishedFacebookEmptyShells } from "@/lib/facebook-import-cleanup";
@@ -49,7 +49,7 @@ function summarize(bySource: AggregationResult[]) {
 
 export async function runVeillePartRss() {
   const start = Date.now();
-  await refreshFacebookUserTokenInProcess();
+  await ensureFacebookTokensInProcess();
   const bySource = await aggregateRssOnly();
   const s = summarize(bySource);
   if (s.articlesCreated > 0) {

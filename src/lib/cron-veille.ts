@@ -10,7 +10,7 @@ import {
   shouldPublishGardeWeekend,
   shouldSyncGardeOnVeille,
 } from "@/lib/cron-tahiti";
-import { refreshFacebookUserTokenInProcess } from "@/lib/facebook-token";
+import { ensureFacebookTokensInProcess } from "@/lib/facebook-token";
 import { syncHealthOnCall } from "@/lib/health-on-call";
 import { syncUtilityOutages } from "@/lib/utility-outages-sync";
 
@@ -30,7 +30,7 @@ export type VeilleCronResult = {
 export async function runVeilleCron(): Promise<VeilleCronResult> {
   const start = Date.now();
   const clock = getTahitiClock();
-  await refreshFacebookUserTokenInProcess();
+  await ensureFacebookTokensInProcess();
   const results = await aggregateAll();
 
   const totalFetched = results.reduce((s, r) => s + r.fetched, 0);

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   checkFacebookTokenHealth,
-  refreshFacebookUserTokenInProcess,
+  ensureFacebookTokensInProcess,
 } from "@/lib/facebook-token";
 
 export const dynamic = "force-dynamic";
@@ -23,17 +23,20 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const refresh = await refreshFacebookUserTokenInProcess();
+  const ensured = await ensureFacebookTokensInProcess();
   const health = await checkFacebookTokenHealth();
 
   return NextResponse.json({
     ok: health.userTokenValid || health.pageTokenValid,
-    refreshedInMemory: refresh.refreshed,
-    hint: !health.pageTokenValid && health.pagesFromMeAccounts.length > 0
-      ? "Copiez access_token de MooreaNews (id 350029589936) depuis me/accounts vers FACEBOOK_PAGE_ACCESS_TOKEN"
-      : !health.userTokenValid
-        ? "Regénérez FACEBOOK_USER_ACCESS_TOKEN (échange long) + FACEBOOK_APP_ID/SECRET sur Vercel"
-        : "Jetons OK",
+    refreshedInMemory: ensured.userRefreshed,
+    pageResolvedFromUser: ensured.pageResolvedFromUser,
+    hint: !health.pageTokenValid
+      ? "Jeton page inaccessible — FACEBOOK_USER_ACCESS_TOKEN long + admin page MooreaNews requis (FACEBOOK_PAGE_ACCESS_TOKEN optionnel, renouvelé auto)."
+      : ensured.pageResolvedFromUser
+        ? "Jeton page régénéré automatiquement depuis le jeton utilisateur — plus besoin de le mettre à jour sur Vercel."
+        : health.daysUntilUserExpiry != null && health.daysUntilUserExpiry < 14
+          ? `Jeton utilisateur expire dans ~${health.daysUntilUserExpiry} j — renouveler une fois (APP_ID + APP_SECRET)`
+          : "Jetons OK — jeton page renouvelé automatiquement à chaque cron.",
     health,
     env: {
       appId: Boolean(process.env.FACEBOOK_APP_ID?.trim()),

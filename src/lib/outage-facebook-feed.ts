@@ -9,7 +9,9 @@ import {
   normalizeGraphPostRaw,
   type GraphPostRaw,
 } from "@/lib/facebook-post-enrich";
-import { refreshFacebookUserTokenInProcess } from "@/lib/facebook-token";
+import {
+  ensureFacebookTokensInProcess,
+} from "@/lib/facebook-token";
 import {
   outageFromText,
   isTeItoRauOutageMessage,
@@ -137,11 +139,14 @@ async function loadPageTokens(userToken: string | undefined): Promise<{
 }> {
   let token = userToken;
   const pageTokens = new Map<string, string>();
-  const fallbackPageToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim();
+  const ensured = await ensureFacebookTokensInProcess();
+  if (ensured.userToken) token = ensured.userToken;
+  const fallbackPageToken =
+    ensured.pageToken ??
+    process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim() ??
+    undefined;
 
   if (token) {
-    const refreshed = await refreshFacebookUserTokenInProcess();
-    if (refreshed.token) token = refreshed.token;
     for (const acc of await fetchMeAccounts(token)) {
       if (acc.access_token && acc.id) pageTokens.set(acc.id, acc.access_token);
       if (acc.access_token && acc.username) {

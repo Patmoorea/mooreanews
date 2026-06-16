@@ -5,6 +5,9 @@
 
 const GRAPH = "https://graph.facebook.com/v21.0";
 
+/** Page Facebook MooreaNews — jeton page dérivé auto du jeton utilisateur long. */
+export const MOOREANEWS_FACEBOOK_PAGE_ID = "350029589936";
+
 export type FacebookTokenHealth = {
   userTokenPresent: boolean;
   pageTokenPresent: boolean;
@@ -14,6 +17,7 @@ export type FacebookTokenHealth = {
   daysUntilUserExpiry: number | null;
   pagesFromMeAccounts: { id: string; name: string }[];
   refreshedThisRun: boolean;
+  pageResolvedFromUser: boolean;
   errors: string[];
 };
 
@@ -110,6 +114,82 @@ export async function refreshFacebookUserTokenInProcess(): Promise<{
   return { token: exchanged.access_token, refreshed: true };
 }
 
+/** Jeton page MooreaNews via jeton utilisateur (/me/accounts ou lookup direct). */
+export async function fetchPageAccessTokenViaUserToken(
+  userToken: string,
+  pageId: string = MOOREANEWS_FACEBOOK_PAGE_ID,
+): Promise<string | null> {
+  try {
+    const accountsUrl = new URL(`${GRAPH}/me/accounts`);
+    accountsUrl.searchParams.set("fields", "id,access_token");
+    accountsUrl.searchParams.set("limit", "200");
+    accountsUrl.searchParams.set("access_token", userToken);
+    const accRes = await fetch(accountsUrl.toString(), { cache: "no-store" });
+    if (accRes.ok) {
+      const json = (await accRes.json()) as {
+        data?: { id: string; access_token?: string }[];
+      };
+      const match = json.data?.find((p) => p.id === pageId);
+      if (match?.access_token?.trim()) return match.access_token.trim();
+    }
+  } catch {
+    /* fallback direct */
+  }
+
+  const pageUrl = new URL(`${GRAPH}/${encodeURIComponent(pageId)}`);
+  pageUrl.searchParams.set("fields", "access_token");
+  pageUrl.searchParams.set("access_token", userToken);
+  const pageRes = await fetch(pageUrl.toString(), { cache: "no-store" });
+  if (!pageRes.ok) return null;
+  const pageJson = (await pageRes.json()) as { access_token?: string };
+  return pageJson.access_token?.trim() ?? null;
+}
+
+/**
+ * Si FACEBOOK_PAGE_ACCESS_TOKEN est absent ou expiré, le récupère via le jeton
+ * utilisateur long (valable pour toute la requête serverless — pas besoin de Vercel).
+ */
+export async function resolveFacebookPageAccessTokenInProcess(
+  userToken?: string | null,
+): Promise<{ token: string | null; resolvedFromUser: boolean }> {
+  const ut =
+    userToken?.trim() ??
+    process.env.FACEBOOK_USER_ACCESS_TOKEN?.trim() ??
+    null;
+  const existing = process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim() ?? "";
+
+  if (existing && (await probeToken(existing))) {
+    return { token: existing, resolvedFromUser: false };
+  }
+
+  if (!ut) return { token: existing || null, resolvedFromUser: false };
+
+  const fetched = await fetchPageAccessTokenViaUserToken(ut);
+  if (fetched && (await probeToken(fetched))) {
+    process.env.FACEBOOK_PAGE_ACCESS_TOKEN = fetched;
+    return { token: fetched, resolvedFromUser: true };
+  }
+
+  return { token: existing || null, resolvedFromUser: false };
+}
+
+/** Renouvelle le jeton utilisateur + résout le jeton page avant chaque cron Facebook. */
+export async function ensureFacebookTokensInProcess(): Promise<{
+  userToken: string | null;
+  pageToken: string | null;
+  userRefreshed: boolean;
+  pageResolvedFromUser: boolean;
+}> {
+  const user = await refreshFacebookUserTokenInProcess();
+  const page = await resolveFacebookPageAccessTokenInProcess(user.token);
+  return {
+    userToken: user.token,
+    pageToken: page.token,
+    userRefreshed: user.refreshed,
+    pageResolvedFromUser: page.resolvedFromUser,
+  };
+}
+
 async function probeToken(token: string): Promise<boolean> {
   const url = new URL(`${GRAPH}/me`);
   url.searchParams.set("fields", "id");
@@ -119,8 +199,12 @@ async function probeToken(token: string): Promise<boolean> {
 }
 
 export async function checkFacebookTokenHealth(): Promise<FacebookTokenHealth> {
-  const userToken = process.env.FACEBOOK_USER_ACCESS_TOKEN?.trim() ?? "";
-  const pageToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim() ?? "";
+  const ensured = await ensureFacebookTokensInProcess();
+  const userToken = ensured.userToken ?? "";
+  const pageToken =
+    ensured.pageToken ??
+    process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim() ??
+    "";
   const appId = process.env.FACEBOOK_APP_ID?.trim();
   const appSecret = process.env.FACEBOOK_APP_SECRET?.trim();
 
@@ -132,7 +216,8 @@ export async function checkFacebookTokenHealth(): Promise<FacebookTokenHealth> {
     userExpiresAt: null,
     daysUntilUserExpiry: null,
     pagesFromMeAccounts: [],
-    refreshedThisRun: false,
+    refreshedThisRun: ensured.userRefreshed,
+    pageResolvedFromUser: ensured.pageResolvedFromUser,
     errors: [],
   };
 
@@ -210,9 +295,13 @@ export async function checkFacebookTokenHealth(): Promise<FacebookTokenHealth> {
     health.pageTokenValid = await probeToken(pageToken);
     if (!health.pageTokenValid) {
       health.errors.push(
-        "FACEBOOK_PAGE_ACCESS_TOKEN invalide — utilisez le access_token de /me/accounts (page MooreaNews), pas le jeton utilisateur.",
+        "Jeton page MooreaNews inaccessible — vérifiez FACEBOOK_USER_ACCESS_TOKEN (long) + droits admin page MooreaNews.",
       );
     }
+  } else if (userToken) {
+    health.errors.push(
+      "Jeton page absent — admin page MooreaNews requis sur le jeton utilisateur.",
+    );
   }
 
   return health;

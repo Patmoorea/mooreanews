@@ -26,7 +26,7 @@ import {
 } from "@/lib/facebook-import-cleanup";
 import {
   checkFacebookTokenHealth,
-  refreshFacebookUserTokenInProcess,
+  ensureFacebookTokensInProcess,
 } from "@/lib/facebook-token";
 import { checkFerryScheduleSync } from "@/lib/ferry-sync";
 import { sendMorningDigest } from "@/lib/morning-digest";
@@ -150,8 +150,11 @@ export async function runDailyCronPart(
 
   switch (part) {
     case "maintenance": {
-      const fbRefresh = await refreshFacebookUserTokenInProcess();
-      jobs.facebookToken = { refreshed: fbRefresh.refreshed };
+      const fbTokens = await ensureFacebookTokensInProcess();
+      jobs.facebookToken = {
+        refreshed: fbTokens.userRefreshed,
+        pageResolvedFromUser: fbTokens.pageResolvedFromUser,
+      };
 
       const expiredAlerts = await expirePastAlerts();
       jobs.expiredAlerts = expiredAlerts;
@@ -346,9 +349,12 @@ export async function runDailyCronPart(
       const aggErrors = aggregationErrors(rssResults);
       errors.push(...aggErrors);
 
-      const fbRefresh = await refreshFacebookUserTokenInProcess();
+      const fbTokens = await ensureFacebookTokensInProcess();
       const facebookHealth = await checkFacebookTokenHealth();
-      if (fbRefresh.refreshed) facebookHealth.refreshedThisRun = true;
+      if (fbTokens.userRefreshed) facebookHealth.refreshedThisRun = true;
+      if (fbTokens.pageResolvedFromUser) {
+        facebookHealth.pageResolvedFromUser = true;
+      }
       const facebookImportStatus = await getFacebookImportStatus();
 
       jobs.telegram = await notifyVeilleReport({
