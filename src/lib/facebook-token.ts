@@ -191,7 +191,14 @@ export async function checkFacebookTokenHealth(): Promise<FacebookTokenHealth> {
             }
           }
         } else {
-          health.errors.push(`me/accounts: HTTP ${res.status}`);
+          const body = await res.text();
+          if (body.includes("nonexisting field (accounts)")) {
+            health.errors.push(
+              "me/accounts inaccessible — vérifiez que FACEBOOK_USER_ACCESS_TOKEN est un jeton UTILISATEUR (pas page) avec pages_show_list",
+            );
+          } else {
+            health.errors.push(`me/accounts: HTTP ${res.status}`);
+          }
         }
       } catch (e) {
         health.errors.push(String(e));

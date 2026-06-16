@@ -23,7 +23,14 @@ export function formatMorningBrief30s(d: MooreaDuJour): {
   parts.push(`${d.swim.emoji} Lagon ${d.swim.label.toLowerCase()}`);
 
   if (d.alerts.count > 0) {
-    parts.push(`⚠️ ${d.alerts.count} alerte(s)`);
+    const outage = d.alerts.items.find((a) =>
+      /coupure|électricité|electricite|eau potable|edt/i.test(a.title),
+    );
+    if (outage) {
+      parts.push(`⚡ ${outage.title.slice(0, 55)}`);
+    } else {
+      parts.push(`⚠️ ${d.alerts.count} alerte(s)`);
+    }
   } else {
     parts.push("✅ 0 alerte");
   }

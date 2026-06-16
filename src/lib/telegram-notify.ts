@@ -397,6 +397,10 @@ export async function notifyVeilleReport(input: {
       lines.push(
         "\n🔑 <b>Facebook</b> : jetons invalides sur Vercel — refaire /me/accounts → FACEBOOK_PAGE_ACCESS_TOKEN",
       );
+    } else if (!h.pageTokenValid && h.pageTokenPresent) {
+      lines.push(
+        "\n🔑 <b>Facebook</b> : FACEBOOK_PAGE_ACCESS_TOKEN invalide — regénérez le jeton page MooreaNews (350029589936) sur Vercel puis Redeploy",
+      );
     } else if (h.daysUntilUserExpiry != null && h.daysUntilUserExpiry < 14) {
       lines.push(
         `\n🔑 <b>Facebook</b> : jeton utilisateur expire dans ~${h.daysUntilUserExpiry} j — renouveler (APP_ID + APP_SECRET)`,
