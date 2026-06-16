@@ -8,6 +8,10 @@ import type { FacebookTokenHealth } from "@/lib/facebook-token";
 import type { ContentAuditReport } from "@/lib/site-content-audit";
 import { escapeHtml, sendTelegramNotification } from "@/lib/telegram";
 import { getPublicBotTokenStrict, getPublicChatId } from "@/lib/telegram-config";
+import {
+  filterNotYetOnTelegramChannel,
+  markPostedOnTelegramChannel,
+} from "@/lib/telegram-channel-dedup";
 import { isOptionalVeilleWarning } from "@/lib/feed-errors";
 import { getMooreaDuJour } from "@/lib/moorea-du-jour";
 import { formatMorningBrief30s } from "@/lib/moorea-brief";
@@ -418,10 +422,6 @@ export async function notifyVeilleReport(input: {
   const message = truncate(lines.join("\n"), 3900);
   const result = await sendTelegramNotification(message);
 
-  if (input.createdArticles?.length) {
-    await notifyPublicNewArticles(input.createdArticles);
-  }
-
   return result.ok
     ? { sent: true }
     : { sent: false, reason: result.error ?? "telegram_failed" };
@@ -506,12 +506,17 @@ export async function notifyPublicNewArticles(
     return { sent: 0, failed: 0, reason: "no_articles", errors: [] };
   }
 
+  const toPost = await filterNotYetOnTelegramChannel(articles);
+  if (toPost.length === 0) {
+    return { sent: 0, failed: 0, reason: "already_posted", errors: [] };
+  }
+
   const base = siteUrl();
   let sent = 0;
   let failed = 0;
   const errors: string[] = [];
 
-  for (const a of articles.slice(0, 5)) {
+  for (const a of toPost.slice(0, 5)) {
     const html = [
       `<b>📰 MooreaNews</b>`,
       escapeHtml(truncate(a.title, 120)),
@@ -538,6 +543,7 @@ export async function notifyPublicNewArticles(
       };
       if (res.ok && json.ok) {
         sent += 1;
+        await markPostedOnTelegramChannel(a.slug);
       } else {
         failed += 1;
         const msg = json.description ?? `HTTP ${res.status}`;

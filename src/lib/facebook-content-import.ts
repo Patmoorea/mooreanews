@@ -84,8 +84,7 @@ function articleTelegramNotice(
       title,
       excerpt: excerpt ?? null,
       body: body ?? "",
-    }) &&
-    /^[^—]+ — publication · /i.test(title.trim())
+    })
   ) {
     return null;
   }
