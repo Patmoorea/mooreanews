@@ -139,16 +139,9 @@ export async function unpublishEmptyFacebookShells(): Promise<number> {
     .like("slug", "mooreanews-fb-%");
 
   let unpublished = 0;
-  const graceMs = 6 * 3600 * 1000;
   for (const row of rows ?? []) {
-    if (row.published_at) {
-      const ms = Date.parse(row.published_at);
-      if (!Number.isNaN(ms) && Date.now() - ms < graceMs) {
-        continue;
-      }
-    }
     if (
-      !isEmptyFacebookArticleShell({
+      isFacebookArticleCompleteOnSite({
         title: row.title,
         excerpt: row.excerpt,
         body: row.body,
@@ -158,7 +151,7 @@ export async function unpublishEmptyFacebookShells(): Promise<number> {
       continue;
     }
     if (
-      isFacebookArticleCompleteOnSite({
+      !isEmptyFacebookArticleShell({
         title: row.title,
         excerpt: row.excerpt,
         body: row.body,

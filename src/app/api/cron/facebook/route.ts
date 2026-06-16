@@ -55,7 +55,6 @@ async function runFacebookImport(
     newPostsOnly?: boolean;
     newPostsLimit?: number;
     repairOnly?: boolean;
-    repairLimit?: number;
   },
 ) {
   const start = Date.now();
@@ -64,10 +63,9 @@ async function runFacebookImport(
   const result = await aggregateFacebookPagesGraph({
     light: true,
     recentImportLimit: recentLimit,
-    newPostsOnly: options?.newPostsOnly,
-    newPostsLimit: options?.newPostsLimit,
-    repairOnly: options?.repairOnly,
-    repairLimit: options?.repairLimit,
+    newPostsOnly: options?.newPostsOnly === true,
+    newPostsLimit: options?.newPostsLimit ?? recentLimit,
+    repairOnly: options?.repairOnly === true,
     forcePhotoFbids:
       forcePhotoFbids && forcePhotoFbids.length > 0
         ? forcePhotoFbids
@@ -162,7 +160,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const wait = url.searchParams.get("wait") === "1";
   const chain = url.searchParams.get("chain") === "1";
-  const repairOnly = url.searchParams.get("repair") === "1";
+  const repairOnly = url.searchParams.get("repairOnly") === "1";
   const newPostsOnly =
     !repairOnly &&
     (url.searchParams.get("newOnly") === "1" ||
@@ -190,21 +188,18 @@ export async function GET(req: Request) {
     const limitRaw = url.searchParams.get("limit");
     const newPostsLimit = limitRaw
       ? Math.min(Math.max(1, Math.floor(Number(limitRaw))), 10)
-      : repairOnly
+      : newPostsOnly
         ? 1
-        : newPostsOnly
-          ? 1
-          : facebookCronRecentPostLimit();
+        : facebookCronRecentPostLimit();
 
     const importOptions = {
-      skipTelegram: false,
+      skipTelegram: chain && !repairOnly,
       skipUtility: chain,
       skipStatus: chain,
-      recentImportLimit: Math.max(newPostsLimit, 20),
-      newPostsOnly: repairOnly ? false : newPostsOnly,
+      recentImportLimit: Math.max(newPostsLimit, 25),
+      newPostsOnly,
       newPostsLimit,
       repairOnly,
-      repairLimit: repairOnly ? newPostsLimit : undefined,
     };
 
     /** Sans wait=1 : async (tests manuels uniquement). Veille GitHub passe toujours wait=1. */
@@ -226,6 +221,7 @@ export async function GET(req: Request) {
           started: true,
           async: true,
           newPostsOnly,
+          repairOnly,
           newPostsLimit,
           hint: "Import Facebook en arrière-plan.",
         },

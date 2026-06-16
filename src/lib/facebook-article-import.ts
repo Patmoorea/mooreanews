@@ -36,11 +36,10 @@ export type FacebookPageImportConfig = {
   newPostsOnly?: boolean;
   /** Nombre max de nouveaux posts par run (veille Hobby). */
   newPostsLimit?: number;
+  /** Réparer texte + affiche des articles incomplets (veille Hobby). */
+  repairOnly?: boolean;
   /** Pas de réparations (veille sync ~60 s). */
   skipRepairs?: boolean;
-  /** Uniquement réparer les articles MooreaNews incomplets. */
-  repairOnly?: boolean;
-  repairLimit?: number;
 };
 
 /** @deprecated Utiliser importFacebookPostsAsContent */
