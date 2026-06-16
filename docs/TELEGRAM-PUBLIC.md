@@ -39,7 +39,17 @@ Les **articles** ne partent pas en DM à tous les abonnés du bot — il faut un
 
 1. Telegram → **Nouveau canal** → public → `@MooreaNews` (exemple)
 2. Paramètres canal → **Administrateurs** → ajouter **@MooreanewsPublic_bot** (droits poster)
-3. Récupérer l’ID du canal (bot @userinfobot ou API) → `TELEGRAM_PUBLIC_CHAT_ID`
+3. Récupérer l’**ID du canal** (pas du bot !) → `TELEGRAM_PUBLIC_CHAT_ID`
+
+   **Méthode simple** (bot déjà admin du canal) :
+   ```bash
+   curl "https://api.telegram.org/bot<VOTRE_TELEGRAM_PUBLIC_BOT_TOKEN>/getChat?chat_id=@MooreaNews"
+   ```
+   Copier `"id": -100xxxxxxxxxx` dans Vercel → `TELEGRAM_PUBLIC_CHAT_ID`.
+
+   Ou : transférer un message du canal @MooreaNews vers [@userinfobot](https://t.me/userinfobot) — l’ID affiché commence par **-100**.
+
+   ⚠️ **Ne pas** mettre l’ID du bot @MooreanewsPublic_bot ni votre chat privé.
 4. `TELEGRAM_PUBLIC_CHANNEL_USERNAME=MooreaNews` pour le bouton sur `/signalements`
 
 Le site envoie alors :
@@ -55,6 +65,7 @@ curl "https://www.mooreanews.com/api/cron/telegram-webhook?secret=VOTRE_CRON_SEC
 Réponse `"channelTest": { "ok": true }` → un message test apparaît sur @MooreaNews.
 
 Erreurs fréquentes :
+- `the bot can't send messages to the bot` → **TELEGRAM_PUBLIC_CHAT_ID = ID du bot** (faux). Utiliser l’ID du **canal** `-100…`
 - `chat not found` → mauvais `TELEGRAM_PUBLIC_CHAT_ID`
 - `bot is not a member` / `need administrator rights` → ajouter **@MooreanewsPublic_bot** comme admin du canal avec droit **Publier des messages**
 

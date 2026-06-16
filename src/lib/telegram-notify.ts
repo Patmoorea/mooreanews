@@ -556,10 +556,25 @@ export async function notifyPublicNewArticles(
 }
 
 /** Message test canal public — diagnostic config. */
+function explainChannelTelegramError(description: string): string | undefined {
+  const d = description.toLowerCase();
+  if (d.includes("can't send messages to the bot")) {
+    return "TELEGRAM_PUBLIC_CHAT_ID = ID du bot (incorrect). Mettez l'ID du CANAL @MooreaNews (commence par -100…), pas le chat du bot.";
+  }
+  if (d.includes("chat not found")) {
+    return "Canal introuvable — vérifiez TELEGRAM_PUBLIC_CHAT_ID ou ajoutez @MooreanewsPublic_bot au canal.";
+  }
+  if (d.includes("not a member") || d.includes("administrator rights")) {
+    return "Ajoutez @MooreanewsPublic_bot comme administrateur du canal avec droit « Publier des messages ».";
+  }
+  return undefined;
+}
+
 export async function sendTestPublicChannelPost(): Promise<{
   ok: boolean;
   reason?: string;
   telegramError?: string;
+  hint?: string;
 }> {
   const token = getPublicBotTokenStrict();
   const chatId = getPublicChatId();
@@ -589,10 +604,12 @@ export async function sendTestPublicChannelPost(): Promise<{
       description?: string;
     };
     if (res.ok && json.ok) return { ok: true };
+    const telegramError = json.description ?? `HTTP ${res.status}`;
     return {
       ok: false,
       reason: "telegram_api_error",
-      telegramError: json.description ?? `HTTP ${res.status}`,
+      telegramError,
+      hint: explainChannelTelegramError(telegramError),
     };
   } catch (e) {
     return {
