@@ -14,7 +14,7 @@ export const HERO_STICKER_ACCENTS = {
 } as const;
 
 type Props = {
-  href: string;
+  href?: string;
   label: string;
   icon: LucideIcon;
   accent: string;
@@ -33,19 +33,20 @@ export function HeroStickerVignette({
   pulse,
   className,
 }: Props) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "group relative inline-flex items-center gap-2.5 max-w-[min(100%,22rem)] min-h-[3.25rem] px-3.5 py-2 rounded-2xl",
-        "border border-white/25 bg-white/12 backdrop-blur-md",
-        "hover:bg-white/22 hover:border-white/40 hover:-translate-y-0.5",
-        "transition-all duration-200",
-        isFresh && "ring-1 ring-white/35",
-        pulse && "animate-pulse",
-        className,
-      )}
-    >
+  const shellClass = cn(
+    "relative inline-flex items-center gap-2.5 max-w-[min(100%,22rem)] min-h-[3.25rem] px-3.5 py-2 rounded-2xl",
+    "border border-white/25 bg-white/12 backdrop-blur-md",
+    "transition-all duration-200",
+    isFresh && "ring-1 ring-white/35",
+    pulse && "animate-pulse",
+    href
+      ? "group hover:bg-white/22 hover:border-white/40 hover:-translate-y-0.5"
+      : "cursor-default select-none",
+    className,
+  );
+
+  const content = (
+    <>
       <div
         aria-hidden
         className={cn(
@@ -59,6 +60,20 @@ export function HeroStickerVignette({
       <span className="relative truncate text-white text-[11px] sm:text-xs font-semibold leading-snug">
         {label}
       </span>
-    </Link>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className={shellClass}>
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <div className={shellClass} aria-label={label}>
+      {content}
+    </div>
   );
 }

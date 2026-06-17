@@ -12,6 +12,11 @@ import {
   webSiteJsonLd,
 } from "@/lib/seo";
 import { getFooterSponsorStripItems } from "@/lib/ads";
+import {
+  getActiveSeasonTheme,
+  seasonThemeColor,
+} from "@/lib/seasonal-theme";
+import { SeasonalDecor } from "@/components/decor/SeasonalDecor";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -95,30 +100,44 @@ export const metadata: Metadata = {
 /** Pied de page (pubs) + chrome — cache 10 min pour limiter le CPU Vercel. */
 export const revalidate = 600;
 
-export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#06b6d4" },
-    { media: "(prefers-color-scheme: dark)", color: "#0c4a6e" },
-  ],
-  width: "device-width",
-  initialScale: 1,
-};
+export async function generateViewport(): Promise<Viewport> {
+  const seasonTheme = await getActiveSeasonTheme();
+  const color = seasonThemeColor(seasonTheme);
+  return {
+    themeColor: [
+      { media: "(prefers-color-scheme: light)", color },
+      {
+        media: "(prefers-color-scheme: dark)",
+        color: seasonTheme ? color : "#0c4a6e",
+      },
+    ],
+    width: "device-width",
+    initialScale: 1,
+  };
+}
 
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const sponsorItems = await getFooterSponsorStripItems();
+  const [sponsorItems, seasonTheme] = await Promise.all([
+    getFooterSponsorStripItems(),
+    getActiveSeasonTheme(),
+  ]);
 
   return (
     <html
       lang="fr"
       className={`${inter.variable} ${marcellus.variable} antialiased`}
+      data-season={seasonTheme ?? undefined}
     >
       <body className="min-h-screen flex flex-col bg-island-sky bg-palm-pattern text-ocean-950 dark:bg-ocean-950 dark:text-ocean-50">
+        <SeasonalDecor theme={seasonTheme} />
         <JsonLd data={webSiteJsonLd()} />
-        <SiteChrome sponsorItems={sponsorItems}>{children}</SiteChrome>
+        <SiteChrome sponsorItems={sponsorItems} seasonTheme={seasonTheme}>
+          {children}
+        </SiteChrome>
         <Analytics />
       </body>
     </html>

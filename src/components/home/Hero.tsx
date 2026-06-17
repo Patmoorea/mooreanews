@@ -21,7 +21,6 @@ import { HeroOutageSticker } from "@/components/home/HeroOutageSticker";
 import { EmploymentSticker } from "@/components/home/EmploymentSticker";
 import { GardeWeekendSticker } from "@/components/home/GardeWeekendSticker";
 import { WeeklyRecapSticker } from "@/components/home/WeeklyRecapSticker";
-import { SeasonalMomentStickers } from "@/components/home/SeasonalMomentStickers";
 import { cn } from "@/lib/utils";
 
 const UTILITIES: {
@@ -127,9 +126,6 @@ export function Hero() {
                 </span>
                 <HeroWeatherPill />
                 <HeroOutageSticker />
-              </div>
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 sm:gap-3">
-                <SeasonalMomentStickers />
               </div>
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 sm:gap-3">
                 <GardeWeekendSticker />
