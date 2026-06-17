@@ -1,7 +1,4 @@
-import {
-  getSeasonThemeMeta,
-  type SeasonThemeId,
-} from "@/lib/seasonal-theme";
+import { getSeasonThemeMeta, type SeasonThemeId } from "@/lib/seasonal-theme-meta";
 import { SeasonThemeIcon } from "@/components/decor/SeasonThemeIllustrations";
 import { cn } from "@/lib/utils";
 

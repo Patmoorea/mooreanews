@@ -1,7 +1,7 @@
 import {
   getSeasonThemeMeta,
   type SeasonThemeId,
-} from "@/lib/seasonal-theme";
+} from "@/lib/seasonal-theme-meta";
 import { SeasonThemeIcon } from "@/components/decor/SeasonThemeIllustrations";
 
 type Props = {

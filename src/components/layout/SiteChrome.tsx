@@ -12,9 +12,7 @@ import { FerryStickyBar } from "@/components/widgets/FerryStickyBar";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import { PageViewTracker } from "@/components/analytics/PageViewTracker";
-import { SeasonalThemeRibbon } from "@/components/layout/SeasonalThemeRibbon";
-import { SeasonThemeIcon } from "@/components/decor/SeasonThemeIllustrations";
-import type { SeasonThemeId } from "@/lib/seasonal-theme";
+import type { SeasonThemeId } from "@/lib/seasonal-theme-meta";
 
 function isMinimalChrome(pathname: string): boolean {
   return pathname.startsWith("/app") || pathname.startsWith("/admin");
@@ -24,10 +22,12 @@ export function SiteChrome({
   children,
   sponsorItems = [],
   seasonTheme = null,
+  seasonRibbon = null,
 }: {
   children: React.ReactNode;
   sponsorItems?: AdSponsorStripItem[];
   seasonTheme?: SeasonThemeId | null;
+  seasonRibbon?: React.ReactNode;
 }) {
   const pathname = usePathname();
   const minimal = isMinimalChrome(pathname);
@@ -49,7 +49,7 @@ export function SiteChrome({
       <InfoBannerSlot />
       <BreakingNewsSlot />
       <Header seasonTheme={seasonTheme} />
-      {seasonTheme ? <SeasonalThemeRibbon theme={seasonTheme} /> : null}
+      {seasonRibbon}
       <ServiceHighlightsTicker />
       <Ticker />
       <main className="flex-1 pb-16 md:pb-0">{children}</main>

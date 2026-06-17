@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from "react";
-import type { SeasonThemeId } from "@/lib/seasonal-theme";
+import type { SeasonThemeId } from "@/lib/seasonal-theme-meta";
 import { cn } from "@/lib/utils";
 
 type IconProps = {

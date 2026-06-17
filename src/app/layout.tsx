@@ -14,9 +14,10 @@ import {
 import { getFooterSponsorStripItems } from "@/lib/ads";
 import {
   getActiveSeasonTheme,
-  seasonThemeColor,
 } from "@/lib/seasonal-theme";
+import { seasonThemeColor } from "@/lib/seasonal-theme-meta";
 import { SeasonalDecor } from "@/components/decor/SeasonalDecor";
+import { SeasonalThemeRibbon } from "@/components/layout/SeasonalThemeRibbon";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -135,7 +136,15 @@ export default async function RootLayout({
       <body className="min-h-screen flex flex-col bg-island-sky bg-palm-pattern text-ocean-950 dark:bg-ocean-950 dark:text-ocean-50">
         <SeasonalDecor theme={seasonTheme} />
         <JsonLd data={webSiteJsonLd()} />
-        <SiteChrome sponsorItems={sponsorItems} seasonTheme={seasonTheme}>
+        <SiteChrome
+          sponsorItems={sponsorItems}
+          seasonTheme={seasonTheme}
+          seasonRibbon={
+            seasonTheme ? (
+              <SeasonalThemeRibbon theme={seasonTheme} />
+            ) : null
+          }
+        >
           {children}
         </SiteChrome>
         <Analytics />

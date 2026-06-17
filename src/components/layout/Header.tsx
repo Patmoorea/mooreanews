@@ -10,7 +10,7 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { MainNav } from "@/components/layout/MainNav";
 import { Logo } from "@/components/ui/Logo";
 import { SeasonThemeIcon } from "@/components/decor/SeasonThemeIllustrations";
-import type { SeasonThemeId } from "@/lib/seasonal-theme";
+import type { SeasonThemeId } from "@/lib/seasonal-theme-meta";
 
 type HeaderProps = {
   seasonTheme?: SeasonThemeId | null;
