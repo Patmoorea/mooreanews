@@ -10,7 +10,7 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { MainNav } from "@/components/layout/MainNav";
 import { Logo } from "@/components/ui/Logo";
 
-export function Header({ logoSrc }: { logoSrc?: string }) {
+export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -38,7 +38,6 @@ export function Header({ logoSrc }: { logoSrc?: string }) {
             aria-label="MooreaNews — Accueil"
           >
             <Logo
-              src={logoSrc}
               size={40}
               priority
               className="h-9 w-9 sm:h-10 sm:w-10 rounded-full shadow-sm group-hover:scale-105 transition-transform ring-2 ring-lagon-200"

@@ -5,18 +5,17 @@ type Props = {
   size?: number;
   className?: string;
   priority?: boolean;
-  /** Logo saisonnier ou défaut SITE.logo */
-  src?: string;
 };
 
 /**
  * Logo MooreaNews : image officielle (île, palmier, lagon, hibiscus,
- * motifs tribaux). Variante saisonnière si `src` fourni.
+ * motifs tribaux). Le PNG source est rond, on conserve simplement
+ * sa forme circulaire native.
  */
-export function Logo({ size = 48, className, priority = false, src }: Props) {
+export function Logo({ size = 48, className, priority = false }: Props) {
   return (
     <Image
-      src={src ?? SITE.logo}
+      src={SITE.logo}
       alt={`${SITE.name} — ${SITE.tagline}`}
       width={size}
       height={size}

@@ -6,14 +6,11 @@ import { SITE_DIRECTORY } from "@/lib/site-directory";
 import { NewsletterForm } from "@/components/NewsletterForm";
 import { FacebookIcon, InstagramIcon, WhatsAppIcon } from "@/components/ui/SocialIcons";
 import { Logo } from "@/components/ui/Logo";
-import { getSiteLogo } from "@/lib/seasonal-theme";
 import { WaveDivider } from "@/components/decor/TropicalDecor";
 import { AdSponsorsStrip } from "@/components/ads/AdSponsorsStrip";
 import type { AdSponsorStripItem } from "@/lib/ads-sponsors";
 
 export function Footer({ sponsorItems = [] }: { sponsorItems?: AdSponsorStripItem[] }) {
-  const logoSrc = getSiteLogo();
-
   return (
     <footer className="relative mt-20 bg-gradient-to-b from-ocean-800 via-ocean-900 to-ocean-950 text-ocean-100">
       <WaveDivider className="absolute top-0 left-0 right-0 -translate-y-full text-lagon-100" flip />
@@ -44,7 +41,7 @@ export function Footer({ sponsorItems = [] }: { sponsorItems?: AdSponsorStripIte
               href="/"
               className="inline-flex items-center gap-3 group"
             >
-              <Logo src={logoSrc} size={40} className="rounded-full shadow-lg" />
+              <Logo size={40} className="rounded-full shadow-lg" />
               <span className="font-display text-xl text-white">
                 {SITE.name}
               </span>
