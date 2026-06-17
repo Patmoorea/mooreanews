@@ -22,12 +22,10 @@ export function SiteChrome({
   children,
   sponsorItems = [],
   seasonTheme = null,
-  seasonRibbon = null,
 }: {
   children: React.ReactNode;
   sponsorItems?: AdSponsorStripItem[];
   seasonTheme?: SeasonThemeId | null;
-  seasonRibbon?: React.ReactNode;
 }) {
   const pathname = usePathname();
   const minimal = isMinimalChrome(pathname);
@@ -49,7 +47,6 @@ export function SiteChrome({
       <InfoBannerSlot />
       <BreakingNewsSlot />
       <Header seasonTheme={seasonTheme} />
-      {seasonRibbon}
       <ServiceHighlightsTicker />
       <Ticker />
       <main className="flex-1 pb-16 md:pb-0">{children}</main>

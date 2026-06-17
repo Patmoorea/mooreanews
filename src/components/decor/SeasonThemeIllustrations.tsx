@@ -35,17 +35,31 @@ function SvgWrap({
 function CoupeMondeIcon({ className, size = 48 }: IconProps) {
   return (
     <SvgWrap size={size} className={className}>
-      <circle cx="24" cy="24" r="20" fill="#fefce8" stroke="#16a34a" strokeWidth="2" />
+      <circle cx="24" cy="24" r="20" fill="#ffffff" stroke="#6b7280" strokeWidth="1.5" />
       <path
-        d="M24 8 L28 18 L38 18 L30 24 L33 34 L24 28 L15 34 L18 24 L10 18 L20 18 Z"
-        fill="#16a34a"
+        d="M24 10 L29.8 16.2 L27.8 23.8 L20.2 23.8 L18.2 16.2 Z"
+        fill="#171717"
+      />
+      <path
+        d="M11.5 22.5 L18.2 16.2 L20.2 23.8 L16.5 30.5 Z"
+        fill="#171717"
         opacity="0.85"
       />
       <path
-        d="M24 14 L26 20 L32 20 L27 24 L29 30 L24 26 L19 30 L21 24 L16 20 L22 20 Z"
-        fill="#eab308"
+        d="M36.5 22.5 L31.8 30.5 L28.2 23.8 L29.8 16.2 Z"
+        fill="#171717"
+        opacity="0.85"
       />
-      <circle cx="24" cy="24" r="3" fill="#15803d" />
+      <path
+        d="M15.5 34.5 L20.2 23.8 L27.8 23.8 L32.5 34.5 Z"
+        fill="#171717"
+        opacity="0.7"
+      />
+      <path
+        d="M24 38 L20.2 23.8 L27.8 23.8 Z"
+        fill="#171717"
+        opacity="0.55"
+      />
     </SvgWrap>
   );
 }
