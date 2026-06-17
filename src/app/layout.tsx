@@ -12,6 +12,7 @@ import {
   webSiteJsonLd,
 } from "@/lib/seo";
 import { getFooterSponsorStripItems } from "@/lib/ads";
+import { getActiveSeasonalTheme } from "@/lib/seasonal-theme";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -110,15 +111,19 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const sponsorItems = await getFooterSponsorStripItems();
+  const seasonalTheme = getActiveSeasonalTheme();
 
   return (
     <html
       lang="fr"
       className={`${inter.variable} ${marcellus.variable} antialiased`}
+      data-season={seasonalTheme?.id}
     >
       <body className="min-h-screen flex flex-col bg-island-sky bg-palm-pattern text-ocean-950 dark:bg-ocean-950 dark:text-ocean-50">
         <JsonLd data={webSiteJsonLd()} />
-        <SiteChrome sponsorItems={sponsorItems}>{children}</SiteChrome>
+        <SiteChrome sponsorItems={sponsorItems} seasonalTheme={seasonalTheme}>
+          {children}
+        </SiteChrome>
         <Analytics />
       </body>
     </html>

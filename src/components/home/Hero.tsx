@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { SITE } from "@/lib/constants";
+import { getSiteLogo } from "@/lib/seasonal-theme";
 import { WaveDivider, TROPICAL_EMOJI } from "@/components/decor/TropicalDecor";
 import { HeroWeatherPill } from "@/components/home/HeroWeatherPill";
 import { HeroOutageSticker } from "@/components/home/HeroOutageSticker";
@@ -89,6 +90,8 @@ const UTILITIES: {
 ];
 
 export function Hero() {
+  const logoSrc = getSiteLogo();
+
   return (
     <section className="relative flex flex-col justify-center overflow-hidden">
       {/* Fond immersif */}
@@ -216,7 +219,7 @@ export function Hero() {
           <div className="hidden lg:flex items-center justify-center">
             <div className="rounded-3xl border border-white/20 bg-white/10 backdrop-blur-lg p-6 shadow-xl shrink-0">
               <Image
-                src={SITE.logo}
+                src={logoSrc}
                 alt={SITE.name}
                 width={120}
                 height={120}
