@@ -38,7 +38,7 @@ const ACCENTS: Record<SeasonalMoment["accent"], string> = {
 
 /** Pastilles hero — grands événements de la saison (Heiva, Coupe du monde, Noël…). */
 export function SeasonalMomentStickers() {
-  const moments = getActiveSeasonalMoments(2);
+  const moments = getActiveSeasonalMoments(3);
   if (moments.length === 0) return null;
 
   return (
