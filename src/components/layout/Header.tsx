@@ -9,14 +9,8 @@ import { UserMenu } from "@/components/layout/UserMenu";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { MainNav } from "@/components/layout/MainNav";
 import { Logo } from "@/components/ui/Logo";
-import { SeasonThemeIcon } from "@/components/decor/SeasonThemeIllustrations";
-import type { SeasonThemeId } from "@/lib/seasonal-theme-meta";
 
-type HeaderProps = {
-  seasonTheme?: SeasonThemeId | null;
-};
-
-export function Header({ seasonTheme = null }: HeaderProps) {
+export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -48,11 +42,6 @@ export function Header({ seasonTheme = null }: HeaderProps) {
               priority
               className="h-9 w-9 sm:h-10 sm:w-10 rounded-full shadow-sm group-hover:scale-105 transition-transform ring-2 ring-lagon-200"
             />
-            {seasonTheme ? (
-              <span className="hidden sm:flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-black/5">
-                <SeasonThemeIcon theme={seasonTheme} size={24} />
-              </span>
-            ) : null}
             <span className="font-display text-lg sm:text-xl text-ocean-900">
               Moorea<span className="text-lagon-600">News</span>
             </span>
