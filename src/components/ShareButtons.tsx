@@ -60,30 +60,33 @@ export function ShareButtons({
   if (variant === "article") {
     return (
       <div className="space-y-4">
-        <a
-          href={waHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-6 py-4 text-base font-bold text-white shadow-lg shadow-[#25D366]/30 transition-transform hover:-translate-y-0.5 hover:bg-[#20bd5a]"
-          aria-label="Partager sur WhatsApp"
-        >
-          <WhatsAppIcon size={24} />
-          Partager sur WhatsApp
-        </a>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-ocean-500">
-            <Share2 size={14} />
-            Aussi sur
-          </span>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <a
+            href={waHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-5 py-4 text-base font-bold text-white shadow-lg shadow-[#25D366]/30 transition-transform hover:-translate-y-0.5 hover:bg-[#20bd5a]"
+            aria-label="Partager sur WhatsApp"
+          >
+            <WhatsAppIcon size={24} />
+            WhatsApp
+          </a>
           <a
             href={fbHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-full bg-[#1877F2] px-3.5 py-2 text-sm font-semibold text-white hover:opacity-90"
+            className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#1877F2] px-5 py-4 text-base font-bold text-white shadow-lg shadow-[#1877F2]/25 transition-transform hover:-translate-y-0.5 hover:bg-[#166fe5]"
+            aria-label="Partager sur Facebook"
           >
-            <FacebookIcon size={14} />
+            <FacebookIcon size={24} />
             Facebook
           </a>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-ocean-500">
+            <Share2 size={14} />
+            Autres options
+          </span>
           <a
             href={mailHref}
             className="inline-flex items-center gap-1.5 rounded-full bg-ocean-100 px-3.5 py-2 text-sm font-semibold text-ocean-800 hover:bg-ocean-200"
