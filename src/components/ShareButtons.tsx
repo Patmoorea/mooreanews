@@ -3,38 +3,113 @@
 import { Share2, Link2, Check } from "lucide-react";
 import { useState } from "react";
 import { FacebookIcon, WhatsAppIcon } from "@/components/ui/SocialIcons";
+import { withUtm } from "@/lib/utm";
 
 type Props = {
   url: string;
   title: string;
   description?: string;
-  variant?: "inline" | "compact";
+  /** inline = défaut ; compact = petit ; article = WhatsApp mis en avant */
+  variant?: "inline" | "compact" | "article";
+  /** Identifiant campagne UTM (ex. slug article) */
+  utmContent?: string;
 };
 
-/**
- * Boutons de partage social réutilisables (Facebook, WhatsApp, Email,
- * copier le lien). Côté client pour gérer la copie + retour visuel.
- */
-export function ShareButtons({ url, title, description, variant = "inline" }: Props) {
+export function ShareButtons({
+  url,
+  title,
+  description,
+  variant = "inline",
+  utmContent,
+}: Props) {
   const [copied, setCopied] = useState(false);
 
-  const fbHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-    url,
-  )}`;
-  const waText = description ? `${title} — ${description}\n${url}` : `${title} — ${url}`;
+  const campaign = "partage_contenu";
+  const waUrl = withUtm(url, {
+    source: "whatsapp",
+    medium: "social",
+    campaign,
+    content: utmContent,
+  });
+  const fbUrl = withUtm(url, {
+    source: "facebook",
+    medium: "social",
+    campaign,
+    content: utmContent,
+  });
+
+  const fbHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fbUrl)}`;
+  const waText = description
+    ? `${title} — ${description}\n${waUrl}`
+    : `${title}\n${waUrl}`;
   const waHref = `https://wa.me/?text=${encodeURIComponent(waText)}`;
   const mailHref = `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(
-    `${description ?? ""}\n\n${url}`,
+    `${description ?? ""}\n\n${waUrl}`,
   )}`;
 
   async function copyLink() {
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(waUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback : sélectionner / mode dégradé silencieux
+      // ignore
     }
+  }
+
+  if (variant === "article") {
+    return (
+      <div className="space-y-4">
+        <a
+          href={waHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-6 py-4 text-base font-bold text-white shadow-lg shadow-[#25D366]/30 transition-transform hover:-translate-y-0.5 hover:bg-[#20bd5a]"
+          aria-label="Partager sur WhatsApp"
+        >
+          <WhatsAppIcon size={24} />
+          Partager sur WhatsApp
+        </a>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-ocean-500">
+            <Share2 size={14} />
+            Aussi sur
+          </span>
+          <a
+            href={fbHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#1877F2] px-3.5 py-2 text-sm font-semibold text-white hover:opacity-90"
+          >
+            <FacebookIcon size={14} />
+            Facebook
+          </a>
+          <a
+            href={mailHref}
+            className="inline-flex items-center gap-1.5 rounded-full bg-ocean-100 px-3.5 py-2 text-sm font-semibold text-ocean-800 hover:bg-ocean-200"
+          >
+            Email
+          </a>
+          <button
+            type="button"
+            onClick={copyLink}
+            className="inline-flex items-center gap-1.5 rounded-full bg-lagon-100 px-3.5 py-2 text-sm font-semibold text-ocean-800 hover:bg-lagon-200"
+          >
+            {copied ? (
+              <>
+                <Check size={14} />
+                Copié !
+              </>
+            ) : (
+              <>
+                <Link2 size={14} />
+                Copier le lien
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const compact = variant === "compact";
@@ -44,7 +119,7 @@ export function ShareButtons({ url, title, description, variant = "inline" }: Pr
       className={
         compact
           ? "flex flex-wrap gap-2"
-          : "flex flex-col sm:flex-row sm:items-center gap-3"
+          : "flex flex-col gap-3 sm:flex-row sm:items-center"
       }
     >
       {!compact && (
@@ -55,37 +130,35 @@ export function ShareButtons({ url, title, description, variant = "inline" }: Pr
       )}
       <div className="flex flex-wrap gap-2">
         <a
+          href={waHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-full bg-[#25D366] px-4 py-2.5 text-sm font-bold text-white shadow-md hover:opacity-90"
+          aria-label="Partager sur WhatsApp"
+        >
+          <WhatsAppIcon size={16} />
+          WhatsApp
+        </a>
+        <a
           href={fbHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#1877F2] text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+          className="inline-flex items-center gap-1.5 rounded-full bg-[#1877F2] px-3.5 py-2 text-sm font-semibold text-white hover:opacity-90"
           aria-label="Partager sur Facebook"
         >
           <FacebookIcon size={14} />
           Facebook
         </a>
         <a
-          href={waHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#25D366] text-white text-sm font-semibold hover:opacity-90 transition-opacity"
-          aria-label="Partager sur WhatsApp"
-        >
-          <WhatsAppIcon size={14} />
-          WhatsApp
-        </a>
-        <a
           href={mailHref}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-ocean-100 text-ocean-800 text-sm font-semibold hover:bg-ocean-200 transition-colors"
-          aria-label="Partager par email"
+          className="inline-flex items-center gap-1.5 rounded-full bg-ocean-100 px-3.5 py-2 text-sm font-semibold text-ocean-800 hover:bg-ocean-200"
         >
           Email
         </a>
         <button
           type="button"
           onClick={copyLink}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-lagon-100 text-ocean-800 text-sm font-semibold hover:bg-lagon-200 transition-colors"
-          aria-label="Copier le lien"
+          className="inline-flex items-center gap-1.5 rounded-full bg-lagon-100 px-3.5 py-2 text-sm font-semibold text-ocean-800 hover:bg-lagon-200"
         >
           {copied ? (
             <>

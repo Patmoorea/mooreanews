@@ -114,6 +114,16 @@ export default async function ArticlePage({ params }: Props) {
               </span>
             )}
           </div>
+
+          <div className="mt-8 max-w-xl">
+            <ShareButtons
+              url={shareUrl}
+              title={article.title}
+              description={article.excerpt}
+              variant="article"
+              utmContent={article.slug}
+            />
+          </div>
         </Container>
       </section>
 
@@ -147,6 +157,8 @@ export default async function ArticlePage({ params }: Props) {
             url={shareUrl}
             title={article.title}
             description={article.excerpt}
+            variant="article"
+            utmContent={article.slug}
           />
         </div>
 

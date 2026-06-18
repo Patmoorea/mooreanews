@@ -70,6 +70,75 @@ export default async function AdminAnalyticsPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+        <section className="sm:col-span-2 lg:col-span-3 rounded-3xl border-2 border-lagon-200 bg-gradient-to-br from-lagon-50 to-white p-6">
+          <h2 className="font-display text-xl text-ocean-900 mb-1">
+            Rapport hebdomadaire (7 jours)
+          </h2>
+          <p className="text-sm text-ocean-600 mb-6">
+            Résumé pour piloter votre audience — heure Tahiti.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+            <MiniStat label="Pages vues (7 j)" value={stats.weekViews} />
+            <MiniStat label="Visiteurs uniques (7 j)" value={stats.weekVisitors} />
+            <MiniStat
+              label="Moyenne / jour"
+              value={Math.round(stats.weekViews / 7)}
+            />
+            <MiniStat label="Aujourd'hui" value={stats.todayViews} />
+          </div>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div>
+              <h3 className="text-sm font-semibold text-ocean-800 mb-3">
+                Top articles (7 j)
+              </h3>
+              {stats.topArticles.length === 0 ? (
+                <p className="text-sm text-ocean-500">—</p>
+              ) : (
+                <ol className="space-y-2">
+                  {stats.topArticles.slice(0, 5).map((a, i) => (
+                    <li
+                      key={a.path}
+                      className="flex justify-between gap-3 text-sm border-b border-ocean-50 pb-2"
+                    >
+                      <span className="truncate">
+                        <span className="text-ocean-400 mr-2">{i + 1}.</span>
+                        {a.title}
+                      </span>
+                      <span className="font-medium shrink-0">{a.views}</span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-ocean-800 mb-3">
+                Campagnes UTM (7 j)
+              </h3>
+              {stats.utmSources.length === 0 ? (
+                <p className="text-sm text-ocean-500">
+                  Les liens avec{" "}
+                  <code className="text-xs">?utm_source=</code> (Facebook Ads,
+                  WhatsApp, etc.) apparaîtront ici.
+                </p>
+              ) : (
+                <ol className="space-y-2">
+                  {stats.utmSources.map((u) => (
+                    <li
+                      key={u.source}
+                      className="flex justify-between text-sm border-b border-ocean-50 pb-2"
+                    >
+                      <span>{u.source}</span>
+                      <span className="font-medium">{u.views}</span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-8">
         <StatBox
           label="Pages vues aujourd'hui"
           value={stats.todayViews}
@@ -245,6 +314,15 @@ export default async function AdminAnalyticsPage() {
           <ExternalLink size={14} />
         </a>
       </section>
+    </div>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl bg-white border border-ocean-100 p-4">
+      <p className="text-[10px] uppercase tracking-wide text-ocean-500">{label}</p>
+      <p className="font-display text-2xl text-ocean-950 mt-1">{value}</p>
     </div>
   );
 }

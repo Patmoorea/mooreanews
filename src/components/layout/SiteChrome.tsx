@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import type { AdSponsorStripItem } from "@/lib/ads-sponsors";
 import { InfoBannerSlot } from "@/components/layout/InfoBannerSlot";
@@ -31,7 +32,9 @@ export function SiteChrome({
     return (
       <>
         <ServiceWorkerRegister />
-        <PageViewTracker />
+        <Suspense fallback={null}>
+          <PageViewTracker />
+        </Suspense>
         <main className="flex-1">{children}</main>
       </>
     );
@@ -40,7 +43,9 @@ export function SiteChrome({
   return (
     <>
       <ServiceWorkerRegister />
-      <PageViewTracker />
+      <Suspense fallback={null}>
+        <PageViewTracker />
+      </Suspense>
       <InfoBannerSlot />
       <BreakingNewsSlot />
       <Header />

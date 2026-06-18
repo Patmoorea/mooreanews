@@ -9,6 +9,14 @@ const Payload = z.object({
   deviceType: z
     .enum(["mobile", "desktop", "tablet", "unknown"])
     .optional(),
+  utm: z
+    .object({
+      source: z.string().max(64),
+      medium: z.string().max(64).optional(),
+      campaign: z.string().max(128).optional(),
+      content: z.string().max(128).optional(),
+    })
+    .optional(),
 });
 
 export async function POST(req: Request) {

@@ -40,6 +40,11 @@ export const SOCIAL = {
   whatsapp: "+689 89 410 211",
 } as const;
 
+/** Fiche Google Business / Google Maps — définir NEXT_PUBLIC_GOOGLE_BUSINESS_URL sur Vercel. */
+export const GOOGLE_BUSINESS_URL =
+  process.env.NEXT_PUBLIC_GOOGLE_BUSINESS_URL?.trim() ||
+  "https://www.google.com/maps/search/MooreaNews+Moorea";
+
 /** Lien WhatsApp (partage / contact). */
 export function whatsappHref(text?: string): string {
   const digits = SOCIAL.whatsapp.replace(/\D/g, "");

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Mail, MapPin } from "lucide-react";
 import { Container } from "@/components/ui/Container";
-import { NAV_ITEMS, SITE, SOCIAL, USEFUL_LINKS, whatsappHref } from "@/lib/constants";
+import { NAV_ITEMS, SITE, SOCIAL, USEFUL_LINKS, whatsappHref, GOOGLE_BUSINESS_URL } from "@/lib/constants";
 import { SITE_DIRECTORY } from "@/lib/site-directory";
 import { NewsletterForm } from "@/components/NewsletterForm";
 import { FacebookIcon, InstagramIcon, WhatsAppIcon } from "@/components/ui/SocialIcons";
@@ -89,6 +89,15 @@ export function Footer({ sponsorItems = [] }: { sponsorItems?: AdSponsorStripIte
                 <Mail size={18} />
               </a>
             </div>
+            <a
+              href={GOOGLE_BUSINESS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 text-sm text-lagon-200 hover:text-white transition-colors"
+            >
+              <MapPin size={14} />
+              Fiche Google — MooreaNews
+            </a>
           </div>
 
           {/* Navigation */}

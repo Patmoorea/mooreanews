@@ -4,6 +4,8 @@
 
 import { getAdminSupabase } from "@/lib/supabase/admin";
 
+import { utmReferrerLabel, type UtmParams } from "@/lib/utm";
+
 const STATS_DAYS = 30;
 
 export type PageViewInput = {
@@ -11,6 +13,7 @@ export type PageViewInput = {
   referrer?: string | null;
   visitorId?: string | null;
   deviceType?: "mobile" | "desktop" | "tablet" | "unknown" | null;
+  utm?: UtmParams | null;
 };
 
 export type VisitStats = {
@@ -25,6 +28,8 @@ export type VisitStats = {
   daily: { date: string; views: number; visitors: number }[];
   topPages: { path: string; views: number }[];
   topReferrers: { source: string; views: number }[];
+  topArticles: { path: string; title: string; views: number }[];
+  utmSources: { source: string; views: number }[];
   devices: { type: string; views: number; pct: number }[];
 };
 
@@ -61,16 +66,31 @@ export function deviceTypeFromUserAgent(ua: string): PageViewInput["deviceType"]
 
 export function referrerLabel(referrer: string | null): string {
   if (!referrer?.trim()) return "Accès direct";
+  if (referrer.startsWith("utm:")) {
+    try {
+      const json = referrer.slice(4);
+      const parsed = JSON.parse(json) as UtmParams;
+      return utmReferrerLabel(parsed);
+    } catch {
+      return referrer.slice(4);
+    }
+  }
   try {
     const host = new URL(referrer).hostname.toLowerCase();
     if (host.includes("mooreanews.com")) return "Liens internes";
     if (host.includes("google.")) return "Google";
     if (host.includes("facebook.") || host.includes("fb.")) return "Facebook";
     if (host.includes("instagram.")) return "Instagram";
+    if (host.includes("whatsapp.") || host.includes("wa.me")) return "WhatsApp";
+    if (host.includes("t.me") || host.includes("telegram.")) return "Telegram";
     return host.replace(/^www\./, "");
   } catch {
     return "Autre";
   }
+}
+
+function encodeUtmReferrer(utm: UtmParams): string {
+  return `utm:${JSON.stringify(utm)}`;
 }
 
 export async function recordPageView(input: PageViewInput): Promise<void> {
@@ -82,7 +102,9 @@ export async function recordPageView(input: PageViewInput): Promise<void> {
 
   await admin.from("page_views").insert({
     path,
-    referrer: input.referrer?.slice(0, 500) ?? null,
+    referrer: input.utm
+      ? encodeUtmReferrer(input.utm)
+      : (input.referrer?.slice(0, 500) ?? null),
     visitor_id: input.visitorId?.slice(0, 64) ?? null,
     device_type: input.deviceType ?? "unknown",
   });
@@ -101,6 +123,8 @@ export async function getVisitStats(): Promise<VisitStats> {
     daily: [],
     topPages: [],
     topReferrers: [],
+    topArticles: [],
+    utmSources: [],
     devices: [],
   };
 
@@ -162,6 +186,40 @@ export async function getVisitStats(): Promise<VisitStats> {
     .slice(0, 20)
     .map(([path, views]) => ({ path, views }));
 
+  const weekPathCounts = new Map<string, number>();
+  for (const r of last7Rows) {
+    weekPathCounts.set(r.path, (weekPathCounts.get(r.path) ?? 0) + 1);
+  }
+  const articleCounts = [...weekPathCounts.entries()]
+    .filter(([path]) => path.startsWith("/actualites/") && path.length > 12)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+
+  const topArticles = articleCounts.map(([path, views]) => {
+    const slug = path.replace("/actualites/", "");
+    const title = slug
+      .split("-")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+    return { path, title, views };
+  });
+
+  const utmCounts = new Map<string, number>();
+  for (const r of last7Rows) {
+    if (r.referrer?.startsWith("utm:")) {
+      try {
+        const parsed = JSON.parse(r.referrer.slice(4)) as UtmParams;
+        const key = parsed.source;
+        utmCounts.set(key, (utmCounts.get(key) ?? 0) + 1);
+      } catch {
+        // ignore
+      }
+    }
+  }
+  const utmSources = [...utmCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([source, views]) => ({ source, views }));
+
   const refCounts = new Map<string, number>();
   for (const r of rows) {
     const label = referrerLabel(r.referrer);
@@ -204,6 +262,8 @@ export async function getVisitStats(): Promise<VisitStats> {
     daily,
     topPages,
     topReferrers,
+    topArticles,
+    utmSources,
     devices,
   };
 }

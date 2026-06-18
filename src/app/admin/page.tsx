@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { dbGetAdminStats } from "@/lib/supabase/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/server";
+import { getVisitStats } from "@/lib/page-analytics";
 
 export const metadata: Metadata = {
   title: "Tableau de bord",
@@ -22,6 +23,7 @@ export const metadata: Metadata = {
 
 export default async function AdminDashboard() {
   const stats = await dbGetAdminStats();
+  const visits = await getVisitStats();
 
   return (
     <div>
@@ -94,6 +96,28 @@ export default async function AdminDashboard() {
           color="from-lagon-400 to-ocean-500"
         />
       </div>
+
+      {visits.configured && (
+        <Link
+          href="/admin/analytics"
+          className="mt-6 block rounded-3xl border border-lagon-200 bg-gradient-to-br from-lagon-50 to-ocean-50 p-6 hover:border-lagon-400 transition-colors"
+        >
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-lagon-700 font-semibold">
+                Rapport hebdo — visites
+              </p>
+              <p className="font-display text-2xl text-ocean-950 mt-1">
+                {visits.weekViews} pages vues · {visits.weekVisitors} visiteurs
+              </p>
+              <p className="text-sm text-ocean-600 mt-1">
+                7 derniers jours — sources, articles top & campagnes UTM
+              </p>
+            </div>
+            <BarChart3 size={28} className="text-lagon-600 shrink-0" />
+          </div>
+        </Link>
+      )}
 
       {/* Soumissions en attente — mis en avant */}
       <Link

@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import type { Metadata } from "next";
-import { SITE, RAI_TAHITI } from "@/lib/constants";
+import { SITE, RAI_TAHITI, GOOGLE_BUSINESS_URL, SOCIAL } from "@/lib/constants";
 
 /** Origine canonique (www.mooreanews.com en prod). */
 export function getSiteOrigin(): string {
@@ -158,9 +158,36 @@ export function webSiteJsonLd() {
         url: origin,
         logo: `${origin}/brand/logo.png`,
         sameAs: [
-          "https://www.facebook.com/MooreaNews",
-          "https://www.instagram.com/mooreanews",
+          SOCIAL.facebook,
+          SOCIAL.instagram,
+          GOOGLE_BUSINESS_URL,
         ],
+      },
+      {
+        "@type": "LocalBusiness",
+        "@id": `${origin}/#localbusiness`,
+        name: SITE.name,
+        description: SITE.description,
+        url: origin,
+        image: `${origin}/brand/logo.png`,
+        telephone: SOCIAL.whatsapp.replace(/\s/g, ""),
+        email: SITE.email,
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: "Moorea",
+          addressRegion: "Îles du Vent",
+          addressCountry: "PF",
+        },
+        geo: {
+          "@type": "GeoCoordinates",
+          latitude: -17.5333,
+          longitude: -149.8333,
+        },
+        areaServed: {
+          "@type": "Place",
+          name: "Moorea",
+        },
+        sameAs: [SOCIAL.facebook, SOCIAL.instagram, GOOGLE_BUSINESS_URL],
       },
       {
         "@type": "WebPage",
@@ -199,6 +226,7 @@ export const STATIC_SITEMAP_PATHS: {
   { path: "/evenements", priority: 0.9, freq: "daily" },
   { path: "/annonces", priority: 0.85, freq: "daily" },
   { path: "/alertes", priority: 0.9, freq: "hourly" },
+  { path: "/alertes-moorea", priority: 0.92, freq: "hourly" },
   { path: "/trafic-ferry", priority: 0.75, freq: "monthly" },
   { path: "/coupures", priority: 0.85, freq: "daily" },
   { path: "/restaurants", priority: 0.85, freq: "weekly" },
