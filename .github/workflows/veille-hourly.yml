@@ -1,95 +1,90 @@
-# Veille MooreaNews toutes les heures (alternative à cron-job.org).
-# Secret requis : Settings → Secrets → CRON_SECRET (même valeur que Vercel).
-#
-# Vercel Hobby = max 60 s par invocation → veille en 4 étapes synchrones.
-
 name: Veille horaire MooreaNews
 on:
-schedule:
+  schedule:
 # 5h–20h heure de Tahiti (UTC−10) → 15h–23h et 0h–6h UTC
-- cron: "0 15-23,0-6 * * *"
-workflow_dispatch:
+    - cron: "0 15-23,0-6 * * *"
+  workflow_dispatch:
 concurrency:
-group: veille-hourly
-cancel-in-progress: false
+  group: veille-hourly
+  cancel-in-progress: false
 jobs:
-veille:
-runs-on: ubuntu-latest
-timeout-minutes: 20
-steps:
-  - name: Veille chainée (rss → facebook → web → telegram)
-    env:
-      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+  veille:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Veille chainée (rss → facebook → web → telegram)
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
 
-    run: |
-      set -euo pipefail
+        run: |
+          set -euo pipefail
 
-      if [ -z "$CRON_SECRET" ]; then
-        echo "CRON_SECRET manquant dans les secrets GitHub du dépôt."
-        exit 1
-      fi
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET manquant dans les secrets GitHub du dépôt."
+            exit 1
+          fi
 
-      BASE="https://www.mooreanews.com"
+          BASE="https://www.mooreanews.com"
 
-      run_step() {
-        label="$1"
-        endpoint="$2"
-        extra="${3:-}"
-        optional="${4:-0}"
-        max_time="${5:-55}"
+          run_step() {
+            label="$1"
+            endpoint="$2"
+            extra="${3:-}"
+            optional="${4:-0}"
+            max_time="${5:-55}"
 
-        url="${BASE}${endpoint}?secret=${CRON_SECRET}&wait=1"
+            url="${BASE}${endpoint}?secret=${CRON_SECRET}&wait=1"
 
-        if [ -n "$extra" ]; then
-          url="${url}&${extra}"
-        fi
+            if [ -n "$extra" ]; then
+              url="${url}&${extra}"
+            fi
 
-        echo ""
-        echo "=== ${label} ==="
+            echo ""
+            echo "=== ${label} ==="
 
-        set +e
-        code=$(curl -sS -o /tmp/veille-step.json -w "%{http_code}" --http1.1 --max-time "$max_time" "$url")
-        curl_exit=$?
-        set -e
+            set +e
+            code=$(curl -sS -o /tmp/veille-step.json -w "%{http_code}" --http1.1 --max-time "$max_time" "$url")
+            curl_exit=$?
+            set -e
 
-        echo "HTTP ${code} (curl exit ${curl_exit})"
-        head -c 600 /tmp/veille-step.json || true
-        echo ""
+            echo "HTTP ${code} (curl exit ${curl_exit})"
+            head -c 600 /tmp/veille-step.json || true
+            echo ""
 
-        if grep -q '"error":"unauthorized"' /tmp/veille-step.json 2>/dev/null; then
-          echo "CRON_SECRET incorrect"
-          exit 1
-        fi
+            if grep -q '"error":"unauthorized"' /tmp/veille-step.json 2>/dev/null; then
+              echo "CRON_SECRET incorrect"
+              exit 1
+            fi
 
-        if [ "$code" = "200" ] || [ "$code" = "202" ]; then
-          return 0
-        fi
+            if [ "$code" = "200" ] || [ "$code" = "202" ]; then
+              return 0
+            fi
 
-        if [ "$optional" = "1" ]; then
-          echo "Avertissement ${label} — suite de la chaîne"
-          return 0
-        fi
+            if [ "$optional" = "1" ]; then
+              echo "Avertissement ${label} — suite de la chaîne"
+              return 0
+            fi
 
-        echo "Échec ${label} (HTTP ${code})"
-        exit 1
-      }
+            echo "Échec ${label} (HTTP ${code})"
+            exit 1
+          }
 
-      # RSS
-      run_step "RSS" "/api/cron/aggregate" "part=rss"
+          # RSS
+          run_step "RSS" "/api/cron/aggregate" "part=rss"
 
-      # Facebook (observé ~48 s)
-      run_step "FB nouveau" "/api/cron/facebook" "chain=1&newOnly=1&limit=1" "1" "75"
+          # Facebook (observé ~48 s)
+          run_step "FB nouveau" "/api/cron/facebook" "chain=1&newOnly=1&limit=1" "1" "75"
 
-      run_step "FB réparation" "/api/cron/facebook" "chain=1&repairOnly=1&limit=1" "1" "75"
+          run_step "FB réparation" "/api/cron/facebook" "chain=1&repairOnly=1&limit=1" "1" "75"
 
-      # Veille web
-      run_step "Web" "/api/cron/aggregate" "part=web"
+          # Veille web
+          run_step "Web" "/api/cron/aggregate" "part=web"
 
-      # IA (optionnelle)
-      run_step "IA brouillons" "/api/cron/aggregate" "part=ai" "1" "55"
+          # IA (optionnelle)
+          run_step "IA brouillons" "/api/cron/aggregate" "part=ai" "1" "55"
 
-      # Finish + Telegram (observé ~85 s)
-      run_step "Finish + Telegram" "/api/cron/aggregate" "part=finish" "1" "120"
+          # Finish + Telegram (observé ~85 s)
+          run_step "Finish + Telegram" "/api/cron/aggregate" "part=finish" "1" "120"
 
-      echo ""
-      echo "Veille terminée — rapport Telegram envoyé si configuré."
+          echo ""
+          echo "Veille terminée — rapport Telegram envoyé si configuré."
