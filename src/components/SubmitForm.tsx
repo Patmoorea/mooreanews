@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Send, Check, AlertCircle } from "lucide-react";
 import { PosterUploadField } from "@/components/PosterUploadField";
+import { HoneypotField } from "@/components/ui/HoneypotField";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -95,8 +96,9 @@ export function SubmitForm() {
   return (
     <form
       onSubmit={onSubmit}
-      className="space-y-5 bg-white rounded-3xl p-6 sm:p-8 border border-ocean-100 shadow-[var(--shadow-soft)]"
+      className="relative space-y-5 bg-white rounded-3xl p-6 sm:p-8 border border-ocean-100 shadow-[var(--shadow-soft)]"
     >
+      <HoneypotField />
       <Field label="Type" required>
         <select
           name="type"

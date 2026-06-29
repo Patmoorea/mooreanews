@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Resend } from "resend";
 import { ENV } from "@/lib/constants";
+import { checkPublicFormSpam } from "@/lib/spam-guard";
+import { FORM_CORS_HEADERS, spamBlockedResponse } from "@/lib/spam-api-response";
 import {
   escapeHtml,
   sendTelegramNotification,
@@ -31,25 +33,40 @@ const Payload = z.object({
 
 type SubmitData = z.infer<typeof Payload>;
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
-
 export async function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+  return new NextResponse(null, { status: 204, headers: FORM_CORS_HEADERS });
 }
 
 export async function POST(req: Request) {
+  let raw: Record<string, unknown>;
+  try {
+    raw = (await req.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json(
+      { ok: false, error: "invalid_payload" },
+      { status: 400, headers: FORM_CORS_HEADERS }
+    );
+  }
+
+  const spam = await checkPublicFormSpam(req, "submit", raw, {
+    email: typeof raw.contact === "string" && raw.contact.includes("@")
+      ? raw.contact
+      : undefined,
+    fields: [
+      typeof raw.title === "string" ? raw.title : "",
+      typeof raw.description === "string" ? raw.description : "",
+      typeof raw.name === "string" ? raw.name : "",
+    ],
+  });
+  if (!spam.allowed) return spamBlockedResponse(spam);
+
   let parsed: SubmitData;
   try {
-    const body = await req.json();
-    parsed = Payload.parse(body);
+    parsed = Payload.parse(raw);
   } catch (err) {
     return NextResponse.json(
       { ok: false, error: "invalid_payload", detail: String(err) },
-      { status: 400, headers: CORS_HEADERS }
+      { status: 400, headers: FORM_CORS_HEADERS }
     );
   }
 
@@ -67,7 +84,7 @@ export async function POST(req: Request) {
         detail:
           "Ajoutez une affiche (photo) pour les événements, annonces et services.",
       },
-      { status: 400, headers: CORS_HEADERS },
+      { status: 400, headers: FORM_CORS_HEADERS },
     );
   }
 
@@ -128,11 +145,11 @@ export async function POST(req: Request) {
   if (!delivered && !supabase) {
     return NextResponse.json(
       { ok: false, error: "not_configured", warnings },
-      { status: 503, headers: CORS_HEADERS }
+      { status: 503, headers: FORM_CORS_HEADERS }
     );
   }
 
-  return NextResponse.json({ ok: true, warnings }, { status: 200, headers: CORS_HEADERS });
+  return NextResponse.json({ ok: true, warnings }, { status: 200, headers: FORM_CORS_HEADERS });
 }
 
 function normalizeSubmissionType(

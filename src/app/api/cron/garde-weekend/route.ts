@@ -1,17 +1,41 @@
 import { after, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { verifyCronAuth } from "@/lib/cron-auth";
-import { getTahitiClock, shouldPublishGardeWeekend } from "@/lib/cron-tahiti";
+import { getTahitiClock, shouldSyncGardeOnVeille } from "@/lib/cron-tahiti";
 import { syncHealthOnCall } from "@/lib/health-on-call";
+import { escapeHtml, sendTelegramNotification } from "@/lib/telegram";
+import { COPPF_MEDECINS_GARDE_URL } from "@/lib/garde-ordre-pharmaciens";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
+
+async function notifyGardeGap(result: Awaited<ReturnType<typeof syncHealthOnCall>>) {
+  if (result.found && result.doctor) return;
+  const lines = [
+    "<b>⚠️ Garde week-end — sync incomplète</b>",
+    "",
+    result.found
+      ? "Affiche trouvée mais médecin non extrait (OCR ?)."
+      : "Aucune affiche garde détectée (COPPF / Commune).",
+    "",
+    `Pharmacie : ${escapeHtml(result.pharmacy ?? "—")}`,
+    `Médecin : ${escapeHtml(result.doctor ?? "—")}`,
+    result.ocrError ? `OCR : ${escapeHtml(result.ocrError)}` : "",
+    "",
+    `<a href="${COPPF_MEDECINS_GARDE_URL}">COPPF — médecins de garde</a>`,
+    `<a href="https://www.mooreanews.com/admin">Admin MooreaNews</a>`,
+  ].filter(Boolean);
+  await sendTelegramNotification(lines.join("\n"));
+}
 
 async function runGardeSync() {
   const result = await syncHealthOnCall({ fullWeekendPipeline: true });
   revalidatePath("/sante-garde");
   revalidatePath("/actualites");
   revalidatePath("/", "layout");
+  if (!result.found || !result.doctor) {
+    await notifyGardeGap(result).catch(() => {});
+  }
   return result;
 }
 
@@ -31,10 +55,10 @@ export async function GET(req: Request) {
   const wait = url.searchParams.get("wait") === "1";
   const clock = getTahitiClock();
 
-  if (!force && !shouldPublishGardeWeekend(clock)) {
+  if (!force && !shouldSyncGardeOnVeille(clock)) {
     return NextResponse.json({
       skipped: true,
-      reason: "hors créneau vendredi matin Tahiti",
+      reason: "hors créneau garde (jeu 17h – dim Tahiti)",
       tahiti: clock.label,
     });
   }

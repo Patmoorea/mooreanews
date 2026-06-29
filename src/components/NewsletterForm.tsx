@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Send, Check, AlertCircle } from "lucide-react";
+import { HoneypotField } from "@/components/ui/HoneypotField";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -13,13 +14,15 @@ export function NewsletterForm() {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!email || status === "loading") return;
+    const form = e.currentTarget;
+    const website = String(new FormData(form).get("website") ?? "");
     setStatus("loading");
     setMessage("");
     try {
       const res = await fetch("/api/newsletter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, website }),
       });
       const json = (await res.json().catch(() => null)) as
         | { ok: boolean; warnings?: string[] }
@@ -30,6 +33,7 @@ export function NewsletterForm() {
         "Inscription confirmée ! Bienvenue à bord du lagon. 🌺"
       );
       setEmail("");
+      form.reset();
     } catch {
       setStatus("error");
       setMessage(
@@ -41,8 +45,9 @@ export function NewsletterForm() {
   return (
     <form
       onSubmit={onSubmit}
-      className="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/20"
+      className="relative bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/20"
     >
+      <HoneypotField />
       <label
         htmlFor="newsletter-email"
         className="text-xs uppercase tracking-widest text-ocean-200 font-medium block mb-2"

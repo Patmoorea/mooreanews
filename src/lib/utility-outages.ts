@@ -63,6 +63,17 @@ const FRENCH_MONTHS: Record<string, number> = {
 const CACHE_MS = 3 * 60 * 60 * 1000;
 let cache: { at: number; data: UtilityOutagesResult } | null = null;
 
+const FETCH_TIMEOUT_MS = 20_000;
+
+async function withFetchTimeout<T>(promise: Promise<T>, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => {
+      setTimeout(() => resolve(fallback), FETCH_TIMEOUT_MS);
+    }),
+  ]);
+}
+
 /** Invalide le cache mémoire (avant sync cron ou admin). */
 export function clearUtilityOutagesCache(): void {
   cache = null;
@@ -431,17 +442,23 @@ export async function getUtilityOutages(): Promise<UtilityOutagesResult> {
     fbFeed,
     fromExtraFb,
   ] = await Promise.all([
-    fetchEdtCsv().catch(() => ""),
-    fetchPdeMooreaOutages().catch(() => [] as UtilityOutage[]),
-    fetchOutagesFromArticles().catch(() => [] as UtilityOutage[]),
-    fetchOutagesFromLiveVeille().catch(() => [] as UtilityOutage[]),
-    fetchOutagesFromFacebookFeeds().catch(() => ({
-      outages: [] as UtilityOutage[],
-      errors: [] as string[],
-      postsImported: 0,
-    })),
-    fetchOutagesFromExtraFacebookUrls(extraTeItoRauPostUrlsFromEnv()).catch(
-      () => [] as UtilityOutage[],
+    withFetchTimeout(fetchEdtCsv().catch(() => ""), ""),
+    withFetchTimeout(fetchPdeMooreaOutages().catch(() => [] as UtilityOutage[]), []),
+    withFetchTimeout(fetchOutagesFromArticles().catch(() => [] as UtilityOutage[]), []),
+    withFetchTimeout(fetchOutagesFromLiveVeille().catch(() => [] as UtilityOutage[]), []),
+    withFetchTimeout(
+      fetchOutagesFromFacebookFeeds().catch(() => ({
+        outages: [] as UtilityOutage[],
+        errors: [] as string[],
+        postsImported: 0,
+      })),
+      { outages: [], errors: [], postsImported: 0 },
+    ),
+    withFetchTimeout(
+      fetchOutagesFromExtraFacebookUrls(extraTeItoRauPostUrlsFromEnv()).catch(
+        () => [] as UtilityOutage[],
+      ),
+      [],
     ),
   ]);
 

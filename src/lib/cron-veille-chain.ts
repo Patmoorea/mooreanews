@@ -16,6 +16,7 @@ import {
 import { ensureFacebookTokensInProcess } from "@/lib/facebook-token";
 import { syncHealthOnCall } from "@/lib/health-on-call";
 import { syncUtilityOutages } from "@/lib/utility-outages-sync";
+import { importTeItoRauOutageArticlesFromFallback } from "@/lib/outage-te-ito-fallback";
 import { cleanupPublishedFacebookEmptyShells } from "@/lib/facebook-import-cleanup";
 import {
   deactivateFalseFerryAlerts,
@@ -93,6 +94,11 @@ export async function runVeillePartFinish() {
   const clock = getTahitiClock();
   const bySource: AggregationResult[] = [];
 
+  const teIto = await importTeItoRauOutageArticlesFromFallback().catch(() => ({
+    articlesCreated: 0,
+    errors: ["te-ito: import failed"],
+  }));
+
   const utilityOutages = await syncUtilityOutages();
   if (
     utilityOutages.created > 0 ||
@@ -111,7 +117,8 @@ export async function runVeillePartFinish() {
   if (shouldSyncGardeOnVeille(clock)) {
     try {
       healthOnCall = await syncHealthOnCall({
-        fullWeekendPipeline: shouldPublishGardeWeekend(clock),
+        fullWeekendPipeline:
+          shouldPublishGardeWeekend(clock) || clock.weekday >= 5,
       });
       if (healthOnCall.found) {
         revalidatePath("/sante-garde");
@@ -200,6 +207,7 @@ export async function runVeillePartFinish() {
     part: "finish" as const,
     durationMs,
     utilityOutages,
+    teItoRau: teIto,
     healthOnCall,
     telegram,
     auditFindings: audit?.findings.length ?? 0,

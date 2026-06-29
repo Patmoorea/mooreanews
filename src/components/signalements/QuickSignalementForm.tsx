@@ -10,6 +10,7 @@ import {
   signalementCategoryRequiresPhoto,
 } from "@/lib/signalement-categories";
 import { PosterUploadField } from "@/components/PosterUploadField";
+import { HoneypotField } from "@/components/ui/HoneypotField";
 
 export function QuickSignalementForm() {
   const [category, setCategory] = useState<string>("route");
@@ -26,7 +27,7 @@ export function QuickSignalementForm() {
   const cat = getSignalementCategory(category);
   const photoRequired = signalementCategoryRequiresPhoto(category);
 
-  async function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -38,6 +39,8 @@ export function QuickSignalementForm() {
     }
 
     try {
+      const form = e.currentTarget;
+      const website = String(new FormData(form).get("website") ?? "");
       const res = await fetch("/api/signalement", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -49,6 +52,7 @@ export function QuickSignalementForm() {
           name: name.trim() || "Anonyme",
           contact: email.trim(),
           coverUrl: coverUrl.trim() || undefined,
+          website,
         }),
       });
       const json = (await res.json()) as { ok?: boolean; error?: string };
@@ -85,7 +89,8 @@ export function QuickSignalementForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-5 bg-white rounded-3xl border border-ocean-100 p-6 sm:p-8">
+    <form onSubmit={onSubmit} className="relative space-y-5 bg-white rounded-3xl border border-ocean-100 p-6 sm:p-8">
+      <HoneypotField />
       <div>
         <label className="block text-sm font-medium text-ocean-800 mb-2">Type</label>
         <div className="flex flex-wrap gap-2">

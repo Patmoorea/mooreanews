@@ -240,6 +240,12 @@ export type NewsletterSubscriber = {
   unsubscribed_at: string | null;
 };
 
+export type FormRateLimitRow = {
+  id: string;
+  hits: number;
+  reset_at: string;
+};
+
 export type AlertType =
   | "coupure_eau"
   | "coupure_edt"
@@ -381,6 +387,7 @@ export type Database = {
       import_blocklist: TableDef<ImportBlocklistRow>;
       telegram_signalement_sessions: TableDef<TelegramSignalementSessionRow>;
       newsletter_subscribers: TableDef<NewsletterSubscriber>;
+      form_rate_limits: TableDef<FormRateLimitRow>;
       external_articles: TableDef<ExternalArticleRow>;
       alerts: TableDef<AlertRow>;
       push_subscriptions: TableDef<PushSubscriptionRow>;

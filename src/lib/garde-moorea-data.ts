@@ -53,8 +53,23 @@ export function isGardeWeekActive(
   if (dow === 5 && today < validFrom && addDaysKey(today, 1) === validFrom) {
     return true;
   }
+  if (dow === 4 && today < validFrom && today >= addDaysKey(validFrom, -2)) {
+    return true;
+  }
 
   return false;
+}
+
+/** Sync / veille : affiche COPPF dès le jeudi précédent le WE. */
+export function isGardeWeekRelevant(
+  now: Date,
+  validFrom: string,
+  validTo: string,
+): boolean {
+  if (isGardeWeekActive(now, validFrom, validTo)) return true;
+  const today = tahitiDateKey(now);
+  const previewFrom = addDaysKey(validFrom, -2);
+  return today >= previewFrom && today <= validTo;
 }
 
 /** Choisit le snapshot garde le plus pertinent (WE en cours / à venir, puis le plus récent). */
@@ -67,12 +82,14 @@ export function pickBestGardeSnapshot(
   const ranked = candidates
     .map((snap) => ({
       snap,
-      active: isGardeWeekActive(now, snap.validFrom, snap.validTo),
+      active: isGardeWeekRelevant(now, snap.validFrom, snap.validTo),
       validFrom: snap.validFrom,
       synced: Date.parse(snap.syncedAt) || 0,
+      coppf: snap.sourceUrl?.includes("ordre-pharmaciens") ? 1 : 0,
     }))
     .sort((a, b) => {
       if (a.active !== b.active) return a.active ? -1 : 1;
+      if (a.coppf !== b.coppf) return b.coppf - a.coppf;
       if (a.validFrom !== b.validFrom) return b.validFrom.localeCompare(a.validFrom);
       return b.synced - a.synced;
     });

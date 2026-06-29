@@ -5,14 +5,51 @@
 
 import type { GardeMooreaSnapshot } from "@/lib/garde-moorea-auto";
 import { inferWeekendFromPostDate } from "@/lib/garde-announcement-parse";
-import { isGardeWeekActive, pickBestGardeSnapshot } from "@/lib/garde-moorea-data";
+import {
+  isGardeWeekRelevant,
+  pickBestGardeSnapshot,
+} from "@/lib/garde-moorea-data";
 
 export const COPPF_MEDECINS_GARDE_URL =
   "https://www.ordre-pharmaciens-polynesie.com/medecins-de-garde/";
 
-const COPPF_HOST = "www.ordre-pharmaciens-polynesie.com";
+export const COPPF_PHARMACIES_GARDE_URL =
+  "https://www.ordre-pharmaciens-polynesie.com/pharmacies-de-garde/";
+
+/** Samedi–dimanche de la semaine ISO N (affiche type 2026_GARDES_SEM26.jpg). */
+export function weekendFromIsoWeek(
+  year: number,
+  isoWeek: number,
+): { validFrom: string; validTo: string; label: string } {
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const dayOfWeek = jan4.getUTCDay() || 7;
+  const mondayWeek1 = new Date(jan4);
+  mondayWeek1.setUTCDate(jan4.getUTCDate() - dayOfWeek + 1);
+  const monday = new Date(mondayWeek1);
+  monday.setUTCDate(mondayWeek1.getUTCDate() + (isoWeek - 1) * 7);
+  const saturday = new Date(monday);
+  saturday.setUTCDate(monday.getUTCDate() + 5);
+  const sunday = new Date(monday);
+  sunday.setUTCDate(monday.getUTCDate() + 6);
+  const validFrom = saturday.toISOString().slice(0, 10);
+  const validTo = sunday.toISOString().slice(0, 10);
+  return {
+    validFrom,
+    validTo,
+    label: `Semaine ${isoWeek} — samedi ${validFrom.slice(8, 10)} / dimanche ${validTo.slice(8, 10)}`,
+  };
+}
 
 function datesFromImageUrl(url: string): ReturnType<typeof inferWeekendFromPostDate> {
+  const fname = (url.split("/").pop() ?? "").replace(/\.[a-z]+$/i, "");
+  const yearFromPath = url.match(/uploads\/(\d{4})\//)?.[1];
+  const year = yearFromPath ? Number(yearFromPath) : new Date().getFullYear();
+
+  const sem = fname.match(/SEM(\d{1,2})/i);
+  if (sem) {
+    return weekendFromIsoWeek(year, Number(sem[1]));
+  }
+
   const m =
     url.match(/(\d{4})[._-]?(\d{2})[._-]?(\d{2})/) ??
     url.match(/(\d{4})\/(\d{2})\/[^/]+/);
@@ -53,7 +90,7 @@ export async function fetchCoppfGardeImageUrl(): Promise<{
       const score =
         Number(match[2]) * 1000 +
         Number(match[3]) * 10 +
-        (/(screenshot|garde|medecin|drive)/i.test(fname) ? 50 : 0);
+        (/(screenshot|garde|medecin|drive|sem\d)/i.test(fname) ? 200 : 0);
 
       const dateM = fname.match(/(\d{4})(\d{2})(\d{2})/);
       const postedAt = dateM
@@ -73,8 +110,8 @@ export async function fetchCoppfGardeImageUrl(): Promise<{
   }
 }
 
-/** Snapshot léger (sans OCR) — dates déduites du nom de fichier / page. */
-export async function fetchGardeFromOrdrePharmaciens(
+/** Snapshot COPPF (affiche hebdo ordre des médecins) — source prioritaire. */
+export async function fetchCoppfGardeSnapshot(
   now = new Date(),
 ): Promise<GardeMooreaSnapshot | null> {
   const image = await fetchCoppfGardeImageUrl();
@@ -85,7 +122,7 @@ export async function fetchGardeFromOrdrePharmaciens(
     (image.postedAt ? inferWeekendFromPostDate(image.postedAt) : null);
 
   if (!dates) return null;
-  if (!isGardeWeekActive(now, dates.validFrom, dates.validTo)) return null;
+  if (!isGardeWeekRelevant(now, dates.validFrom, dates.validTo)) return null;
 
   return {
     ...dates,
@@ -96,6 +133,13 @@ export async function fetchGardeFromOrdrePharmaciens(
     sourceUrl: COPPF_MEDECINS_GARDE_URL,
     syncedAt: new Date().toISOString(),
   };
+}
+
+/** @deprecated Utiliser fetchCoppfGardeSnapshot */
+export async function fetchGardeFromOrdrePharmaciens(
+  now = new Date(),
+): Promise<GardeMooreaSnapshot | null> {
+  return fetchCoppfGardeSnapshot(now);
 }
 
 export function mergeGardeSnapshots(
@@ -122,13 +166,13 @@ export async function pickGardeWithCoppf(
   candidates: GardeMooreaSnapshot[],
   now = new Date(),
 ): Promise<GardeMooreaSnapshot | null> {
-  const coppf = await fetchGardeFromOrdrePharmaciens(now).catch(() => null);
-  const all = coppf ? [...candidates, coppf] : candidates;
+  const coppf = await fetchCoppfGardeSnapshot(now).catch(() => null);
+  const all = coppf ? [coppf, ...candidates] : candidates;
   const best = pickBestGardeSnapshot(all.filter(Boolean), now);
   if (!best) return coppf;
 
   if (coppf && coppf.validFrom === best.validFrom) {
-    return mergeGardeSnapshots(best, coppf);
+    return mergeGardeSnapshots(coppf, best);
   }
   return best;
 }

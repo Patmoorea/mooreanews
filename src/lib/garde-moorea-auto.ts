@@ -19,7 +19,7 @@ import { fetchGardeFromImportedArticles } from "@/lib/garde-site-articles";
 import {
   COPPF_MEDECINS_GARDE_URL,
   fetchCoppfGardeImageUrl,
-  pickGardeWithCoppf,
+  fetchCoppfGardeSnapshot,
 } from "@/lib/garde-ordre-pharmaciens";
 import { ocrGardePosterImage } from "@/lib/garde-poster-ocr";
 import {
@@ -28,6 +28,7 @@ import {
 } from "@/lib/garde-weekend-poster-sync";
 import {
   isGardeWeekActive,
+  isGardeWeekRelevant,
   pickBestGardeSnapshot,
   readGardeFileSnapshot,
 } from "@/lib/garde-moorea-data";
@@ -249,13 +250,14 @@ async function fetchCommuneRssGarde(): Promise<GardeMooreaSnapshot | null> {
 }
 
 export async function fetchLiveGardeMooreaSnapshot(): Promise<GardeMooreaSnapshot | null> {
-  const [site, fb, rss] = await Promise.all([
+  const [coppf, site, fb, rss] = await Promise.all([
+    fetchCoppfGardeSnapshot().catch(() => null),
     fetchGardeFromImportedArticles().catch(() => null),
     fetchGardeFromFacebookPages().catch(() => null),
     fetchCommuneRssGarde().catch(() => null),
   ]);
-  const candidates = [site, fb, rss].filter(Boolean) as GardeMooreaSnapshot[];
-  return pickGardeWithCoppf(candidates);
+  const candidates = [coppf, site, fb, rss].filter(Boolean) as GardeMooreaSnapshot[];
+  return pickBestGardeSnapshot(candidates);
 }
 
 const getCachedLiveGarde = unstable_cache(
@@ -337,17 +339,18 @@ async function resolveSnapshotForSync(): Promise<GardeMooreaSnapshot | null> {
 
   const now = new Date();
   const fileCandidate =
-    file && isGardeWeekActive(now, file.validFrom, file.validTo) ? file : null;
+    file && isGardeWeekRelevant(now, file.validFrom, file.validTo) ? file : null;
 
-  const best = await pickGardeWithCoppf(
-    [live, fileCandidate].filter(Boolean) as GardeMooreaSnapshot[],
+  const coppf = await fetchCoppfGardeSnapshot(now).catch(() => null);
+  const best = pickBestGardeSnapshot(
+    [coppf, live, fileCandidate].filter(Boolean) as GardeMooreaSnapshot[],
     now,
   );
 
   if (!best) return null;
 
   let merged = best;
-  for (const c of [live, fileCandidate].filter(Boolean) as GardeMooreaSnapshot[]) {
+  for (const c of [coppf, live, fileCandidate].filter(Boolean) as GardeMooreaSnapshot[]) {
     if (c.validFrom === merged.validFrom) {
       merged = mergeGardeSnapshots(merged, c);
     }
@@ -368,12 +371,19 @@ async function resolveSnapshotForSync(): Promise<GardeMooreaSnapshot | null> {
 
 async function enrichFromCoppfImage(
   snap: GardeMooreaSnapshot,
-  runOcr: boolean,
 ): Promise<{ snap: GardeMooreaSnapshot; ocrUsed: boolean; ocrError?: string }> {
-  if (!runOcr || snap.doctor?.name) return { snap, ocrUsed: false };
-
   const coppf = await fetchCoppfGardeImageUrl().catch(() => null);
   if (!coppf?.imageUrl) return { snap, ocrUsed: false };
+
+  if (!snap.communePosterUrl?.includes("ordre-pharmaciens")) {
+    snap = {
+      ...snap,
+      communePosterUrl: coppf.imageUrl,
+      sourceUrl: snap.sourceUrl ?? COPPF_MEDECINS_GARDE_URL,
+    };
+  }
+
+  if (snap.doctor?.name) return { snap, ocrUsed: false };
 
   const ocr = await ocrGardePosterImage(coppf.imageUrl);
   if (!ocr.ok || !ocr.text) {
@@ -468,7 +478,7 @@ export async function syncGardeMooreaFromCommune(
   }
 
   const now = new Date();
-  if (!isGardeWeekActive(now, snap.validFrom, snap.validTo)) {
+  if (!isGardeWeekRelevant(now, snap.validFrom, snap.validTo)) {
     return {
       ok: true,
       found: false,
@@ -485,14 +495,14 @@ export async function syncGardeMooreaFromCommune(
     snap.communePosterUrl = snap.posterImageUrl;
   }
 
+  const coppfEnriched = await enrichFromCoppfImage(snap);
+  snap = coppfEnriched.snap;
+
   const enriched = await enrichFromCommuneImage(
     snap,
-    Boolean(options.fullWeekendPipeline),
+    Boolean(options.fullWeekendPipeline) || !snap.doctor?.name,
   );
   snap = enriched.snap;
-
-  const coppfEnriched = await enrichFromCoppfImage(snap, !snap.doctor?.name);
-  snap = coppfEnriched.snap;
 
   const ocrUsed = enriched.ocrUsed || coppfEnriched.ocrUsed;
   const ocrError = enriched.ocrError ?? coppfEnriched.ocrError;
@@ -500,7 +510,8 @@ export async function syncGardeMooreaFromCommune(
   const shouldMakePoster =
     options.fullWeekendPipeline ||
     !snap.posterImageUrl ||
-    snap.posterImageUrl.startsWith("/");
+    snap.posterImageUrl.startsWith("/") ||
+    Boolean(snap.doctor?.name || snap.pharmacy?.name);
 
   if (shouldMakePoster && gardePosterHasContent(snap)) {
     const mooreaPoster = await renderAndUploadMooreaNewsGardePoster(snap);

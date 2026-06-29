@@ -13,6 +13,7 @@ import {
   shouldSendEveningDigest,
   shouldSendMorningDigest,
   shouldPublishGardeWeekend,
+  shouldSyncGardeOnVeille,
   shouldPublishWeeklyRecap,
   shouldSendWeekendDigest,
 } from "@/lib/cron-tahiti";
@@ -285,7 +286,8 @@ export async function runDailyCronPart(
     case "services": {
       jobs.utilityOutages = await syncUtilityOutages();
       jobs.healthOnCall = await syncHealthOnCall({
-        fullWeekendPipeline: shouldPublishGardeWeekend(clock),
+        fullWeekendPipeline:
+          shouldPublishGardeWeekend(clock) || shouldSyncGardeOnVeille(clock),
       });
       revalidatePath("/sante-garde");
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Send, Check, AlertCircle } from "lucide-react";
+import { HoneypotField } from "@/components/ui/HoneypotField";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -40,8 +41,9 @@ export function ContactForm() {
   return (
     <form
       onSubmit={onSubmit}
-      className="space-y-5 bg-white rounded-3xl p-6 sm:p-8 border border-ocean-100 shadow-[var(--shadow-soft)]"
+      className="relative space-y-5 bg-white rounded-3xl p-6 sm:p-8 border border-ocean-100 shadow-[var(--shadow-soft)]"
     >
+      <HoneypotField />
       <div className="grid sm:grid-cols-2 gap-5">
         <label className="block">
           <span className="block text-sm font-semibold text-ocean-800 mb-1.5">

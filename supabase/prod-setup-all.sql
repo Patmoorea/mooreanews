@@ -154,3 +154,13 @@ alter table public.accommodations
       merchant_availability_status in ('available', 'limited', 'contact', 'full')
     ),
   add column if not exists merchant_availability_updated_at timestamptz;
+
+-- 8) Anti-spam formulaires publics (rate limit par IP)
+create table if not exists public.form_rate_limits (
+  id text primary key,
+  hits int not null default 1,
+  reset_at timestamptz not null default now()
+);
+create index if not exists form_rate_limits_reset_at_idx
+  on public.form_rate_limits (reset_at);
+alter table public.form_rate_limits enable row level security;

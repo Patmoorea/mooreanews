@@ -24,6 +24,10 @@
       "memory": 1024,
       "maxDuration": 300
     },
+    "src/app/api/cron/te-ito-rau/route.ts": {
+      "memory": 1024,
+      "maxDuration": 120
+    },
     "src/app/api/cron/weekly-recap/route.ts": {
       "memory": 1024,
       "maxDuration": 300
