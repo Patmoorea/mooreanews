@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { aggregateAll } from "@/lib/aggregator";
 import { externalIdFromFacebookUrl } from "@/lib/facebook-url";
 import { hideStaleExternalArticles } from "@/lib/site-content-audit";
@@ -26,10 +27,12 @@ async function requireAdmin() {
 
 export async function purgeStaleExternalVeille(): Promise<void> {
   await requireAdmin();
-  await hideStaleExternalArticles();
+  const result = await hideStaleExternalArticles();
   revalidatePath("/admin/external");
   revalidatePath("/actualites");
   revalidatePath("/");
+  revalidatePath("/admin");
+  redirect(`/admin/external?purged=${result.hidden}`);
 }
 
 export async function runAggregation() {

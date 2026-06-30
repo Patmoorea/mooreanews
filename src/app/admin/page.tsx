@@ -16,6 +16,7 @@ import {
 import { dbGetAdminStats } from "@/lib/supabase/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/server";
 import { getVisitStats } from "@/lib/page-analytics";
+import { PurgeObsoleteVeilleBanner } from "@/components/admin/PurgeObsoleteVeilleBanner";
 
 export const metadata: Metadata = {
   title: "Tableau de bord",
@@ -37,6 +38,8 @@ export default async function AdminDashboard() {
       </header>
 
       {!isSupabaseConfigured() && <SupabaseSetupNotice />}
+
+      <PurgeObsoleteVeilleBanner />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
@@ -179,8 +182,8 @@ export default async function AdminDashboard() {
             icon={<Inbox size={16} />}
           />
           <QuickAction
-            href="/admin/external"
-            label="Veille RSS"
+            href="/admin/external#nettoyage-veille"
+            label="Veille RSS — nettoyage"
             icon={<Rss size={16} />}
           />
         </div>

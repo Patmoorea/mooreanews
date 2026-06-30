@@ -7,17 +7,18 @@ import {
   FACEBOOK_WATCH_URLS,
 } from "@/lib/watch-sources";
 import { AddFacebookLinkForm } from "@/components/admin/AddFacebookLinkForm";
-import { runAggregation, toggleExternalArticle, purgeStaleExternalVeille } from "@/app/admin/external-actions";
+import { PurgeObsoleteVeilleBanner } from "@/components/admin/PurgeObsoleteVeilleBanner";
+import { runAggregation, toggleExternalArticle } from "@/app/admin/external-actions";
 import { timeAgo } from "@/lib/utils";
 
 export const metadata = { title: "Veille externe" };
 
 type PageProps = {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; purged?: string }>;
 };
 
 export default async function AdminExternalPage({ searchParams }: PageProps) {
-  const { q } = await searchParams;
+  const { q, purged } = await searchParams;
   const query = q?.trim() ?? "";
 
   const supabase = await getServerSupabase();
@@ -38,8 +39,24 @@ export default async function AdminExternalPage({ searchParams }: PageProps) {
     <div>
       <AdminPageHeader
         title="Veille externe"
-        description="RSS, Google Actualités et liens Facebook — collecte automatique chaque soir (~18h, Tahiti)."
+        description="RSS, Google Actualités et liens Facebook — collecte automatique chaque soir (~18h, Tahiti). Menu latéral : « Veille RSS »."
       />
+
+      {purged !== undefined && (
+        <div
+          className={`mb-4 rounded-xl px-4 py-3 text-sm font-medium ${
+            Number(purged) > 0
+              ? "bg-green-100 text-green-900 border border-green-300"
+              : "bg-ocean-100 text-ocean-800 border border-ocean-200"
+          }`}
+        >
+          {Number(purged) > 0
+            ? `✅ ${purged} entrée(s) de veille obsolète(s) masquée(s).`
+            : "Aucune entrée obsolète visible à masquer (déjà fait ou introuvable)."}
+        </div>
+      )}
+
+      <PurgeObsoleteVeilleBanner />
 
       <section className="mb-6 bg-white rounded-3xl border border-ocean-100 p-5">
         <form method="get" className="flex flex-wrap items-end gap-3 mb-4">
@@ -86,15 +103,6 @@ export default async function AdminExternalPage({ searchParams }: PageProps) {
             entrées ne sont pas dans les 80 derniers sans recherche.
           </p>
         )}
-
-        <form action={purgeStaleExternalVeille} className="mb-4">
-          <button
-            type="submit"
-            className="text-xs px-3 py-1.5 rounded-full bg-tipanier-100 text-tipanier-800 font-semibold hover:bg-tipanier-200"
-          >
-            Masquer toute la veille obsolète (2024 et avant)
-          </button>
-        </form>
 
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
