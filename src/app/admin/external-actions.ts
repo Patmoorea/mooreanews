@@ -24,13 +24,12 @@ async function requireAdmin() {
   return supabase;
 }
 
-export async function purgeStaleExternalVeille() {
+export async function purgeStaleExternalVeille(): Promise<void> {
   await requireAdmin();
-  const result = await hideStaleExternalArticles();
+  await hideStaleExternalArticles();
   revalidatePath("/admin/external");
   revalidatePath("/actualites");
   revalidatePath("/");
-  return result;
 }
 
 export async function runAggregation() {
