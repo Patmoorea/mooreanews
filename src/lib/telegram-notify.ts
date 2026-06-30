@@ -253,6 +253,7 @@ export async function notifyVeilleReport(input: {
   facebookImportStatus?: FacebookImportStatus | null;
   facebookPurgeDeleted?: number;
   facebookCleanup?: { unpublished: number; deleted: number; duplicatesRemoved?: number };
+  externalCleanup?: { hidden: number; titles: string[] };
   headerNote?: string;
 }): Promise<{ sent: boolean; reason?: string }> {
   const alertsCreated = input.alertsCreated ?? 0;
@@ -391,6 +392,15 @@ export async function notifyVeilleReport(input: {
     lines.push(
       `\n🧹 <b>Nettoyage Facebook</b> : ${input.facebookCleanup.unpublished} dépubliée(s), ${input.facebookCleanup.deleted} supprimée(s) (coquilles vides)${input.facebookCleanup.duplicatesRemoved ? `, ${input.facebookCleanup.duplicatesRemoved} doublon(s)` : ""}`,
     );
+  }
+
+  if (input.externalCleanup && input.externalCleanup.hidden > 0) {
+    lines.push(
+      `\n🧹 <b>Veille RSS</b> : ${input.externalCleanup.hidden} entrée(s) obsolète(s) masquée(s)`,
+    );
+    for (const t of input.externalCleanup.titles.slice(0, 3)) {
+      lines.push(`• ${escapeHtml(truncate(t, 70))}`);
+    }
   }
 
   if (input.facebookHealth) {

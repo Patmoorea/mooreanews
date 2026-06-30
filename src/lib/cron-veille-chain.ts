@@ -23,7 +23,10 @@ import {
   deactivateFalseHouleAlerts,
 } from "@/lib/facebook-alert-import";
 import { notifyVeilleReport, notifyPublicNewArticles } from "@/lib/telegram-notify";
-import { auditPublicContent } from "@/lib/site-content-audit";
+import {
+  auditPublicContent,
+  hideStaleExternalArticles,
+} from "@/lib/site-content-audit";
 import { checkFacebookTokenHealth } from "@/lib/facebook-token";
 import { getFacebookImportStatus } from "@/lib/facebook-import-status";
 import { runAiVeilleProcessing } from "@/lib/ai-veille";
@@ -178,6 +181,13 @@ export async function runVeillePartFinish() {
     revalidatePath("/alertes");
   }
 
+  const externalCleanup = await hideStaleExternalArticles();
+  if (externalCleanup.hidden > 0) {
+    revalidatePath("/admin/external");
+    revalidatePath("/actualites");
+    revalidatePath("/");
+  }
+
   const audit = await auditPublicContent();
   const facebookHealth = await checkFacebookTokenHealth();
   const facebookImportStatus = await getFacebookImportStatus(5);
@@ -200,6 +210,7 @@ export async function runVeillePartFinish() {
     facebookImportStatus,
     headerNote: "🔗 Veille chaînée GitHub : rss → facebook → web → finish",
     facebookCleanup,
+    externalCleanup,
   });
 
   return {
@@ -213,6 +224,7 @@ export async function runVeillePartFinish() {
     auditFindings: audit?.findings.length ?? 0,
     facebookImportStatus,
     facebookCleanup,
+    externalCleanup,
     falseHouleAlertsDeactivated: falseHouleAlerts,
     falseFerryAlertsDeactivated: falseFerryAlerts,
   };

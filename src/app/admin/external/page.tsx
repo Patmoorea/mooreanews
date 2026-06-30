@@ -1,4 +1,4 @@
-import { ExternalLink, RefreshCw } from "lucide-react";
+import { ExternalLink, RefreshCw, Search } from "lucide-react";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { RSS_SOURCES, sortSourcesByPriority } from "@/lib/rss-sources";
@@ -7,19 +7,32 @@ import {
   FACEBOOK_WATCH_URLS,
 } from "@/lib/watch-sources";
 import { AddFacebookLinkForm } from "@/components/admin/AddFacebookLinkForm";
-import { runAggregation, toggleExternalArticle } from "@/app/admin/external-actions";
+import { runAggregation, toggleExternalArticle, purgeStaleExternalVeille } from "@/app/admin/external-actions";
 import { timeAgo } from "@/lib/utils";
 
 export const metadata = { title: "Veille externe" };
 
-export default async function AdminExternalPage() {
+type PageProps = {
+  searchParams: Promise<{ q?: string }>;
+};
+
+export default async function AdminExternalPage({ searchParams }: PageProps) {
+  const { q } = await searchParams;
+  const query = q?.trim() ?? "";
+
   const supabase = await getServerSupabase();
-  const { data: articles } =
-    (await supabase
-      ?.from("external_articles")
-      .select("*")
-      .order("published_at", { ascending: false })
-      .limit(50)) ?? { data: [] };
+  let articlesQuery = supabase
+    ?.from("external_articles")
+    .select("*")
+    .order("published_at", { ascending: false });
+
+  if (query) {
+    articlesQuery = articlesQuery?.ilike("title", `%${query}%`).limit(40);
+  } else {
+    articlesQuery = articlesQuery?.limit(80);
+  }
+
+  const { data: articles } = (await articlesQuery) ?? { data: [] };
 
   return (
     <div>
@@ -29,6 +42,60 @@ export default async function AdminExternalPage() {
       />
 
       <section className="mb-6 bg-white rounded-3xl border border-ocean-100 p-5">
+        <form method="get" className="flex flex-wrap items-end gap-3 mb-4">
+          <div className="flex-1 min-w-[220px]">
+            <label
+              htmlFor="external-q"
+              className="block text-xs font-semibold text-ocean-700 mb-1"
+            >
+              Rechercher un titre (veille RSS)
+            </label>
+            <div className="relative">
+              <Search
+                size={14}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-ocean-400"
+              />
+              <input
+                id="external-q"
+                name="q"
+                type="search"
+                defaultValue={query}
+                placeholder="ex. TAPUAE MANU"
+                className="w-full pl-9 pr-3 py-2 rounded-xl border border-ocean-200 text-sm"
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            className="px-4 py-2 rounded-full bg-ocean-800 text-white text-sm font-semibold"
+          >
+            Chercher
+          </button>
+          {query && (
+            <a
+              href="/admin/external"
+              className="text-sm text-ocean-600 hover:text-tiare-600"
+            >
+              Effacer
+            </a>
+          )}
+        </form>
+        {query && (
+          <p className="text-xs text-ocean-600 mb-2">
+            {articles?.length ?? 0} résultat(s) pour « {query} » — les vieilles
+            entrées ne sont pas dans les 80 derniers sans recherche.
+          </p>
+        )}
+
+        <form action={purgeStaleExternalVeille} className="mb-4">
+          <button
+            type="submit"
+            className="text-xs px-3 py-1.5 rounded-full bg-tipanier-100 text-tipanier-800 font-semibold hover:bg-tipanier-200"
+          >
+            Masquer toute la veille obsolète (2024 et avant)
+          </button>
+        </form>
+
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
             <h2 className="font-display text-lg text-ocean-900">
@@ -115,7 +182,9 @@ export default async function AdminExternalPage() {
       </section>
 
       <h2 className="font-display text-xl text-ocean-900 mb-3">
-        Derniers articles agrégés ({articles?.length ?? 0})
+        {query
+          ? `Résultats veille (${articles?.length ?? 0})`
+          : `Derniers articles agrégés (${articles?.length ?? 0})`}
       </h2>
 
       <div className="bg-white rounded-2xl border border-ocean-100 overflow-hidden">
@@ -185,10 +254,20 @@ export default async function AdminExternalPage() {
             {(articles ?? []).length === 0 && (
               <tr>
                 <td colSpan={4} className="px-4 py-12 text-center text-ocean-500">
-                  Aucun article agrégé pour l&apos;instant.
-                  <br />
-                  Cliquez sur <strong>Agréger maintenant</strong> pour lancer
-                  une première collecte.
+                  {query ? (
+                    <>
+                      Aucun résultat pour « {query} ».
+                      <br />
+                      Essayez un mot-clé plus court (ex. <strong>TAPUAE</strong>).
+                    </>
+                  ) : (
+                    <>
+                      Aucun article agrégé pour l&apos;instant.
+                      <br />
+                      Cliquez sur <strong>Agréger maintenant</strong> pour lancer
+                      une première collecte.
+                    </>
+                  )}
                 </td>
               </tr>
             )}

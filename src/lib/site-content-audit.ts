@@ -10,6 +10,11 @@ import {
   isEmptyFacebookArticleShell,
   isFacebookJunkText,
 } from "@/lib/facebook-import-filters";
+import {
+  alertBlocklistSlug,
+  alertTitleBlocklistSlug,
+  blockImportedArticleSlug,
+} from "@/lib/import-blocklist";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { ALL_EMPLOYMENT_SOURCE_IDS } from "@/lib/employment-sources";
 import { pastEventCutoffIso } from "@/lib/event-expiry";
@@ -39,6 +44,90 @@ function stalePublicationTitle(title: string): boolean {
     /\bpublication du 20\d{2}-\d{2}-\d{2}\b/i.test(title) &&
     contentReferencesStaleYear(title)
   );
+}
+
+/** Lien admin veille RSS avec recherche pré-remplie (les vieux items ne sont pas dans les 50 derniers). */
+export function externalArticleAdminPath(title: string): string {
+  const q = title
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .split(/\s+/)
+    .filter((w) => w.length > 3)
+    .slice(0, 4)
+    .join(" ");
+  return `/admin/external${q ? `?q=${encodeURIComponent(q)}` : ""}`;
+}
+
+function isStaleExternalRow(row: {
+  title: string;
+  excerpt: string | null;
+  source_id: string;
+}): boolean {
+  if (
+    ALL_EMPLOYMENT_SOURCE_IDS.includes(
+      row.source_id as (typeof ALL_EMPLOYMENT_SOURCE_IDS)[number],
+    )
+  ) {
+    return false;
+  }
+  return contentReferencesFacebookStaleYear(
+    `${row.title} ${row.excerpt ?? ""}`,
+  );
+}
+
+/** Masque automatiquement la veille externe obsolète (année 2024 ou plus ancienne dans le titre). */
+export async function hideStaleExternalArticles(): Promise<{
+  hidden: number;
+  titles: string[];
+}> {
+  const admin = getAdminSupabase();
+  if (!admin) return { hidden: 0, titles: [] };
+
+  const { data: external } = await admin
+    .from("external_articles")
+    .select("id, title, excerpt, source_id, external_id, url")
+    .eq("hidden", false)
+    .limit(500);
+
+  const stale = (external ?? []).filter(isStaleExternalRow);
+  if (stale.length === 0) return { hidden: 0, titles: [] };
+
+  for (const row of stale) {
+    await blockImportedArticleSlug({
+      slug: alertTitleBlocklistSlug(row.title),
+      title: row.title,
+      sourceId: row.source_id,
+      externalId: row.external_id,
+    });
+    if (row.url?.trim()) {
+      await blockImportedArticleSlug({
+        slug: alertBlocklistSlug(row.url),
+        title: row.title,
+        sourceId: row.source_id,
+        externalId: row.external_id,
+      });
+    }
+  }
+
+  const ids = stale.map((r) => r.id);
+  const { error } = await admin
+    .from("external_articles")
+    .update({ hidden: true })
+    .in("id", ids);
+
+  if (error) {
+    console.error("[hideStaleExternalArticles]", error.message);
+    return { hidden: 0, titles: [] };
+  }
+
+  return {
+    hidden: stale.length,
+    titles: stale.map((r) => r.title),
+  };
+}
+
+export async function purgeStaleExternalArticlesNow() {
+  return hideStaleExternalArticles();
 }
 
 /** Parcourt articles / événements / annonces / veille externe publiés. */
@@ -232,7 +321,7 @@ export async function auditPublicContent(): Promise<ContentAuditReport | null> {
         title: x.title,
         reason: "Veille externe visible avec année 2024 ou plus ancienne",
         severity: "critical",
-        adminPath: "/admin/external",
+        adminPath: externalArticleAdminPath(x.title),
       });
     }
   }

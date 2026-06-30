@@ -41,7 +41,7 @@ import { syncUtilityOutages } from "@/lib/utility-outages-sync";
 import { syncHealthOnCall } from "@/lib/health-on-call";
 import { syncWeeklyRecapFromMooreaNews } from "@/lib/weekly-recap-sync";
 import { checkDpamStatsFreshness } from "@/lib/maritime-traffic";
-import { auditPublicContent } from "@/lib/site-content-audit";
+import { auditPublicContent, hideStaleExternalArticles } from "@/lib/site-content-audit";
 import { notifyVeilleReport, sendPublicMooreaBrief } from "@/lib/telegram-notify";
 import { sendWeekendDigest } from "@/lib/weekend-digest";
 import { syncEmploymentMoorea } from "@/lib/employment-sync";
@@ -340,6 +340,7 @@ export async function runDailyCronPart(
       revalidatePath("/api/ferries");
 
       jobs.ferrySync = await checkFerryScheduleSync();
+      await hideStaleExternalArticles();
       jobs.audit = await auditPublicContent();
       break;
     }
@@ -374,7 +375,10 @@ export async function runDailyCronPart(
         bySource: rssResults,
         createdArticles: summary.createdArticles,
         createdEvents: summary.createdEvents,
-        audit: await auditPublicContent(),
+        audit: await (async () => {
+          await hideStaleExternalArticles();
+          return auditPublicContent();
+        })(),
         facebookHealth,
         facebookImportStatus,
         headerNote: "Cron daily GitHub (~6h05 Tahiti) — rapport RSS + statut FB",

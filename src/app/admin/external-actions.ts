@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { aggregateAll } from "@/lib/aggregator";
 import { externalIdFromFacebookUrl } from "@/lib/facebook-url";
+import { hideStaleExternalArticles } from "@/lib/site-content-audit";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getServerSupabase } from "@/lib/supabase/server";
 
@@ -21,6 +22,15 @@ async function requireAdmin() {
   if (!profile || (profile.role !== "admin" && profile.role !== "editor"))
     throw new Error("Forbidden");
   return supabase;
+}
+
+export async function purgeStaleExternalVeille() {
+  await requireAdmin();
+  const result = await hideStaleExternalArticles();
+  revalidatePath("/admin/external");
+  revalidatePath("/actualites");
+  revalidatePath("/");
+  return result;
 }
 
 export async function runAggregation() {

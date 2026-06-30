@@ -4,12 +4,18 @@
 
 import { importAlertsFromRssItems } from "@/lib/alert-auto-import";
 import { importArticlesFromRssItems } from "@/lib/rss-article-import";
-import { facebookImportMaxAgeDays, facebookCronRecentPostLimit } from "@/lib/facebook-import-filters";
+import {
+  contentReferencesFacebookStaleYear,
+  facebookImportMaxAgeDays,
+  facebookCronRecentPostLimit,
+} from "@/lib/facebook-import-filters";
 import { aggregateWebWatch } from "@/lib/facebook-watch";
 import { fetchRssFeed, type RssItem } from "@/lib/rss-parser";
 import { isTransientFeedError } from "@/lib/feed-errors";
 import { RSS_SOURCES, rssSourcesByPriority, type RssSource } from "@/lib/rss-sources";
 import { ALL_EMPLOYMENT_SOURCE_IDS } from "@/lib/employment-sources";
+import { upsertExternalArticleRows } from "@/lib/external-articles-upsert";
+import { isAlertImportBlocked } from "@/lib/import-blocklist";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getPublicSupabase } from "@/lib/supabase/server";
 
@@ -81,7 +87,19 @@ async function aggregateOne(source: RssSource): Promise<AggregationResult> {
     return result;
   }
 
-  const rows = matching.map((i) => ({
+  const eligible: RssItem[] = [];
+  for (const i of matching) {
+    const corpus = `${i.title} ${i.description ?? ""}`;
+    if (contentReferencesFacebookStaleYear(corpus)) continue;
+    if (await isAlertImportBlocked({ sourceUrl: i.link, title: i.title })) {
+      continue;
+    }
+    eligible.push(i);
+  }
+
+  if (eligible.length === 0) return result;
+
+  const rows = eligible.map((i) => ({
     source_id: source.id,
     source_name: source.name,
     external_id: i.guid,
@@ -93,18 +111,12 @@ async function aggregateOne(source: RssSource): Promise<AggregationResult> {
     published_at: i.publishedAt,
   }));
 
-  const { error, count } = await supabase
-    .from("external_articles")
-    .upsert(rows, { onConflict: "source_id,external_id", count: "exact" });
-
-  if (error) {
-    result.errors.push(error.message);
-  } else {
-    result.inserted = count ?? rows.length;
-  }
+  const { inserted, errors } = await upsertExternalArticleRows(rows);
+  result.inserted = inserted;
+  result.errors.push(...errors);
 
   try {
-    const alertImport = await importAlertsFromRssItems(matching);
+    const alertImport = await importAlertsFromRssItems(eligible);
     result.alertsCreated = alertImport.created;
     result.createdAlerts = alertImport.titles;
   } catch (e) {
@@ -112,7 +124,7 @@ async function aggregateOne(source: RssSource): Promise<AggregationResult> {
   }
 
   try {
-    const articleImport = await importArticlesFromRssItems(matching, source);
+    const articleImport = await importArticlesFromRssItems(eligible, source);
     result.articlesCreated = articleImport.created;
     result.articlesSkipped =
       (result.articlesSkipped ?? 0) + articleImport.skipped;
