@@ -6,8 +6,16 @@
 
 import path from "path";
 
-const OCR_TIMEOUT_MS = 45_000;
 const MIN_TEXT_LEN = 40;
+
+const OCR_RECOGNIZE_TIMEOUT_MS = Math.max(
+  60_000,
+  Number(process.env.GARDE_OCR_TIMEOUT_MS ?? 120_000) || 120_000,
+);
+const OCR_WORKER_INIT_TIMEOUT_MS = Math.max(
+  45_000,
+  Number(process.env.GARDE_OCR_WORKER_INIT_MS ?? 90_000) || 90_000,
+);
 
 export type GardeOcrResult = {
   ok: boolean;
@@ -33,6 +41,15 @@ function tesseractPaths() {
   };
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => reject(new Error(label)), ms);
+    }),
+  ]);
+}
+
 async function fetchImageBuffer(url: string): Promise<Buffer | null> {
   try {
     const res = await fetch(url, {
@@ -41,7 +58,7 @@ async function fetchImageBuffer(url: string): Promise<Buffer | null> {
         "User-Agent":
           "MooreaNews/1.0 (+https://www.mooreanews.com; garde OCR cron)",
       },
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(20_000),
     });
     if (!res.ok) return null;
     const buf = Buffer.from(await res.arrayBuffer());
@@ -52,39 +69,113 @@ async function fetchImageBuffer(url: string): Promise<Buffer | null> {
   }
 }
 
-async function runOcr(buffer: Buffer): Promise<{ text: string | null; error?: string }> {
-  const { createWorker } = await import("tesseract.js");
-  const paths = tesseractPaths();
+async function loadImageBuffer(imageUrl: string): Promise<Buffer | null> {
+  if (imageUrl.startsWith("/")) {
+    const { readFile } = await import("fs/promises");
+    const filePath = path.join(process.cwd(), "public", imageUrl.replace(/^\//, ""));
+    return readFile(filePath).catch(() => null);
+  }
+  return fetchImageBuffer(imageUrl);
+}
 
-  let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
-  try {
-    worker = await createWorker("fra", 1, {
-      ...paths,
-      gzip: true,
-      workerBlobURL: false,
-      logger: () => {},
-      errorHandler: (err: unknown) => {
-        console.error("[garde-ocr] worker error:", err);
-      },
+type OcrWorker = Awaited<
+  ReturnType<(typeof import("tesseract.js"))["createWorker"]>
+>;
+
+/** Session OCR réutilisable — évite 2× le chargement Tesseract (cold start ~60–90 s). */
+export class GardeOcrSession {
+  private worker: OcrWorker | null = null;
+
+  async init(): Promise<void> {
+    if (this.worker) return;
+
+    const { createWorker, PSM } = await import("tesseract.js");
+    const paths = tesseractPaths();
+
+    this.worker = await withTimeout(
+      createWorker("fra", 1, {
+        ...paths,
+        gzip: true,
+        workerBlobURL: false,
+        logger: () => {},
+        errorHandler: (err: unknown) => {
+          console.error("[garde-ocr] worker error:", err);
+        },
+      }),
+      OCR_WORKER_INIT_TIMEOUT_MS,
+      "ocr_worker_init_timeout",
+    );
+
+    await this.worker.setParameters({
+      tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
     });
+  }
 
-    const { data } = await worker.recognize(buffer);
-    const text = data.text?.trim() ?? "";
-    if (text.length < MIN_TEXT_LEN) {
-      return { text: null, error: `texte trop court (${text.length} car.)` };
+  async recognizeBuffer(buffer: Buffer): Promise<{ text: string | null; error?: string }> {
+    await this.init();
+    if (!this.worker) {
+      return { text: null, error: "worker OCR indisponible" };
     }
-    return { text };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return { text: null, error: msg.slice(0, 280) };
-  } finally {
-    if (worker) {
-      await worker.terminate().catch(() => {});
+
+    try {
+      const { data } = await withTimeout(
+        this.worker.recognize(buffer),
+        OCR_RECOGNIZE_TIMEOUT_MS,
+        "ocr_timeout",
+      );
+      const text = data.text?.trim() ?? "";
+      if (text.length < MIN_TEXT_LEN) {
+        return { text: null, error: `texte trop court (${text.length} car.)` };
+      }
+      return { text };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { text: null, error: msg.slice(0, 280) };
     }
+  }
+
+  async recognizeImageUrl(imageUrl: string): Promise<GardeOcrResult> {
+    const t0 = Date.now();
+    const buffer = await loadImageBuffer(imageUrl);
+    if (!buffer) {
+      return {
+        ok: false,
+        text: null,
+        error: imageUrl.startsWith("/")
+          ? `fichier local introuvable: ${imageUrl}`
+          : `téléchargement image échoué: ${imageUrl.slice(0, 120)}`,
+        durationMs: Date.now() - t0,
+      };
+    }
+
+    const result = await this.recognizeBuffer(buffer);
+    return {
+      ok: Boolean(result.text),
+      text: result.text,
+      error: result.error,
+      durationMs: Date.now() - t0,
+    };
+  }
+
+  async close(): Promise<void> {
+    if (!this.worker) return;
+    await this.worker.terminate().catch(() => {});
+    this.worker = null;
   }
 }
 
-/** Lit le texte d'une affiche garde (URL Facebook ou /public). */
+export async function withGardeOcrSession<T>(
+  fn: (session: GardeOcrSession) => Promise<T>,
+): Promise<T> {
+  const session = new GardeOcrSession();
+  try {
+    return await fn(session);
+  } finally {
+    await session.close();
+  }
+}
+
+/** Lit le texte d'une affiche garde (URL Facebook, COPPF ou /public). */
 export async function ocrGardePosterImage(imageUrl: string): Promise<GardeOcrResult> {
   const t0 = Date.now();
 
@@ -95,52 +186,8 @@ export async function ocrGardePosterImage(imageUrl: string): Promise<GardeOcrRes
     return { ok: false, text: null, error: "url vide", durationMs: 0 };
   }
 
-  let buffer: Buffer | null = null;
-  if (imageUrl.startsWith("/")) {
-    const { readFile } = await import("fs/promises");
-    const filePath = path.join(process.cwd(), "public", imageUrl.replace(/^\//, ""));
-    buffer = await readFile(filePath).catch(() => null);
-    if (!buffer) {
-      return {
-        ok: false,
-        text: null,
-        error: `fichier local introuvable: ${imageUrl}`,
-        durationMs: Date.now() - t0,
-      };
-    }
-  } else {
-    buffer = await fetchImageBuffer(imageUrl);
-    if (!buffer) {
-      return {
-        ok: false,
-        text: null,
-        error: `téléchargement image échoué: ${imageUrl.slice(0, 120)}`,
-        durationMs: Date.now() - t0,
-      };
-    }
-  }
-
-  try {
-    const result = await Promise.race([
-      runOcr(buffer),
-      new Promise<{ text: null; error: string }>((_, reject) =>
-        setTimeout(() => reject(new Error("ocr_timeout")), OCR_TIMEOUT_MS),
-      ),
-    ]);
-
-    return {
-      ok: Boolean(result.text),
-      text: result.text,
-      error: result.error,
-      durationMs: Date.now() - t0,
-    };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return {
-      ok: false,
-      text: null,
-      error: msg.slice(0, 280),
-      durationMs: Date.now() - t0,
-    };
-  }
+  return withGardeOcrSession(async (session) => {
+    const result = await session.recognizeImageUrl(imageUrl);
+    return { ...result, durationMs: Date.now() - t0 };
+  });
 }

@@ -21,7 +21,7 @@ import {
   fetchCoppfGardeImageUrl,
   fetchCoppfGardeSnapshot,
 } from "@/lib/garde-ordre-pharmaciens";
-import { ocrGardePosterImage } from "@/lib/garde-poster-ocr";
+import { withGardeOcrSession } from "@/lib/garde-poster-ocr";
 import {
   gardePosterHasContent,
   renderAndUploadMooreaNewsGardePoster,
@@ -369,59 +369,62 @@ async function resolveSnapshotForSync(): Promise<GardeMooreaSnapshot | null> {
   };
 }
 
-async function enrichFromCoppfImage(
+async function enrichFromPosterOcr(
   snap: GardeMooreaSnapshot,
+  runOcr: boolean,
 ): Promise<{ snap: GardeMooreaSnapshot; ocrUsed: boolean; ocrError?: string }> {
-  const coppf = await fetchCoppfGardeImageUrl().catch(() => null);
-  if (!coppf?.imageUrl) return { snap, ocrUsed: false };
+  const needsOcr =
+    runOcr &&
+    (!snap.doctor?.name ||
+      !snap.pharmacyHours?.length ||
+      !snap.doctorHours?.saturday);
 
-  if (!snap.communePosterUrl?.includes("ordre-pharmaciens")) {
+  if (!needsOcr) return { snap, ocrUsed: false };
+
+  const coppfMeta = await fetchCoppfGardeImageUrl().catch(() => null);
+  if (
+    coppfMeta?.imageUrl &&
+    !snap.communePosterUrl?.includes("ordre-pharmaciens")
+  ) {
     snap = {
       ...snap,
-      communePosterUrl: coppf.imageUrl,
+      communePosterUrl: snap.communePosterUrl ?? coppfMeta.imageUrl,
       sourceUrl: snap.sourceUrl ?? COPPF_MEDECINS_GARDE_URL,
     };
   }
 
-  if (snap.doctor?.name) return { snap, ocrUsed: false };
+  const urls: string[] = [];
+  const add = (url: string | null | undefined) => {
+    if (url && !urls.includes(url)) urls.push(url);
+  };
+  add(snap.communePosterUrl);
+  add(coppfMeta?.imageUrl);
+  if (snap.posterImageUrl?.startsWith("http")) add(snap.posterImageUrl);
 
-  const ocr = await ocrGardePosterImage(coppf.imageUrl);
-  if (!ocr.ok || !ocr.text) {
-    return { snap, ocrUsed: false, ocrError: ocr.error ?? "ocr coppf vide" };
+  if (!urls.length) {
+    return { snap, ocrUsed: false, ocrError: "aucune image affiche" };
   }
 
-  return {
-    snap: {
-      ...mergeGardeOcrIntoSnapshot(snap, ocr.text),
-      sourceUrl: snap.sourceUrl ?? COPPF_MEDECINS_GARDE_URL,
-    },
-    ocrUsed: true,
-  };
-}
+  let ocrUsed = false;
+  let ocrError: string | undefined;
+  let working = snap;
 
-async function enrichFromCommuneImage(
-  snap: GardeMooreaSnapshot,
-  runOcr: boolean,
-): Promise<{ snap: GardeMooreaSnapshot; ocrUsed: boolean; ocrError?: string }> {
-  const imageUrl = snap.communePosterUrl ?? null;
-  if (!runOcr || !imageUrl) return { snap, ocrUsed: false };
+  await withGardeOcrSession(async (session) => {
+    for (const url of urls) {
+      const ocr = await session.recognizeImageUrl(url);
+      if (ocr.ok && ocr.text) {
+        working = mergeGardeOcrIntoSnapshot(working, ocr.text);
+        ocrUsed = true;
+        if (working.doctor?.name && (working.pharmacyHours?.length ?? 0) > 0) {
+          break;
+        }
+      } else if (!ocrError) {
+        ocrError = ocr.error ?? `ocr vide (${url.slice(0, 80)})`;
+      }
+    }
+  });
 
-  const needsOcr =
-    !snap.doctor?.name ||
-    !snap.pharmacyHours?.length ||
-    !snap.doctorHours?.saturday;
-
-  if (!needsOcr) return { snap, ocrUsed: false };
-
-  const ocr = await ocrGardePosterImage(imageUrl);
-  if (!ocr.ok || !ocr.text) {
-    return { snap, ocrUsed: false, ocrError: ocr.error ?? "ocr vide" };
-  }
-
-  return {
-    snap: mergeGardeOcrIntoSnapshot(snap, ocr.text),
-    ocrUsed: true,
-  };
+  return { snap: working, ocrUsed, ocrError };
 }
 
 export type GardeSyncOptions = {
@@ -495,17 +498,14 @@ export async function syncGardeMooreaFromCommune(
     snap.communePosterUrl = snap.posterImageUrl;
   }
 
-  const coppfEnriched = await enrichFromCoppfImage(snap);
-  snap = coppfEnriched.snap;
-
-  const enriched = await enrichFromCommuneImage(
+  const ocrEnriched = await enrichFromPosterOcr(
     snap,
     Boolean(options.fullWeekendPipeline) || !snap.doctor?.name,
   );
-  snap = enriched.snap;
+  snap = ocrEnriched.snap;
 
-  const ocrUsed = enriched.ocrUsed || coppfEnriched.ocrUsed;
-  const ocrError = enriched.ocrError ?? coppfEnriched.ocrError;
+  const ocrUsed = ocrEnriched.ocrUsed;
+  const ocrError = ocrEnriched.ocrError;
 
   const shouldMakePoster =
     options.fullWeekendPipeline ||

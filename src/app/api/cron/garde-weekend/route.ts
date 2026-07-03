@@ -15,12 +15,14 @@ async function notifyGardeGap(result: Awaited<ReturnType<typeof syncHealthOnCall
     "<b>⚠️ Garde week-end — sync incomplète</b>",
     "",
     result.found
-      ? "Affiche trouvée mais médecin non extrait (OCR ?)."
+      ? "Affiche trouvée mais médecin non extrait (OCR trop lent ou illisible)."
       : "Aucune affiche garde détectée (COPPF / Commune).",
     "",
     `Pharmacie : ${escapeHtml(result.pharmacy ?? "—")}`,
     `Médecin : ${escapeHtml(result.doctor ?? "—")}`,
-    result.ocrError ? `OCR : ${escapeHtml(result.ocrError)}` : "",
+    result.ocrError
+      ? `OCR : ${escapeHtml(result.ocrError)}${result.ocrError.includes("timeout") ? " — réessayez dans 5 min ou relancez le cron force=1" : ""}`
+      : "",
     "",
     `<a href="${COPPF_MEDECINS_GARDE_URL}">COPPF — médecins de garde</a>`,
     `<a href="https://www.mooreanews.com/admin">Admin MooreaNews</a>`,
