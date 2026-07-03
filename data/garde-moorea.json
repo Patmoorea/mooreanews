@@ -1,12 +1,11 @@
 {
-  "validFrom": "2026-06-13",
-  "validTo": "2026-06-14",
-  "label": "Samedi 13 / Dimanche 14 juin 2026",
-  "posterImageUrl": "/api/garde-weekend/poster/2026-06-13",
+  "validFrom": "2026-07-04",
+  "validTo": "2026-07-05",
+  "label": "Samedi 04 / Dimanche 05 juillet 2026",
+  "posterImageUrl": "https://www.ordre-pharmaciens-polynesie.com/wp-content/uploads/2026/07/2026_GARDES_SEM27.jpg",
   "doctor": {
-    "name": "APPIETTO Audrey",
-    "phone": "40 56 27 07",
-    "address": "Haapiti, Tiahura PK27,1 c/mer",
+    "name": "DARIER Aurélie",
+    "phone": "87 04 11 88",
     "hours": {
       "saturday": "12h00 – 18h00",
       "sunday": "8h00 – 16h00"

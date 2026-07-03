@@ -11,6 +11,7 @@ import {
 } from "@/lib/garde-moorea-auto";
 import { gardeArticleSlug } from "@/lib/garde-weekend-article";
 import { resolveGardePosterPublicUrl } from "@/lib/garde-poster-url";
+import { isMooreaGardeDoctor } from "@/lib/garde-announcement-parse";
 import { tahitiDateKey, tahitiParts } from "@/lib/tahiti-holidays";
 import type { OnCallDuty } from "@/lib/health-on-call-shared";
 
@@ -116,7 +117,14 @@ export function mergeGardeSnapshotForDisplay(
   return {
     ...primary,
     label,
-    doctor: primary.doctor?.name ? primary.doctor : fallback.doctor ?? primary.doctor,
+    doctor:
+      primary.doctor?.name && isMooreaGardeDoctor(primary.doctor)
+        ? primary.doctor
+        : fallback?.doctor && isMooreaGardeDoctor(fallback.doctor)
+          ? fallback.doctor
+          : primary.doctor?.name
+            ? primary.doctor
+            : fallback?.doctor ?? primary.doctor,
     pharmacy: primary.pharmacy?.name ? primary.pharmacy : fallback.pharmacy ?? primary.pharmacy,
     doctorHours:
       primary.doctorHours?.saturday || primary.doctorHours?.sunday

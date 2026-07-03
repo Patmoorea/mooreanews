@@ -172,9 +172,11 @@ export function mergeGardeOcrIntoSnapshot<
     ...snap,
     ...(mergedDates ?? {}),
     doctor:
-      snap.doctor?.name
-        ? snap.doctor
-        : coppf?.doctor ?? fromPoster.doctor ?? snap.doctor,
+      snap.doctor?.name && !isMooreaGardeDoctor(snap.doctor)
+        ? coppf?.doctor ?? fromPoster.doctor ?? snap.doctor
+        : snap.doctor?.name
+          ? snap.doctor
+          : coppf?.doctor ?? fromPoster.doctor ?? snap.doctor,
     pharmacy: snap.pharmacy?.name ? snap.pharmacy : fromPoster.pharmacy ?? snap.pharmacy,
     doctorAddress: snap.doctorAddress ?? doctorAddress,
     doctorHours:
@@ -361,11 +363,31 @@ function parseDoctorHoursNearName(text: string, namePart: string): {
 
 /** Extrait le médecin de garde Moorea depuis l'OCR COPPF. */
 export function parseMooreaDoctorFromCoppfText(text: string): ParsedOnCall | null {
-  const n = stripAccents(text);
+  const mooreaIdx = text.search(/\bMoorea\b/i);
+  if (mooreaIdx >= 0) {
+    const block = text.slice(Math.max(0, mooreaIdx - 100), mooreaIdx + 240);
+    const d = parseDoctorFromText(block);
+    if (isPlausibleDoctor(d)) {
+      const phoneNear = block.match(
+        /\bMoorea\b[^\n]{0,50}?((?:87|40|89)\s?[\d\s]{7,12})/i,
+      );
+      if (phoneNear) {
+        const phone = cleanPhone(phoneNear[1]!);
+        return {
+          name: d!.name,
+          phone: phone || d!.phone,
+          phoneHref: phone ? phoneHref(phone) : d!.phoneHref,
+        };
+      }
+      return d;
+    }
+  }
 
   const mooreaBlock = text.match(/(?:ile\s+)?moorea[\s-]*maiao?[\s\S]{0,320}/i);
   if (mooreaBlock) {
-    const d = parseDoctorFromText(mooreaBlock[0]);
+    const idx = mooreaBlock.index ?? 0;
+    const block = text.slice(Math.max(0, idx - 100), idx + mooreaBlock[0].length);
+    const d = parseDoctorFromText(block);
     if (isPlausibleDoctor(d)) return d;
   }
 
@@ -374,7 +396,7 @@ export function parseMooreaDoctorFromCoppfText(text: string): ParsedOnCall | nul
   while ((match = sectorRe.exec(text)) !== null) {
     const sector = stripAccents(match[0]);
     if (!/moorea|maiao/.test(sector)) continue;
-    const block = text.slice(match.index, match.index + 320);
+    const block = text.slice(Math.max(0, match.index - 80), match.index + 320);
     const d = parseDoctorFromText(block);
     if (isPlausibleDoctor(d)) return d;
   }
@@ -403,11 +425,6 @@ export function parseMooreaDoctorFromCoppfText(text: string): ParsedOnCall | nul
     };
   }
 
-  if (/moorea|maiao/.test(n)) {
-    const d = parseDoctorFromText(text);
-    if (isPlausibleDoctor(d)) return d;
-  }
-
   return null;
 }
 
@@ -419,6 +436,15 @@ function isPlausibleDoctor(entry: ParsedOnCall | null): boolean {
     return false;
   }
   return true;
+}
+
+/** Rejette un médecin OCR COPPF qui correspond à un autre secteur (ex. Papeete). */
+export function isMooreaGardeDoctor(entry: ParsedOnCall | null): boolean {
+  if (!isPlausibleDoctor(entry)) return false;
+  const n = stripAccents(entry!.name);
+  return !/(papeete|faa.?a|punaauia|pirae|arue|mahina|paea|papara|mataiea|taravao|presqu.?ile|bora|huahine|raiatea|tahaa|rangiroa|cardella|paofai|clinique|polyclinique)/.test(
+    n,
+  );
 }
 
 /** Post / article Facebook déjà importé — accepte affiche seule + dates déduites. */

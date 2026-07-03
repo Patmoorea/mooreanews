@@ -4,7 +4,7 @@
  */
 
 import type { GardeMooreaSnapshot } from "@/lib/garde-moorea-auto";
-import { inferWeekendFromPostDate } from "@/lib/garde-announcement-parse";
+import { inferWeekendFromPostDate, isMooreaGardeDoctor } from "@/lib/garde-announcement-parse";
 import {
   isGardeWeekRelevant,
   pickBestGardeSnapshot,
@@ -148,7 +148,14 @@ export function mergeGardeSnapshots(
 ): GardeMooreaSnapshot {
   return {
     ...primary,
-    doctor: primary.doctor?.name ? primary.doctor : supplement.doctor ?? primary.doctor,
+    doctor:
+      primary.doctor?.name && isMooreaGardeDoctor(primary.doctor)
+        ? primary.doctor
+        : supplement.doctor && isMooreaGardeDoctor(supplement.doctor)
+          ? supplement.doctor
+          : primary.doctor?.name
+            ? primary.doctor
+            : supplement.doctor ?? primary.doctor,
     pharmacy: primary.pharmacy?.name ? primary.pharmacy : supplement.pharmacy ?? primary.pharmacy,
     pharmacyHours:
       primary.pharmacyHours?.length ? primary.pharmacyHours : supplement.pharmacyHours,

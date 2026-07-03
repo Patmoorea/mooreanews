@@ -9,6 +9,7 @@ import { listCommuneMooreaGraphPosts, listMooreaNewsGraphPosts } from "@/lib/fac
 import {
   inferWeekendFromPostDate,
   isGardeImagePost,
+  isMooreaGardeDoctor,
   mergeGardeOcrIntoSnapshot,
   parseGardeFromSiteContent,
   parseGardePost,
@@ -376,6 +377,7 @@ async function enrichFromPosterOcr(
   const needsOcr =
     runOcr &&
     (!snap.doctor?.name ||
+      !isMooreaGardeDoctor(snap.doctor) ||
       !snap.pharmacyHours?.length ||
       !snap.doctorHours?.saturday);
 

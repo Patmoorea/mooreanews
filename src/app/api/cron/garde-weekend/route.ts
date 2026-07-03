@@ -4,6 +4,7 @@ import { verifyCronAuth } from "@/lib/cron-auth";
 import { getTahitiClock, shouldSyncGardeOnVeille } from "@/lib/cron-tahiti";
 import { syncHealthOnCall } from "@/lib/health-on-call";
 import { escapeHtml, sendTelegramNotification } from "@/lib/telegram";
+import { gardeArticleSlug } from "@/lib/garde-weekend-article";
 import { COPPF_MEDECINS_GARDE_URL } from "@/lib/garde-ordre-pharmaciens";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +36,9 @@ async function runGardeSync() {
   revalidatePath("/sante-garde");
   revalidatePath("/actualites");
   revalidatePath("/", "layout");
+  if (result.articleSlug) {
+    revalidatePath(`/actualites/${result.articleSlug}`);
+  }
   if (!result.found || !result.doctor) {
     await notifyGardeGap(result).catch(() => {});
   }
