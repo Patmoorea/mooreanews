@@ -254,6 +254,8 @@ export async function notifyVeilleReport(input: {
   facebookPurgeDeleted?: number;
   facebookCleanup?: { unpublished: number; deleted: number; duplicatesRemoved?: number };
   externalCleanup?: { hidden: number; titles: string[] };
+  expiredEvents?: { unpublished: number; titles: string[] };
+  expiredAnnouncements?: number;
   headerNote?: string;
 }): Promise<{ sent: boolean; reason?: string }> {
   const alertsCreated = input.alertsCreated ?? 0;
@@ -401,6 +403,21 @@ export async function notifyVeilleReport(input: {
     for (const t of input.externalCleanup.titles.slice(0, 3)) {
       lines.push(`• ${escapeHtml(truncate(t, 70))}`);
     }
+  }
+
+  if (input.expiredEvents && input.expiredEvents.unpublished > 0) {
+    lines.push(
+      `\n🧹 <b>Événements passés</b> : ${input.expiredEvents.unpublished} dépublié(s)`,
+    );
+    for (const t of input.expiredEvents.titles.slice(0, 3)) {
+      lines.push(`• ${escapeHtml(truncate(t, 70))}`);
+    }
+  }
+
+  if ((input.expiredAnnouncements ?? 0) > 0) {
+    lines.push(
+      `\n🧹 <b>Annonces expirées</b> : ${input.expiredAnnouncements} dépubliée(s)`,
+    );
   }
 
   if (input.facebookHealth) {

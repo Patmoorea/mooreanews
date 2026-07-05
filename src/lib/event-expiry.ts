@@ -14,37 +14,42 @@ export function pastEventCutoffIso(now = new Date()): string {
 }
 
 /** Dépublie les événements terminés depuis plus de 14 jours. */
-export async function expirePastEvents(now = new Date()): Promise<number> {
+export async function expirePastEvents(now = new Date()): Promise<{
+  unpublished: number;
+  titles: string[];
+}> {
   const admin = getAdminSupabase();
-  if (!admin) return 0;
+  if (!admin) return { unpublished: 0, titles: [] };
 
   const cutoff = pastEventCutoffIso(now);
 
   const { data: rows } = await admin
     .from("events")
-    .select("id, date, end_date")
+    .select("id, title, date, end_date")
     .eq("published", true)
     .limit(500);
 
-  const ids = (rows ?? [])
-    .filter((row) => {
-      const end = row.end_date ?? row.date;
-      return end && end < cutoff;
-    })
-    .map((row) => row.id);
+  const stale = (rows ?? []).filter((row) => {
+    const end = row.end_date ?? row.date;
+    return end && end < cutoff;
+  });
 
-  if (ids.length === 0) return 0;
+  if (stale.length === 0) return { unpublished: 0, titles: [] };
 
+  const ids = stale.map((row) => row.id);
   const { error } = await admin
     .from("events")
     .update({ published: false })
     .in("id", ids);
 
-  if (error) return 0;
+  if (error) return { unpublished: 0, titles: [] };
 
   const { revalidatePath } = await import("next/cache");
   revalidatePath("/evenements");
   revalidatePath("/", "layout");
 
-  return ids.length;
+  return {
+    unpublished: ids.length,
+    titles: stale.map((r) => r.title).filter(Boolean),
+  };
 }

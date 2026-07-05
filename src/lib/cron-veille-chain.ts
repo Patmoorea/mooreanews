@@ -27,6 +27,8 @@ import {
   auditPublicContent,
   hideStaleExternalArticles,
 } from "@/lib/site-content-audit";
+import { expireStaleAnnouncements } from "@/lib/announcement-expiry";
+import { expirePastEvents } from "@/lib/event-expiry";
 import { checkFacebookTokenHealth } from "@/lib/facebook-token";
 import { getFacebookImportStatus } from "@/lib/facebook-import-status";
 import { runAiVeilleProcessing } from "@/lib/ai-veille";
@@ -188,6 +190,17 @@ export async function runVeillePartFinish() {
     revalidatePath("/");
   }
 
+  const expiredEvents = await expirePastEvents();
+  if (expiredEvents.unpublished > 0) {
+    revalidatePath("/evenements");
+    revalidatePath("/", "layout");
+  }
+
+  const expiredAnnouncements = await expireStaleAnnouncements();
+  if (expiredAnnouncements > 0) {
+    revalidatePath("/annonces");
+  }
+
   const audit = await auditPublicContent();
   const facebookHealth = await checkFacebookTokenHealth();
   const facebookImportStatus = await getFacebookImportStatus(5);
@@ -211,6 +224,8 @@ export async function runVeillePartFinish() {
     headerNote: "🔗 Veille chaînée GitHub : rss → facebook → web → finish",
     facebookCleanup,
     externalCleanup,
+    expiredEvents,
+    expiredAnnouncements,
   });
 
   return {
@@ -225,6 +240,8 @@ export async function runVeillePartFinish() {
     facebookImportStatus,
     facebookCleanup,
     externalCleanup,
+    expiredEvents,
+    expiredAnnouncements,
     falseHouleAlertsDeactivated: falseHouleAlerts,
     falseFerryAlertsDeactivated: falseFerryAlerts,
   };

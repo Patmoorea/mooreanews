@@ -160,8 +160,9 @@ export async function runDailyCronPart(
       const expiredAlerts = await expirePastAlerts();
       jobs.expiredAlerts = expiredAlerts;
       jobs.expiredAnnouncements = await expireStaleAnnouncements();
-      jobs.expiredEvents = await expirePastEvents();
-      if ((jobs.expiredEvents as number) > 0) {
+      const expiredEvents = await expirePastEvents();
+      jobs.expiredEvents = expiredEvents;
+      if (expiredEvents.unpublished > 0) {
         revalidatePath("/evenements");
         revalidatePath("/", "layout");
       }
