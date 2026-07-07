@@ -1,11 +1,22 @@
 /**
- * Covoiturage ferry Moorea ↔ Tahiti — offres publiées sur MooreaNews.
+ * Covoiturage en voiture vers / depuis le quai Vaiare (navette ferry).
  */
 
-export type CarpoolDirection =
-  | "moorea-tahiti"
-  | "tahiti-moorea"
-  | "moorea-quai";
+export type CarpoolDirection = "vers-quai" | "depuis-quai";
+
+/** Anciennes valeurs (première version) — compatibilité lecture. */
+const LEGACY_DIRECTION_MAP: Record<string, CarpoolDirection> = {
+  "moorea-tahiti": "vers-quai",
+  "moorea-quai": "vers-quai",
+  "tahiti-moorea": "depuis-quai",
+};
+
+export function normalizeCarpoolDirection(
+  value: string | undefined,
+): CarpoolDirection {
+  if (value === "vers-quai" || value === "depuis-quai") return value;
+  return LEGACY_DIRECTION_MAP[value ?? ""] ?? "vers-quai";
+}
 
 export const CARPOOL_DIRECTIONS: {
   value: CarpoolDirection;
@@ -13,19 +24,14 @@ export const CARPOOL_DIRECTIONS: {
   short: string;
 }[] = [
   {
-    value: "moorea-tahiti",
-    label: "Moorea → Tahiti (aller au ferry)",
-    short: "M → T",
-  },
-  {
-    value: "tahiti-moorea",
-    label: "Tahiti → Moorea (retour île)",
-    short: "T → M",
-  },
-  {
-    value: "moorea-quai",
-    label: "Moorea → Quai Vaiare (covoiturage local)",
+    value: "vers-quai",
+    label: "En voiture → Quai Vaiare (aller prendre le ferry)",
     short: "→ Quai",
+  },
+  {
+    value: "depuis-quai",
+    label: "En voiture ← Quai Vaiare (retour sur l’île)",
+    short: "← Île",
   },
 ];
 
@@ -102,11 +108,15 @@ export function parseCarpoolBody(
 ): Partial<Omit<CarpoolOfferInput, "author" | "phone">> {
   const get = (re: RegExp) => body.match(re)?.[1]?.trim();
   const directionRaw = get(/Sens\s*:\s*(.+)/i);
-  let direction: CarpoolDirection = "moorea-tahiti";
-  if (/tahiti.*moorea/i.test(directionRaw ?? "")) {
-    direction = "tahiti-moorea";
-  } else if (/quai|vaiare/i.test(directionRaw ?? "")) {
-    direction = "moorea-quai";
+  let direction: CarpoolDirection = "vers-quai";
+  if (/depuis|retour|←/i.test(directionRaw ?? "")) {
+    direction = "depuis-quai";
+  } else if (/vers|aller|→/i.test(directionRaw ?? "")) {
+    direction = "vers-quai";
+  } else if (/tahiti.*moorea/i.test(directionRaw ?? "")) {
+    direction = "depuis-quai";
+  } else if (/moorea.*tahiti|quai|vaiare/i.test(directionRaw ?? "")) {
+    direction = "vers-quai";
   }
 
   const trip = get(/Trajet\s*:\s*(\d{4}-\d{2}-\d{2})\s*à\s*(\d{1,2}:\d{2})/i);

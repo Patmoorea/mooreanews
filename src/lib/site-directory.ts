@@ -113,8 +113,8 @@ export const SITE_DIRECTORY: SiteDirectoryCategory[] = [
       },
       {
         href: "/covoiturage",
-        label: "Covoiturage ferry",
-        description: "Partagez la route vers le quai Vaiare",
+        label: "Covoiturage quai Vaiare",
+        description: "En voiture vers le ferry ou retour sur l’île",
       },
       {
         href: "/coupures",

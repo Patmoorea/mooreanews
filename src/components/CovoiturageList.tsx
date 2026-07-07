@@ -20,8 +20,8 @@ export function CovoiturageList({ offers }: Props) {
           Aucun trajet pour le moment.
         </p>
         <p className="mt-2 text-sm text-ocean-600">
-          Soyez le premier à proposer un covoiturage vers le quai Vaiare ou
-          depuis Tahiti.
+          Soyez le premier à proposer un trajet en voiture vers le quai Vaiare
+          ou depuis le quai pour rentrer chez vous.
         </p>
       </div>
     );

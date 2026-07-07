@@ -187,7 +187,7 @@ export async function getCarpoolOffers(): Promise<ParsedCarpoolOffer[]> {
         contact: row.contact ?? "",
         phone: row.contact ?? "",
         author: row.author ?? "",
-        direction: parsed.direction ?? "moorea-tahiti",
+        direction: parsed.direction ?? "vers-quai",
         tripDate: parsed.tripDate ?? "",
         time: parsed.time ?? "",
         seats: parsed.seats ?? 1,

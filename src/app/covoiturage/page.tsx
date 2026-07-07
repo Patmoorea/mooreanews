@@ -13,9 +13,9 @@ import { Share2 } from "lucide-react";
 export const revalidate = 120;
 
 export const metadata = listingPageMetadata({
-  title: "Covoiturage ferry Moorea — Tahiti",
+  title: "Covoiturage voiture — Quai Vaiare Moorea",
   description:
-    "Proposez ou trouvez un covoiturage vers le quai Vaiare ou depuis Papeete. Moins de voitures au parking, partage des frais.",
+    "Proposez ou trouvez un covoiturage en voiture vers le quai Vaiare (navette Papeete) ou pour le retour sur l’île. Moins de voitures au parking, partage des frais.",
   path: "/covoiturage",
 });
 
@@ -30,9 +30,9 @@ export default async function CovoituragePage() {
   return (
     <>
       <PageHeader
-        badge="Ferry · Quai Vaiare"
-        title="Covoiturage Moorea ↔ Tahiti"
-        description="Des milliers de navetteurs chaque jour : partagez la route, libérez le parking du quai (~300 XPF/jour) et les frais de carburant."
+        badge="Voiture · Quai Vaiare"
+        title="Covoiturage vers le quai Vaiare"
+        description="En voiture uniquement : partagez la route pour aller au ferry ou rentrer sur l’île. Moins de voitures au parking (~300 XPF/jour), moins de carburant."
         variant="lagon"
       />
       <Container className="py-10 sm:py-14">

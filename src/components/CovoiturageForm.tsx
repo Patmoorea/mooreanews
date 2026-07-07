@@ -23,7 +23,7 @@ export function CovoiturageForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
   const [direction, setDirection] =
-    useState<CarpoolDirection>("moorea-tahiti");
+    useState<CarpoolDirection>("vers-quai");
   const [successTitle, setSuccessTitle] = useState("");
 
   const today = new Date().toLocaleDateString("en-CA", {
@@ -65,7 +65,7 @@ export function CovoiturageForm() {
       setSuccessTitle(json.title ?? "Trajet publié");
       setStatus("success");
       form.reset();
-      setDirection("moorea-tahiti");
+      setDirection("vers-quai");
     } catch (err) {
       setStatus("error");
       setMessage(
@@ -75,7 +75,7 @@ export function CovoiturageForm() {
   }
 
   if (status === "success") {
-    const shareText = `🚗 Covoiturage ferry Moorea : ${successTitle}\nTous les trajets sur MooreaNews :\nhttps://www.mooreanews.com/covoiturage`;
+    const shareText = `🚗 Covoiturage voiture Moorea (quai Vaiare) : ${successTitle}\nTous les trajets sur MooreaNews :\nhttps://www.mooreanews.com/covoiturage`;
     return (
       <div className="rounded-3xl border border-lagon-200 bg-gradient-to-b from-lagon-50 to-white p-6 sm:p-8 shadow-[var(--shadow-soft)]">
         <div className="flex items-center gap-3 text-lagon-800">
@@ -141,11 +141,11 @@ export function CovoiturageForm() {
         <h3 className="font-display text-lg font-bold">Proposer un trajet</h3>
       </div>
       <p className="text-sm text-ocean-600 -mt-2">
-        Sans compte · publication immédiate · téléphone obligatoire pour être
-        contacté.
+        Covoiturage <strong>en voiture</strong> pour aller au quai Vaiare (ou en
+        revenir) — pas le ferry. Sans compte · publication immédiate.
       </p>
 
-      <Field label="Sens du trajet" required>
+      <Field label="Trajet en voiture" required>
         <select
           name="direction"
           required
@@ -182,7 +182,7 @@ export function CovoiturageForm() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Lieu de rendez-vous" required>
+        <Field label="Départ (prise en charge)" required>
           <select name="meetingPoint" required className="form-input" defaultValue="">
             <option value="" disabled>
               Choisir…
@@ -194,15 +194,15 @@ export function CovoiturageForm() {
             ))}
           </select>
         </Field>
-        <Field label="Destination" required>
+        <Field label="Arrivée" required>
           <input
             name="destination"
             required
             maxLength={120}
             placeholder={
-              direction === "moorea-tahiti"
-                ? "Ex. Quai Vaiare, Ferry Papeete"
-                : "Ex. Maharepa, Centre Afareaitu"
+              direction === "vers-quai"
+                ? "Ex. Quai Vaiare, parking ferry"
+                : "Ex. Maharepa, Afareaitu, Paopao…"
             }
             className="form-input"
           />

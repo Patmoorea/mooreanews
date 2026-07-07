@@ -6,7 +6,7 @@ import {
   buildCarpoolTitle,
   carpoolExpiresAt,
   CARPOOL_DIRECTIONS,
-  CARPOOL_MEETING_POINTS,
+  normalizeCarpoolDirection,
   type CarpoolDirection,
 } from "@/lib/covoiturage";
 import { checkPublicFormSpam } from "@/lib/spam-guard";
@@ -16,11 +16,10 @@ import { getAdminSupabase } from "@/lib/supabase/admin";
 import { SITE } from "@/lib/constants";
 
 const Payload = z.object({
-  direction: z.enum([
-    "moorea-tahiti",
-    "tahiti-moorea",
-    "moorea-quai",
-  ] as const satisfies readonly CarpoolDirection[]),
+  direction: z
+    .string()
+    .transform((value) => normalizeCarpoolDirection(value))
+    .pipe(z.enum(["vers-quai", "depuis-quai"] as const satisfies readonly CarpoolDirection[])),
   tripDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   time: z.string().min(4).max(8),
   seats: z.coerce.number().int().min(1).max(8),
@@ -140,7 +139,7 @@ export async function POST(req: Request) {
 
   await sendTelegramNotification(
     [
-      "<b>🚗 Nouveau covoiturage ferry</b>",
+      "<b>🚗 Nouveau covoiturage voiture (quai Vaiare)</b>",
       "",
       `<b>${escapeHtml(title)}</b>`,
       escapeHtml(body.split("\n").slice(0, 6).join("\n")),

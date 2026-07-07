@@ -36,7 +36,7 @@ export function CovoiturageFerryPanel() {
         Prochains ferries
       </div>
       <p className="mt-1 text-xs text-ocean-600">
-        Covoiturez pour arriver au quai à l&apos;heure — parking Vaiare ~300
+        Horaires ferry pour caler votre départ en voiture — parking Vaiare ~300
         XPF/jour.
       </p>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 text-sm">
