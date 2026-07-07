@@ -16,6 +16,7 @@ import { RecentAnnouncements } from "@/components/home/RecentAnnouncements";
 import { InteractiveMap } from "@/components/home/InteractiveMap";
 import { TelegramCommunityPromo } from "@/components/telegram/TelegramCommunityPromo";
 import { CommunityCTA } from "@/components/home/CommunityCTA";
+import { CovoituragePromo } from "@/components/home/CovoituragePromo";
 
 export const revalidate = 600;
 
@@ -31,6 +32,7 @@ export default function HomePage() {
     <>
       <Hero />
       <AlertsStrip />
+      <CovoituragePromo />
       <TelegramCommunityPromo variant="hero" />
       <AdSlot slotId="home-leaderboard" fullBleed />
       <SafetyCampaignSlot />

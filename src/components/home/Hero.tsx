@@ -7,6 +7,7 @@ import {
   Siren,
   CloudSun,
   Ship,
+  Car,
   ArrowRight,
   Plus,
   Smartphone,
@@ -66,11 +67,18 @@ const UTILITIES: {
     accent: "from-ocean-400/30 to-lagon-500/20",
   },
   {
+    href: "/covoiturage",
+    label: "Covoiturage",
+    sub: "Quai Vaiare",
+    icon: Car,
+    accent: "from-lagon-300/25 to-ocean-600/25",
+  },
+  {
     href: "/#en-direct",
     label: "Ferry",
     sub: "Prochains départs",
     icon: Ship,
-    accent: "from-lagon-300/25 to-ocean-600/25",
+    accent: "from-ocean-400/25 to-lagon-500/20",
   },
   {
     href: "/telecharger",

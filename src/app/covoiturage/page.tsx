@@ -37,7 +37,7 @@ export default async function CovoituragePage() {
       />
       <Container className="py-10 sm:py-14">
         <div className="grid gap-10 lg:grid-cols-5">
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-6" id="proposer">
             <CovoiturageFerryPanel />
             <CovoiturageForm />
             <div className="rounded-2xl border border-ocean-100 bg-ocean-50/50 p-4 text-sm text-ocean-700">
