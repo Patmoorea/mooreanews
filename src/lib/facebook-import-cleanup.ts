@@ -4,7 +4,6 @@
 
 import {
   isStaleFacebookImportRow,
-  isFacebookArticleCompleteOnSite,
   isEmptyFacebookArticleShell,
 } from "@/lib/facebook-import-filters";
 import { getAdminSupabase } from "@/lib/supabase/admin";
@@ -127,29 +126,38 @@ export async function countStaleFacebookImports(): Promise<number> {
   return count;
 }
 
+async function listFacebookImportArticles() {
+  const admin = getAdminSupabase();
+  if (!admin) return [];
+
+  const { data: tagged } = await admin
+    .from("articles")
+    .select("id, slug, title, excerpt, body, tags, published_at, cover_url, published")
+    .filter("tags", "cs", "{facebook-import}");
+
+  const { data: bySlug } = await admin
+    .from("articles")
+    .select("id, slug, title, excerpt, body, tags, published_at, cover_url, published")
+    .ilike("slug", "%-fb-%");
+
+  const seen = new Set<string>();
+  return [...(tagged ?? []), ...(bySlug ?? [])].filter((row) => {
+    if (seen.has(row.id)) return false;
+    seen.add(row.id);
+    return true;
+  });
+}
+
 /** Dépublie les coquilles Facebook sans texte ni affiche Supabase. */
 export async function unpublishEmptyFacebookShells(): Promise<number> {
   const admin = getAdminSupabase();
   if (!admin) return 0;
 
-  const { data: rows } = await admin
-    .from("articles")
-    .select("id, slug, title, excerpt, body, cover_url, published, published_at")
-    .eq("published", true)
-    .like("slug", "%-fb-%");
+  const rows = await listFacebookImportArticles();
 
   let unpublished = 0;
-  for (const row of rows ?? []) {
-    if (
-      isFacebookArticleCompleteOnSite({
-        title: row.title,
-        excerpt: row.excerpt,
-        body: row.body,
-        cover_url: row.cover_url,
-      })
-    ) {
-      continue;
-    }
+  for (const row of rows) {
+    if (!row.published) continue;
     if (
       !isEmptyFacebookArticleShell({
         title: row.title,
@@ -172,6 +180,34 @@ export async function unpublishEmptyFacebookShells(): Promise<number> {
   return unpublished;
 }
 
+/** Supprime les coquilles Facebook publiées (titre auto « affiche · 26/06 », etc.). */
+export async function deletePublishedEmptyFacebookShells(): Promise<number> {
+  const admin = getAdminSupabase();
+  if (!admin) return 0;
+
+  const rows = await listFacebookImportArticles();
+  let deleted = 0;
+
+  for (const row of rows) {
+    if (!row.published) continue;
+    if (
+      !isEmptyFacebookArticleShell({
+        title: row.title,
+        excerpt: row.excerpt,
+        body: row.body,
+        cover_url: row.cover_url,
+      })
+    ) {
+      continue;
+    }
+    if (row.slug) await hideExternalArticlesForArticleSlug(row.slug);
+    const { error } = await admin.from("articles").delete().eq("id", row.id);
+    if (!error) deleted += 1;
+  }
+
+  return deleted;
+}
+
 /**
  * Hygiène imports Facebook — dépublie, supprime coquilles vides et doublons.
  * Appelé à chaque finish veille (pas seulement quand le cron Facebook tourne).
@@ -181,15 +217,15 @@ export async function cleanupPublishedFacebookEmptyShells(): Promise<{
   deleted: number;
   duplicatesRemoved: number;
 }> {
-  const unpublished = await unpublishEmptyFacebookShells();
-  const { deleted } = await purgeStaleFacebookImports();
+  const emptyShellsDeleted = await deletePublishedEmptyFacebookShells();
+  const { deleted: staleDeleted } = await purgeStaleFacebookImports();
   const { purgeDuplicateArticles } = await import(
     "@/lib/article-duplicate-cleanup"
   );
   const dupes = await purgeDuplicateArticles();
   return {
-    unpublished,
-    deleted,
+    unpublished: 0,
+    deleted: emptyShellsDeleted + staleDeleted,
     duplicatesRemoved: dupes.deleted,
   };
 }
