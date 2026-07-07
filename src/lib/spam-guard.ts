@@ -29,7 +29,8 @@ export type SpamScope =
   | "contact"
   | "newsletter"
   | "submit"
-  | "signalement";
+  | "signalement"
+  | "covoiturage";
 
 export type SpamVerdict =
   | { allowed: true }
@@ -43,6 +44,7 @@ const RATE_LIMITS: Record<SpamScope, { max: number; windowMs: number }> = {
   newsletter: { max: 8, windowMs: 60 * 60 * 1000 },
   submit: { max: 4, windowMs: 60 * 60 * 1000 },
   signalement: { max: 6, windowMs: 60 * 60 * 1000 },
+  covoiturage: { max: 6, windowMs: 60 * 60 * 1000 },
 };
 
 export function getClientIp(req: Request): string {

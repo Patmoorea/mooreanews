@@ -39,7 +39,7 @@ export type Announcement = {
   slug: string;
   title: string;
   body: string;
-  type: "vente" | "achat" | "location" | "emploi" | "service" | "perdu-trouve";
+  type: "vente" | "achat" | "location" | "emploi" | "service" | "perdu-trouve" | "covoiturage";
   price?: string;
   contact: string;
   district?: string;

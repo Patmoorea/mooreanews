@@ -59,6 +59,7 @@ export async function expireStaleAnnouncements(): Promise<number> {
 
   const { revalidatePath } = await import("next/cache");
   revalidatePath("/annonces");
+  revalidatePath("/covoiturage");
 
   return ids.length;
 }

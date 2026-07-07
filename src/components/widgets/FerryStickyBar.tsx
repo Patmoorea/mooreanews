@@ -70,6 +70,12 @@ export function FerryStickyBar() {
               ))}
             </div>
           </Link>
+          <Link
+            href="/covoiturage"
+            className="flex items-center gap-1 px-2.5 text-[10px] font-bold uppercase tracking-wide bg-lagon-500/30 hover:bg-lagon-500/50 border-l border-white/10"
+          >
+            Covoit.
+          </Link>
           <a
             href={bookingUrl}
             target="_blank"

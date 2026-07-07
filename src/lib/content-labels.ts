@@ -10,6 +10,7 @@ export const ANNOUNCEMENT_TYPE_LABELS: Record<
   emploi: { label: "Emploi", variant: "tiare" },
   service: { label: "Service", variant: "soleil" },
   "perdu-trouve": { label: "Perdu/Trouvé", variant: "couchant" },
+  covoiturage: { label: "Covoiturage", variant: "lagon" },
 };
 
 export const ACTIVITY_CATEGORY_LABELS: Record<Activity["category"], string> = {

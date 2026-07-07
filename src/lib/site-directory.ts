@@ -112,6 +112,11 @@ export const SITE_DIRECTORY: SiteDirectoryCategory[] = [
         description: "Compagnies et conseils",
       },
       {
+        href: "/covoiturage",
+        label: "Covoiturage ferry",
+        description: "Partagez la route vers le quai Vaiare",
+      },
+      {
         href: "/coupures",
         label: "Coupures EDT & eau",
         description: "Travaux programmés Moorea",
