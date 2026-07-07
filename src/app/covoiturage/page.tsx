@@ -32,7 +32,7 @@ export default async function CovoituragePage() {
       <PageHeader
         badge="Voiture · Quai Vaiare"
         title="Covoiturage vers le quai Vaiare"
-        description="En voiture uniquement : partagez la route pour aller au ferry ou rentrer sur l’île. Moins de voitures au parking (~300 XPF/jour), moins de carburant."
+        description="Publiez votre trajet en voiture ou inscrivez-vous à une proposition : jour, heure, places, frais, nom et contact."
         variant="lagon"
       />
       <Container className="py-10 sm:py-14">

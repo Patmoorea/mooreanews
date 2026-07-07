@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { Clock, MapPin, Phone, Users } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+import { CovoiturageSignupForm } from "@/components/CovoiturageSignupForm";
 import {
   directionShort,
   formatPhoneDisplay,
@@ -51,7 +51,9 @@ function CarpoolCard({ offer }: { offer: ParsedCarpoolOffer }) {
           <h3 className="mt-2 font-display text-lg font-bold text-ocean-900">
             {offer.title}
           </h3>
-          <p className="mt-1 text-sm text-ocean-600">{offer.author}</p>
+          <p className="mt-1 text-sm text-ocean-600">
+            Proposé par <span className="font-medium">{offer.author}</span>
+          </p>
         </div>
         {offer.time && (
           <div className="flex items-center gap-1.5 rounded-full bg-soleil-50 px-3 py-1.5 text-sm font-bold text-soleil-800">
@@ -78,24 +80,41 @@ function CarpoolCard({ offer }: { offer: ParsedCarpoolOffer }) {
             </span>
           </p>
         )}
+        {offer.tripDays && (
+          <p className="flex items-center gap-2 sm:col-span-2">
+            <Clock className="h-4 w-4 text-lagon-600" />
+            Jours : {offer.tripDays}
+          </p>
+        )}
         <p className="flex items-center gap-2">
           <Users className="h-4 w-4 text-lagon-600" />
-          {offer.seats} place{offer.seats > 1 ? "s" : ""}
+          {offer.seatsLeft > 0
+            ? `${offer.seatsLeft} / ${offer.seats} place${offer.seats > 1 ? "s" : ""} dispo`
+            : `Complet (${offer.seats} place${offer.seats > 1 ? "s" : ""})`}
         </p>
         {offer.priceShare && (
-          <p className="text-tiare-700 font-medium">{offer.priceShare}</p>
+          <p className="text-tiare-700 font-medium">
+            Frais : {offer.priceShare}
+          </p>
         )}
       </div>
 
-      {href && (
-        <a
-          href={href}
-          className="mt-4 inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-gradient-to-r from-lagon-600 to-ocean-700 px-5 py-2.5 text-sm font-bold text-white"
-        >
-          <Phone className="h-4 w-4" />
-          Appeler {formatPhoneDisplay(phone)}
-        </a>
-      )}
+      <div className="mt-4 flex flex-col sm:flex-row gap-2">
+        {href && (
+          <a
+            href={href}
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-lagon-600 to-ocean-700 px-5 py-2.5 text-sm font-bold text-white"
+          >
+            <Phone className="h-4 w-4" />
+            Appeler {formatPhoneDisplay(phone)}
+          </a>
+        )}
+      </div>
+
+      <CovoiturageSignupForm
+        announcementId={offer.id}
+        seatsLeft={offer.seatsLeft}
+      />
     </li>
   );
 }

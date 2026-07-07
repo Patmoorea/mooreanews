@@ -47,10 +47,21 @@ export const CARPOOL_MEETING_POINTS = [
   "Autre (préciser dans le message)",
 ] as const;
 
+export const CARPOOL_WEEKDAYS = [
+  { value: "lun", label: "Lun" },
+  { value: "mar", label: "Mar" },
+  { value: "mer", label: "Mer" },
+  { value: "jeu", label: "Jeu" },
+  { value: "ven", label: "Ven" },
+  { value: "sam", label: "Sam" },
+  { value: "dim", label: "Dim" },
+] as const;
+
 export type CarpoolOfferInput = {
   direction: CarpoolDirection;
   tripDate: string;
   time: string;
+  tripDays?: string;
   seats: number;
   meetingPoint: string;
   destination: string;
@@ -65,6 +76,8 @@ export type ParsedCarpoolOffer = CarpoolOfferInput & {
   title: string;
   publishedAt: string;
   contact: string;
+  signupCount: number;
+  seatsLeft: number;
 };
 
 export function directionLabel(dir: CarpoolDirection): string {
@@ -87,11 +100,14 @@ export function buildCarpoolBody(input: CarpoolOfferInput): string {
     `Sens : ${directionLabel(input.direction)}`,
     `Trajet : ${input.tripDate} à ${input.time.slice(0, 5)}`,
     `Places disponibles : ${input.seats}`,
-    `Rendez-vous : ${input.meetingPoint}`,
-    `Destination : ${input.destination}`,
+    `Départ : ${input.meetingPoint}`,
+    `Arrivée : ${input.destination}`,
   ];
+  if (input.tripDays?.trim()) {
+    lines.splice(2, 0, `Jours : ${input.tripDays.trim()}`);
+  }
   if (input.priceShare?.trim()) {
-    lines.push(`Partage frais : ${input.priceShare.trim()}`);
+    lines.push(`Frais de participation : ${input.priceShare.trim()}`);
   }
   if (input.notes?.trim()) {
     lines.push("", input.notes.trim());
@@ -127,9 +143,10 @@ export function parseCarpoolBody(
     tripDate: trip?.[1] ?? "",
     time: trip?.[2] ?? "",
     seats: Number.isFinite(seats) && seats > 0 ? seats : 1,
-    meetingPoint: get(/Rendez-vous\s*:\s*(.+)/i) ?? "",
-    destination: get(/Destination\s*:\s*(.+)/i) ?? "",
-    priceShare: get(/Partage frais\s*:\s*(.+)/i),
+    meetingPoint: get(/Départ\s*:\s*(.+)/i) ?? get(/Rendez-vous\s*:\s*(.+)/i) ?? "",
+    destination: get(/Arrivée\s*:\s*(.+)/i) ?? get(/Destination\s*:\s*(.+)/i) ?? "",
+    tripDays: get(/Jours\s*:\s*(.+)/i),
+    priceShare: get(/Partage frais\s*:\s*(.+)/i) ?? get(/Frais de participation\s*:\s*(.+)/i),
   };
 }
 

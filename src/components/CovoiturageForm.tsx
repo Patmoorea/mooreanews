@@ -7,6 +7,7 @@ import { HoneypotField } from "@/components/ui/HoneypotField";
 import {
   CARPOOL_DIRECTIONS,
   CARPOOL_MEETING_POINTS,
+  CARPOOL_WEEKDAYS,
   facebookShareUrl,
   whatsAppShareUrl,
   type CarpoolDirection,
@@ -34,10 +35,16 @@ export function CovoiturageForm() {
     e.preventDefault();
     if (status === "loading") return;
     const form = e.currentTarget;
-    const data = Object.fromEntries(new FormData(form).entries()) as Record<
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries()) as Record<
       string,
       string
     >;
+
+    const weekdays = formData.getAll("weekdays").map(String);
+    const tripDays = weekdays
+      .map((d) => CARPOOL_WEEKDAYS.find((w) => w.value === d)?.label ?? d)
+      .join(", ");
 
     setStatus("loading");
     setMessage("");
@@ -48,6 +55,7 @@ export function CovoiturageForm() {
         body: JSON.stringify({
           ...data,
           seats: Number(data.seats) || 1,
+          tripDays,
         }),
       });
       const json = (await res.json().catch(() => null)) as {
@@ -85,8 +93,8 @@ export function CovoiturageForm() {
               Trajet publié !
             </h3>
             <p className="text-sm text-ocean-700 mt-1">
-              Visible tout de suite sur cette page. Les intéressés vous
-              contacteront par téléphone.
+              Visible tout de suite. Les passagers peuvent s&apos;inscrire ou
+              vous appeler directement.
             </p>
           </div>
         </div>
@@ -141,8 +149,8 @@ export function CovoiturageForm() {
         <h3 className="font-display text-lg font-bold">Proposer un trajet</h3>
       </div>
       <p className="text-sm text-ocean-600 -mt-2">
-        Covoiturage <strong>en voiture</strong> pour aller au quai Vaiare (ou en
-        revenir) — pas le ferry. Sans compte · publication immédiate.
+        Publiez votre trajet en voiture : jour, heure, places, frais et vos
+        coordonnées. Les passagers pourront s&apos;inscrire ou vous appeler.
       </p>
 
       <Field label="Trajet en voiture" required>
@@ -162,7 +170,7 @@ export function CovoiturageForm() {
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Date du trajet" required>
+        <Field label="Jour du trajet" required>
           <input
             type="date"
             name="tripDate"
@@ -180,6 +188,25 @@ export function CovoiturageForm() {
           />
         </Field>
       </div>
+
+      <Field label="Jours (si trajet régulier, optionnel)">
+        <div className="flex flex-wrap gap-2">
+          {CARPOOL_WEEKDAYS.map((day) => (
+            <label
+              key={day.value}
+              className="inline-flex items-center gap-1.5 rounded-full border border-ocean-200 bg-ocean-50/50 px-3 py-1.5 text-sm text-ocean-800 cursor-pointer has-[:checked]:border-lagon-500 has-[:checked]:bg-lagon-50"
+            >
+              <input
+                type="checkbox"
+                name="weekdays"
+                value={day.value}
+                className="rounded border-ocean-300 text-lagon-600"
+              />
+              {day.label}
+            </label>
+          ))}
+        </div>
+      </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Départ (prise en charge)" required>
@@ -210,7 +237,7 @@ export function CovoiturageForm() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Places disponibles" required>
+        <Field label="Places disponibles dans la voiture" required>
           <input
             type="number"
             name="seats"
@@ -221,11 +248,11 @@ export function CovoiturageForm() {
             className="form-input"
           />
         </Field>
-        <Field label="Partage frais (optionnel)">
+        <Field label="Frais de participation (optionnel)">
           <input
             name="priceShare"
             maxLength={80}
-            placeholder="Ex. 500 XPF, gratuit"
+            placeholder="Ex. 500 XPF par personne, gratuit"
             className="form-input"
           />
         </Field>
@@ -242,10 +269,16 @@ export function CovoiturageForm() {
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Votre prénom" required>
-          <input name="author" required maxLength={80} className="form-input" />
+        <Field label="Votre nom" required>
+          <input
+            name="author"
+            required
+            maxLength={80}
+            placeholder="Prénom et nom"
+            className="form-input"
+          />
         </Field>
-        <Field label="Téléphone / WhatsApp" required>
+        <Field label="Votre téléphone / WhatsApp" required>
           <input
             name="phone"
             required

@@ -370,6 +370,15 @@ export type CommercePaymentRow = {
   completed_at: string | null;
 };
 
+export type CarpoolSignupRow = {
+  id: string;
+  announcement_id: string;
+  name: string;
+  phone: string;
+  message: string | null;
+  created_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -379,6 +388,7 @@ export type Database = {
       articles: TableDef<ArticleRow>;
       events: TableDef<EventRow>;
       announcements: TableDef<AnnouncementRow>;
+      carpool_signups: TableDef<CarpoolSignupRow>;
       restaurants: TableDef<RestaurantRow>;
       accommodations: TableDef<AccommodationRow>;
       activities: TableDef<ActivityRow>;
