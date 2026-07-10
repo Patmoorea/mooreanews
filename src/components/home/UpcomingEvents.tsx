@@ -3,18 +3,9 @@ import { ArrowRight, MapPin, Tag } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { getUpcomingEvents } from "@/lib/content";
+import { getEventCategoryVariant } from "@/lib/content-labels";
 import { PosterImage } from "@/components/PosterImage";
 import { hasPoster } from "@/lib/has-poster";
-
-const CATEGORY_VARIANTS = {
-  musique: "tiare",
-  marche: "soleil",
-  sport: "tipanier",
-  fete: "couchant",
-  culture: "ocean",
-  autre: "neutral",
-  communaute: "ocean",
-} as const;
 
 export async function UpcomingEvents() {
   const events = await getUpcomingEvents(6);
@@ -78,7 +69,7 @@ export async function UpcomingEvents() {
                     />
                   ) : null}
                   <div className="p-5 flex-1">
-                    <Badge variant={CATEGORY_VARIANTS[e.category] ?? "neutral"}>
+                    <Badge variant={getEventCategoryVariant(e.category)}>
                       {e.category}
                     </Badge>
                     <h3 className="mt-2 font-display text-lg text-ocean-900 leading-tight group-hover:text-tiare-600 transition-colors">

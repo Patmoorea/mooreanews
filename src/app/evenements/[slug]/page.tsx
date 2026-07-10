@@ -16,6 +16,7 @@ import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { ShareButtons } from "@/components/ShareButtons";
 import { getEventBySlug, getEvents, getUpcomingEvents } from "@/lib/content";
+import { getEventCategoryVariant } from "@/lib/content-labels";
 import { formatDateFR } from "@/lib/utils";
 import { SITE } from "@/lib/constants";
 import { buildEventJsonLd } from "@/lib/event-jsonld";
@@ -45,15 +46,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     type: "article",
   });
 }
-
-const CATEGORY_VARIANTS = {
-  musique: "tiare",
-  marche: "soleil",
-  sport: "tipanier",
-  fete: "couchant",
-  culture: "ocean",
-  autre: "neutral",
-} as const;
 
 /**
  * Construit une URL Google Calendar pour ajouter l'événement directement.
@@ -137,7 +129,7 @@ export default async function EventDetailPage({ params }: Props) {
           </Link>
 
           <div className="flex items-center gap-3 mb-4">
-            <Badge variant={CATEGORY_VARIANTS[event.category]}>
+            <Badge variant={getEventCategoryVariant(event.category)}>
               {event.category}
             </Badge>
           </div>
@@ -281,7 +273,7 @@ export default async function EventDetailPage({ params }: Props) {
                   href={`/evenements/${e.slug}`}
                   className="group bg-white rounded-2xl border border-ocean-100 p-5 hover:border-tiare-300 hover:shadow-[var(--shadow-tropical)] hover:-translate-y-0.5 transition-all"
                 >
-                  <Badge variant={CATEGORY_VARIANTS[e.category]}>
+                  <Badge variant={getEventCategoryVariant(e.category)}>
                     {e.category}
                   </Badge>
                   <h3 className="mt-2 font-display text-lg text-ocean-900 group-hover:text-tiare-600 transition-colors">

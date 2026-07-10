@@ -1,4 +1,5 @@
-import type { Activity, Announcement, InfoPratique } from "@/lib/content-types";
+import { CATEGORIES, type CategorySlug } from "@/lib/constants";
+import type { Activity, Announcement, Event, InfoPratique } from "@/lib/content-types";
 
 const ANNOUNCEMENT_TYPES = [
   "vente",
@@ -30,6 +31,56 @@ export function normalizeAnnouncementType(
 
 export function getAnnouncementTypeMeta(type: Announcement["type"]) {
   return ANNOUNCEMENT_TYPE_LABELS[type] ?? ANNOUNCEMENT_TYPE_LABELS.service;
+}
+
+const EVENT_CATEGORIES = [
+  "musique",
+  "marche",
+  "sport",
+  "fete",
+  "culture",
+  "autre",
+] as const satisfies readonly Event["category"][];
+
+/** Catégories legacy (ex. communaute) → catégorie agenda valide. */
+export function normalizeEventCategory(
+  category: string | null | undefined,
+): Event["category"] {
+  const raw = (category ?? "").trim().toLowerCase();
+  if ((EVENT_CATEGORIES as readonly string[]).includes(raw)) {
+    return raw as Event["category"];
+  }
+  if (raw === "communaute" || raw === "community") return "autre";
+  return "autre";
+}
+
+export const EVENT_CATEGORY_VARIANTS: Record<
+  Event["category"],
+  "tiare" | "soleil" | "tipanier" | "couchant" | "ocean" | "neutral"
+> = {
+  musique: "tiare",
+  marche: "soleil",
+  sport: "tipanier",
+  fete: "couchant",
+  culture: "ocean",
+  autre: "neutral",
+};
+
+export function getEventCategoryVariant(category: Event["category"]) {
+  return EVENT_CATEGORY_VARIANTS[category] ?? "neutral";
+}
+
+const ARTICLE_CATEGORY_SLUGS = CATEGORIES.map((c) => c.slug);
+
+/** Catégorie article inconnue → actualités (évite un crash d’affichage). */
+export function normalizeArticleCategory(
+  category: string | null | undefined,
+): CategorySlug {
+  const raw = (category ?? "").trim().toLowerCase();
+  if (ARTICLE_CATEGORY_SLUGS.includes(raw as CategorySlug)) {
+    return raw as CategorySlug;
+  }
+  return "actualites";
 }
 
 export const ANNOUNCEMENT_TYPE_LABELS: Record<

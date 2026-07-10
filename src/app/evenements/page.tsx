@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { StayDateFilter } from "@/components/visiteurs/StayDateFilter";
 import { getEventsBetween, getUpcomingEvents } from "@/lib/content";
+import { getEventCategoryVariant } from "@/lib/content-labels";
 import { listingPageMetadata } from "@/lib/seo";
 import { PosterImage } from "@/components/PosterImage";
 import { hasPoster } from "@/lib/has-poster";
@@ -19,16 +20,6 @@ export const metadata = listingPageMetadata({
     "Tous les événements à venir sur Moorea : concerts, marchés, fêtes traditionnelles, sport, culture.",
   path: "/evenements",
 });
-
-const CATEGORY_VARIANTS = {
-  musique: "tiare",
-  marche: "soleil",
-  sport: "tipanier",
-  fete: "couchant",
-  culture: "ocean",
-  autre: "neutral",
-  communaute: "ocean",
-} as const;
 
 type Props = {
   searchParams: Promise<{ du?: string; au?: string }>;
@@ -112,7 +103,7 @@ export default async function EvenementsPage({ searchParams }: Props) {
                     ) : null}
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <Badge variant={CATEGORY_VARIANTS[e.category]}>
+                        <Badge variant={getEventCategoryVariant(e.category)}>
                           {e.category}
                         </Badge>
                         <span className="text-xs text-ocean-600 flex items-center gap-1">

@@ -51,7 +51,11 @@ import type {
 } from "@/lib/supabase/types";
 import { normalizeTitleKey } from "@/lib/cover-image";
 import { dedupeArticlesForDisplay } from "@/lib/article-dedupe";
-import { normalizeAnnouncementType } from "@/lib/content-labels";
+import {
+  normalizeAnnouncementType,
+  normalizeArticleCategory,
+  normalizeEventCategory,
+} from "@/lib/content-labels";
 import { parseCarpoolBody, type ParsedCarpoolOffer } from "@/lib/covoiturage";
 import { getCarpoolSignupCounts } from "@/lib/carpool-signups";
 import {
@@ -357,7 +361,7 @@ function articleFromRow(r: ArticleRow): Article {
     title: r.title,
     excerpt: r.excerpt,
     body: r.body,
-    category: r.category as Article["category"],
+    category: normalizeArticleCategory(r.category),
     tags: r.tags ?? undefined,
     image,
     author: r.author ?? undefined,
@@ -387,7 +391,7 @@ function eventFromRow(r: EventRow): Event {
     slug: r.id,
     title: r.title,
     description: r.description,
-    category: r.category as Event["category"],
+    category: normalizeEventCategory(r.category),
     date: r.date,
     endDate: r.end_date ?? undefined,
     time: r.start_time ?? undefined,
