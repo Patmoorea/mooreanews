@@ -1,0 +1,40 @@
+# Surveillance MooreaNews toutes les 5 min → alerte Telegram si panne.
+name: Site health MooreaNews
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: site-health
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Probe + alerte Telegram
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET manquant"
+            exit 1
+          fi
+          url="https://www.mooreanews.com/api/cron/site-health?secret=${CRON_SECRET}"
+          code=$(curl -sS -o /tmp/site-health.json -w "%{http_code}" --max-time 55 "$url")
+          echo "HTTP ${code}"
+          cat /tmp/site-health.json
+          echo ""
+          if [ "$code" = "401" ]; then
+            echo "CRON_SECRET incorrect"
+            exit 1
+          fi
+          # 503 = site en panne mais sonde exécutée (Telegram envoyé si besoin)
+          if [ "$code" != "200" ] && [ "$code" != "503" ]; then
+            echo "Échec sonde site-health"
+            exit 1
+          fi

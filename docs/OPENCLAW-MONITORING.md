@@ -13,6 +13,17 @@ Dans `.env.local` (mêmes valeurs que Vercel si possible) :
 | `CRON_SECRET` | optionnel — auto-fix veille/coupures |
 | `NEXT_PUBLIC_SITE_URL` | défaut `https://www.mooreanews.com` |
 
+## Surveillance automatique (recommandé)
+
+Un workflow **GitHub Actions** appelle `/api/cron/site-health` **toutes les 5 minutes** :
+
+- Fichier : `.github/workflows/site-health.yml`
+- Si l’accueil ou une page clé est en HTTP 500 → **Telegram** `🚨 MooreaNews INDISPONIBLE`
+- Quand le site revient → `✅ site de nouveau OK`
+- Cooldown : pas plus d’une alerte identique toutes les **30 minutes**
+
+Prérequis : `CRON_SECRET`, `TELEGRAM_BOT_TOKEN` et `TELEGRAM_CHAT_ID` sur **Vercel** (le cron tourne sur le serveur).
+
 ## Test manuel
 
 ```bash

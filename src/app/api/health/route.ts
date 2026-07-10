@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
+import {
+  probePublicPage,
+  PUBLIC_HEALTH_PAGES,
+  siteBaseUrl,
+} from "@/lib/site-health-probe";
 
 export const dynamic = "force-dynamic";
 
-const PUBLIC_PAGES = [
-  { path: "/", label: "accueil" },
-  { path: "/alertes", label: "alertes" },
-  { path: "/coupures", label: "coupures" },
-  { path: "/actualites", label: "actualites" },
-] as const;
+const PUBLIC_PAGES = PUBLIC_HEALTH_PAGES;
 
 type PageProbe = {
   path: string;
@@ -25,32 +25,7 @@ async function probePage(
   label: string,
   timeoutMs = 25_000,
 ): Promise<PageProbe> {
-  const url = `${base}${path}`;
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, {
-      cache: "no-store",
-      signal: ctrl.signal,
-      redirect: "follow",
-    });
-    return {
-      path,
-      label,
-      status: res.status,
-      ok: res.ok && res.status < 500,
-    };
-  } catch (e) {
-    return {
-      path,
-      label,
-      status: 0,
-      ok: false,
-      error: (e as Error).message,
-    };
-  } finally {
-    clearTimeout(timer);
-  }
+  return probePublicPage(base, path, label, timeoutMs);
 }
 
 /**
@@ -59,9 +34,7 @@ async function probePage(
  * GET /api/health?secret=CRON_SECRET
  */
 export async function GET(req: Request) {
-  const base = (
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.mooreanews.com"
-  ).replace(/\/$/, "");
+  const base = siteBaseUrl();
   const verbose = await verifyCronAuth(req);
 
   const pages = await Promise.all(
