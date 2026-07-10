@@ -605,7 +605,7 @@ export async function approveSubmission(id: string, formData: FormData) {
       .insert({
         title: sub.title,
         description: sub.description,
-        category: "communaute",
+        category: "autre",
         date: sub.date || new Date().toISOString().slice(0, 10),
         start_time: sub.start_time,
         location: sub.location || "Moorea",

@@ -13,6 +13,7 @@ const CATEGORY_VARIANTS = {
   fete: "couchant",
   culture: "ocean",
   autre: "neutral",
+  communaute: "ocean",
 } as const;
 
 export async function UpcomingEvents() {
@@ -77,7 +78,7 @@ export async function UpcomingEvents() {
                     />
                   ) : null}
                   <div className="p-5 flex-1">
-                    <Badge variant={CATEGORY_VARIANTS[e.category]}>
+                    <Badge variant={CATEGORY_VARIANTS[e.category] ?? "neutral"}>
                       {e.category}
                     </Badge>
                     <h3 className="mt-2 font-display text-lg text-ocean-900 leading-tight group-hover:text-tiare-600 transition-colors">
