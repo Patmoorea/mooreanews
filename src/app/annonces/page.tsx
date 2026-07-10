@@ -7,7 +7,7 @@ import { PublicationCard } from "@/components/PublicationCard";
 import { getAnnouncements } from "@/lib/content";
 import { listingPageMetadata } from "@/lib/seo";
 import { expireStaleAnnouncements } from "@/lib/announcement-expiry";
-import { ANNOUNCEMENT_TYPE_LABELS } from "@/lib/content-labels";
+import { getAnnouncementTypeMeta } from "@/lib/content-labels";
 import { timeAgo } from "@/lib/utils";
 
 export const revalidate = 300;
@@ -48,7 +48,7 @@ export default async function AnnoncesPage() {
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((a) => {
-              const t = ANNOUNCEMENT_TYPE_LABELS[a.type];
+              const t = getAnnouncementTypeMeta(a.type);
               return (
                 <PublicationCard
                   key={a.slug}

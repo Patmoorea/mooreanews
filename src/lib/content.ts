@@ -51,6 +51,7 @@ import type {
 } from "@/lib/supabase/types";
 import { normalizeTitleKey } from "@/lib/cover-image";
 import { dedupeArticlesForDisplay } from "@/lib/article-dedupe";
+import { normalizeAnnouncementType } from "@/lib/content-labels";
 import { parseCarpoolBody, type ParsedCarpoolOffer } from "@/lib/covoiturage";
 import { getCarpoolSignupCounts } from "@/lib/carpool-signups";
 import {
@@ -407,7 +408,7 @@ function announcementFromRow(r: AnnouncementRow): Announcement {
     slug: r.id,
     title: r.title,
     body: r.body,
-    type: (r.category as Announcement["type"]) ?? "service",
+    type: normalizeAnnouncementType(r.category),
     district: r.district ?? undefined,
     price: r.price ?? undefined,
     contact: r.contact ?? "",

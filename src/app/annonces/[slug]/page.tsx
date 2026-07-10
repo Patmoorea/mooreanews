@@ -6,7 +6,7 @@ import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { ShareButtons } from "@/components/ShareButtons";
 import { getAnnouncementBySlug, getAnnouncements } from "@/lib/content";
-import { ANNOUNCEMENT_TYPE_LABELS } from "@/lib/content-labels";
+import { getAnnouncementTypeMeta } from "@/lib/content-labels";
 import { SITE } from "@/lib/constants";
 import { buildPageShareMetadata } from "@/lib/seo";
 import { timeAgo } from "@/lib/utils";
@@ -42,7 +42,7 @@ export default async function AnnonceDetailPage({ params }: Props) {
   const item = await getAnnouncementBySlug(slug);
   if (!item) notFound();
 
-  const typeMeta = ANNOUNCEMENT_TYPE_LABELS[item.type];
+  const typeMeta = getAnnouncementTypeMeta(item.type);
   const shareUrl = `${SITE.url}/annonces/${item.slug}`;
   const contactHref = item.contact.includes("@")
     ? `mailto:${item.contact}`

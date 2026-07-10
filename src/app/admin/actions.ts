@@ -501,11 +501,7 @@ export async function deleteLegacyFacebookImports(): Promise<{
   const { purgeStaleFacebookImports, purgeStaleFacebookEvents } = await import(
     "@/lib/facebook-import-cleanup"
   );
-  const { purgeDuplicateArticles } = await import(
-    "@/lib/article-duplicate-cleanup"
-  );
   const { deleted } = await purgeStaleFacebookImports();
-  const { deleted: duplicatesDeleted } = await purgeDuplicateArticles();
   const eventsCleanup = await purgeStaleFacebookEvents();
 
   const { data: externalRows } = await admin
@@ -528,11 +524,7 @@ export async function deleteLegacyFacebookImports(): Promise<{
   revalidatePath("/evenements");
   revalidateArticlePublicPaths();
   return {
-    deleted:
-      deleted +
-      duplicatesDeleted +
-      eventsCleanup.unpublished +
-      eventsCleanup.deleted,
+    deleted: deleted + eventsCleanup.unpublished + eventsCleanup.deleted,
   };
 }
 
@@ -632,9 +624,9 @@ export async function approveSubmission(id: string, formData: FormData) {
       .insert({
         title: sub.title,
         body: sub.description,
-        category: sub.type === "service" ? "services" : "general",
+        category: sub.type === "service" ? "service" : "vente",
         district: sub.district,
-        contact: sub.user_email,
+        contact: sub.user_phone ?? sub.user_email,
         author: sub.user_name,
         cover_url: coverUrl,
         published: true,

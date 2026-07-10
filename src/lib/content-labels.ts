@@ -1,5 +1,37 @@
 import type { Activity, Announcement, InfoPratique } from "@/lib/content-types";
 
+const ANNOUNCEMENT_TYPES = [
+  "vente",
+  "achat",
+  "location",
+  "emploi",
+  "service",
+  "perdu-trouve",
+  "covoiturage",
+] as const satisfies readonly Announcement["type"][];
+
+/** Catégories legacy / admin → type affichable sur le site. */
+export function normalizeAnnouncementType(
+  category: string | null | undefined,
+): Announcement["type"] {
+  const raw = (category ?? "").trim().toLowerCase();
+  if ((ANNOUNCEMENT_TYPES as readonly string[]).includes(raw)) {
+    return raw as Announcement["type"];
+  }
+  switch (raw) {
+    case "services":
+    case "general":
+    case "communaute":
+      return "service";
+    default:
+      return "service";
+  }
+}
+
+export function getAnnouncementTypeMeta(type: Announcement["type"]) {
+  return ANNOUNCEMENT_TYPE_LABELS[type] ?? ANNOUNCEMENT_TYPE_LABELS.service;
+}
+
 export const ANNOUNCEMENT_TYPE_LABELS: Record<
   Announcement["type"],
   { label: string; variant: "tipanier" | "lagon" | "ocean" | "tiare" | "soleil" | "couchant" }

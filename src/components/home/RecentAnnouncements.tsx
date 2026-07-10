@@ -4,7 +4,7 @@ import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { PublicationCard } from "@/components/PublicationCard";
 import { getAnnouncements } from "@/lib/content";
-import { ANNOUNCEMENT_TYPE_LABELS } from "@/lib/content-labels";
+import { getAnnouncementTypeMeta } from "@/lib/content-labels";
 
 export async function RecentAnnouncements() {
   const items = (await getAnnouncements()).slice(0, 6);
@@ -37,7 +37,7 @@ export async function RecentAnnouncements() {
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((a) => {
-            const t = ANNOUNCEMENT_TYPE_LABELS[a.type];
+            const t = getAnnouncementTypeMeta(a.type);
             return (
               <PublicationCard
                 key={a.slug}
