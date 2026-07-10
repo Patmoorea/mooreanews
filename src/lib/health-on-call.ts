@@ -3,6 +3,7 @@
  */
 
 import { cache } from "react";
+import { revalidateTag } from "next/cache";
 import {
   clearGardeMooreaMemoryCache,
   getGardeMooreaForNow,
@@ -29,7 +30,7 @@ const DSP_GARDE_PHONES = [
   { label: "Direction de la santé", phone: "40 47 01 47", phoneHref: "tel:+68940470147" },
 ] as const;
 
-const CACHE_MS = 6 * 60 * 60 * 1000;
+const CACHE_MS = 5 * 60 * 1000;
 let dataCache: { at: number; data: HealthOnCallData } | null = null;
 
 function buildPeriodLabel(d: Date, weekendLabel: string | null): string {
@@ -96,6 +97,7 @@ export const getHealthOnCall = cache(getHealthOnCallUncached);
 export function clearHealthOnCallCache(): void {
   dataCache = null;
   clearGardeMooreaMemoryCache();
+  revalidateTag("garde-moorea", "max");
 }
 
 export async function syncHealthOnCall(

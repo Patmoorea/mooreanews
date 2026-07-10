@@ -1,5 +1,5 @@
 import { after, NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import { getTahitiClock, shouldSyncGardeOnVeille } from "@/lib/cron-tahiti";
 import { syncHealthOnCall } from "@/lib/health-on-call";
@@ -11,12 +11,16 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 async function notifyGardeGap(result: Awaited<ReturnType<typeof syncHealthOnCall>>) {
-  if (result.found && result.doctor) return;
+  const hasDoctor = Boolean(result.doctor);
+  const hasPharmacy = Boolean(result.pharmacy);
+  if (result.found && hasDoctor && hasPharmacy) return;
   const lines = [
     "<b>⚠️ Garde week-end — sync incomplète</b>",
     "",
     result.found
-      ? "Affiche trouvée mais médecin non extrait (OCR trop lent ou illisible)."
+      ? hasDoctor
+        ? "Médecin OK mais pharmacie non extraite (OCR ou affiche COPPF)."
+        : "Affiche trouvée mais médecin non extrait (OCR trop lent ou illisible)."
       : "Aucune affiche garde détectée (COPPF / Commune).",
     "",
     `Pharmacie : ${escapeHtml(result.pharmacy ?? "—")}`,
@@ -33,13 +37,14 @@ async function notifyGardeGap(result: Awaited<ReturnType<typeof syncHealthOnCall
 
 async function runGardeSync() {
   const result = await syncHealthOnCall({ fullWeekendPipeline: true });
+  revalidateTag("garde-moorea", "max");
   revalidatePath("/sante-garde");
   revalidatePath("/actualites");
   revalidatePath("/", "layout");
   if (result.articleSlug) {
     revalidatePath(`/actualites/${result.articleSlug}`);
   }
-  if (!result.found || !result.doctor) {
+  if (!result.found || !result.doctor || !result.pharmacy) {
     await notifyGardeGap(result).catch(() => {});
   }
   return result;
@@ -93,11 +98,15 @@ export async function GET(req: Request) {
 
   try {
     const result = await runGardeSync();
-    return NextResponse.json({
-      tahiti: clock.label,
-      forced: force,
-      ...result,
-    });
+    const httpStatus = result.found && result.doctor ? 200 : result.ok ? 200 : 500;
+    return NextResponse.json(
+      {
+        tahiti: clock.label,
+        forced: force,
+        ...result,
+      },
+      { status: httpStatus },
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[garde-weekend cron]", message);

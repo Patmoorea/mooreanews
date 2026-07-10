@@ -1,15 +1,18 @@
 # Garde week-end Moorea — COPPF (ordre des médecins) + Commune + OCR.
-# Tahiti UTC−10 : jeudi 17h, vendredi 6h/12h, samedi 8h, dimanche 6h.
+# Tahiti UTC−10 : mer 12h, jeu 6h/12h/17h, ven 6h/12h, sam 8h, dim 6h.
 
 name: Garde week-end MooreaNews
 
 on:
   schedule:
-    - cron: "0 3 * * 5"   # jeudi 17h Tahiti
-    - cron: "0 16 * * 5"  # vendredi 6h Tahiti
-    - cron: "0 22 * * 5"  # vendredi 12h Tahiti
-    - cron: "0 18 * * 6"  # samedi 8h Tahiti
-    - cron: "0 16 * * 0"  # dimanche 6h Tahiti
+    - cron: "0 22 * * 3"   # mercredi 12h Tahiti
+    - cron: "0 16 * * 4"   # jeudi 6h Tahiti
+    - cron: "0 22 * * 4"   # jeudi 12h Tahiti
+    - cron: "0 3 * * 5"    # jeudi 17h Tahiti
+    - cron: "0 16 * * 5"   # vendredi 6h Tahiti
+    - cron: "0 22 * * 5"   # vendredi 12h Tahiti
+    - cron: "0 18 * * 6"   # samedi 8h Tahiti
+    - cron: "0 16 * * 0"   # dimanche 6h Tahiti
   workflow_dispatch:
 
 concurrency:
@@ -36,6 +39,13 @@ jobs:
           echo "HTTP ${code}"
           head -c 1200 /tmp/garde.json || true
           echo ""
+          if [ "$code" = "200" ]; then
+            exit 0
+          fi
+          if grep -q '"found":true' /tmp/garde.json && grep -q '"doctor":' /tmp/garde.json; then
+            echo "Garde trouvée malgré HTTP ${code} — OK"
+            exit 0
+          fi
           if [ "$code" != "200" ]; then
             exit 1
           fi

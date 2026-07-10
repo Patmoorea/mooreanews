@@ -5,8 +5,9 @@
 import type { GardeMooreaSnapshot } from "@/lib/garde-moorea-auto";
 import { gardeArticleSlug } from "@/lib/garde-weekend-article";
 import {
-  isGardeWeekActive,
+  isGardeWeekRelevant,
   resolveGardeWeekendSnapshot,
+  snapshotHasGardeContent,
 } from "@/lib/garde-moorea-data";
 import { resolveGardePosterPublicUrl } from "@/lib/garde-poster-url";
 import { tahitiParts } from "@/lib/tahiti-holidays";
@@ -59,21 +60,16 @@ function isFreshGarde(snap: GardeMooreaSnapshot, now: Date): boolean {
 }
 
 function snapshotHasContent(snap: GardeMooreaSnapshot): boolean {
-  return Boolean(
-    snap.doctor?.name ||
-      snap.pharmacy?.name ||
-      snap.posterImageUrl ||
-      (snap.pharmacyHours && snap.pharmacyHours.length > 0),
-  );
+  return snapshotHasGardeContent(snap);
 }
 
 export async function getGardeWeekendHighlight(
   now = new Date(),
 ): Promise<GardeWeekendHighlight | null> {
-  const snap = await resolveGardeWeekendSnapshot();
+  const snap = await resolveGardeWeekendSnapshot(now);
   if (!snap || !snapshotHasContent(snap)) return null;
 
-  if (!isGardeWeekActive(now, snap.validFrom, snap.validTo)) {
+  if (!isGardeWeekRelevant(now, snap.validFrom, snap.validTo)) {
     return null;
   }
 

@@ -58,11 +58,51 @@ function datesFromImageUrl(url: string): ReturnType<typeof inferWeekendFromPostD
   return inferWeekendFromPostDate(iso);
 }
 
-/** Récupère l'URL de l'affiche médecins (dernier upload sur la page). */
-export async function fetchCoppfGardeImageUrl(): Promise<{
-  imageUrl: string;
+function scoreCoppfImageFileName(year: string, month: string, fname: string): number {
+  const lower = fname.toLowerCase();
+  if (/logo|favicon|plan|situation|cropped|carte/.test(lower)) return -1;
+  if (lower.includes("logo-texte")) return -1;
+
+  let score = Number(year) * 10_000 + Number(month) * 100;
+  const sem = lower.match(/sem(\d{1,2})/);
+  if (sem) score += 5_000 + Number(sem[1]) * 10;
+  if (/garde|medecin|screenshot|drive/.test(lower)) score += 200;
+  if (/gardes_\d{4}/.test(lower)) score += 150;
+  return score;
+}
+
+function parseCoppfGardeImagesFromHtml(html: string): {
+  url: string;
+  score: number;
   postedAt?: string;
-} | null> {
+}[] {
+  const candidates: { url: string; score: number; postedAt?: string }[] = [];
+  const re =
+    /src="(https:\/\/www\.ordre-pharmaciens-polynesie\.com\/wp-content\/uploads\/(\d{4})\/(\d{2})\/([^"]+\.(?:jpg|jpeg|png|webp)))"/gi;
+
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(html)) !== null) {
+    const url = match[1]!;
+    const fname = match[4]!;
+    const score = scoreCoppfImageFileName(match[2]!, match[3]!, fname);
+    if (score < 0) continue;
+
+    const dateM = fname.toLowerCase().match(/(\d{4})(\d{2})(\d{2})/);
+    const postedAt = dateM
+      ? `${dateM[1]}-${dateM[2]}-${dateM[3]}T12:00:00.000Z`
+      : `${match[2]}-${match[3]}-01T12:00:00.000Z`;
+
+    candidates.push({ url, score, postedAt });
+  }
+
+  candidates.sort((a, b) => b.score - a.score);
+  return candidates;
+}
+
+/** Toutes les affiches garde COPPF (SEM + complément horaires pharmacies). */
+export async function fetchCoppfGardeImageUrls(): Promise<
+  { imageUrl: string; postedAt?: string }[]
+> {
   try {
     const res = await fetch(COPPF_MEDECINS_GARDE_URL, {
       headers: {
@@ -72,42 +112,32 @@ export async function fetchCoppfGardeImageUrl(): Promise<{
       signal: AbortSignal.timeout(15_000),
       cache: "no-store",
     });
-    if (!res.ok) return null;
+    if (!res.ok) return [];
 
-    const html = await res.text();
-    const candidates: { url: string; score: number; postedAt?: string }[] = [];
+    const candidates = parseCoppfGardeImagesFromHtml(await res.text());
+    const seen = new Set<string>();
+    const out: { imageUrl: string; postedAt?: string }[] = [];
 
-    const re =
-      /src="(https:\/\/www\.ordre-pharmaciens-polynesie\.com\/wp-content\/uploads\/(\d{4})\/(\d{2})\/([^"]+\.(?:jpg|jpeg|png|webp)))"/gi;
-
-    let match: RegExpExecArray | null;
-    while ((match = re.exec(html)) !== null) {
-      const url = match[1]!;
-      const fname = match[4]!.toLowerCase();
-      if (/logo|favicon|plan|situation|cropped|carte/.test(fname)) continue;
-      if (fname.includes("logo-texte")) continue;
-
-      const score =
-        Number(match[2]) * 1000 +
-        Number(match[3]) * 10 +
-        (/(screenshot|garde|medecin|drive|sem\d)/i.test(fname) ? 200 : 0);
-
-      const dateM = fname.match(/(\d{4})(\d{2})(\d{2})/);
-      const postedAt = dateM
-        ? `${dateM[1]}-${dateM[2]}-${dateM[3]}T12:00:00.000Z`
-        : `${match[2]}-${match[3]}-01T12:00:00.000Z`;
-
-      candidates.push({ url, score, postedAt });
+    for (const c of candidates) {
+      if (seen.has(c.url)) continue;
+      seen.add(c.url);
+      if (c.score < 200) continue;
+      out.push({ imageUrl: c.url, postedAt: c.postedAt });
     }
 
-    candidates.sort((a, b) => b.score - a.score);
-    const best = candidates[0];
-    if (!best) return null;
-
-    return { imageUrl: best.url, postedAt: best.postedAt };
+    return out;
   } catch {
-    return null;
+    return [];
   }
+}
+
+/** Récupère l'URL de l'affiche médecins (dernier upload sur la page). */
+export async function fetchCoppfGardeImageUrl(): Promise<{
+  imageUrl: string;
+  postedAt?: string;
+} | null> {
+  const images = await fetchCoppfGardeImageUrls();
+  return images[0] ?? null;
 }
 
 /** Snapshot COPPF (affiche hebdo ordre des médecins) — source prioritaire. */

@@ -20,6 +20,7 @@ import { fetchGardeFromImportedArticles } from "@/lib/garde-site-articles";
 import {
   COPPF_MEDECINS_GARDE_URL,
   fetchCoppfGardeImageUrl,
+  fetchCoppfGardeImageUrls,
   fetchCoppfGardeSnapshot,
 } from "@/lib/garde-ordre-pharmaciens";
 import { withGardeOcrSession } from "@/lib/garde-poster-ocr";
@@ -28,7 +29,6 @@ import {
   renderAndUploadMooreaNewsGardePoster,
 } from "@/lib/garde-weekend-poster-sync";
 import {
-  isGardeWeekActive,
   isGardeWeekRelevant,
   pickBestGardeSnapshot,
   readGardeFileSnapshot,
@@ -117,7 +117,7 @@ export function snapshotToPublicDuties(
   snap: GardeMooreaSnapshot,
   now: Date,
 ): { pharmacy: OnCallDuty | null; doctor: OnCallDuty | null; weekendLabel: string | null } {
-  if (!isGardeWeekActive(now, snap.validFrom, snap.validTo)) {
+  if (!isGardeWeekRelevant(now, snap.validFrom, snap.validTo)) {
     return { pharmacy: null, doctor: null, weekendLabel: null };
   }
 
@@ -384,6 +384,7 @@ async function enrichFromPosterOcr(
   if (!needsOcr) return { snap, ocrUsed: false };
 
   const coppfMeta = await fetchCoppfGardeImageUrl().catch(() => null);
+  const coppfImages = await fetchCoppfGardeImageUrls().catch(() => []);
   if (
     coppfMeta?.imageUrl &&
     !snap.communePosterUrl?.includes("ordre-pharmaciens")
@@ -401,6 +402,7 @@ async function enrichFromPosterOcr(
   };
   add(snap.communePosterUrl);
   add(coppfMeta?.imageUrl);
+  for (const img of coppfImages) add(img.imageUrl);
   if (snap.posterImageUrl?.startsWith("http")) add(snap.posterImageUrl);
 
   if (!urls.length) {
@@ -411,20 +413,26 @@ async function enrichFromPosterOcr(
   let ocrError: string | undefined;
   let working = snap;
 
-  await withGardeOcrSession(async (session) => {
-    for (const url of urls) {
-      const ocr = await session.recognizeImageUrl(url);
-      if (ocr.ok && ocr.text) {
-        working = mergeGardeOcrIntoSnapshot(working, ocr.text);
-        ocrUsed = true;
-        if (working.doctor?.name && (working.pharmacyHours?.length ?? 0) > 0) {
-          break;
+  try {
+    await withGardeOcrSession(async (session) => {
+      for (const url of urls) {
+        const ocr = await session.recognizeImageUrl(url);
+        if (ocr.ok && ocr.text) {
+          working = mergeGardeOcrIntoSnapshot(working, ocr.text);
+          ocrUsed = true;
+          if (working.doctor?.name && (working.pharmacyHours?.length ?? 0) > 0) {
+            break;
+          }
+        } else if (!ocrError) {
+          ocrError = ocr.error ?? `ocr vide (${url.slice(0, 80)})`;
         }
-      } else if (!ocrError) {
-        ocrError = ocr.error ?? `ocr vide (${url.slice(0, 80)})`;
       }
-    }
-  });
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    ocrError = msg.slice(0, 280);
+    console.error("[garde-ocr] session failed:", ocrError);
+  }
 
   return { snap: working, ocrUsed, ocrError };
 }
@@ -500,6 +508,11 @@ export async function syncGardeMooreaFromCommune(
     snap.communePosterUrl = snap.posterImageUrl;
   }
 
+  const fileSnap = await readGardeFileSnapshot();
+  if (fileSnap?.validFrom === snap.validFrom) {
+    snap = mergeGardeSnapshots(snap, fileSnap);
+  }
+
   const ocrEnriched = await enrichFromPosterOcr(
     snap,
     Boolean(options.fullWeekendPipeline) || !snap.doctor?.name,
@@ -526,7 +539,6 @@ export async function syncGardeMooreaFromCommune(
     }
   }
 
-  const fileSnap = await readGardeFileSnapshot();
   if (fileSnap?.validFrom === snap.validFrom) {
     snap = mergeGardeSnapshots(snap, fileSnap);
   }
@@ -541,11 +553,13 @@ export async function syncGardeMooreaFromCommune(
 
   await writeGardeMooreaCache(snap);
 
+  const duties = snapshotToPublicDuties(snap, now);
+
   return {
     ok: true,
     found: true,
-    pharmacy: snap.pharmacy?.name ?? null,
-    doctor: snap.doctor?.name ?? null,
+    pharmacy: duties.pharmacy?.name ?? snap.pharmacy?.name ?? null,
+    doctor: duties.doctor?.name ?? snap.doctor?.name ?? null,
     weekend: snap.label,
     articleSlug: snap.articleSlug ?? gardeArticleSlug(snap.validFrom),
     ocrUsed,

@@ -251,11 +251,12 @@ export async function readGardeFileSnapshot(): Promise<GardeMooreaSnapshot | nul
   return fileToSnapshot(file);
 }
 
-function snapshotHasContent(snap: GardeMooreaSnapshot): boolean {
+export function snapshotHasGardeContent(snap: GardeMooreaSnapshot): boolean {
   return Boolean(
     snap.doctor?.name ||
       snap.pharmacy?.name ||
       snap.posterImageUrl ||
+      snap.communePosterUrl ||
       (snap.pharmacyHours && snap.pharmacyHours.length > 0),
   );
 }
@@ -270,7 +271,9 @@ export async function resolveGardeWeekendSnapshot(
 
   const candidates = [cached, file].filter(
     (s): s is GardeMooreaSnapshot =>
-      s != null && snapshotHasContent(s) && isGardeWeekActive(now, s.validFrom, s.validTo),
+      s != null &&
+      snapshotHasGardeContent(s) &&
+      isGardeWeekRelevant(now, s.validFrom, s.validTo),
   );
 
   const best = pickBestGardeSnapshot(candidates, now);
@@ -317,7 +320,7 @@ async function fromFile(now: Date): Promise<{
   weekendLabel: string | null;
 }> {
   const file = await readGardeFileRaw();
-  if (!file || !isGardeWeekActive(now, file.validFrom, file.validTo)) {
+  if (!file || !isGardeWeekRelevant(now, file.validFrom, file.validTo)) {
     return { pharmacy: null, doctor: null, weekendLabel: null };
   }
   const label = file.label?.trim() || `${file.validFrom} → ${file.validTo}`;

@@ -1,14 +1,14 @@
 {
-  "validFrom": "2026-07-04",
-  "validTo": "2026-07-05",
-  "label": "Samedi 04 / Dimanche 05 juillet 2026",
-  "posterImageUrl": "https://www.ordre-pharmaciens-polynesie.com/wp-content/uploads/2026/07/2026_GARDES_SEM27.jpg",
+  "validFrom": "2026-07-11",
+  "validTo": "2026-07-12",
+  "label": "Samedi 11 / Dimanche 12 juillet 2026",
+  "posterImageUrl": "https://www.ordre-pharmaciens-polynesie.com/wp-content/uploads/2026/07/2026_GARDES_SEM28.jpg",
   "doctor": {
-    "name": "DARIER Aurélie",
-    "phone": "87 04 11 88",
+    "name": "BLIN",
+    "phone": "40 43 50 68",
     "hours": {
-      "saturday": "12h00 – 18h00",
-      "sunday": "8h00 – 16h00"
+      "saturday": "12h00 – 22h00",
+      "sunday": "06h00 – 22h00"
     }
   },
   "pharmacyHours": [

@@ -86,35 +86,42 @@ type OcrWorker = Awaited<
 export class GardeOcrSession {
   private worker: OcrWorker | null = null;
 
-  async init(): Promise<void> {
-    if (this.worker) return;
+  async init(): Promise<string | null> {
+    if (this.worker) return null;
 
-    const { createWorker, PSM } = await import("tesseract.js");
-    const paths = tesseractPaths();
+    try {
+      const { createWorker, PSM } = await import("tesseract.js");
+      const paths = tesseractPaths();
 
-    this.worker = await withTimeout(
-      createWorker("fra", 1, {
-        ...paths,
-        gzip: true,
-        workerBlobURL: false,
-        logger: () => {},
-        errorHandler: (err: unknown) => {
-          console.error("[garde-ocr] worker error:", err);
-        },
-      }),
-      OCR_WORKER_INIT_TIMEOUT_MS,
-      "ocr_worker_init_timeout",
-    );
+      this.worker = await withTimeout(
+        createWorker("fra", 1, {
+          ...paths,
+          gzip: true,
+          workerBlobURL: false,
+          logger: () => {},
+          errorHandler: (err: unknown) => {
+            console.error("[garde-ocr] worker error:", err);
+          },
+        }),
+        OCR_WORKER_INIT_TIMEOUT_MS,
+        "ocr_worker_init_timeout",
+      );
 
-    await this.worker.setParameters({
-      tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
-    });
+      await this.worker.setParameters({
+        tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
+      });
+      return null;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[garde-ocr] init failed:", msg);
+      return msg.slice(0, 280);
+    }
   }
 
   async recognizeBuffer(buffer: Buffer): Promise<{ text: string | null; error?: string }> {
-    await this.init();
-    if (!this.worker) {
-      return { text: null, error: "worker OCR indisponible" };
+    const initError = await this.init();
+    if (initError || !this.worker) {
+      return { text: null, error: initError ?? "worker OCR indisponible" };
     }
 
     try {

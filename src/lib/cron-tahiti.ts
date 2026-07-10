@@ -60,9 +60,10 @@ export function shouldPublishGardeWeekend(clock: TahitiClock): boolean {
   return clock.weekday === 5 && clock.hour >= 5 && clock.hour <= 8;
 }
 
-/** Veille horaire : sync garde ven–dim (+ jeu ≥17h si commune publie tôt). */
+/** Veille horaire : sync garde dès le jeudi matin Tahiti (COPPF publie souvent avant la commune). */
 export function shouldSyncGardeOnVeille(clock: TahitiClock): boolean {
-  if (clock.weekday === 4 && clock.hour >= 17) return true;
+  if (clock.weekday === 4) return true;
+  if (clock.weekday === 3 && clock.hour >= 12) return true;
   return clock.weekday === 5 || clock.weekday === 6 || clock.weekday === 0;
 }
 
