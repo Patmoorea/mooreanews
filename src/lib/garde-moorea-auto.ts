@@ -379,7 +379,7 @@ async function enrichFromPosterOcr(
     (!snap.doctor?.name ||
       !isMooreaGardeDoctor(snap.doctor) ||
       !snap.pharmacyHours?.length ||
-      !snap.doctorHours?.saturday);
+      (!snap.doctorHours?.saturday && !snap.doctorHours?.sunday));
 
   if (!needsOcr) return { snap, ocrUsed: false };
 

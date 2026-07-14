@@ -1,5 +1,7 @@
 /** Heure locale Polynésie (UTC−10, pas de changement d'heure). */
 
+import { isTahitiPublicHoliday } from "@/lib/tahiti-holidays";
+
 const DAY_INDEX: Record<string, number> = {
   Sunday: 0,
   Monday: 1,
@@ -60,8 +62,16 @@ export function shouldPublishGardeWeekend(clock: TahitiClock): boolean {
   return clock.weekday === 5 && clock.hour >= 5 && clock.hour <= 8;
 }
 
-/** Veille horaire : sync garde dès le jeudi matin Tahiti (COPPF publie souvent avant la commune). */
-export function shouldSyncGardeOnVeille(clock: TahitiClock): boolean {
+/** Veille horaire : sync garde week-end + jours fériés (COPPF publie aussi les affiches férié). */
+export function shouldSyncGardeOnVeille(
+  clock: TahitiClock,
+  now = new Date(),
+): boolean {
+  if (isTahitiPublicHoliday(now)) return true;
+  // Veille d’un jour férié (affiche COPPF souvent la veille).
+  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  if (isTahitiPublicHoliday(tomorrow)) return true;
+
   if (clock.weekday === 4) return true;
   if (clock.weekday === 3 && clock.hour >= 12) return true;
   return clock.weekday === 5 || clock.weekday === 6 || clock.weekday === 0;

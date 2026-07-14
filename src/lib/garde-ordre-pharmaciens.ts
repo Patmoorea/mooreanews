@@ -9,6 +9,7 @@ import {
   isGardeWeekRelevant,
   pickBestGardeSnapshot,
 } from "@/lib/garde-moorea-data";
+import { formatTahitiDay, tahitiDateKey, tahitiHolidayLabel } from "@/lib/tahiti-holidays";
 
 export const COPPF_MEDECINS_GARDE_URL =
   "https://www.ordre-pharmaciens-polynesie.com/medecins-de-garde/";
@@ -16,11 +17,17 @@ export const COPPF_MEDECINS_GARDE_URL =
 export const COPPF_PHARMACIES_GARDE_URL =
   "https://www.ordre-pharmaciens-polynesie.com/pharmacies-de-garde/";
 
+export type GardeDateRange = {
+  validFrom: string;
+  validTo: string;
+  label: string;
+};
+
 /** Samedi–dimanche de la semaine ISO N (affiche type 2026_GARDES_SEM26.jpg). */
 export function weekendFromIsoWeek(
   year: number,
   isoWeek: number,
-): { validFrom: string; validTo: string; label: string } {
+): GardeDateRange {
   const jan4 = new Date(Date.UTC(year, 0, 4));
   const dayOfWeek = jan4.getUTCDay() || 7;
   const mondayWeek1 = new Date(jan4);
@@ -40,43 +47,108 @@ export function weekendFromIsoWeek(
   };
 }
 
-function datesFromImageUrl(url: string): ReturnType<typeof inferWeekendFromPostDate> {
+/** Affiche férié COPPF type 2026_GARDES_1402maj.jpg → jour 14 + mois du dossier upload (07). */
+export function holidayDatesFromFilename(
+  fname: string,
+  yearHint?: number,
+  monthHint?: number,
+): GardeDateRange | null {
+  const base = fname.replace(/\.[a-z]+$/i, "");
+  // GARDES_1402maj, GARDES_1407, GARDE_14_07…
+  const ddmmyy =
+    base.match(/gardes?[_\-]?(\d{2})(\d{2})(?:maj|bis|v\d+)?$/i) ??
+    base.match(/(\d{2})(\d{2})(?:maj|bis)$/i);
+  if (!ddmmyy) return null;
+
+  let day = Number(ddmmyy[1]);
+  let month = Number(ddmmyy[2]);
+
+  // Souvent JJ + version (ex. 1402maj = 14 du mois, maj n°2) quand le MM
+  // ne colle pas au dossier d’upload (/2026/07/…).
+  if (monthHint && monthHint >= 1 && monthHint <= 12) {
+    if (month !== monthHint) {
+      month = monthHint;
+    }
+  }
+
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+
+  const year = yearHint ?? new Date().getFullYear();
+  const iso = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  const fakeNoon = new Date(`${iso}T12:00:00.000Z`);
+  const holiday = tahitiHolidayLabel(fakeNoon);
+  const dayLabel = formatTahitiDay(fakeNoon);
+  return {
+    validFrom: iso,
+    validTo: iso,
+    label: holiday ? `${dayLabel} — ${holiday}` : `${dayLabel} — jour férié`,
+  };
+}
+
+function datesFromImageUrl(url: string): GardeDateRange | null {
   const fname = (url.split("/").pop() ?? "").replace(/\.[a-z]+$/i, "");
   const yearFromPath = url.match(/uploads\/(\d{4})\//)?.[1];
+  const monthFromPath = url.match(/uploads\/\d{4}\/(\d{2})\//)?.[1];
   const year = yearFromPath ? Number(yearFromPath) : new Date().getFullYear();
+  const monthHint = monthFromPath ? Number(monthFromPath) : undefined;
+
+  const holiday = holidayDatesFromFilename(fname, year, monthHint);
+  if (holiday) return holiday;
 
   const sem = fname.match(/SEM(\d{1,2})/i);
   if (sem) {
     return weekendFromIsoWeek(year, Number(sem[1]));
   }
 
-  const m =
-    url.match(/(\d{4})[._-]?(\d{2})[._-]?(\d{2})/) ??
-    url.match(/(\d{4})\/(\d{2})\/[^/]+/);
-  if (!m) return null;
-  const iso = `${m[1]}-${m[2]}-${m[3]}T12:00:00.000Z`;
-  return inferWeekendFromPostDate(iso);
+  // Éviter de parser 2026/07/2026… comme jour 20
+  const explicit =
+    fname.match(/^(\d{4})[._-](\d{2})[._-](\d{2})/) ??
+    fname.match(/(\d{4})(\d{2})(\d{2})/);
+  if (explicit) {
+    const iso = `${explicit[1]}-${explicit[2]}-${explicit[3]}T12:00:00.000Z`;
+    return inferWeekendFromPostDate(iso);
+  }
+
+  return null;
 }
 
-function scoreCoppfImageFileName(year: string, month: string, fname: string): number {
+function scoreCoppfImageFileName(
+  year: string,
+  month: string,
+  fname: string,
+  todayKey: string,
+): number {
   const lower = fname.toLowerCase();
   if (/logo|favicon|plan|situation|cropped|carte/.test(lower)) return -1;
   if (lower.includes("logo-texte")) return -1;
 
   let score = Number(year) * 10_000 + Number(month) * 100;
+  const holiday = holidayDatesFromFilename(fname, Number(year), Number(month));
+  if (holiday) {
+    score += 8_000;
+    if (holiday.validFrom === todayKey) score += 50_000;
+  }
   const sem = lower.match(/sem(\d{1,2})/);
   if (sem) score += 5_000 + Number(sem[1]) * 10;
   if (/garde|medecin|screenshot|drive/.test(lower)) score += 200;
   if (/gardes_\d{4}/.test(lower)) score += 150;
+  if (/ferie|férié|maj/.test(lower)) score += 400;
   return score;
 }
 
-function parseCoppfGardeImagesFromHtml(html: string): {
+function parseCoppfGardeImagesFromHtml(html: string, now = new Date()): {
   url: string;
   score: number;
   postedAt?: string;
+  dates: GardeDateRange | null;
 }[] {
-  const candidates: { url: string; score: number; postedAt?: string }[] = [];
+  const todayKey = tahitiDateKey(now);
+  const candidates: {
+    url: string;
+    score: number;
+    postedAt?: string;
+    dates: GardeDateRange | null;
+  }[] = [];
   const re =
     /src="(https:\/\/www\.ordre-pharmaciens-polynesie\.com\/wp-content\/uploads\/(\d{4})\/(\d{2})\/([^"]+\.(?:jpg|jpeg|png|webp)))"/gi;
 
@@ -84,24 +156,32 @@ function parseCoppfGardeImagesFromHtml(html: string): {
   while ((match = re.exec(html)) !== null) {
     const url = match[1]!;
     const fname = match[4]!;
-    const score = scoreCoppfImageFileName(match[2]!, match[3]!, fname);
+    const score = scoreCoppfImageFileName(match[2]!, match[3]!, fname, todayKey);
     if (score < 0) continue;
 
+    const dates = datesFromImageUrl(url);
     const dateM = fname.toLowerCase().match(/(\d{4})(\d{2})(\d{2})/);
     const postedAt = dateM
       ? `${dateM[1]}-${dateM[2]}-${dateM[3]}T12:00:00.000Z`
-      : `${match[2]}-${match[3]}-01T12:00:00.000Z`;
+      : dates
+        ? `${dates.validFrom}T12:00:00.000Z`
+        : `${match[2]}-${match[3]}-01T12:00:00.000Z`;
 
-    candidates.push({ url, score, postedAt });
+    candidates.push({ url, score, postedAt, dates });
   }
 
-  candidates.sort((a, b) => b.score - a.score);
+  candidates.sort((a, b) => {
+    const aRel = a.dates ? Number(isGardeWeekRelevant(now, a.dates.validFrom, a.dates.validTo)) : 0;
+    const bRel = b.dates ? Number(isGardeWeekRelevant(now, b.dates.validFrom, b.dates.validTo)) : 0;
+    if (aRel !== bRel) return bRel - aRel;
+    return b.score - a.score;
+  });
   return candidates;
 }
 
-/** Toutes les affiches garde COPPF (SEM + complément horaires pharmacies). */
-export async function fetchCoppfGardeImageUrls(): Promise<
-  { imageUrl: string; postedAt?: string }[]
+/** Toutes les affiches garde COPPF (SEM + férié JJMM). */
+export async function fetchCoppfGardeImageUrls(now = new Date()): Promise<
+  { imageUrl: string; postedAt?: string; dates: GardeDateRange | null }[]
 > {
   try {
     const res = await fetch(COPPF_MEDECINS_GARDE_URL, {
@@ -114,15 +194,15 @@ export async function fetchCoppfGardeImageUrls(): Promise<
     });
     if (!res.ok) return [];
 
-    const candidates = parseCoppfGardeImagesFromHtml(await res.text());
+    const candidates = parseCoppfGardeImagesFromHtml(await res.text(), now);
     const seen = new Set<string>();
-    const out: { imageUrl: string; postedAt?: string }[] = [];
+    const out: { imageUrl: string; postedAt?: string; dates: GardeDateRange | null }[] = [];
 
     for (const c of candidates) {
       if (seen.has(c.url)) continue;
       seen.add(c.url);
       if (c.score < 200) continue;
-      out.push({ imageUrl: c.url, postedAt: c.postedAt });
+      out.push({ imageUrl: c.url, postedAt: c.postedAt, dates: c.dates });
     }
 
     return out;
@@ -131,38 +211,44 @@ export async function fetchCoppfGardeImageUrls(): Promise<
   }
 }
 
-/** Récupère l'URL de l'affiche médecins (dernier upload sur la page). */
-export async function fetchCoppfGardeImageUrl(): Promise<{
+/** Récupère l'URL de l'affiche médecins la plus pertinente pour aujourd'hui. */
+export async function fetchCoppfGardeImageUrl(now = new Date()): Promise<{
   imageUrl: string;
   postedAt?: string;
+  dates: GardeDateRange | null;
 } | null> {
-  const images = await fetchCoppfGardeImageUrls();
+  const images = await fetchCoppfGardeImageUrls(now);
   return images[0] ?? null;
 }
 
-/** Snapshot COPPF (affiche hebdo ordre des médecins) — source prioritaire. */
+/** Snapshot COPPF (affiche hebdo ou jour férié) — source prioritaire. */
 export async function fetchCoppfGardeSnapshot(
   now = new Date(),
 ): Promise<GardeMooreaSnapshot | null> {
-  const image = await fetchCoppfGardeImageUrl();
-  if (!image) return null;
+  const images = await fetchCoppfGardeImageUrls(now);
+  if (!images.length) return null;
 
-  const dates =
-    datesFromImageUrl(image.imageUrl) ??
-    (image.postedAt ? inferWeekendFromPostDate(image.postedAt) : null);
+  for (const image of images) {
+    const dates =
+      image.dates ??
+      datesFromImageUrl(image.imageUrl) ??
+      (image.postedAt ? inferWeekendFromPostDate(image.postedAt) : null);
 
-  if (!dates) return null;
-  if (!isGardeWeekRelevant(now, dates.validFrom, dates.validTo)) return null;
+    if (!dates) continue;
+    if (!isGardeWeekRelevant(now, dates.validFrom, dates.validTo)) continue;
 
-  return {
-    ...dates,
-    doctor: null,
-    pharmacy: null,
-    communePosterUrl: image.imageUrl,
-    posterImageUrl: null,
-    sourceUrl: COPPF_MEDECINS_GARDE_URL,
-    syncedAt: new Date().toISOString(),
-  };
+    return {
+      ...dates,
+      doctor: null,
+      pharmacy: null,
+      communePosterUrl: image.imageUrl,
+      posterImageUrl: null,
+      sourceUrl: COPPF_MEDECINS_GARDE_URL,
+      syncedAt: new Date().toISOString(),
+    };
+  }
+
+  return null;
 }
 
 /** @deprecated Utiliser fetchCoppfGardeSnapshot */

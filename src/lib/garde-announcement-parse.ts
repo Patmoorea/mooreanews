@@ -103,6 +103,51 @@ export function parseWeekendDatesFromText(text: string): {
     };
   }
 
+  return parseHolidayDatesFromText(text);
+}
+
+/** Affiche férié COPPF : « Férié 14/07/2026 », « mardi 14 juillet », etc. */
+export function parseHolidayDatesFromText(text: string): {
+  validFrom: string;
+  validTo: string;
+  label: string;
+} | null {
+  const n = stripAccents(text);
+  if (!/ferie|fete nationale|jour ferie/.test(n)) return null;
+
+  const dmy = n.match(
+    /(?:ferie|du)\s*[^\d]{0,20}?(\d{1,2})\s*[\/.\-]?\s*(\d{1,2})\s*[\/.\-]?\s*(\d{4})/i,
+  );
+  if (dmy) {
+    const day = Number(dmy[1]);
+    const month = Number(dmy[2]);
+    const year = Number(dmy[3]);
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      const iso = dateKey(year, month, day);
+      return {
+        validFrom: iso,
+        validTo: iso,
+        label: `Jour férié ${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}`,
+      };
+    }
+  }
+
+  const frenchDay = n.match(
+    /(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)?\s*(\d{1,2})\s+(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)(?:\s+(\d{4}))?/i,
+  );
+  if (frenchDay) {
+    const month = FRENCH_MONTHS[stripAccents(frenchDay[2]!)];
+    if (month) {
+      const year = frenchDay[3] ? Number(frenchDay[3]) : new Date().getFullYear();
+      const iso = dateKey(year, month, Number(frenchDay[1]));
+      return {
+        validFrom: iso,
+        validTo: iso,
+        label: `Jour férié ${frenchDay[1]} ${frenchDay[2]} ${year}`,
+      };
+    }
+  }
+
   return null;
 }
 
@@ -166,7 +211,12 @@ export function mergeGardeOcrIntoSnapshot<
   const doctorHours = parseDoctorHoursFromText(ocrText);
   const doctorAddress = parseDoctorAddressFromText(ocrText);
 
-  const mergedDates = coppf?.dates ?? dates;
+  const mergedDates =
+    coppf?.dates && coppf.dates.validFrom && coppf.dates.validTo
+      ? coppf.dates
+      : dates && dates.validFrom
+        ? dates
+        : null;
 
   return {
     ...snap,
@@ -253,9 +303,12 @@ export function parseDoctorHoursFromText(text: string): {
   const sun = text.match(
     /dimanche[^.\n]{0,35}?(\d{1,2}\s*[hH]\d{0,2}\s*[–\-—]\s*\d{1,2}\s*[hH]\d{0,2})/i,
   );
+  const ferie = text.match(
+    /f[eéê]ri[eé][^.\n]{0,25}?(\d{1,2}\s*[hH]\d{0,2}\s*[–\-—à]\s*\d{1,2}\s*[hH]\d{0,2})/i,
+  );
   return {
     saturday: sat?.[1]?.trim(),
-    sunday: sun?.[1]?.trim(),
+    sunday: sun?.[1]?.trim() ?? ferie?.[1]?.trim(),
   };
 }
 
@@ -268,15 +321,15 @@ export function parseDoctorAddressFromText(text: string): string | undefined {
 
 function parseDoctorFromText(text: string): ParsedOnCall | null {
   const n = stripAccents(text);
-  if (!/medecin|docteur|dr\.| garde/.test(n)) return null;
+  if (!/medecin|docteur|dr\.?|\bgarde\b/.test(n)) return null;
 
   const dr =
     text.match(
-      /(?:Dr|Docteur|Docteure|M[ée]decin)\.?\s+([A-ZÀ-Ü][A-Za-zÀ-ü'\-]+(?:[\s-][A-ZÀ-Ü][A-Za-zÀ-ü'\-]+)*)/,
+      /(?:Dr|Docteur|Docteure|M[ée]decin)\.?\s+([A-ZÀ-Ü][A-Za-zÀ-ü'\-]+(?:[ \t-][A-ZÀ-Ü][A-Za-zÀ-ü'\-]+)*)/,
     ) ??
     text.match(/(?:Dr|Docteur|Docteure|M[ée]decin)\.?\s+([^\n,;]+)/i) ??
     text.match(
-      /(?:Dr|Docteur|M[ée]decin)[^\n]{0,40}?([A-Z][A-Za-z\-]+\s+[A-Z][A-Za-z\-]+(?:\s+[A-Z][A-Za-z\-]+)?)/,
+      /(?:Dr|Docteur|M[ée]decin)[^\n]{0,40}?([A-Z][A-Za-z\-]+[ \t]+[A-Z][A-Za-z\-]+(?:[ \t]+[A-Z][A-Za-z\-]+)?)/,
     ) ??
     text.match(/\b([A-Z][a-z]{4,})\s+(Pierre|Paul|Jean|Marie|Antoine)\s+([A-Z][a-z]{4,})\b/);
 
@@ -340,13 +393,25 @@ export function parseCoppfMooreaGarde(text: string): {
     return null;
   }
 
-  const dates = parseWeekendDatesFromText(text);
-  if (!dates) return null;
-
+  const dates = parseWeekendDatesFromText(text) ?? parseHolidayDatesFromText(text);
   const doctor = parseMooreaDoctorFromCoppfText(text);
   const doctorHours = doctor
     ? parseDoctorHoursNearName(text, doctor.name.replace(/^Dr\.?\s+/i, ""))
     : {};
+
+  // Affiche férié : dates souvent absentes de l'OCR — on garde quand même le médecin.
+  if (!dates && !doctor) return null;
+  if (!dates) {
+    return {
+      dates: {
+        validFrom: "",
+        validTo: "",
+        label: "Jour férié",
+      },
+      doctor,
+      doctorHours,
+    };
+  }
 
   return { dates, doctor, doctorHours };
 }
