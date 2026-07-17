@@ -515,7 +515,10 @@ export async function syncGardeMooreaFromCommune(
 
   const ocrEnriched = await enrichFromPosterOcr(
     snap,
-    Boolean(options.fullWeekendPipeline) || !snap.doctor?.name,
+    // OCR seulement si données incomplètes (évite timeout Vercel qui écrase le cache).
+    !snap.doctor?.name ||
+      !isMooreaGardeDoctor(snap.doctor) ||
+      !snap.pharmacyHours?.length,
   );
   snap = ocrEnriched.snap;
 
@@ -541,6 +544,12 @@ export async function syncGardeMooreaFromCommune(
 
   if (fileSnap?.validFrom === snap.validFrom) {
     snap = mergeGardeSnapshots(snap, fileSnap);
+  }
+
+  // Ne jamais écraser un médecin/pharmacie déjà en cache si OCR a échoué.
+  const prevCache = await readGardeMooreaFromCache().catch(() => null);
+  if (prevCache?.validFrom === snap.validFrom) {
+    snap = mergeGardeSnapshots(snap, prevCache);
   }
 
   snap.syncedAt = new Date().toISOString();
