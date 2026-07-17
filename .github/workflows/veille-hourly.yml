@@ -69,8 +69,8 @@ jobs:
             exit 1
           }
 
-          # RSS
-          run_step "RSS" "/api/cron/aggregate" "part=rss"
+          # RSS (timeout fréquent sur Vercel cold start — ne bloque plus toute la chaîne)
+          run_step "RSS" "/api/cron/aggregate" "part=rss" "1" "90"
 
           # Te Ito Rau — coupures (hors limite 1 post/h Facebook)
           run_step "Te Ito Rau" "/api/cron/te-ito-rau" "" "1" "55"
@@ -81,7 +81,7 @@ jobs:
           run_step "FB réparation" "/api/cron/facebook" "chain=1&repairOnly=1&limit=1" "1" "75"
 
           # Veille web
-          run_step "Web" "/api/cron/aggregate" "part=web"
+          run_step "Web" "/api/cron/aggregate" "part=web" "1" "90"
 
           # IA (optionnelle)
           run_step "IA brouillons" "/api/cron/aggregate" "part=ai" "1" "55"

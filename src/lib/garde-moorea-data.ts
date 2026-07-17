@@ -95,7 +95,10 @@ export function pickBestGardeSnapshot(
       return b.synced - a.synced;
     });
 
-  return ranked[0]?.snap ?? null;
+  const best = ranked[0];
+  // Ne jamais coller une affiche périmée (ex. férié 14/07) sur le jeudi du WE suivant.
+  if (!best?.active) return null;
+  return best.snap;
 }
 
 function isWeakGardeLabel(label: string): boolean {

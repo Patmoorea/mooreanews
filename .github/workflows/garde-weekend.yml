@@ -44,13 +44,21 @@ jobs:
           echo "HTTP ${code}"
           head -c 1200 /tmp/garde.json || true
           echo ""
-          if [ "$code" = "200" ]; then
-            exit 0
-          fi
-          if grep -q '"found":true' /tmp/garde.json && grep -q '"doctor":' /tmp/garde.json; then
-            echo "Garde trouvée malgré HTTP ${code} — OK"
-            exit 0
-          fi
-          if [ "$code" != "200" ]; then
+          if [ "$code" != "200" ] && [ "$code" != "202" ]; then
+            if grep -q '"found":true' /tmp/garde.json && grep -qE '"doctor":"[^"]+' /tmp/garde.json; then
+              echo "Garde trouvée malgré HTTP ${code} — OK"
+              exit 0
+            fi
+            echo "Échec HTTP ${code}"
             exit 1
           fi
+          if ! grep -q '"found":true' /tmp/garde.json; then
+            echo "Sync HTTP ${code} mais found=false — échec (garde absente)"
+            exit 1
+          fi
+          if ! grep -qE '"doctor":"[^"]+' /tmp/garde.json; then
+            echo "Sync OK mais médecin manquant — échec"
+            exit 1
+          fi
+          echo "Garde OK"
+          exit 0

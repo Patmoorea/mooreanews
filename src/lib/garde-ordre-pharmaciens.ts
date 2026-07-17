@@ -125,14 +125,18 @@ function scoreCoppfImageFileName(
   let score = Number(year) * 10_000 + Number(month) * 100;
   const holiday = holidayDatesFromFilename(fname, Number(year), Number(month));
   if (holiday) {
-    score += 8_000;
-    if (holiday.validFrom === todayKey) score += 50_000;
+    // Ne booster l’affiche férié QUE le jour même (sinon elle écrase la SEM du WE).
+    if (holiday.validFrom === todayKey) {
+      score += 50_000;
+    } else {
+      score -= 20_000;
+    }
   }
   const sem = lower.match(/sem(\d{1,2})/);
   if (sem) score += 5_000 + Number(sem[1]) * 10;
   if (/garde|medecin|screenshot|drive/.test(lower)) score += 200;
   if (/gardes_\d{4}/.test(lower)) score += 150;
-  if (/ferie|férié|maj/.test(lower)) score += 400;
+  if (/ferie|férié|maj/.test(lower) && holiday?.validFrom === todayKey) score += 400;
   return score;
 }
 

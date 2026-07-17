@@ -7,7 +7,8 @@ async function main() {
   const { getGardeMooreaForNow } = await import("../src/lib/garde-moorea-data");
   const snap = await readGardeMooreaFromCache();
   console.log(JSON.stringify(snap, null, 2));
-  const now = new Date("2026-07-09T18:00:00-10:00");
+  const now = new Date();
+  console.log("\nnow Tahiti approx:", now.toISOString());
   const duties = await getGardeMooreaForNow(now);
   console.log("\n--- duties ---\n", JSON.stringify(duties, null, 2));
 }
