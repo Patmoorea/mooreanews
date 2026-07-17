@@ -23,7 +23,7 @@ import {
   fetchCoppfGardeImageUrls,
   fetchCoppfGardeSnapshot,
 } from "@/lib/garde-ordre-pharmaciens";
-import { withGardeOcrSession } from "@/lib/garde-poster-ocr";
+import { isGardeOcrEnabled, withGardeOcrSession } from "@/lib/garde-poster-ocr";
 import {
   gardePosterHasContent,
   renderAndUploadMooreaNewsGardePoster,
@@ -376,6 +376,7 @@ async function enrichFromPosterOcr(
 ): Promise<{ snap: GardeMooreaSnapshot; ocrUsed: boolean; ocrError?: string }> {
   const needsOcr =
     runOcr &&
+    isGardeOcrEnabled() &&
     (!snap.doctor?.name ||
       !isMooreaGardeDoctor(snap.doctor) ||
       !snap.pharmacyHours?.length ||

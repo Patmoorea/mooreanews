@@ -24,8 +24,18 @@ export type GardeOcrResult = {
   durationMs?: number;
 };
 
+export function isGardeOcrEnabled(): boolean {
+  // Sur Vercel, Tesseract dépasse quasi toujours le délai d'init (~90 s) et
+  // consomme du CPU « Fluid Active » facturé pour rien. L'OCR tourne en local
+  // (script de sync) pour alimenter le cache + data/garde-moorea.json ; en prod
+  // on s'appuie sur ce cache. Réactivable via GARDE_OCR_ENABLED=true.
+  if (process.env.GARDE_OCR_ENABLED === "true") return true;
+  if (process.env.GARDE_OCR_ENABLED === "false") return false;
+  return !process.env.VERCEL;
+}
+
 function ocrEnabled(): boolean {
-  return process.env.GARDE_OCR_ENABLED !== "false";
+  return isGardeOcrEnabled();
 }
 
 function tesseractPaths() {

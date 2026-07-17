@@ -1,8 +1,8 @@
 name: Veille horaire MooreaNews
 on:
   schedule:
-# 5h–20h heure de Tahiti (UTC−10) → 15h–23h et 0h–6h UTC
-    - cron: "0 15-23,0-6 * * *"
+# ~toutes les 2h entre 5h et 20h Tahiti (UTC−10) — limite le CPU Vercel (offre gratuite)
+    - cron: "0 16,18,20,22,0,2,4,6 * * *"
   workflow_dispatch:
 concurrency:
   group: veille-hourly
