@@ -14,7 +14,7 @@ import {
 } from "@/lib/telegram-channel-dedup";
 import { isOptionalVeilleWarning } from "@/lib/feed-errors";
 import { getMooreaDuJour } from "@/lib/moorea-du-jour";
-import { formatMorningBrief30s } from "@/lib/moorea-brief";
+import { enrichMorningBriefWithGarde, formatMorningBrief30s } from "@/lib/moorea-brief";
 
 function siteUrl(): string {
   return (
@@ -674,14 +674,27 @@ export async function sendPublicMooreaBrief(): Promise<{
   }
 
   const digest = await getMooreaDuJour();
-  const brief = formatMorningBrief30s(digest);
+  const brief = await enrichMorningBriefWithGarde(formatMorningBrief30s(digest));
   const base = siteUrl();
 
   let bodyLine = escapeHtml(brief.body);
-  if (brief.eventSlug && brief.eventLabel) {
-    const badPart = `📅 ${escapeHtml(brief.eventLabel)}`;
-    const linked = `📅 <a href="${base}/evenements/${encodeURIComponent(brief.eventSlug)}">${escapeHtml(brief.eventLabel)}</a>`;
-    bodyLine = bodyLine.replace(badPart, linked);
+  if (brief.eventSlug && brief.eventLabel && brief.linkPath) {
+    const label = escapeHtml(brief.eventLabel);
+    const href = `${base}${brief.linkPath}`;
+    for (const prefix of ["📅 WE · ", "📅 ", "📰 "]) {
+      const candidate = `${prefix}${label}`;
+      if (bodyLine.includes(candidate)) {
+        bodyLine = bodyLine.replace(
+          candidate,
+          `${prefix}<a href="${href}">${label}</a>`,
+        );
+        break;
+      }
+    }
+  }
+
+  if (/🩺|💊/.test(brief.body)) {
+    bodyLine += `\n<a href="${base}/sante-garde">Garde Moorea →</a>`;
   }
 
   const html = [
@@ -699,7 +712,8 @@ export async function sendPublicMooreaBrief(): Promise<{
         chat_id: publicChat,
         text: html,
         parse_mode: "HTML",
-        disable_web_page_preview: false,
+        // Pas d’aperçu d’affiche géante qui se répète chaque matin.
+        disable_web_page_preview: true,
       }),
     });
     if (!res.ok) {

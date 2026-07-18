@@ -125,7 +125,12 @@ export async function getEvents(): Promise<Event[]> {
 }
 
 export async function getUpcomingEvents(limit?: number): Promise<Event[]> {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Pacific/Tahiti",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
   const all = await getEvents();
   const items = all.filter((e) => e.date >= today);
   return typeof limit === "number" ? items.slice(0, limit) : items;

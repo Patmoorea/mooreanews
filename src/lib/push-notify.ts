@@ -14,6 +14,7 @@ import { getAdminSupabase } from "@/lib/supabase/admin";
 import type { AlertRow } from "@/lib/supabase/types";
 import { getMooreaDuJour } from "@/lib/moorea-du-jour";
 import {
+  enrichMorningBriefWithGarde,
   formatEveningBrief,
   formatMorningBrief30s,
 } from "@/lib/moorea-brief";
@@ -426,12 +427,12 @@ export async function sendMorningDigestPush(): Promise<{
   errors: string[];
 }> {
   const digest = await getMooreaDuJour();
-  const brief = formatMorningBrief30s(digest);
+  const brief = await enrichMorningBriefWithGarde(formatMorningBrief30s(digest));
   const base = SITE.url.replace(/\/$/, "");
   return sendDigestToTopic("morning", {
     title: brief.title,
     body: brief.body,
-    url: `${base}/`,
+    url: `${base}${brief.linkPath ?? "/"}`,
   });
 }
 

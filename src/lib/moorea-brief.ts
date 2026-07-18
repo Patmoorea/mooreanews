@@ -4,12 +4,15 @@
 
 import type { MooreaDuJour } from "@/lib/moorea-du-jour";
 import { humanEventTitle } from "@/lib/event-title";
+import { getHealthOnCallUncached } from "@/lib/health-on-call";
+import { tahitiParts } from "@/lib/tahiti-holidays";
 
 export function formatMorningBrief30s(d: MooreaDuJour): {
   title: string;
   body: string;
   eventSlug?: string;
   eventLabel?: string;
+  linkPath?: string;
 } {
   const parts: string[] = [];
 
@@ -35,9 +38,32 @@ export function formatMorningBrief30s(d: MooreaDuJour): {
     parts.push("✅ 0 alerte");
   }
 
-  const ev = d.todayEvents[0] ?? d.weekendEvents[0];
-  if (ev) {
-    parts.push(`📅 ${humanEventTitle(ev.title)}`);
+  // Priorité : événement DU JOUR → une actu → (vendredi seulement) aperçu week-end.
+  // Évite de republier la même affiche d'agenda tous les matins du WE.
+  const { dow } = tahitiParts(new Date());
+  const todayEv = d.todayEvents[0];
+  const headline = d.headlines[0];
+  const weekendEv = dow === 5 ? d.weekendEvents[0] : undefined;
+
+  let eventSlug: string | undefined;
+  let eventLabel: string | undefined;
+  let linkPath: string | undefined;
+
+  if (todayEv) {
+    eventLabel = humanEventTitle(todayEv.title);
+    eventSlug = todayEv.slug;
+    linkPath = `/evenements/${todayEv.slug}`;
+    parts.push(`📅 ${eventLabel}`);
+  } else if (headline) {
+    eventLabel = headline.title;
+    eventSlug = headline.slug;
+    linkPath = `/actualites/${headline.slug}`;
+    parts.push(`📰 ${eventLabel}`);
+  } else if (weekendEv) {
+    eventLabel = humanEventTitle(weekendEv.title);
+    eventSlug = weekendEv.slug;
+    linkPath = `/evenements/${weekendEv.slug}`;
+    parts.push(`📅 WE · ${eventLabel}`);
   }
 
   const title = "🌺 Moorea en 30 secondes";
@@ -45,9 +71,44 @@ export function formatMorningBrief30s(d: MooreaDuJour): {
   return {
     title,
     body,
-    eventSlug: ev?.slug,
-    eventLabel: ev ? humanEventTitle(ev.title) : undefined,
+    eventSlug,
+    eventLabel,
+    linkPath,
   };
+}
+
+/** Ajoute médecin / pharmacie de garde au brief du matin (week-end & fériés). */
+export async function enrichMorningBriefWithGarde(
+  brief: ReturnType<typeof formatMorningBrief30s>,
+): Promise<ReturnType<typeof formatMorningBrief30s>> {
+  try {
+    const health = await getHealthOnCallUncached();
+    if (!health.showProminent && !health.onDutyDoctor && !health.onDutyPharmacy) {
+      return brief;
+    }
+    const bits: string[] = [];
+    if (health.onDutyDoctor?.name) {
+      bits.push(`🩺 ${health.onDutyDoctor.name}`);
+    }
+    if (health.onDutyPharmacy?.name) {
+      const short = health.onDutyPharmacy.name
+        .replace(/^Pharmacies de garde\s*\(/i, "")
+        .replace(/\)$/, "")
+        .trim();
+      bits.push(`💊 ${short || health.onDutyPharmacy.name}`);
+    }
+    if (!bits.length) return brief;
+
+    const gardeLine = bits.join(" · ");
+    const body = `${brief.body} · ${gardeLine}`.slice(0, 280);
+    return {
+      ...brief,
+      body,
+      linkPath: brief.linkPath ?? "/sante-garde",
+    };
+  } catch {
+    return brief;
+  }
 }
 
 export function formatEveningBrief(d: MooreaDuJour): { title: string; body: string } {
