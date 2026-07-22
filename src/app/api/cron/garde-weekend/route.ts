@@ -14,6 +14,11 @@ async function notifyGardeGap(result: Awaited<ReturnType<typeof syncHealthOnCall
   const hasDoctor = Boolean(result.doctor);
   const hasPharmacy = Boolean(result.pharmacy);
   if (result.found && hasDoctor && hasPharmacy) return;
+
+  // Lun–mer : pas d’affiche WE attendue → pas d’alerte (évite le spam).
+  const clock = getTahitiClock();
+  if (clock.weekday >= 1 && clock.weekday <= 3 && !result.found) return;
+
   const lines = [
     "<b>⚠️ Garde week-end — sync incomplète</b>",
     "",

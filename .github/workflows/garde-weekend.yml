@@ -1,17 +1,25 @@
-# Garde Moorea — COPPF (ordre des médecins) + Commune + OCR.
-# Tahiti UTC−10 :
-# - tous les matins 6h (jours fériés midweek inclus)
-# - fenêtre week-end mer→dim
-# - 12h le jour même si férié midweek (lun–mar)
+# Garde Moorea — COPPF + Commune.
+# Tahiti UTC−10. Ne « échoue » (mail GitHub) que quand une garde est attendue
+# (jeu–dim, ou férié) et qu’elle manque. Lun–mer midweek = found=false normal.
 
 name: Garde week-end MooreaNews
 
 on:
   schedule:
-    - cron: "0 16 * * *"   # tous les jours 6h Tahiti (fériés midweek + secours WE)
-    - cron: "0 3 * * 5"    # jeudi 17h Tahiti (nouvelle affiche COPPF du WE)
-    - cron: "0 18 * * 6"   # samedi 8h Tahiti
-    - cron: "0 16 * * 0"   # dimanche 6h Tahiti
+    # Mercredi 12h Tahiti — première tentative SEM de la semaine
+    - cron: "0 22 * * 3"
+    # Jeudi 6h / 12h / 17h Tahiti
+    - cron: "0 16 * * 4"
+    - cron: "0 22 * * 4"
+    - cron: "0 3 * * 5"
+    # Vendredi 6h Tahiti
+    - cron: "0 16 * * 5"
+    # Samedi 8h / Dimanche 6h Tahiti
+    - cron: "0 18 * * 6"
+    - cron: "0 16 * * 0"
+    # Secours férié midweek : lun/mar 6h et 12h Tahiti
+    - cron: "0 16 * * 1,2"
+    - cron: "0 22 * * 1,2"
   workflow_dispatch:
 
 concurrency:
@@ -32,27 +40,43 @@ jobs:
             echo "CRON_SECRET manquant"
             exit 1
           fi
+
+          # Jour Tahiti (1=lun … 7=dim)
+          DOW=$(TZ=Pacific/Tahiti date +%u)
+          echo "Jour Tahiti DOW=${DOW} ($(TZ=Pacific/Tahiti date))"
+
           url="https://www.mooreanews.com/api/cron/garde-weekend?secret=${CRON_SECRET}&force=1&wait=1"
           echo "=== Garde week-end ==="
           code=$(curl -sS -o /tmp/garde.json -w "%{http_code}" --http1.1 --max-time 300 "$url")
           echo "HTTP ${code}"
           head -c 1200 /tmp/garde.json || true
           echo ""
+
+          found=0
+          doctor=0
+          grep -q '"found":true' /tmp/garde.json 2>/dev/null && found=1 || true
+          grep -qE '"doctor":"[^"]+' /tmp/garde.json 2>/dev/null && doctor=1 || true
+
           if [ "$code" != "200" ] && [ "$code" != "202" ]; then
-            if grep -q '"found":true' /tmp/garde.json && grep -qE '"doctor":"[^"]+' /tmp/garde.json; then
+            if [ "$found" = "1" ] && [ "$doctor" = "1" ]; then
               echo "Garde trouvée malgré HTTP ${code} — OK"
               exit 0
             fi
             echo "Échec HTTP ${code}"
             exit 1
           fi
-          if ! grep -q '"found":true' /tmp/garde.json; then
-            echo "Sync HTTP ${code} mais found=false — échec (garde absente)"
-            exit 1
+
+          if [ "$found" = "1" ] && [ "$doctor" = "1" ]; then
+            echo "Garde OK"
+            exit 0
           fi
-          if ! grep -qE '"doctor":"[^"]+' /tmp/garde.json; then
-            echo "Sync OK mais médecin manquant — échec"
-            exit 1
+
+          # Lun–mer : pas d’affiche WE attendue (sauf férié déjà géré côté API).
+          # Ne pas spammer GitHub / mail — c’est normal.
+          if [ "$DOW" -ge 1 ] && [ "$DOW" -le 3 ]; then
+            echo "found=false en milieu de semaine (DOW=${DOW}) — normal, COPPF publie souvent jeudi."
+            exit 0
           fi
-          echo "Garde OK"
-          exit 0
+
+          echo "Garde attendue (jeu–dim) mais absente — échec"
+          exit 1
