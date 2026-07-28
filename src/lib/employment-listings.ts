@@ -1,5 +1,6 @@
 import { getPublicSupabase } from "@/lib/supabase/server";
 import { getAdminSupabase } from "@/lib/supabase/admin";
+import { cleanEmploymentTitle } from "@/lib/html-entities";
 import {
   ALL_EMPLOYMENT_SOURCE_IDS,
   ARAVIHI_JOBS_SOURCE_ID,
@@ -55,8 +56,8 @@ async function listBySource(
     sourceId: r.source_id,
     sourceName: r.source_name,
     externalId: r.external_id,
-    title: r.title,
-    excerpt: r.excerpt,
+    title: cleanEmploymentTitle(r.title),
+    excerpt: r.excerpt ? cleanEmploymentTitle(r.excerpt) : r.excerpt,
     url: r.url,
     publishedAt: r.published_at,
     fetchedAt: r.fetched_at,
@@ -128,8 +129,8 @@ export async function getRecentMooreaJobOffers(
     sourceId: r.source_id,
     sourceName: r.source_name,
     externalId: r.external_id,
-    title: r.title,
-    excerpt: r.excerpt,
+    title: cleanEmploymentTitle(r.title),
+    excerpt: r.excerpt ? cleanEmploymentTitle(r.excerpt) : r.excerpt,
     url: r.url,
     publishedAt: r.published_at,
     fetchedAt: r.fetched_at,

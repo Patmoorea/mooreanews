@@ -10,6 +10,7 @@ import {
   upsertEmploymentRows,
   type EmploymentRow,
 } from "@/lib/employment-sync-shared";
+import { cleanEmploymentTitle } from "@/lib/html-entities";
 
 const MOOREA_SLUGS = new Set<string>(CGF_MOOREA_COMMUNE_SLUGS);
 
@@ -41,7 +42,7 @@ export function parseCgfMooreaOffersHtml(html: string): EmploymentRow[] {
     if (!linkMatch || !titleMatch) continue;
 
     const url = linkMatch[1]!.replace(/&amp;/g, "&");
-    const title = stripTags(titleMatch[1]!);
+    const title = cleanEmploymentTitle(stripTags(titleMatch[1]!));
     if (!title) continue;
 
     const refMatch = chunk.match(

@@ -68,8 +68,19 @@ function mapMathAlphanumeric(cp: number): string | null {
 /** Nettoie le texte importé depuis Facebook / RSS. */
 export function cleanImportedText(s: string): string {
   return stripFacebookStyledUnicode(decodeHtmlEntities(s))
+    .replace(/\\'/g, "'")
+    .replace(/\\"/g, '"')
+    .replace(/\\\\/g, "\\")
     .replace(/\u00a0/g, " ")
     .replace(/[^\S\n]+/g, " ")
     .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/** Titres offres emploi (SEFI Lotus Notes, CGF…) — apostrophes échappées, entités HTML. */
+export function cleanEmploymentTitle(s: string): string {
+  return cleanImportedText(s)
+    .replace(/^(\d+)\s*:\s*/, "") // "12345 : Titre" → Titre
+    .replace(/\s+/g, " ")
     .trim();
 }

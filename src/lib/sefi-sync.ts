@@ -18,6 +18,7 @@ import {
   hideStaleEmploymentRows,
   upsertEmploymentRows,
 } from "@/lib/employment-sync-shared";
+import { cleanEmploymentTitle } from "@/lib/html-entities";
 
 export type SefiSyncResult = {
   jobsFetched: number;
@@ -86,7 +87,7 @@ export function parseSefiJobSearchHtml(html: string): ParsedSefiJob[] {
 
     jobs.push({
       externalId,
-      title: refMatch[2]!.trim().replace(/\s+/g, " "),
+      title: cleanEmploymentTitle(refMatch[2]!),
       url: `${SEFI_SERVICES_BASE}/SefiWeb/SefiOffres.nsf/vOffreWeb/${pathMatch[1]}?OpenDocument`,
       excerpt: excerptParts.join(" · "),
       publishedAt: parseFrDateToIso(dateMatch[1]!),
