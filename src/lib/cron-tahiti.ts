@@ -87,6 +87,16 @@ export function shouldSendWeeklyNewsletter(clock: TahitiClock): boolean {
   return clock.weekday === 0 && clock.hour >= 18 && clock.hour < 20;
 }
 
+/**
+ * Veille agenda web Moorea : vendredi soir (17–19h) ou samedi matin (5–10h) Tahiti.
+ * Remplit l’agenda avant la newsletter dimanche.
+ */
+export function shouldDiscoverWeekendEvents(clock: TahitiClock): boolean {
+  if (clock.weekday === 5 && clock.hour >= 17 && clock.hour < 20) return true;
+  if (clock.weekday === 6 && clock.hour >= 5 && clock.hour <= 10) return true;
+  return false;
+}
+
 /** Push « Ce soir à Moorea » : jeu–dim entre 16h et 20h Tahiti (cron externe recommandé). */
 export function shouldSendEveningDigest(clock: TahitiClock): boolean {
   const eveningDays = new Set([0, 4, 5, 6]);

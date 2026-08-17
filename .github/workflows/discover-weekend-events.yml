@@ -1,0 +1,34 @@
+# Veille agenda Moorea — fin de semaine.
+# Fouille Fenua Agenda, Tahiti Tourisme, marchés, croisières…
+# pour décrire précisément la semaine suivante (avant newsletter dimanche).
+
+name: Veille agenda fin de semaine
+
+on:
+  schedule:
+    # Vendredi ~18h05 Tahiti (04:05 UTC samedi)
+    - cron: "5 4 * * 6"
+    # Samedi ~6h05 Tahiti (16:05 UTC samedi)
+    - cron: "5 16 * * 6"
+  workflow_dispatch:
+
+concurrency:
+  group: discover-weekend-events
+  cancel-in-progress: false
+
+jobs:
+  discover-events:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Découverte web événements Moorea
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET manquant dans les secrets GitHub du dépôt."
+            exit 1
+          fi
+          curl -fsS --max-time 300 \
+            "https://www.mooreanews.com/api/cron/discover-weekend-events?secret=${CRON_SECRET}&force=1"

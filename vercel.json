@@ -35,6 +35,10 @@
     "src/app/api/cron/weekly-newsletter/route.ts": {
       "memory": 1024,
       "maxDuration": 300
+    },
+    "src/app/api/cron/discover-weekend-events/route.ts": {
+      "memory": 1024,
+      "maxDuration": 300
     }
   }
 }
