@@ -26,8 +26,9 @@ export const FENUA_AGENDA_EVENT_BASE =
   "https://www.fenua-agenda.com/event-detail.php?id_event=";
 
 /**
- * Escales croisière / circuits connus (complément quand les sites ne listent
- * pas clairement Moorea). Mettre à jour au fil des saisons.
+ * Escales croisière / circuits connus (complément manuel).
+ * Les escales Windstar Star Breeze sont aussi découvertes automatiquement
+ * via DELUXE_CRUISES_STAR_BREEZE_YEAR.
  */
 export type CruiseStopSeed = {
   id: string;
@@ -44,21 +45,32 @@ export type CruiseStopSeed = {
   category?: string;
 };
 
-export const CRUISE_STOP_SEEDS: CruiseStopSeed[] = [
+/** Liste des croisières Star Breeze (itinéraires jour par jour, dont Moorea). */
+export const DELUXE_CRUISES_STAR_BREEZE_YEAR =
+  "https://deluxecruises.com/windstar/star-breeze/cruises-2026/";
+
+/** Pages opérateurs / circuits à sonder (souvent hors agendas locaux). */
+export const TOUR_OPERATOR_WATCH_URLS: { url: string; label: string }[] = [
   {
-    id: "windstar-star-breeze-2026-08-26",
-    title: "Escale croisière Windstar — MS Star Breeze",
-    date: "2026-08-26",
-    startTime: "08:00",
-    endTime: "18:00",
-    location: "Moorea",
-    description:
-      "Escale prévue du MS Star Breeze (Windstar Cruises) à Moorea. Activités et excursions possibles sur l’île (vélo, lagon, villages). Horaires indicatifs 8h–18h — à confirmer auprès de l’organisateur.",
-    url: "https://www.windstarcruises.com/cruise-destinations/tahiti/",
-    organizer: "Windstar Cruises",
-    category: "autre",
+    url: "https://www.santanaadventures.com/tahiti-2026/",
+    label: "Santana Adventures — Tahiti cycling cruise",
+  },
+  {
+    url: "https://www.wetravel.com/trips/7986671479",
+    label: "WeTravel — Tahiti cycling cruise",
   },
 ];
+
+/** Requêtes web (DuckDuckGo HTML) pour attraper croisières / sport hors agendas. */
+export const MOOREA_WEB_SEARCH_QUERIES = [
+  'Moorea "Star Breeze" OR Windstar escale OR port',
+  "Moorea vélo OR cycling cruise OR peloton OR Santana Adventures Tahiti",
+  "Moorea croisière escale 2026",
+  "Moorea événement OR festival OR course OR foire OR marché",
+];
+
+/** Graines manuelles (secours si le scrape échoue). */
+export const CRUISE_STOP_SEEDS: CruiseStopSeed[] = [];
 
 /** Marché bio : 1er samedi du mois, face au restaurant Rudy’s. */
 export const MARCHE_BIO = {

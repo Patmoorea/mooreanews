@@ -13,11 +13,14 @@ import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getNextWeekRange } from "@/lib/week-ahead-range";
 import {
   CRUISE_STOP_SEEDS,
+  DELUXE_CRUISES_STAR_BREEZE_YEAR,
   FENUA_AGENDA_EVENT_BASE,
   FENUA_AGENDA_MOOREA_LIST,
   MARCHE_BIO,
+  MOOREA_WEB_SEARCH_QUERIES,
   TAHITI_TOURISME_LISTING_URLS,
   TAHITI_TOURISME_MOOREA_SEEDS,
+  TOUR_OPERATOR_WATCH_URLS,
 } from "@/lib/web-event-sources";
 
 export type DiscoveredEvent = {
@@ -362,6 +365,319 @@ function discoverCruiseSeeds(
   }));
 }
 
+const EN_MONTHS: Record<string, number> = {
+  january: 1,
+  february: 2,
+  march: 3,
+  april: 4,
+  may: 5,
+  june: 6,
+  july: 7,
+  august: 8,
+  september: 9,
+  october: 10,
+  november: 11,
+  december: 12,
+};
+
+function englishDateToIso(day: number, monthName: string, year: number): string | null {
+  const month = EN_MONTHS[monthName.toLowerCase()];
+  if (!month || day < 1 || day > 31) return null;
+  return `${year}-${pad2(month)}-${pad2(day)}`;
+}
+
+/**
+ * Escales Moorea du MS Star Breeze (itinéraires publics).
+ * C’est ce qui manquait pour le peloton vélo : l’info n’est pas sur Fenua Agenda,
+ * elle est sur les croisières / opérateurs étrangers.
+ */
+async function discoverWindstarMooreaPortDays(
+  rangeStart: string,
+  rangeEnd: string,
+  errors: string[],
+): Promise<DiscoveredEvent[]> {
+  const listHtml = await fetchHtml(DELUXE_CRUISES_STAR_BREEZE_YEAR);
+  if (!listHtml) {
+    errors.push("windstar-ports: listing Deluxe Cruises inaccessible");
+    return [];
+  }
+
+  const relLinks = [
+    ...new Set(
+      [...listHtml.matchAll(/href="((?:https:\/\/deluxecruises\.com)?\/windstar\/star-breeze\/cruises-2026\/[^"#]+)"/gi)].map(
+        (m) => m[1],
+      ),
+    ),
+  ]
+    .map((href) =>
+      href.startsWith("http") ? href : `https://deluxecruises.com${href}`,
+    )
+    .filter((u) => !u.includes("calendar"));
+
+  const byDate = new Map<string, DiscoveredEvent>();
+
+  for (const pageUrl of relLinks.slice(0, 24)) {
+    try {
+      const html = await fetchHtml(pageUrl);
+      if (!html) continue;
+      const text = html
+        .replace(/&#183;/g, "·")
+        .replace(/&amp;/g, "&")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ");
+
+      const re =
+        /(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(20\d{2})\s+MOOREA[^.]{0,200}?Arrives\s+(\d{2}:\d{2})[^.]{0,80}?Departs\s+(\d{2}:\d{2})/gi;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(text))) {
+        const date = englishDateToIso(Number(m[1]), m[2], Number(m[3]));
+        if (!date || date < rangeStart || date > rangeEnd) continue;
+        const startTime = `${m[4]}:00`;
+        const endTime = `${m[5]}:00`;
+        const externalId = `windstar-star-breeze-${date}`;
+        byDate.set(date, {
+          sourceId: "windstar-ports",
+          externalId,
+          title: "Escale croisière Windstar — MS Star Breeze à Moorea",
+          description: [
+            `Le MS Star Breeze (Windstar Cruises) est en escale à Moorea.`,
+            `Arrivée prévue ${m[4]}, départ ${m[5]} (horaires publiés).`,
+            `Excursions possibles sur l’île (vélo / e-bike, 4x4, snorkel, villages) — circulation et affluence possibles sur les routes.`,
+            `Source itinéraire : ${pageUrl}`,
+            marker("windstar-ports", externalId),
+          ].join("\n\n"),
+          category: "autre",
+          date,
+          startTime,
+          endTime,
+          location: "Moorea (escale portuaire)",
+          organizer: "Windstar Cruises — MS Star Breeze",
+          url: canonicalEventUrl(pageUrl, date),
+        });
+      }
+    } catch (e) {
+      errors.push(`windstar-ports ${pageUrl}: ${String(e).slice(0, 120)}`);
+    }
+  }
+
+  return [...byDate.values()];
+}
+
+function decodeDuckDuckGoUrl(raw: string): string | null {
+  try {
+    const u = decodeURIComponent(raw);
+    if (!u.startsWith("http")) return null;
+    return u;
+  } catch {
+    return null;
+  }
+}
+
+function isUsefulSearchUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, "").toLowerCase();
+    if (
+      host.includes("duckduckgo") ||
+      host.includes("facebook.com") ||
+      host.includes("instagram.com") ||
+      host.includes("youtube.com") ||
+      host.includes("livenation") ||
+      host.includes("amazon.") ||
+      host.includes("wikipedia") ||
+      host.includes("deluxecruises.com") ||
+      host.includes("windstarcruises.com") ||
+      host.includes("cruiseindustrynews")
+    ) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Dates situées près d’un mot-clé Moorea / vélo (évite les dates marketing hors sujet). */
+function datesNearMooreaSignal(
+  plain: string,
+  rangeStart: string,
+  rangeEnd: string,
+): string[] {
+  const dates = new Set<string>();
+  const window = 140;
+  const signals: RegExp[] = [
+    /moorea/gi,
+    /v[eé]lo/gi,
+    /\bbike\b/gi,
+    /cycling/gi,
+    /peloton/gi,
+    /escale/gi,
+  ];
+  for (const signal of signals) {
+    let m: RegExpExecArray | null;
+    while ((m = signal.exec(plain))) {
+      const slice = plain.slice(
+        Math.max(0, m.index - window),
+        m.index + window,
+      );
+      for (const dm of slice.matchAll(
+        /(\d{1,2})\s+(janvier|février|fevrier|mars|avril|mai|juin|juillet|août|aout|septembre|octobre|novembre|décembre|decembre|January|February|March|April|May|June|July|August|September|October|November|December)\s+(20\d{2})/gi,
+      )) {
+        const iso =
+          frenchDateToIso(Number(dm[1]), dm[2], Number(dm[3])) ??
+          englishDateToIso(Number(dm[1]), dm[2], Number(dm[3]));
+        if (iso && iso >= rangeStart && iso <= rangeEnd) dates.add(iso);
+      }
+      for (const dm of slice.matchAll(/\b(20\d{2})-(\d{2})-(\d{2})\b/g)) {
+        const iso = `${dm[1]}-${dm[2]}-${dm[3]}`;
+        if (iso >= rangeStart && iso <= rangeEnd) dates.add(iso);
+      }
+    }
+  }
+  return [...dates].sort();
+}
+
+async function discoverTourOperatorPages(
+  rangeStart: string,
+  rangeEnd: string,
+  errors: string[],
+): Promise<DiscoveredEvent[]> {
+  const out: DiscoveredEvent[] = [];
+  for (const page of TOUR_OPERATOR_WATCH_URLS) {
+    const html = await fetchHtml(page.url);
+    if (!html) {
+      errors.push(`tour-op ${page.label}: inaccessible (${page.url})`);
+      continue;
+    }
+    if (!mentionsMoorea(html)) continue;
+    const plain = normalizeText(html);
+    const dates = new Set<string>();
+    for (const m of plain.matchAll(
+      /(\d{1,2})\s+(janvier|février|fevrier|mars|avril|mai|juin|juillet|août|aout|septembre|octobre|novembre|décembre|decembre|January|February|March|April|May|June|July|August|September|October|November|December)\s+(20\d{2})/gi,
+    )) {
+      const fr = frenchDateToIso(Number(m[1]), m[2], Number(m[3]));
+      const en = englishDateToIso(Number(m[1]), m[2], Number(m[3]));
+      const iso = fr ?? en;
+      if (iso && iso >= rangeStart && iso <= rangeEnd) dates.add(iso);
+    }
+    for (const m of plain.matchAll(/\b(20\d{2})-(\d{2})-(\d{2})\b/g)) {
+      const iso = `${m[1]}-${m[2]}-${m[3]}`;
+      if (iso >= rangeStart && iso <= rangeEnd) dates.add(iso);
+    }
+
+    const bike =
+      /v[eé]lo|bike|cycling|peloton/i.test(plain) ||
+      /v[eé]lo|bike|cycling/i.test(page.label);
+
+    for (const date of [...dates].sort()) {
+      const externalId = `tour-op-${Buffer.from(page.url).toString("base64url").slice(0, 24)}-${date}`;
+      out.push({
+        sourceId: "tour-operator",
+        externalId,
+        title: bike
+          ? `${page.label} — journée vélo / Moorea`
+          : `${page.label} — Moorea`,
+        description: [
+          `Activité repérée chez un opérateur touristique (souvent hors agendas locaux).`,
+          plain.slice(0, 900),
+          marker("tour-operator", externalId),
+        ].join("\n\n"),
+        category: bike ? "sport" : "autre",
+        date,
+        location: "Moorea",
+        organizer: page.label,
+        url: canonicalEventUrl(page.url, date),
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * Recherche web ciblée (pas un crawl du net entier) pour croisières / sport
+ * qui n’apparaissent jamais sur Fenua Agenda ni Tahiti Tourisme.
+ */
+async function discoverWebSearchHints(
+  rangeStart: string,
+  rangeEnd: string,
+  errors: string[],
+): Promise<DiscoveredEvent[]> {
+  const year = rangeStart.slice(0, 4);
+  const urls = new Set<string>();
+
+  for (const q of MOOREA_WEB_SEARCH_QUERIES) {
+    const query = `${q} ${year}`;
+    const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+    const html = await fetchHtml(searchUrl);
+    if (!html) {
+      errors.push(`web-search: échec « ${q.slice(0, 40)} »`);
+      continue;
+    }
+    for (const m of html.matchAll(/uddg=([^&"]+)/g)) {
+      const u = decodeDuckDuckGoUrl(m[1]);
+      if (u && isUsefulSearchUrl(u)) urls.add(u.split("#")[0]);
+    }
+  }
+
+  const out: DiscoveredEvent[] = [];
+  for (const url of [...urls].slice(0, 18)) {
+    try {
+      const html = await fetchHtml(url);
+      if (!html || !mentionsMoorea(html)) continue;
+      const plain = normalizeText(html);
+      const bike = /v[eé]lo|bike|cycling|peloton/i.test(plain);
+      const cruisePort = /MOOREA[\s\S]{0,120}Arrives\s+\d{2}:\d{2}/i.test(
+        html.replace(/<[^>]+>/g, " "),
+      );
+      const localEvent =
+        /agenda|festival|foire|march[eé]\s|course\s|concert|spectacle/i.test(
+          plain,
+        );
+      if (!bike && !cruisePort && !localEvent) continue;
+
+      const uniqDates = datesNearMooreaSignal(plain, rangeStart, rangeEnd);
+      if (uniqDates.length === 0) continue;
+
+      const titleMatch =
+        html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] ??
+        (bike
+          ? "Activité vélo / circuit à Moorea"
+          : cruisePort
+            ? "Escale croisière — Moorea"
+            : "Événement Moorea (veille web)");
+      const title = decodeHtmlEntities(titleMatch)
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 160);
+
+      for (const date of uniqDates.slice(0, 2)) {
+        const externalId = `websearch-${Buffer.from(url).toString("base64url").slice(0, 28)}-${date}`;
+        out.push({
+          sourceId: "web-search",
+          externalId,
+          title,
+          description: [
+            `Repéré par recherche web (hors agendas locaux).`,
+            plain.slice(0, 1000),
+            marker("web-search", externalId),
+          ].join("\n\n"),
+          category: bike
+            ? "sport"
+            : cruisePort
+              ? "autre"
+              : eventCategoryFromMessage(plain),
+          date,
+          location: "Moorea",
+          organizer: cruisePort ? "Croisière / opérateur" : null,
+          url: canonicalEventUrl(url, date),
+        });
+      }
+    } catch (e) {
+      errors.push(`web-search ${url}: ${String(e).slice(0, 100)}`);
+    }
+  }
+  return out;
+}
+
 async function discoverFromTahitiTourismePage(
   pageUrl: string,
   rangeStart: string,
@@ -644,6 +960,24 @@ export async function discoverWeekendMooreaEvents(
 
   batches.push(discoverRecurringMarcheBio(start, end));
   batches.push(discoverCruiseSeeds(start, end));
+
+  try {
+    batches.push(await discoverWindstarMooreaPortDays(start, end, errors));
+  } catch (e) {
+    errors.push(`windstar-ports: ${String(e).slice(0, 200)}`);
+  }
+
+  try {
+    batches.push(await discoverTourOperatorPages(start, end, errors));
+  } catch (e) {
+    errors.push(`tour-operator: ${String(e).slice(0, 200)}`);
+  }
+
+  try {
+    batches.push(await discoverWebSearchHints(start, end, errors));
+  } catch (e) {
+    errors.push(`web-search: ${String(e).slice(0, 200)}`);
+  }
 
   try {
     batches.push(await discoverTahitiTourisme(start, end, errors));
