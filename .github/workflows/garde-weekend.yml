@@ -1,6 +1,5 @@
-# Garde Moorea — COPPF + Commune.
-# Tahiti UTC−10. Ne « échoue » (mail GitHub) que quand une garde est attendue
-# (jeu–dim, ou férié) et qu’elle manque. Lun–mer midweek = found=false normal.
+# Garde Moorea — COPPF + OCR + affiche MooreaNews.
+# Tahiti UTC−10. OCR en CI (Tesseract) + OCR.space si clé configurée.
 
 name: Garde week-end MooreaNews
 
@@ -29,26 +28,65 @@ concurrency:
 jobs:
   garde:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
-      - name: Sync garde (COPPF + OCR + article)
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Langue OCR Tesseract (fra)
+        run: node scripts/ensure-tesseract-lang.mjs
+
+      - name: Sync garde avec OCR (CI)
+        id: sync
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          OCR_SPACE_API_KEY: ${{ secrets.OCR_SPACE_API_KEY }}
+          GARDE_OCR_ENABLED: "true"
+          FACEBOOK_PAGE_ACCESS_TOKEN: ${{ secrets.FACEBOOK_PAGE_ACCESS_TOKEN }}
+          FACEBOOK_USER_ACCESS_TOKEN: ${{ secrets.FACEBOOK_USER_ACCESS_TOKEN }}
+        run: npx tsx scripts/run-garde-sync-now.ts
+
+      - name: Revalider le cache Vercel
+        if: always() && steps.sync.outcome == 'success'
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -sS --http1.1 --max-time 90 \
+            "https://www.mooreanews.com/api/cron/garde-weekend?secret=${CRON_SECRET}&force=1&wait=1" \
+            | head -c 1200 || true
+
+      - name: Vérifier le résultat (jeu–dim)
+        if: always()
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
-          if [ -z "$CRON_SECRET" ]; then
+          DOW=$(TZ=Pacific/Tahiti date +%u)
+          echo "Jour Tahiti DOW=${DOW} ($(TZ=Pacific/Tahiti date))"
+
+          if [ "${{ steps.sync.outcome }}" = "success" ]; then
+            echo "Sync CI OK — médecin extrait"
+            exit 0
+          fi
+
+          # Secours : appel direct Vercel (OCR.space si clé sur Vercel)
+          if [ -z "${CRON_SECRET:-}" ]; then
             echo "CRON_SECRET manquant"
             exit 1
           fi
 
-          # Jour Tahiti (1=lun … 7=dim)
-          DOW=$(TZ=Pacific/Tahiti date +%u)
-          echo "Jour Tahiti DOW=${DOW} ($(TZ=Pacific/Tahiti date))"
-
           url="https://www.mooreanews.com/api/cron/garde-weekend?secret=${CRON_SECRET}&force=1&wait=1"
-          echo "=== Garde week-end ==="
           code=$(curl -sS -o /tmp/garde.json -w "%{http_code}" --http1.1 --max-time 300 "$url")
-          echo "HTTP ${code}"
+          echo "Secours Vercel HTTP ${code}"
           head -c 1200 /tmp/garde.json || true
           echo ""
 
@@ -57,26 +95,15 @@ jobs:
           grep -q '"found":true' /tmp/garde.json 2>/dev/null && found=1 || true
           grep -qE '"doctor":"[^"]+' /tmp/garde.json 2>/dev/null && doctor=1 || true
 
-          if [ "$code" != "200" ] && [ "$code" != "202" ]; then
-            if [ "$found" = "1" ] && [ "$doctor" = "1" ]; then
-              echo "Garde trouvée malgré HTTP ${code} — OK"
-              exit 0
-            fi
-            echo "Échec HTTP ${code}"
-            exit 1
-          fi
-
           if [ "$found" = "1" ] && [ "$doctor" = "1" ]; then
-            echo "Garde OK"
+            echo "Garde OK (secours Vercel)"
             exit 0
           fi
 
-          # Lun–mer : pas d’affiche WE attendue (sauf férié déjà géré côté API).
-          # Ne pas spammer GitHub / mail — c’est normal.
           if [ "$DOW" -ge 1 ] && [ "$DOW" -le 3 ]; then
-            echo "found=false en milieu de semaine (DOW=${DOW}) — normal, COPPF publie souvent jeudi."
+            echo "found=false en milieu de semaine — normal"
             exit 0
           fi
 
-          echo "Garde attendue (jeu–dim) mais absente — échec"
+          echo "Garde attendue (jeu–dim) mais médecin absent"
           exit 1

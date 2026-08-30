@@ -1,10 +1,15 @@
 /**
  * OCR affiche garde commune — cron uniquement (jamais pages visiteurs).
  *
- * Vercel : WASM + worker + lang embarqués (voir next.config + vercel.json).
+ * Priorité : OCR.space (rapide, Vercel OK) → Tesseract (local / GitHub Actions).
  */
 
 import path from "path";
+import {
+  isOcrSpaceEnabled,
+  ocrSpaceFromBuffer,
+  ocrSpaceFromUrl,
+} from "@/lib/garde-ocr-space";
 
 const MIN_TEXT_LEN = 40;
 
@@ -25,12 +30,11 @@ export type GardeOcrResult = {
 };
 
 export function isGardeOcrEnabled(): boolean {
-  // Sur Vercel, Tesseract dépasse quasi toujours le délai d'init (~90 s) et
-  // consomme du CPU « Fluid Active » facturé pour rien. L'OCR tourne en local
-  // (script de sync) pour alimenter le cache + data/garde-moorea.json ; en prod
-  // on s'appuie sur ce cache. Réactivable via GARDE_OCR_ENABLED=true.
-  if (process.env.GARDE_OCR_ENABLED === "true") return true;
   if (process.env.GARDE_OCR_ENABLED === "false") return false;
+  if (process.env.GARDE_OCR_ENABLED === "true") return true;
+  // OCR.space : fonctionne sur Vercel (quelques secondes).
+  if (isOcrSpaceEnabled()) return true;
+  // Tesseract : local / GitHub Actions uniquement (cold start ~60–90 s sur Vercel).
   return !process.env.VERCEL;
 }
 
@@ -129,6 +133,13 @@ export class GardeOcrSession {
   }
 
   async recognizeBuffer(buffer: Buffer): Promise<{ text: string | null; error?: string }> {
+    if (isOcrSpaceEnabled()) {
+      const online = await ocrSpaceFromBuffer(buffer);
+      if (online.ok && online.text) {
+        return { text: online.text };
+      }
+    }
+
     const initError = await this.init();
     if (initError || !this.worker) {
       return { text: null, error: initError ?? "worker OCR indisponible" };
@@ -153,6 +164,18 @@ export class GardeOcrSession {
 
   async recognizeImageUrl(imageUrl: string): Promise<GardeOcrResult> {
     const t0 = Date.now();
+
+    if (isOcrSpaceEnabled() && imageUrl.startsWith("http")) {
+      const online = await ocrSpaceFromUrl(imageUrl);
+      if (online.ok && online.text) {
+        return {
+          ok: true,
+          text: online.text,
+          durationMs: Date.now() - t0,
+        };
+      }
+    }
+
     const buffer = await loadImageBuffer(imageUrl);
     if (!buffer) {
       return {
@@ -197,7 +220,14 @@ export async function ocrGardePosterImage(imageUrl: string): Promise<GardeOcrRes
   const t0 = Date.now();
 
   if (!ocrEnabled()) {
-    return { ok: false, text: null, error: "GARDE_OCR_ENABLED=false", durationMs: 0 };
+    return {
+      ok: false,
+      text: null,
+      error: isOcrSpaceEnabled()
+        ? "ocr indisponible"
+        : "OCR désactivé — ajoutez OCR_SPACE_API_KEY (Vercel) ou lancez en local",
+      durationMs: 0,
+    };
   }
   if (!imageUrl?.trim()) {
     return { ok: false, text: null, error: "url vide", durationMs: 0 };

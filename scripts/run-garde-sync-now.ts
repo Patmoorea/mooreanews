@@ -4,6 +4,8 @@
  *   npx tsx scripts/run-garde-sync-now.ts
  */
 import { config } from "dotenv";
+import { writeFile } from "fs/promises";
+import path from "path";
 
 config({ path: ".env.local" });
 
@@ -14,7 +16,9 @@ async function main() {
   }
 
   const { getAdminSupabase } = await import("../src/lib/supabase/admin");
-  const { GARDE_CACHE_SOURCE_ID } = await import("../src/lib/garde-moorea-auto");
+  const { GARDE_CACHE_SOURCE_ID, readGardeMooreaFromCache } = await import(
+    "../src/lib/garde-moorea-auto"
+  );
   const supabase = getAdminSupabase();
   if (supabase) {
     await supabase
@@ -25,7 +29,6 @@ async function main() {
     console.log("Cache garde Supabase purgé.");
   }
 
-  const { syncGardeMooreaFromCommune } = await import("../src/lib/garde-moorea-auto");
   const { listCommuneMooreaGraphPosts } = await import("../src/lib/facebook-watch");
 
   console.log("=== Posts Commune (garde) ===");
@@ -36,8 +39,36 @@ async function main() {
   }
 
   console.log("\n=== Sync garde ===");
+  const { syncGardeMooreaFromCommune } = await import("../src/lib/garde-moorea-auto");
   const result = await syncGardeMooreaFromCommune({ fullWeekendPipeline: true });
   console.log(JSON.stringify(result, null, 2));
+
+  if (result.found && result.doctor) {
+    const snap = await readGardeMooreaFromCache();
+    if (snap) {
+      const filePayload = {
+        validFrom: snap.validFrom,
+        validTo: snap.validTo,
+        label: snap.label,
+        posterImageUrl: snap.posterImageUrl ?? snap.communePosterUrl,
+        doctor: snap.doctor
+          ? {
+              name: snap.doctor.name.replace(/^Dr\.?\s+/i, ""),
+              phone: snap.doctor.phone,
+              hours: snap.doctorHours,
+            }
+          : undefined,
+        pharmacyHours: snap.pharmacyHours,
+      };
+      const dest = path.join(process.cwd(), "data/garde-moorea.json");
+      await writeFile(dest, `${JSON.stringify(filePayload, null, 2)}\n`, "utf8");
+      console.log(`\nFichier secours mis à jour : ${dest}`);
+    }
+  }
+
+  if (!result.found || !result.doctor) {
+    process.exit(1);
+  }
 }
 
 main().catch((err) => {
