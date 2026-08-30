@@ -1,34 +1,14 @@
 {
-  "validFrom": "2026-07-18",
-  "validTo": "2026-07-19",
-  "label": "Samedi 18 / Dimanche 19 juillet 2026",
-  "posterImageUrl": "https://www.ordre-pharmaciens-polynesie.com/wp-content/uploads/2026/07/2026_GARDES_SEM29.jpg",
+  "validFrom": "2026-08-29",
+  "validTo": "2026-08-30",
+  "label": "Samedi 29 / Dimanche 30 aout 2026",
+  "posterImageUrl": "https://fvksncxoievsrezdkmek.supabase.co/storage/v1/object/public/media/generated/garde-weekend/garde-moorea-2026-08-29.png",
   "doctor": {
-    "name": "GUAIS Elouan",
-    "phone": "40 56 44 63",
+    "name": "FOUGEROUSE Pierre-Antoine",
+    "phone": "87 00 08 00",
     "hours": {
-      "saturday": "12h00 – 18h00",
-      "sunday": "8h00 – 16h00"
+      "saturday": "12h00 — 18h00",
+      "sunday": "8h00 — 16h00"
     }
-  },
-  "pharmacyHours": [
-    {
-      "district": "Afareaitu",
-      "phone": "40 56 35 47",
-      "saturday": "7h30 – 13h30",
-      "sunday": "7h30 – 11h30"
-    },
-    {
-      "district": "Maharepa",
-      "phone": "40 55 20 75",
-      "saturday": "7h30 – 12h15 / 14h30 – 16h30",
-      "sunday": "8h00 – 11h00"
-    },
-    {
-      "district": "Haapiti",
-      "phone": "40 56 38 37",
-      "saturday": "8h00 – 12h00",
-      "sunday": "8h00 – 10h00"
-    }
-  ]
+  }
 }
