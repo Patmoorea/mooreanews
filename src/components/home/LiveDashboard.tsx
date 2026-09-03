@@ -1,6 +1,7 @@
 import { Container } from "@/components/ui/Container";
 import { WeatherCard } from "@/components/widgets/WeatherCard";
 import { FerryCard } from "@/components/widgets/FerryCard";
+import { BusCard } from "@/components/widgets/BusCard";
 import { CruiseShipsCard } from "@/components/widgets/CruiseShipsCard";
 import { UtilityOutagesCard } from "@/components/widgets/UtilityOutagesCard";
 import { MaritimeTrafficCard } from "@/components/widgets/MaritimeTrafficCard";
@@ -28,7 +29,7 @@ export function LiveDashboard() {
             Outils du quotidien
           </span>
           <h2 className="mt-4 font-display text-2xl sm:text-3xl text-ocean-950">
-            Météo, ferries & marées {TROPICAL_EMOJI.sun}
+            Météo, ferries, bus & marées {TROPICAL_EMOJI.sun}
           </h2>
           <p className="mt-3 text-ocean-700 text-sm sm:text-base">
             Données en direct — après l&apos;actualité et l&apos;agenda de
@@ -42,6 +43,9 @@ export function LiveDashboard() {
           <TidesCard />
           <div className="sm:col-span-2 lg:col-span-1">
             <FerryCard />
+          </div>
+          <div className="sm:col-span-2 lg:col-span-1">
+            <BusCard />
           </div>
           <div className="sm:col-span-2 lg:col-span-1">
             <CruiseShipsCard />

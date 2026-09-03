@@ -1,0 +1,125 @@
+{
+  "meta": {
+    "operator": "Entreprise J.RUTA Transport",
+    "authority": "Commune de Moorea-Maiao",
+    "sourceUrl": "https://mooreatransportpublic.com/horaires",
+    "networkUrl": "https://mooreatransportpublic.com/reseau",
+    "faresUrl": "https://mooreatransportpublic.com/tarifs",
+    "fares": [
+      { "label": "De 3 à 12 ans", "price": 150 },
+      { "label": "De 13 à 59 ans", "price": 300 },
+      { "label": "À partir de 60 ans", "price": 150 }
+    ],
+    "notes": {
+      "schoolTerm": "Le départ à 05:20 est assuré uniquement en période scolaire (lignes 1 et 2, lun–ven).",
+      "approximate": "Les horaires de passage dans les secteurs sont approximatifs et peuvent varier selon la circulation.",
+      "sunday": "Pas de circulation le dimanche. Service lun–sam."
+    }
+  },
+  "lines": {
+    "L1": {
+      "id": "L1",
+      "label": "Ligne 1",
+      "direction": "Tiahura → Vaiare",
+      "directionKey": "toVaiare",
+      "stops": [
+        "Départ",
+        "Tiahura",
+        "Papetoai",
+        "Hilton Moorea",
+        "Paopao",
+        "Maharepa",
+        "Temae",
+        "Teavaro",
+        "Vaiare"
+      ]
+    },
+    "L2": {
+      "id": "L2",
+      "label": "Ligne 2",
+      "direction": "Tiahura → Vaiare",
+      "directionKey": "toVaiare",
+      "stops": [
+        "Départ",
+        "Tiahura",
+        "Nuuroa",
+        "Haapiti",
+        "Atiha",
+        "Paroa / Maatea",
+        "Afareaitu",
+        "Patae",
+        "Vaiare"
+      ]
+    },
+    "L3": {
+      "id": "L3",
+      "label": "Ligne 3",
+      "direction": "Vaiare → Tiahura",
+      "directionKey": "toTiahura",
+      "stops": [
+        "Départ",
+        "Vaiare",
+        "Teavaro",
+        "Temae",
+        "Maharepa",
+        "Paopao",
+        "Hilton Moorea",
+        "Papetoai",
+        "Tiahura"
+      ]
+    },
+    "L4": {
+      "id": "L4",
+      "label": "Ligne 4",
+      "direction": "Vaiare → Tiahura",
+      "directionKey": "toTiahura",
+      "stops": [
+        "Départ",
+        "Vaiare",
+        "Patae",
+        "Afareaitu",
+        "Paroa / Maatea",
+        "Atiha",
+        "Haapiti",
+        "Nuuroa",
+        "Tiahura"
+      ]
+    }
+  },
+  "schedules": {
+    "L1_week": [
+      ["03:50", "03:50", "03:55", "04:05", "04:15", "04:20", "04:30", "04:35", "04:40"],
+      ["05:20*", "05:20", "05:30", "05:40", "05:50", "05:55", "06:05", "06:10", "06:15"],
+      ["07:45", "07:45", "07:50", "08:00", "08:10", "08:15", "08:25", "08:30", "08:35"],
+      ["15:30", "15:30", "15:35", "15:45", "15:55", "16:00", "16:10", "16:15", "16:20"]
+    ],
+    "L1_sat": [
+      ["07:00", "07:00", "07:05", "07:15", "07:25", "07:30", "07:40", "07:45", "07:50"]
+    ],
+    "L2_week": [
+      ["03:50", "03:50", "03:55", "04:05", "04:15", "04:20", "04:30", "04:35", "04:40"],
+      ["05:20*", "05:20", "05:30", "05:40", "05:50", "05:55", "06:05", "06:10", "06:15"],
+      ["07:45", "07:45", "07:50", "08:00", "08:10", "08:15", "08:25", "08:30", "08:35"],
+      ["15:30", "15:30", "15:35", "15:45", "15:55", "16:00", "16:10", "16:15", "16:20"]
+    ],
+    "L2_sat": [
+      ["07:00", "07:00", "07:05", "07:15", "07:25", "07:30", "07:40", "07:45", "07:50"]
+    ],
+    "L3_week": [
+      ["08:50", "08:50", "08:55", "09:00", "09:10", "09:15", "09:25", "09:35", "09:40"],
+      ["16:45", "16:45", "16:50", "16:55", "17:05", "17:10", "17:20", "17:30", "17:35"],
+      ["18:00", "18:00", "18:05", "18:10", "18:20", "18:25", "18:35", "18:45", "18:50"]
+    ],
+    "L3_sat": [
+      ["08:00", "08:00", "08:05", "08:10", "08:20", "08:25", "08:35", "08:45", "08:50"]
+    ],
+    "L4_week": [
+      ["08:50", "08:50", "08:55", "09:00", "09:10", "09:15", "09:25", "09:35", "09:40"],
+      ["16:45", "16:45", "16:50", "16:55", "17:05", "17:10", "17:20", "17:30", "17:35"],
+      ["18:00", "18:00", "18:05", "18:10", "18:20", "18:25", "18:35", "18:45", "18:50"]
+    ],
+    "L4_sat": [
+      ["08:00", "08:00", "08:05", "08:10", "08:20", "08:25", "08:35", "08:45", "08:50"]
+    ]
+  }
+}
