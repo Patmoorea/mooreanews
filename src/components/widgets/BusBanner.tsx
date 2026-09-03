@@ -41,14 +41,14 @@ export function BusBanner() {
       role="region"
       aria-label="Horaires bus Moorea"
     >
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 sm:px-6 lg:px-8">
-        <Link
-          href="/#bus-moorea"
-          className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wide hover:bg-white/15 sm:text-sm"
-        >
+      <Link
+        href="/bus-moorea"
+        className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 sm:px-6 lg:px-8 hover:bg-white/5 transition-colors"
+      >
+        <span className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wide sm:text-sm">
           <Bus size={16} className="text-emerald-200" aria-hidden />
           Bus Moorea
-        </Link>
+        </span>
 
         {data.dayKind === "sun" ? (
           <p className="text-xs sm:text-sm text-emerald-100">
@@ -92,20 +92,10 @@ export function BusBanner() {
           </div>
         )}
 
-        <div className="ml-auto flex shrink-0 items-center gap-3 text-[11px] sm:text-xs">
-          <span className="hidden text-emerald-200/80 lg:inline">
-            300 F · 4 lignes · lun–sam
-          </span>
-          <a
-            href={data.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-semibold text-white underline-offset-2 hover:underline"
-          >
-            Horaires complets →
-          </a>
-        </div>
-      </div>
+        <span className="ml-auto shrink-0 text-[11px] sm:text-xs font-semibold text-emerald-100">
+          300 F · lun–sam · Guide complet →
+        </span>
+      </Link>
     </div>
   );
 }

@@ -231,6 +231,11 @@ export const USEFUL_LINKS = [
     description: "Site officiel de la commune",
   },
   {
+    title: "Transport public Moorea — Bus",
+    href: "https://www.mooreanews.com/bus-moorea",
+    description: "Horaires, tarifs et 4 lignes J.RUTA (lun–sam)",
+  },
+  {
     title: "Horaires Tahiti",
     href: "https://www.horaires-tahiti.com",
     description: "Ferries Aremiti, Terevau et autres",

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bus, ArrowRight, Clock, Ticket } from "lucide-react";
+import Link from "next/link";
+import { Bus, ArrowRight, Clock, Ticket, ExternalLink } from "lucide-react";
 import type { NextBusDepartures, BusDeparture } from "@/lib/buses";
 import { formatBusLines, formatBusMinutesUntil } from "@/lib/buses";
 
@@ -41,14 +42,12 @@ export function BusCard() {
             </p>
           </div>
         </div>
-        <a
-          href={data?.sourceUrl ?? "https://mooreatransportpublic.com/horaires"}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-ocean-600 hover:text-ocean-800"
+        <Link
+          href="/bus-moorea"
+          className="text-xs font-semibold text-emerald-700 hover:text-emerald-900 hover:underline"
         >
-          Horaires complets →
-        </a>
+          Guide complet →
+        </Link>
       </div>
 
       {data?.dayKind === "sun" ? (
@@ -90,7 +89,21 @@ export function BusCard() {
         </div>
       ) : null}
 
-      <p className="mt-4 text-[11px] text-ocean-500/80 leading-relaxed">
+      <a
+        href={
+          data?.officialSiteUrl ??
+          data?.sourceUrl ??
+          "https://mooreatransportpublic.com"
+        }
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-colors"
+      >
+        Site officiel mooreatransportpublic.com
+        <ExternalLink size={13} aria-hidden />
+      </a>
+
+      <p className="mt-3 text-[11px] text-ocean-500/80 leading-relaxed">
         {data?.operator ?? "J.RUTA Transport"} · {data?.authority ?? "Commune Moorea-Maiao"}
         {data?.source === "mooreatransportpublic.com (cache)" && (
           <>

@@ -57,11 +57,11 @@
   {
     "slug": "transport-public-moorea",
     "title": "Transport public Moorea — Bus J.RUTA",
-    "description": "Réseau de 4 lignes (Tiahura ↔ Vaiare). Tarifs : 300 F adulte, 150 F enfant/sénior. Horaires lun–sam, pas de service dimanche.",
+    "description": "Réseau de 4 lignes (Tiahura ↔ Vaiare). Tarifs : 300 F adulte, 150 F enfant/sénior. Horaires lun–sam, pas de service dimanche. Guide complet sur MooreaNews.",
     "category": "transport",
     "address": "Moorea — lignes 1 à 4",
     "hours": "Lun–ven & sam (horaires variables) · dimanche : pas de service",
-    "website": "https://mooreatransportpublic.com/horaires"
+    "website": "https://www.mooreanews.com/bus-moorea"
   },
   {
     "slug": "rai-tahiti-vsl",

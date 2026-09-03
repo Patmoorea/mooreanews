@@ -68,7 +68,7 @@ const UTILITIES: {
     accent: "from-ocean-400/30 to-lagon-500/20",
   },
   {
-    href: "/#bus-moorea",
+    href: "/bus-moorea",
     label: "Bus",
     sub: "4 lignes Moorea",
     icon: Bus,

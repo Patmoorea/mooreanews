@@ -227,6 +227,7 @@ export const STATIC_SITEMAP_PATHS: {
   { path: "/annonces", priority: 0.85, freq: "daily" },
   { path: "/alertes", priority: 0.9, freq: "hourly" },
   { path: "/alertes-moorea", priority: 0.92, freq: "hourly" },
+  { path: "/bus-moorea", priority: 0.88, freq: "hourly" },
   { path: "/trafic-ferry", priority: 0.75, freq: "monthly" },
   { path: "/coupures", priority: 0.85, freq: "daily" },
   { path: "/restaurants", priority: 0.85, freq: "weekly" },

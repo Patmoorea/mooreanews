@@ -14,6 +14,19 @@
       "schoolTerm": "Le départ à 05:20 est assuré uniquement en période scolaire (lignes 1 et 2, lun–ven).",
       "approximate": "Les horaires de passage dans les secteurs sont approximatifs et peuvent varier selon la circulation.",
       "sunday": "Pas de circulation le dimanche. Service lun–sam."
+    },
+    "officialSiteUrl": "https://mooreatransportpublic.com",
+    "paymentNote": "Préparez votre moyen de paiement avant de monter pour faciliter l'embarquement.",
+    "lineCoast": {
+      "L1": "Côte nord",
+      "L2": "Côte sud",
+      "L3": "Côte nord",
+      "L4": "Côte sud"
+    },
+    "travelRules": {
+      "respect": "Respectez le conducteur, les passagers, les places prioritaires et gardez le véhicule propre.",
+      "onboard": "Il est interdit de fumer, vapoter, consommer de l'alcool, gêner le conducteur ou bloquer les accès.",
+      "tip": "Présentez-vous quelques minutes à l'avance. Les horaires intermédiaires peuvent varier selon la circulation."
     }
   },
   "lines": {

@@ -48,6 +48,14 @@ export type BusScheduleData = {
       approximate: string;
       sunday: string;
     };
+    officialSiteUrl?: string;
+    paymentNote?: string;
+    lineCoast?: Partial<Record<BusLineId, string>>;
+    travelRules?: {
+      respect: string;
+      onboard: string;
+      tip: string;
+    };
   };
   lines: Record<BusLineId, BusLineInfo>;
   schedules: Record<string, string[][]>;
@@ -66,6 +74,7 @@ export type NextBusDepartures = {
   sourceUrl: string;
   networkUrl: string;
   faresUrl: string;
+  officialSiteUrl?: string;
   notes: BusScheduleData["meta"]["notes"];
   lines: Record<BusLineId, BusLineInfo>;
 };
@@ -205,6 +214,7 @@ export function computeNextBusDepartures(
       sourceUrl: meta.sourceUrl,
       networkUrl: meta.networkUrl,
       faresUrl: meta.faresUrl,
+      officialSiteUrl: meta.officialSiteUrl,
       notes: meta.notes,
       lines: data.lines,
     };
@@ -277,6 +287,7 @@ export function computeNextBusDepartures(
     sourceUrl: meta.sourceUrl,
     networkUrl: meta.networkUrl,
     faresUrl: meta.faresUrl,
+    officialSiteUrl: meta.officialSiteUrl,
     notes: meta.notes,
     lines: data.lines,
   };
@@ -292,6 +303,16 @@ export function formatBusMinutesUntil(min: number): string {
 
 export function formatBusLines(lines: BusLineId[]): string {
   return lines.map((l) => `Ligne ${l.slice(1)}`).join(" · ");
+}
+
+export function formatBusScheduleTime(raw: string): string {
+  const m = raw.replace("*", "").trim().match(/(\d{1,2}):(\d{2})/);
+  if (!m) return raw;
+  return `${m[1]}h${m[2]}`;
+}
+
+export function isBusSchoolTermDeparture(raw: string): boolean {
+  return raw.includes("*");
 }
 
 /** Prochains bus du jour (live + cache local). */
