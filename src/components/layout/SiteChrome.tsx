@@ -10,12 +10,13 @@ import { Footer } from "@/components/layout/Footer";
 import { Ticker } from "@/components/widgets/Ticker";
 import { ServiceHighlightsTicker } from "@/components/widgets/ServiceHighlightsTicker";
 import { FerryStickyBar } from "@/components/widgets/FerryStickyBar";
+import { BusBanner } from "@/components/widgets/BusBanner";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import { PageViewTracker } from "@/components/analytics/PageViewTracker";
 
 function isMinimalChrome(pathname: string): boolean {
-  return pathname.startsWith("/app") || pathname.startsWith("/admin");
+  return pathname.startsWith("/app") || pathname.startsWith("/admin") || pathname.startsWith("/sail");
 }
 
 export function SiteChrome({
@@ -51,6 +52,7 @@ export function SiteChrome({
       <Header />
       <ServiceHighlightsTicker />
       <Ticker />
+      <BusBanner />
       <main className="flex-1 pb-16 md:pb-0">{children}</main>
       <FerryStickyBar />
       <InstallPrompt />

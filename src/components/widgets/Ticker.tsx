@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   Sun,
   Ship,
+  Bus,
   Waves,
   Moon,
   ThermometerSun,
@@ -13,6 +14,8 @@ import type { WeatherSummary } from "@/lib/weather";
 import type { SunMoonData } from "@/lib/sun";
 import type { Departure, NextDepartures } from "@/lib/ferries";
 import { formatMinutesUntil, nextDeparturesPerCompany } from "@/lib/ferries";
+import type { NextBusDepartures } from "@/lib/buses";
+import { formatBusLines, formatBusMinutesUntil } from "@/lib/buses";
 
 type TickerItem = {
   icon: React.ReactNode;
@@ -64,10 +67,11 @@ export function Ticker() {
 
     async function load() {
       try {
-        const [weatherRes, sunRes, ferryRes] = await Promise.all([
+        const [weatherRes, sunRes, ferryRes, busRes] = await Promise.all([
           fetch("/api/weather").catch(() => null),
           fetch("/api/sun").catch(() => null),
           fetch("/api/ferries").catch(() => null),
+          fetch("/api/buses").catch(() => null),
         ]);
 
         const next: TickerItem[] = [];
@@ -83,6 +87,31 @@ export function Ticker() {
             ...ferryTickerItems("Moorea → Tahiti", f.fromMoorea ?? []),
             ...ferryTickerItems("Tahiti → Moorea", f.fromTahiti ?? []),
           );
+        }
+
+        if (busRes?.ok) {
+          const b = (await busRes.json()) as NextBusDepartures;
+          if (b.dayKind === "sun") {
+            next.push({
+              icon: <Bus size={14} className="text-emerald-300" />,
+              label: "Bus Moorea : pas de service dimanche",
+            });
+          } else {
+            const v = b.toVaiare[0];
+            const t = b.toTiahura[0];
+            if (v) {
+              next.push({
+                icon: <Bus size={14} className="text-emerald-300" />,
+                label: `Bus → Vaiare ${v.time} ${formatBusLines(v.lines)} (${formatBusMinutesUntil(v.minutesUntil)})`,
+              });
+            }
+            if (t) {
+              next.push({
+                icon: <Bus size={14} className="text-emerald-300" />,
+                label: `Bus → Tiahura ${t.time} ${formatBusLines(t.lines)} (${formatBusMinutesUntil(t.minutesUntil)})`,
+              });
+            }
+          }
         }
 
         if (weatherRes?.ok) {

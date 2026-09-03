@@ -7,6 +7,7 @@ import {
   Siren,
   CloudSun,
   Ship,
+  Bus,
   Car,
   ArrowRight,
   Plus,
@@ -65,6 +66,13 @@ const UTILITIES: {
     sub: "Vent · houle",
     icon: CloudSun,
     accent: "from-ocean-400/30 to-lagon-500/20",
+  },
+  {
+    href: "/#bus-moorea",
+    label: "Bus",
+    sub: "4 lignes Moorea",
+    icon: Bus,
+    accent: "from-emerald-400/30 to-teal-600/20",
   },
   {
     href: "/covoiturage",

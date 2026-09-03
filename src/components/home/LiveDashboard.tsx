@@ -44,7 +44,7 @@ export function LiveDashboard() {
           <div className="sm:col-span-2 lg:col-span-1">
             <FerryCard />
           </div>
-          <div className="sm:col-span-2 lg:col-span-1">
+          <div id="bus-moorea" className="sm:col-span-2 lg:col-span-1 scroll-mt-36 md:scroll-mt-44">
             <BusCard />
           </div>
           <div className="sm:col-span-2 lg:col-span-1">
