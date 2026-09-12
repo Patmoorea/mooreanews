@@ -218,15 +218,27 @@ export function mergeGardeOcrIntoSnapshot<
         ? dates
         : null;
 
+  const doctor =
+    // COPPF tableau prioritaire (évite un mauvais médecin resté en cache, ex. autre secteur).
+    (coppf?.doctor && isMooreaGardeDoctor(coppf.doctor) ? coppf.doctor : null) ??
+    (snap.doctor && isMooreaGardeDoctor(snap.doctor) ? snap.doctor : null) ??
+    fromPoster.doctor ??
+    snap.doctor;
+
+  const resolvedPharmacyHours =
+    snap.pharmacyHours && snap.pharmacyHours.length > 0
+      ? snap.pharmacyHours
+      : pharmacyHours.length > 0
+        ? pharmacyHours
+        : // COPPF ne publie pas d'affiche pharmacies Moorea → contacts des 3 officines.
+          doctor && isMooreaGardeDoctor(doctor)
+          ? defaultMooreaPharmacyHours()
+          : snap.pharmacyHours;
+
   return {
     ...snap,
     ...(mergedDates ?? {}),
-    doctor:
-      snap.doctor?.name && !isMooreaGardeDoctor(snap.doctor)
-        ? coppf?.doctor ?? fromPoster.doctor ?? snap.doctor
-        : snap.doctor?.name
-          ? snap.doctor
-          : coppf?.doctor ?? fromPoster.doctor ?? snap.doctor,
+    doctor,
     pharmacy: snap.pharmacy?.name ? snap.pharmacy : fromPoster.pharmacy ?? snap.pharmacy,
     doctorAddress: snap.doctorAddress ?? doctorAddress,
     doctorHours:
@@ -234,12 +246,7 @@ export function mergeGardeOcrIntoSnapshot<
       (coppf?.doctorHours.saturday || coppf?.doctorHours.sunday
         ? coppf.doctorHours
         : doctorHours),
-    pharmacyHours:
-      snap.pharmacyHours && snap.pharmacyHours.length > 0
-        ? snap.pharmacyHours
-        : pharmacyHours.length > 0
-          ? pharmacyHours
-          : snap.pharmacyHours,
+    pharmacyHours: resolvedPharmacyHours,
   };
 }
 
@@ -426,15 +433,95 @@ function parseDoctorHoursNearName(text: string, namePart: string): {
   return parseDoctorHoursFromText(text.slice(idx, idx + 220));
 }
 
+/**
+ * Affiche COPPF = tableau (secteurs | médecins | téléphones).
+ * L'OCR lit souvent colonne par colonne : on aligne Moorea = Nᵉ secteur → Nᵉ médecin.
+ */
+function parseMooreaDoctorFromCoppfTable(text: string): ParsedOnCall | null {
+  const n = stripAccents(text);
+  if (!/\bmoorea\b/.test(n) || !/dr\.?\s+/i.test(text)) return null;
+
+  // Ordre habituel du tableau COPPF (une entree = un secteur / ile).
+  const sectorKeys = [
+    /secteur\s+papeete[\s\-]*faa.?a|(?:^|[\n\s])punaauia\b/,
+    /secteur\s+papeete[\s\-]*pirae|(?:^|[\n\s])(?:papenoo|papenoo)\b/,
+    /(?:^|[\n\s])paea\b/,
+    /papara|mataiea/,
+    /taravao|presqu.?ile/,
+    /\bmoorea\b/,
+    /bora[\s\-]*bora/,
+    /\bhuahine\b/,
+    /\braiatea\b/,
+    /\btahaa\b/,
+    /\brangiroa\b/,
+    /cardella/,
+    /paofai/,
+  ];
+
+  const foundSectors: { key: number; pos: number }[] = [];
+  for (let i = 0; i < sectorKeys.length; i++) {
+    const m = n.match(sectorKeys[i]!);
+    if (!m || m.index == null) continue;
+    if (foundSectors.some((s) => s.key === i || Math.abs(s.pos - m.index!) < 3)) continue;
+    foundSectors.push({ key: i, pos: m.index });
+  }
+  foundSectors.sort((a, b) => a.pos - b.pos);
+  const mooreaOrd = foundSectors.findIndex((s) => s.key === 5);
+  if (mooreaOrd < 0) return null;
+
+  // Nom = 1 a 3 mots ; ne jamais avaler le "Dr" suivant.
+  const doctors = [
+    ...text.matchAll(
+      /Dr\.?[ \t]+([A-ZÀ-Ü][A-Za-zÀ-ü''\-]+(?:[ \t]+[A-ZÀ-Ü][A-Za-zÀ-ü''\-]+){0,2})/g,
+    ),
+  ]
+    .map((m) => {
+      const raw = m[1]!.trim().replace(/\s+/g, " ");
+      const name = raw.replace(/\s+Dr\.?.*$/i, "").trim();
+      return { name: `Dr ${name}`, pos: m.index ?? 0 };
+    })
+    .filter((d) => d.name.length > 5 && !/\bDr\b.*\bDr\b/i.test(d.name));
+
+  // Tel. PF type 40 XX XX XX (8 chiffres) — evite de fusionner 2 numeros.
+  const phones = [
+    ...text.matchAll(/\b((?:40|87|89)(?:[ .\-]?\d{2}){3})\b/g),
+  ].map((m) => ({
+    phone: cleanPhone(m[1]!),
+    pos: m.index ?? 0,
+  }));
+
+  const dutyPhones = phones.filter(
+    (p) => !/^87\s?77\s?78\s?28$/.test(p.phone.replace(/\s+/g, " ")),
+  );
+
+  if (doctors.length <= mooreaOrd) return null;
+  const doc = doctors[mooreaOrd]!;
+  const probe = { name: doc.name, phone: "—", phoneHref: "" };
+  if (!isPlausibleDoctor(probe) || !isMooreaGardeDoctor(probe)) return null;
+
+  const phone =
+    dutyPhones.length > mooreaOrd ? dutyPhones[mooreaOrd]!.phone : "";
+  return {
+    name: doc.name,
+    phone: phone || "—",
+    phoneHref: phone ? phoneHref(phone) : "",
+  };
+}
+
 /** Extrait le médecin de garde Moorea depuis l'OCR COPPF. */
 export function parseMooreaDoctorFromCoppfText(text: string): ParsedOnCall | null {
+  const fromTable = parseMooreaDoctorFromCoppfTable(text);
+  if (fromTable) return fromTable;
+
   const mooreaIdx = text.search(/\bMoorea\b/i);
   if (mooreaIdx >= 0) {
-    const block = text.slice(Math.max(0, mooreaIdx - 100), mooreaIdx + 240);
-    const d = parseDoctorFromText(block);
-    if (isPlausibleDoctor(d)) {
-      const phoneNear = block.match(
-        /\bMoorea\b[^\n]{0,50}?((?:87|40|89)\s?[\d\s]{7,12})/i,
+    const block = text.slice(Math.max(0, mooreaIdx - 40), mooreaIdx + 280);
+    // Privilégie un Dr dans les lignes juste après « Moorea » (pas le médecin du secteur d'avant).
+    const after = block.slice(block.search(/\bMoorea\b/i));
+    const d = parseDoctorFromText(after) ?? parseDoctorFromText(block);
+    if (isPlausibleDoctor(d) && isMooreaGardeDoctor(d)) {
+      const phoneNear = after.match(
+        /(?:Dr\.?\s+[^\n]{0,40})?((?:87|40|89)\s?[\d\s]{7,12})/i,
       );
       if (phoneNear) {
         const phone = cleanPhone(phoneNear[1]!);
@@ -451,9 +538,9 @@ export function parseMooreaDoctorFromCoppfText(text: string): ParsedOnCall | nul
   const mooreaBlock = text.match(/(?:ile\s+)?moorea[\s-]*maiao?[\s\S]{0,320}/i);
   if (mooreaBlock) {
     const idx = mooreaBlock.index ?? 0;
-    const block = text.slice(Math.max(0, idx - 100), idx + mooreaBlock[0].length);
+    const block = text.slice(Math.max(0, idx - 40), idx + mooreaBlock[0].length);
     const d = parseDoctorFromText(block);
-    if (isPlausibleDoctor(d)) return d;
+    if (isPlausibleDoctor(d) && isMooreaGardeDoctor(d)) return d;
   }
 
   const sectorRe = /(?:secteur|ile|presqu.?ile|commune)\s[^\n]{0,70}/gi;
@@ -461,9 +548,9 @@ export function parseMooreaDoctorFromCoppfText(text: string): ParsedOnCall | nul
   while ((match = sectorRe.exec(text)) !== null) {
     const sector = stripAccents(match[0]);
     if (!/moorea|maiao/.test(sector)) continue;
-    const block = text.slice(Math.max(0, match.index - 80), match.index + 320);
+    const block = text.slice(Math.max(0, match.index - 40), match.index + 320);
     const d = parseDoctorFromText(block);
-    if (isPlausibleDoctor(d)) return d;
+    if (isPlausibleDoctor(d) && isMooreaGardeDoctor(d)) return d;
   }
 
   const fougerouse = text.match(
@@ -491,6 +578,14 @@ export function parseMooreaDoctorFromCoppfText(text: string): ParsedOnCall | nul
   }
 
   return null;
+}
+
+/** Horaires / contacts pharmacies Moorea (COPPF ne publie pas d'affiche Moorea). */
+export function defaultMooreaPharmacyHours(): GardePharmacyHours[] {
+  return MOOREA_PHARMACIES.map((p) => ({
+    district: p.district,
+    phone: p.phone,
+  }));
 }
 
 function isPlausibleDoctor(entry: ParsedOnCall | null): boolean {

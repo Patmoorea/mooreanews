@@ -96,14 +96,23 @@ function pharmacyDutyFromSnapshot(
   if (snap.pharmacy?.name) {
     return toDuty("pharmacy", snap.pharmacy, source, snap.sourceUrl);
   }
-  const hours = snap.pharmacyHours;
+  // COPPF n'a pas d'affiche pharmacies Moorea : afficher les 3 officines.
+  const hours =
+    snap.pharmacyHours && snap.pharmacyHours.length > 0
+      ? snap.pharmacyHours
+      : snap.doctor?.name
+        ? MOOREA_PHARMACIES.map((p) => ({
+            district: p.district,
+            phone: p.phone,
+          }))
+        : null;
   if (!hours?.length) return null;
   const summary = hours
     .map((h) => `${h.district} ${h.phone}`)
     .join(" · ");
   const first = hours[0]!;
   return {
-    name: "Pharmacies de garde (Afareaitu, Maharepa, Haapiti)",
+    name: "Pharmacies Moorea (Afareaitu · Paopao · Haapiti)",
     phone: first.phone,
     phoneHref: first.phone ? phoneHref(first.phone) : "",
     address: summary,
