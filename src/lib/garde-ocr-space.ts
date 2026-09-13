@@ -12,7 +12,11 @@ export type OcrSpaceResult = {
 };
 
 function ocrSpaceApiKey(): string | null {
-  const key = process.env.OCR_SPACE_API_KEY?.trim();
+  const key =
+    process.env.OCR_SPACE_API_KEY?.trim() ||
+    process.env.OCRSPACE_API_KEY?.trim() ||
+    process.env.OCR_SPACE_APIKEY?.trim() ||
+    null;
   return key || null;
 }
 
