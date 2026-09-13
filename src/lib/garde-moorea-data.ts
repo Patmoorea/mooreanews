@@ -105,6 +105,12 @@ function isWeakGardeLabel(label: string): boolean {
   return /week[- ]?end.*->/i.test(label) || /^\d{4}-\d{2}-\d{2}/.test(label.trim());
 }
 
+function doctorHasPhone(doctor: { phone?: string } | null | undefined): boolean {
+  const phone = doctor?.phone?.trim() ?? "";
+  if (!phone || phone === "—" || phone === "-" || phone === "–") return false;
+  return /\d/.test(phone);
+}
+
 /** Complète cache OCR incomplet avec fichier secours (même week-end). */
 export function mergeGardeSnapshotForDisplay(
   primary: GardeMooreaSnapshot,
@@ -117,17 +123,29 @@ export function mergeGardeSnapshotForDisplay(
       ? primary.label
       : fallback.label || primary.label;
 
+  const primaryDoctorOk =
+    primary.doctor?.name &&
+    isMooreaGardeDoctor(primary.doctor) &&
+    doctorHasPhone(primary.doctor);
+  const fallbackDoctorOk =
+    fallback?.doctor?.name &&
+    isMooreaGardeDoctor(fallback.doctor) &&
+    doctorHasPhone(fallback.doctor);
+
   return {
     ...primary,
     label,
-    doctor:
-      primary.doctor?.name && isMooreaGardeDoctor(primary.doctor)
-        ? primary.doctor
-        : fallback?.doctor && isMooreaGardeDoctor(fallback.doctor)
-          ? fallback.doctor
-          : primary.doctor?.name
-            ? primary.doctor
-            : fallback?.doctor ?? primary.doctor,
+    doctor: primaryDoctorOk
+      ? primary.doctor
+      : fallbackDoctorOk
+        ? fallback!.doctor
+        : primary.doctor?.name && isMooreaGardeDoctor(primary.doctor)
+          ? primary.doctor
+          : fallback?.doctor && isMooreaGardeDoctor(fallback.doctor)
+            ? fallback.doctor
+            : primary.doctor?.name
+              ? primary.doctor
+              : fallback?.doctor ?? primary.doctor,
     pharmacy: primary.pharmacy?.name ? primary.pharmacy : fallback.pharmacy ?? primary.pharmacy,
     doctorHours:
       primary.doctorHours?.saturday || primary.doctorHours?.sunday
