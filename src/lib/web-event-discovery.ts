@@ -12,10 +12,10 @@ import { MOOREA_KEYWORDS } from "@/lib/rss-sources";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getNextWeekRange } from "@/lib/week-ahead-range";
 import {
-  CRUISE_STOP_SEEDS,
   DELUXE_CRUISES_STAR_BREEZE_YEAR,
   FENUA_AGENDA_EVENT_BASE,
   FENUA_AGENDA_MOOREA_LIST,
+  MANUAL_EVENT_SEEDS,
   MARCHE_BIO,
   MOOREA_WEB_SEARCH_QUERIES,
   TAHITI_TOURISME_LISTING_URLS,
@@ -342,17 +342,17 @@ function discoverRecurringMarcheBio(
   return out;
 }
 
-function discoverCruiseSeeds(
+function discoverManualEventSeeds(
   rangeStart: string,
   rangeEnd: string,
 ): DiscoveredEvent[] {
-  return CRUISE_STOP_SEEDS.filter(
+  return MANUAL_EVENT_SEEDS.filter(
     (c) => c.date >= rangeStart && c.date <= rangeEnd,
   ).map((c) => ({
-    sourceId: "cruise-seed",
+    sourceId: "manual-seed",
     externalId: c.id,
     title: c.title,
-    description: `${c.description}\n\n${marker("cruise-seed", c.id)}`,
+    description: `${c.description}\n\n${marker("manual-seed", c.id)}`,
     category: c.category ?? "autre",
     date: c.date,
     endDate: c.endDate ?? null,
@@ -624,12 +624,15 @@ async function discoverWebSearchHints(
       const html = await fetchHtml(url);
       if (!html || !mentionsMoorea(html)) continue;
       const plain = normalizeText(html);
-      const bike = /v[eé]lo|bike|cycling|peloton/i.test(plain);
+      const bike =
+        /v[eé]lo|bike|cycling|peloton|cyclisme|tour tahiti nui|contre-la-montre/i.test(
+          plain,
+        );
       const cruisePort = /MOOREA[\s\S]{0,120}Arrives\s+\d{2}:\d{2}/i.test(
         html.replace(/<[^>]+>/g, " "),
       );
       const localEvent =
-        /agenda|festival|foire|march[eé]\s|course\s|concert|spectacle/i.test(
+        /agenda|festival|foire|march[eé]\s|course\s|concert|spectacle|tour tahiti nui/i.test(
           plain,
         );
       if (!bike && !cruisePort && !localEvent) continue;
@@ -959,7 +962,7 @@ export async function discoverWeekendMooreaEvents(
   const batches: DiscoveredEvent[][] = [];
 
   batches.push(discoverRecurringMarcheBio(start, end));
-  batches.push(discoverCruiseSeeds(start, end));
+  batches.push(discoverManualEventSeeds(start, end));
 
   try {
     batches.push(await discoverWindstarMooreaPortDays(start, end, errors));
