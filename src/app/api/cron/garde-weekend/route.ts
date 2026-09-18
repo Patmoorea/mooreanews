@@ -12,8 +12,13 @@ export const maxDuration = 300;
 
 async function notifyGardeGap(result: Awaited<ReturnType<typeof syncHealthOnCall>>) {
   const hasDoctor = Boolean(result.doctor);
-  const hasPharmacy = Boolean(result.pharmacy);
-  if (result.found && hasDoctor && hasPharmacy) return;
+  /**
+   * COPPF publie une affiche médecins (avec ligne Moorea) mais PAS d’affiche
+   * « pharmacie de garde Moorea ». Le site liste alors les 3 officines — ce n’est
+   * pas une panne. On n’alerte Telegram que si le médecin manque ou si aucune
+   * affiche n’a été trouvée (jeu–dim).
+   */
+  if (result.found && hasDoctor) return;
 
   // Lun–mer : pas d’affiche WE attendue → pas d’alerte (évite le spam).
   const clock = getTahitiClock();
@@ -23,13 +28,11 @@ async function notifyGardeGap(result: Awaited<ReturnType<typeof syncHealthOnCall
     "<b>⚠️ Garde week-end — sync incomplète</b>",
     "",
     result.found
-      ? hasDoctor
-        ? "Médecin OK mais pharmacie non extraite (OCR ou affiche COPPF)."
-        : "Affiche trouvée mais médecin non extrait (OCR trop lent ou illisible)."
-      : "Aucune affiche garde détectée (COPPF / Commune).",
+      ? "Affiche trouvée mais médecin non extrait (OCR trop lent ou illisible)."
+      : "Aucune affiche médecins de garde détectée (COPPF / Commune).",
     "",
-    `Pharmacie : ${escapeHtml(result.pharmacy ?? "—")}`,
     `Médecin : ${escapeHtml(result.doctor ?? "—")}`,
+    `Pharmacie : ${escapeHtml(result.pharmacy ?? "— (COPPF ne publie pas d’affiche Moorea → 3 officines listées)")}`,
     result.ocrError
       ? `OCR : ${escapeHtml(result.ocrError)}${result.ocrError.includes("timeout") ? " — réessayez dans 5 min ou relancez le cron force=1" : ""}`
       : "",
@@ -49,7 +52,7 @@ async function runGardeSync() {
   if (result.articleSlug) {
     revalidatePath(`/actualites/${result.articleSlug}`);
   }
-  if (!result.found || !result.doctor || !result.pharmacy) {
+  if (!result.found || !result.doctor) {
     await notifyGardeGap(result).catch(() => {});
   }
   return result;
