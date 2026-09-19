@@ -6,8 +6,7 @@ import { CovoiturageFerryPanel } from "@/components/CovoiturageFerryPanel";
 import { getCarpoolOffers } from "@/lib/content";
 import { expireStaleAnnouncements } from "@/lib/announcement-expiry";
 import { listingPageMetadata } from "@/lib/seo";
-import { MOOREA_COMMUNITY_LINKS, SOCIAL } from "@/lib/constants";
-import Link from "next/link";
+import { SOCIAL } from "@/lib/constants";
 import { Share2 } from "lucide-react";
 
 export const revalidate = 120;
@@ -22,10 +21,6 @@ export const metadata = listingPageMetadata({
 export default async function CovoituragePage() {
   await expireStaleAnnouncements();
   const offers = await getCarpoolOffers();
-
-  const fbGroup =
-    MOOREA_COMMUNITY_LINKS.find((l) => l.href.includes("/groups/"))?.href ??
-    SOCIAL.facebook;
 
   return (
     <>
@@ -46,14 +41,14 @@ export default async function CovoituragePage() {
                 Partager aussi sur Facebook
               </p>
               <p className="mt-2">
-                Après publication, partagez le lien dans le{" "}
+                Après publication, partagez le lien sur la{" "}
                 <a
-                  href={fbGroup}
+                  href={SOCIAL.facebook}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-medium text-lagon-700 underline"
                 >
-                  groupe Facebook Moorea
+                  page Facebook MooreaNews
                 </a>{" "}
                 pour toucher plus de monde.
               </p>
