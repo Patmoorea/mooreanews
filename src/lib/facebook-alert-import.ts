@@ -55,9 +55,7 @@ async function insertFacebookAlert(opts: {
   const endsAt = new Date(
     Date.now() + opts.durationHours * 60 * 60 * 1000,
   ).toISOString();
-  const details =
-    opts.message.slice(0, 500) +
-    (opts.imageUrl?.trim() ? `\n\nAffiche : ${opts.imageUrl.trim()}` : "");
+  const details = opts.message.slice(0, 800).trim() || null;
 
   const { data: inserted, error } = await admin
     .from("alerts")
@@ -65,7 +63,7 @@ async function insertFacebookAlert(opts: {
       type: opts.type,
       severity: opts.severity,
       title: opts.title.slice(0, 200),
-      details: details.trim() || null,
+      details,
       source_url: opts.sourceUrl,
       starts_at: new Date().toISOString(),
       ends_at: endsAt,
@@ -202,9 +200,11 @@ export async function tryImportFacebookMeteoAlert(opts: {
     message,
     opts.fallbackTitle ?? "Vigilance météo — Polynésie",
   );
-  const urgent = /cyclone|tempete tropicale|tempête tropicale|alerte rouge/i.test(
-    message,
-  );
+  // Ne pas marquer urgent juste parce que le mot « cyclone » est dans le nom de page.
+  const urgent =
+    /alerte rouge|alerte orange|tempete tropicale|tempête tropicale|vigilance (orange|rouge)|confinez/i.test(
+      message,
+    );
 
   return insertFacebookAlert({
     type: "meteo",
@@ -216,4 +216,36 @@ export async function tryImportFacebookMeteoAlert(opts: {
     imageUrl: opts.imageUrl,
     durationHours: 48,
   });
+}
+
+/** Désactive les fausses alertes météo (coquille page Infos Cyclones, etc.). */
+export async function deactivateFalseMeteoAlerts(): Promise<number> {
+  const admin = getAdminSupabase();
+  if (!admin) return 0;
+
+  const { data: rows } = await admin
+    .from("alerts")
+    .select("id, title, details, source_url")
+    .eq("type", "meteo")
+    .eq("active", true);
+
+  let n = 0;
+  for (const row of rows ?? []) {
+    const corpus = `${row.title} ${row.details ?? ""}`;
+    const fromFbCyclones =
+      (row.source_url ?? "").includes("facebook.com/infoscyclones") ||
+      (row.source_url ?? "").includes("fbcdn.net") ||
+      /infos cyclones/i.test(row.title);
+    const junk =
+      isFacebookPageBoilerplate(corpus) ||
+      (fromFbCyclones && !isCycloneMeteoNotice(corpus, "Infos cyclones"));
+
+    if (!junk) continue;
+    const { error } = await admin
+      .from("alerts")
+      .update({ active: false, updated_at: new Date().toISOString() })
+      .eq("id", row.id);
+    if (!error) n += 1;
+  }
+  return n;
 }

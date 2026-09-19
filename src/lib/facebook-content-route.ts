@@ -26,6 +26,33 @@ export function isCycloneMeteoNotice(
 ): boolean {
   const n = normalize(message);
   if (isFacebookPageBoilerplate(message)) return false;
+
+  // « Infos Cyclones » seul = nom de page, pas un bulletin.
+  const realSignal =
+    n.includes("vigilance") ||
+    n.includes("tempete tropicale") ||
+    n.includes("tempête tropicale") ||
+    n.includes("alerte meteo") ||
+    n.includes("alerte météo") ||
+    n.includes("alerte orange") ||
+    n.includes("alerte rouge") ||
+    n.includes("alerte jaune") ||
+    n.includes("phenomene") ||
+    n.includes("phénomène") ||
+    n.includes("bulletin") ||
+    /\bcyclonique\b/.test(n) ||
+    (n.includes("cyclone") &&
+      (n.includes("alerte") ||
+        n.includes("vigilance") ||
+        n.includes("depression") ||
+        n.includes("dépression") ||
+        n.includes("formation") ||
+        n.includes("trajet") ||
+        n.includes("prevision") ||
+        n.includes("prévision")));
+
+  if (!realSignal) return false;
+
   const label = normalize(sourceLabel ?? "");
   const fromCycloneSource =
     label.includes("cyclone") ||
@@ -33,22 +60,12 @@ export function isCycloneMeteoNotice(
     label.includes("météo") ||
     label.includes("vigilance");
 
-  const hasMeteoSignal =
-    n.includes("vigilance") ||
-    n.includes("cyclone") ||
-    n.includes("tempete tropicale") ||
-    n.includes("tempête tropicale") ||
-    n.includes("alerte meteo") ||
-    n.includes("alerte météo") ||
-    n.includes("cyclonique");
-
-  if (fromCycloneSource && hasMeteoSignal) return true;
+  if (fromCycloneSource) return true;
   return (
-    hasMeteoSignal &&
-    (n.includes("polynesie") ||
-      n.includes("polynésie") ||
-      n.includes("moorea") ||
-      n.includes("tahiti"))
+    n.includes("polynesie") ||
+    n.includes("polynésie") ||
+    n.includes("moorea") ||
+    n.includes("tahiti")
   );
 }
 

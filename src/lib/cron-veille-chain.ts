@@ -21,6 +21,7 @@ import { cleanupPublishedFacebookEmptyShells } from "@/lib/facebook-import-clean
 import {
   deactivateFalseFerryAlerts,
   deactivateFalseHouleAlerts,
+  deactivateFalseMeteoAlerts,
 } from "@/lib/facebook-alert-import";
 import { notifyVeilleReport, notifyPublicNewArticles } from "@/lib/telegram-notify";
 import {
@@ -178,7 +179,8 @@ export async function runVeillePartFinish() {
 
   const falseHouleAlerts = await deactivateFalseHouleAlerts();
   const falseFerryAlerts = await deactivateFalseFerryAlerts();
-  if (falseHouleAlerts > 0 || falseFerryAlerts > 0) {
+  const falseMeteoAlerts = await deactivateFalseMeteoAlerts();
+  if (falseHouleAlerts > 0 || falseFerryAlerts > 0 || falseMeteoAlerts > 0) {
     revalidatePath("/");
     revalidatePath("/alertes");
   }

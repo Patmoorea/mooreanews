@@ -14,17 +14,29 @@ export function isFacebookPageBoilerplate(text: string): boolean {
   const n = normalize(text);
   if (!n.trim()) return true;
   const hasLikes = /\d[\d\s,.]*\s*likes/.test(n);
+  const hasFollowers = /\d[\d\s,.]*\s*followers/.test(n);
   const hasTalking = n.includes("talking about");
   const hasFollow =
     n.includes("people follow this") ||
     n.includes("suivez l actualite") ||
     n.includes("suivez l'actualite");
-  if (hasLikes && (hasTalking || hasFollow)) return true;
+  if ((hasLikes || hasFollowers) && (hasTalking || hasFollow)) return true;
   if (
     n.includes("infos cyclones") &&
-    hasLikes &&
+    (hasLikes || hasFollowers || hasTalking) &&
     !n.includes("vigilance") &&
-    n.length < 220
+    !n.includes("alerte") &&
+    n.length < 280
+  ) {
+    return true;
+  }
+  // Page d’accueil FB : titre + slogan, sans bulletin.
+  if (
+    n.includes("infos cyclones") &&
+    n.includes("observer") &&
+    n.includes("transmettre") &&
+    !n.includes("vigilance") &&
+    n.length < 280
   ) {
     return true;
   }

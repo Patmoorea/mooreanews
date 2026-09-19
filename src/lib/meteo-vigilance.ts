@@ -565,5 +565,8 @@ export function vigilanceDisplayLevel(snapshot: MeteoVigilanceSnapshot): number 
 /** Retire la balise technique de synchro avant affichage public. */
 export function meteoAlertPublicDetails(details: string | null): string {
   if (!details) return "";
-  return details.replace(/\n<!--vigilance-sync:[^>]+-->/g, "").trim();
+  return details
+    .replace(/\n<!--vigilance-sync:[^>]+-->/g, "")
+    .replace(/\n*Affiche\s*:\s*https?:\/\/\S+/gi, "")
+    .trim();
 }

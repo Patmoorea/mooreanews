@@ -20,6 +20,7 @@ import {
 import {
   deactivateFalseFerryAlerts,
   deactivateFalseHouleAlerts,
+  deactivateFalseMeteoAlerts,
 } from "@/lib/facebook-alert-import";
 import {
   purgeStaleFacebookImports,
@@ -314,7 +315,9 @@ export async function runDailyCronPart(
       jobs.falseHouleAlertsDeactivated = falseHouleAlerts;
       const falseFerryAlerts = await deactivateFalseFerryAlerts();
       jobs.falseFerryAlertsDeactivated = falseFerryAlerts;
-      if (falseHouleAlerts > 0 || falseFerryAlerts > 0) {
+      const falseMeteoAlerts = await deactivateFalseMeteoAlerts();
+      jobs.falseMeteoAlertsDeactivated = falseMeteoAlerts;
+      if (falseHouleAlerts > 0 || falseFerryAlerts > 0 || falseMeteoAlerts > 0) {
         revalidatePath("/");
         revalidatePath("/alertes");
       }
