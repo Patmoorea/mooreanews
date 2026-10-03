@@ -554,17 +554,296 @@ html.dark article.bg-white {
 }
 
 /* ============================================================
-   OCTOBRE ROSE 2026
-   Thème visuel seulement. Actif avec la classe html.octobre-rose,
-   posée en octobre 2026 (heure de Tahiti) par isOctobreRoseActive.
-   En novembre la classe disparaît toute seule.
-   Pour retirer le code : ce bloc, OctobreRoseBanner, src/lib/octobre-rose.ts,
-   et le branchement dans layout.tsx / manifest.ts.
-   Le texte courant reste sur les tons 700–950 (prune foncée).
-   Les fonds et les cartes restent rose très clair.
+   SAISONS — heure de Tahiti
+   html[data-season] est posé par activeSeason(). Hors fenêtre, le lagon
+   d'origine reste en place. Le texte courant reste sur ocean 700–950.
+   Les fonds restent très clairs. Le bandeau, les boutons et les accents changent.
    ============================================================ */
 
-html.octobre-rose {
+html[data-season] {
+  --background: var(--color-ocean-50);
+  --foreground: var(--color-ocean-950);
+  --surface: color-mix(in srgb, var(--color-ocean-50) 40%, white);
+  --surface-elevated: var(--surface);
+  --border: color-mix(in srgb, var(--color-lagon-600) 16%, transparent);
+  --hero-overlay: var(--color-lagon-800);
+  --hero-accent: var(--color-lagon-300);
+  --hero-action: var(--color-lagon-500);
+  --shadow-soft:
+    0 2px 12px -2px color-mix(in srgb, var(--color-lagon-700) 16%, transparent),
+    0 1px 4px -1px color-mix(in srgb, var(--color-lagon-700) 8%, transparent);
+  --shadow-tropical:
+    0 10px 30px -8px color-mix(in srgb, var(--color-lagon-700) 24%, transparent),
+    0 4px 12px -4px color-mix(in srgb, var(--color-lagon-800) 14%, transparent);
+  --shadow-sunset:
+    0 8px 24px -6px color-mix(in srgb, var(--color-lagon-500) 28%, transparent);
+}
+
+html[data-season] ::selection {
+  background: var(--color-lagon-300);
+  color: var(--color-lagon-900);
+}
+
+html[data-season] ::-webkit-scrollbar-track {
+  background: var(--color-ocean-50);
+}
+html[data-season] ::-webkit-scrollbar-thumb {
+  background: var(--color-lagon-400);
+  border-color: var(--color-ocean-50);
+}
+html[data-season] ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-lagon-500);
+}
+
+html[data-season] .bg-island-sky {
+  background-color: var(--color-ocean-50);
+  background-image:
+    radial-gradient(
+      ellipse 120% 80% at 50% -20%,
+      color-mix(in srgb, var(--color-lagon-300) 42%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 80% 50% at 100% 0%,
+      color-mix(in srgb, var(--color-lagon-200) 50%, transparent),
+      transparent 46%
+    ),
+    radial-gradient(
+      ellipse 60% 40% at 0% 100%,
+      color-mix(in srgb, var(--color-lagon-500) 10%, transparent),
+      transparent 50%
+    ),
+    linear-gradient(180deg, var(--color-lagon-50) 0%, var(--color-ocean-50) 42%, #fffdfd 100%);
+}
+
+html[data-season] .bg-palm-pattern {
+  background-image: none;
+}
+
+html[data-season]:not(.dark) .bg-white {
+  background-color: color-mix(in srgb, var(--color-ocean-50) 48%, white);
+}
+
+html[data-season] header {
+  background: color-mix(in srgb, var(--color-lagon-50) 82%, white) !important;
+  border-color: color-mix(in srgb, var(--color-lagon-300) 70%, transparent) !important;
+}
+
+html[data-season] .card-tropical,
+html[data-season] .card-island {
+  background: color-mix(in srgb, var(--color-ocean-50) 55%, white);
+  border-color: color-mix(in srgb, var(--color-lagon-600) 16%, transparent);
+}
+
+html[data-season] .btn-tropical:hover {
+  box-shadow:
+    var(--shadow-tropical),
+    0 0 0 4px color-mix(in srgb, var(--color-lagon-500) 18%, transparent);
+}
+
+html.dark[data-season] {
+  --background: var(--color-ocean-950);
+  --foreground: var(--color-ocean-50);
+  --surface: var(--color-ocean-900);
+  --border: color-mix(in srgb, var(--color-lagon-300) 28%, transparent);
+  --hero-overlay: var(--color-ocean-950);
+}
+
+html.dark[data-season] body,
+html.dark[data-season] .bg-island-sky {
+  background-color: var(--color-ocean-950);
+  background-image:
+    radial-gradient(
+      ellipse 120% 80% at 50% -20%,
+      color-mix(in srgb, var(--color-lagon-600) 34%, transparent),
+      transparent 55%
+    ),
+    linear-gradient(180deg, var(--color-ocean-900) 0%, var(--color-ocean-950) 100%);
+}
+
+html.dark[data-season] header {
+  background: color-mix(in srgb, var(--color-ocean-950) 95%, transparent) !important;
+  border-color: color-mix(in srgb, var(--color-lagon-300) 24%, transparent) !important;
+}
+
+html.dark[data-season] .card-tropical,
+html.dark[data-season] .card-island,
+html.dark[data-season] article.bg-white {
+  background: var(--color-ocean-900);
+  border-color: color-mix(in srgb, var(--color-lagon-300) 22%, transparent);
+  color: var(--color-ocean-50);
+}
+
+html[data-season="nouvel-an"] {
+  --color-lagon-50: #fffbeb;
+  --color-lagon-100: #fef3c7;
+  --color-lagon-200: #fde68a;
+  --color-lagon-300: #fcd34d;
+  --color-lagon-400: #f59e0b;
+  --color-lagon-500: #1e3a5f;
+  --color-lagon-600: #172554;
+  --color-lagon-700: #111c3a;
+  --color-lagon-800: #0c1730;
+  --color-lagon-900: #070e1e;
+  --color-ocean-50: #fbf7ee;
+  --color-ocean-100: #f5edd8;
+  --color-ocean-200: #e8d7a8;
+  --color-ocean-300: #d4bc78;
+  --color-ocean-400: #c4a35a;
+  --color-ocean-500: #3d4f73;
+  --color-ocean-600: #2a3a5c;
+  --color-ocean-700: #1e2c4a;
+  --color-ocean-800: #152038;
+  --color-ocean-900: #0e1628;
+  --color-ocean-950: #090f1c;
+}
+
+html[data-season="saint-valentin"] {
+  --color-lagon-50: #fff1f2;
+  --color-lagon-100: #ffe4e6;
+  --color-lagon-200: #fecdd3;
+  --color-lagon-300: #fda4af;
+  --color-lagon-400: #fb7185;
+  --color-lagon-500: #9f1239;
+  --color-lagon-600: #881337;
+  --color-lagon-700: #6b1028;
+  --color-lagon-800: #6b1028;
+  --color-lagon-900: #3f0314;
+  --color-ocean-50: #fff7f7;
+  --color-ocean-100: #ffe4e6;
+  --color-ocean-200: #fecdd3;
+  --color-ocean-300: #fda4af;
+  --color-ocean-400: #fb7185;
+  --color-ocean-500: #9f1239;
+  --color-ocean-600: #881337;
+  --color-ocean-700: #6b1028;
+  --color-ocean-800: #4c0519;
+  --color-ocean-900: #3f0314;
+  --color-ocean-950: #2a020d;
+}
+
+html[data-season="paques"] {
+  --color-lagon-50: #f0fdf4;
+  --color-lagon-100: #dcfce7;
+  --color-lagon-200: #bbf7d0;
+  --color-lagon-300: #86efac;
+  --color-lagon-400: #4ade80;
+  --color-lagon-500: #166534;
+  --color-lagon-600: #14532d;
+  --color-lagon-700: #14532d;
+  --color-lagon-800: #052e16;
+  --color-lagon-900: #052e16;
+  --color-ocean-50: #f4fbf6;
+  --color-ocean-100: #e7f6ec;
+  --color-ocean-200: #c9ead6;
+  --color-ocean-300: #9fd8b6;
+  --color-ocean-400: #6fbf96;
+  --color-ocean-500: #1f7a4d;
+  --color-ocean-600: #166534;
+  --color-ocean-700: #14532d;
+  --color-ocean-800: #0f3d24;
+  --color-ocean-900: #0c2e1b;
+  --color-ocean-950: #071910;
+}
+
+html[data-season="heiva"] {
+  --color-lagon-50: #fff7ed;
+  --color-lagon-100: #ffedd5;
+  --color-lagon-200: #fed7aa;
+  --color-lagon-300: #fdba74;
+  --color-lagon-400: #fb923c;
+  --color-lagon-500: #9a3412;
+  --color-lagon-600: #7c2d12;
+  --color-lagon-700: #6b240f;
+  --color-lagon-800: #6b240f;
+  --color-lagon-900: #2d0f08;
+  --color-ocean-50: #fff8f3;
+  --color-ocean-100: #ffedd5;
+  --color-ocean-200: #fed7aa;
+  --color-ocean-300: #fdba74;
+  --color-ocean-400: #fb923c;
+  --color-ocean-500: #9a3412;
+  --color-ocean-600: #7c2d12;
+  --color-ocean-700: #6b240f;
+  --color-ocean-800: #431407;
+  --color-ocean-900: #2d0f08;
+  --color-ocean-950: #1c0a05;
+}
+
+html[data-season="baleines"] {
+  --color-lagon-50: #f0fdfa;
+  --color-lagon-100: #ccfbf1;
+  --color-lagon-200: #99f6e4;
+  --color-lagon-300: #5eead4;
+  --color-lagon-400: #2dd4bf;
+  --color-lagon-500: #0f766e;
+  --color-lagon-600: #115e59;
+  --color-lagon-700: #134e4a;
+  --color-lagon-800: #0f3d3a;
+  --color-lagon-900: #042f2e;
+  --color-ocean-50: #f3fbfb;
+  --color-ocean-100: #dff5f4;
+  --color-ocean-200: #b7e6e3;
+  --color-ocean-300: #7dcec8;
+  --color-ocean-400: #5eead4;
+  --color-ocean-500: #0f766e;
+  --color-ocean-600: #115e59;
+  --color-ocean-700: #134e4a;
+  --color-ocean-800: #0f3d3a;
+  --color-ocean-900: #08302e;
+  --color-ocean-950: #042421;
+}
+
+html[data-season="hawaiki-nui"] {
+  --hero-accent: #fde68a;
+  --color-lagon-50: #ecfeff;
+  --color-lagon-100: #cffafe;
+  --color-lagon-200: #a5f3fc;
+  --color-lagon-300: #67e8f9;
+  --color-lagon-400: #22d3ee;
+  --color-lagon-500: #0e7490;
+  --color-lagon-600: #155e75;
+  --color-lagon-700: #164e63;
+  --color-lagon-800: #0c4a6e;
+  --color-lagon-900: #083344;
+  --color-ocean-50: #f3fbff;
+  --color-ocean-100: #e0f4ff;
+  --color-ocean-200: #bae6fd;
+  --color-ocean-300: #7dd3fc;
+  --color-ocean-400: #38bdf8;
+  --color-ocean-500: #0369a1;
+  --color-ocean-600: #075985;
+  --color-ocean-700: #0c4a6e;
+  --color-ocean-800: #083654;
+  --color-ocean-900: #06283d;
+  --color-ocean-950: #041824;
+}
+
+html[data-season="rentree"] {
+  --color-lagon-50: #f7fee7;
+  --color-lagon-100: #ecfccb;
+  --color-lagon-200: #d9f99d;
+  --color-lagon-300: #bef264;
+  --color-lagon-400: #a3e635;
+  --color-lagon-500: #3f6212;
+  --color-lagon-600: #365314;
+  --color-lagon-700: #365314;
+  --color-lagon-800: #1a2e05;
+  --color-lagon-900: #142204;
+  --color-ocean-50: #f8faf3;
+  --color-ocean-100: #eef4d8;
+  --color-ocean-200: #dce8b0;
+  --color-ocean-300: #c3d984;
+  --color-ocean-400: #a3c45a;
+  --color-ocean-500: #4d7c0f;
+  --color-ocean-600: #3f6212;
+  --color-ocean-700: #365314;
+  --color-ocean-800: #24380d;
+  --color-ocean-900: #1a2a09;
+  --color-ocean-950: #101a05;
+}
+
+html[data-season="octobre-rose"] {
   --color-lagon-50: #fff5f8;
   --color-lagon-100: #ffe4ef;
   --color-lagon-200: #fecde0;
@@ -575,7 +854,6 @@ html.octobre-rose {
   --color-lagon-700: #831843;
   --color-lagon-800: #6b1238;
   --color-lagon-900: #4a0c28;
-
   --color-ocean-50: #fff7f9;
   --color-ocean-100: #fde8f0;
   --color-ocean-200: #f8d0e0;
@@ -587,103 +865,52 @@ html.octobre-rose {
   --color-ocean-800: #45142c;
   --color-ocean-900: #32101f;
   --color-ocean-950: #230914;
-
-  --background: #fff7f9;
-  --foreground: #230914;
-  --surface: #fff8fa;
-  --surface-elevated: #fff8fa;
-  --border: rgb(194 24 91 / 0.14);
-
-  --hero-overlay: #5c1230;
-  --hero-accent: #f9a8d4;
-  --hero-action: #c2185b;
-
-  --shadow-soft: 0 2px 12px -2px rgb(157 23 77 / 0.1), 0 1px 4px -1px rgb(157 23 77 / 0.06);
-  --shadow-tropical: 0 10px 30px -8px rgb(157 23 77 / 0.22), 0 4px 12px -4px rgb(107 18 56 / 0.14);
-  --shadow-sunset: 0 8px 24px -6px rgb(194 24 91 / 0.28);
 }
 
-html.octobre-rose ::selection {
-  background: #f9a8d4;
-  color: #4a0c28;
+html[data-season="coupe-du-monde"] {
+  --color-lagon-50: #eff6ff;
+  --color-lagon-100: #dbeafe;
+  --color-lagon-200: #bfdbfe;
+  --color-lagon-300: #fcd34d;
+  --color-lagon-400: #fbbf24;
+  --color-lagon-500: #1d4ed8;
+  --color-lagon-600: #1e3a8a;
+  --color-lagon-700: #1e3a8a;
+  --color-lagon-800: #172554;
+  --color-lagon-900: #0f172a;
+  --color-ocean-50: #f5f7fb;
+  --color-ocean-100: #e8eef8;
+  --color-ocean-200: #d4e0f5;
+  --color-ocean-300: #a9c2ef;
+  --color-ocean-400: #7aa2e3;
+  --color-ocean-500: #1e40af;
+  --color-ocean-600: #1e3a8a;
+  --color-ocean-700: #172554;
+  --color-ocean-800: #131c3d;
+  --color-ocean-900: #0d142b;
+  --color-ocean-950: #080e1f;
 }
 
-html.octobre-rose ::-webkit-scrollbar-track {
-  background: #fff7f9;
-}
-html.octobre-rose ::-webkit-scrollbar-thumb {
-  background: #f472b6;
-  border-color: #fff7f9;
-}
-html.octobre-rose ::-webkit-scrollbar-thumb:hover {
-  background: #c2185b;
-}
-
-html.octobre-rose .bg-island-sky {
-  background-color: #fff7f9;
-  background-image:
-    radial-gradient(ellipse 120% 80% at 50% -20%, rgb(249 168 212 / 0.42), transparent 55%),
-    radial-gradient(ellipse 80% 50% at 100% 0%, rgb(251 207 232 / 0.38), transparent 46%),
-    radial-gradient(ellipse 60% 40% at 0% 100%, rgb(194 24 91 / 0.07), transparent 50%),
-    linear-gradient(180deg, #fff1f6 0%, #fff7f9 42%, #fffdfd 100%);
-}
-
-html.octobre-rose .bg-palm-pattern {
-  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 8c-4 8-8 14-8 22 0 6 4 10 8 10s8-4 8-10c0-8-4-14-8-22z' fill='%23c2185b' fill-opacity='0.035'/%3E%3C/svg%3E");
-}
-
-html.octobre-rose:not(.dark) .bg-white {
-  background-color: #fff8fa;
-}
-
-html.octobre-rose header {
-  background: rgb(255 245 248 / 0.94) !important;
-  border-color: rgb(249 168 212 / 0.75) !important;
-}
-
-html.octobre-rose .card-tropical,
-html.octobre-rose .card-island {
-  background: #fff5f8;
-  border-color: rgb(194 24 91 / 0.14);
-}
-
-html.octobre-rose .btn-tropical:hover {
-  box-shadow:
-    var(--shadow-tropical),
-    0 0 0 4px rgb(194 24 91 / 0.16);
-}
-
-html.dark.octobre-rose {
-  --background: #2a0c18;
-  --foreground: #fff1f5;
-  --surface: #3d1226;
-  --border: rgb(249 168 212 / 0.2);
-  --hero-overlay: #3d0c1e;
-}
-
-html.dark.octobre-rose body {
-  background-color: #2a0c18;
-  background-image:
-    radial-gradient(ellipse 120% 80% at 50% -20%, rgb(157 23 77 / 0.38), transparent 55%),
-    linear-gradient(180deg, #3d1226 0%, #2a0c18 100%);
-}
-
-html.dark.octobre-rose .bg-island-sky {
-  background-color: #2a0c18;
-  background-image:
-    radial-gradient(ellipse 120% 80% at 50% -20%, rgb(157 23 77 / 0.32), transparent 55%),
-    linear-gradient(180deg, #3d1226 0%, #2a0c18 100%);
-}
-
-html.dark.octobre-rose header {
-  background: rgb(42 12 24 / 0.95) !important;
-  border-color: rgb(249 168 212 / 0.22) !important;
-}
-
-html.dark.octobre-rose .card-tropical,
-html.dark.octobre-rose .card-island,
-html.dark.octobre-rose article.bg-white {
-  background: #3d1226;
-  border-color: rgb(249 168 212 / 0.18);
-  color: #fff1f5;
+html[data-season="noel"] {
+  --color-lagon-50: #fef2f2;
+  --color-lagon-100: #fee2e2;
+  --color-lagon-200: #fecaca;
+  --color-lagon-300: #fcd34d;
+  --color-lagon-400: #f87171;
+  --color-lagon-500: #b91c1c;
+  --color-lagon-600: #991b1b;
+  --color-lagon-700: #7f1d1d;
+  --color-lagon-800: #6b1212;
+  --color-lagon-900: #450a0a;
+  --color-ocean-50: #fff8f6;
+  --color-ocean-100: #fee8e4;
+  --color-ocean-200: #f8cfc6;
+  --color-ocean-300: #f0b0a4;
+  --color-ocean-400: #e08b80;
+  --color-ocean-500: #9f1239;
+  --color-ocean-600: #881337;
+  --color-ocean-700: #6b1028;
+  --color-ocean-800: #4c0519;
+  --color-ocean-900: #3a0414;
+  --color-ocean-950: #24020c;
 }

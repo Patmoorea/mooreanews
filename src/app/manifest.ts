@@ -1,17 +1,17 @@
 import type { MetadataRoute } from "next";
 import { SITE } from "@/lib/constants";
-import { isOctobreRoseActive } from "@/lib/octobre-rose";
+import { activeSeason } from "@/lib/seasonal-theme";
 
 export default function manifest(): MetadataRoute.Manifest {
-  const rose = isOctobreRoseActive();
+  const season = activeSeason();
   return {
     name: `${SITE.name} — ${SITE.tagline}`,
     short_name: SITE.name,
     description: SITE.description,
     start_url: "/app",
     display: "standalone",
-    background_color: rose ? "#fff7f9" : "#0c4a6e",
-    theme_color: rose ? "#c2185b" : "#06b6d4",
+    background_color: season?.pageColor ?? "#0c4a6e",
+    theme_color: season?.themeColor ?? "#06b6d4",
     orientation: "portrait",
     lang: "fr-PF",
     categories: ["news", "weather", "travel"],

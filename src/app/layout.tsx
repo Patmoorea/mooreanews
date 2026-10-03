@@ -12,7 +12,7 @@ import {
   webSiteJsonLd,
 } from "@/lib/seo";
 import { getFooterSponsorStripItems } from "@/lib/ads";
-import { isOctobreRoseActive } from "@/lib/octobre-rose";
+import { activeSeason } from "@/lib/seasonal-theme";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -97,12 +97,12 @@ export const metadata: Metadata = {
 export const revalidate = 600;
 
 export function generateViewport(): Viewport {
-  const rose = isOctobreRoseActive();
+  const season = activeSeason();
   return {
-    themeColor: rose
+    themeColor: season
       ? [
-          { media: "(prefers-color-scheme: light)", color: "#c2185b" },
-          { media: "(prefers-color-scheme: dark)", color: "#5c1230" },
+          { media: "(prefers-color-scheme: light)", color: season.themeColor },
+          { media: "(prefers-color-scheme: dark)", color: season.themeColorDark },
         ]
       : [
           { media: "(prefers-color-scheme: light)", color: "#06b6d4" },
@@ -119,12 +119,13 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const sponsorItems = await getFooterSponsorStripItems();
-  const octobreRose = isOctobreRoseActive();
+  const season = activeSeason();
 
   return (
     <html
       lang="fr"
-      className={`${inter.variable} ${marcellus.variable} antialiased${octobreRose ? " octobre-rose" : ""}`}
+      data-season={season?.id}
+      className={`${inter.variable} ${marcellus.variable} antialiased`}
     >
       <body className="min-h-screen flex flex-col bg-island-sky bg-palm-pattern text-ocean-950 dark:bg-ocean-950 dark:text-ocean-50">
         <JsonLd data={webSiteJsonLd()} />
