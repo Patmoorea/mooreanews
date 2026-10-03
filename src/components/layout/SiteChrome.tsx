@@ -6,7 +6,7 @@ import type { AdSponsorStripItem } from "@/lib/ads-sponsors";
 import { InfoBannerSlot } from "@/components/layout/InfoBannerSlot";
 import { BreakingNewsSlot } from "@/components/layout/BreakingNewsSlot";
 import { Header } from "@/components/layout/Header";
-import { OctobreRoseBanner } from "@/components/layout/OctobreRoseBanner";
+import { SeasonalBanner } from "@/components/layout/SeasonalBanner";
 import { Footer } from "@/components/layout/Footer";
 import { Ticker } from "@/components/widgets/Ticker";
 import { ServiceHighlightsTicker } from "@/components/widgets/ServiceHighlightsTicker";
@@ -50,7 +50,7 @@ export function SiteChrome({
       </Suspense>
       <InfoBannerSlot />
       <BreakingNewsSlot />
-      <OctobreRoseBanner />
+      <SeasonalBanner />
       <Header />
       <ServiceHighlightsTicker />
       <Ticker />

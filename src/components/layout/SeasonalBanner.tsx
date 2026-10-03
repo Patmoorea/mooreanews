@@ -1,4 +1,4 @@
-import { isOctobreRoseActive } from "@/lib/octobre-rose";
+import { activeSeason } from "@/lib/seasonal-theme";
 
 function RibbonIcon() {
   return (
@@ -21,15 +21,16 @@ function RibbonIcon() {
   );
 }
 
-/** Une ligne, sans collecte de dons ni promesse médicale. */
-export function OctobreRoseBanner() {
-  if (!isOctobreRoseActive()) return null;
+/** Bandeau d'une ligne. Absent hors saison. */
+export function SeasonalBanner() {
+  const season = activeSeason();
+  if (!season) return null;
 
   return (
     <div className="no-print bg-lagon-800 text-white" role="note">
       <p className="mx-auto max-w-7xl px-4 py-1.5 text-center text-[13px] leading-snug sm:text-sm">
-        <RibbonIcon />
-        Octobre rose — MooreaNews porte le ruban rose.
+        {season.id === "octobre-rose" ? <RibbonIcon /> : null}
+        {season.banner}
       </p>
     </div>
   );
