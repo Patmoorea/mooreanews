@@ -117,17 +117,14 @@ export function Hero() {
         className="object-cover object-center scale-105"
         aria-hidden
       />
-      <div
-        aria-hidden
-        className="absolute inset-0 bg-gradient-to-b from-[#083B66]/85 via-[#083B66]/55 to-[#083B66]/92"
-      />
+      <div aria-hidden className="hero-scrim absolute inset-0" />
       <div
         aria-hidden
         className="absolute inset-0 bg-gradient-to-tr from-lagon-500/15 via-transparent to-soleil-400/10"
       />
       <div
         aria-hidden
-        className="absolute top-0 right-0 w-[min(100%,520px)] h-full opacity-20 bg-[radial-gradient(circle_at_70%_30%,#00C2D7_0%,transparent_55%)]"
+        className="hero-accent-glow absolute top-0 right-0 w-[min(100%,520px)] h-full opacity-20"
       />
 
       <Container className="relative z-10 py-10 sm:py-14 lg:py-16">
@@ -155,9 +152,7 @@ export function Hero() {
                 {SITE.name}
               </span>
               Toute l&apos;actualité de Moorea{" "}
-              <span className="bg-gradient-to-r from-[#00C2D7] via-lagon-300 to-soleil-300 bg-clip-text text-transparent">
-                en temps réel
-              </span>
+              <span className="hero-accent-text">en temps réel</span>
             </h1>
 
             <p className="mt-5 text-base sm:text-lg text-white/85 text-center lg:text-left max-w-2xl mx-auto lg:mx-0 text-pretty">
@@ -177,7 +172,7 @@ export function Hero() {
                       "border border-white/25 bg-white/12 backdrop-blur-md",
                       "hover:bg-white/22 hover:border-white/40 hover:-translate-y-0.5",
                       "transition-all duration-200 shadow-lg",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C2D7] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--hero-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
                     )}
                   >
                     <div
@@ -213,7 +208,7 @@ export function Hero() {
             <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3">
               <Link
                 href="#infos-locales"
-                className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-gradient-to-br from-[#00C2D7] to-lagon-600 text-white font-semibold text-base shadow-[var(--shadow-tropical)] hover:-translate-y-0.5 transition-transform"
+                className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-gradient-to-br from-[var(--hero-action)] to-lagon-600 text-white font-semibold text-base shadow-[var(--shadow-tropical)] hover:-translate-y-0.5 transition-transform"
               >
                 Lire l&apos;info de l&apos;île
                 <ArrowRight size={20} />
