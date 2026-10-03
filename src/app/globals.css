@@ -82,6 +82,10 @@
   --surface: #ffffff;
   --surface-elevated: #ffffff;
   --border: rgb(14 165 233 / 0.12);
+  /* Hero : valeurs d'origine. Octobre rose les surcharge plus bas. */
+  --hero-overlay: #083b66;
+  --hero-accent: #00c2d7;
+  --hero-action: #00c2d7;
 }
 
 html,
@@ -509,6 +513,37 @@ html.dark article.bg-white {
   color: #e0f2fe;
 }
 
+/* Hero : les aplats bleus étaient en dur. Les variables gardent le rendu
+   d'origine hors Octobre rose. */
+.hero-scrim {
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--hero-overlay) 85%, transparent),
+    color-mix(in srgb, var(--hero-overlay) 55%, transparent),
+    color-mix(in srgb, var(--hero-overlay) 92%, transparent)
+  );
+}
+
+.hero-accent-glow {
+  background: radial-gradient(
+    circle at 70% 30%,
+    var(--hero-accent) 0%,
+    transparent 55%
+  );
+}
+
+.hero-accent-text {
+  background-image: linear-gradient(
+    to right,
+    var(--hero-accent),
+    var(--color-lagon-300),
+    var(--color-soleil-300)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 @media print {
   header,
   footer,
@@ -516,4 +551,139 @@ html.dark article.bg-white {
   .no-print {
     display: none !important;
   }
+}
+
+/* ============================================================
+   OCTOBRE ROSE 2026
+   Thème visuel seulement. Actif avec la classe html.octobre-rose,
+   posée en octobre 2026 (heure de Tahiti) par isOctobreRoseActive.
+   En novembre la classe disparaît toute seule.
+   Pour retirer le code : ce bloc, OctobreRoseBanner, src/lib/octobre-rose.ts,
+   et le branchement dans layout.tsx / manifest.ts.
+   Le texte courant reste sur les tons 700–950 (prune foncée).
+   Les fonds et les cartes restent rose très clair.
+   ============================================================ */
+
+html.octobre-rose {
+  --color-lagon-50: #fff5f8;
+  --color-lagon-100: #ffe4ef;
+  --color-lagon-200: #fecde0;
+  --color-lagon-300: #f9a8d4;
+  --color-lagon-400: #f472b6;
+  --color-lagon-500: #c2185b;
+  --color-lagon-600: #9d174d;
+  --color-lagon-700: #831843;
+  --color-lagon-800: #6b1238;
+  --color-lagon-900: #4a0c28;
+
+  --color-ocean-50: #fff7f9;
+  --color-ocean-100: #fde8f0;
+  --color-ocean-200: #f8d0e0;
+  --color-ocean-300: #f0b4cc;
+  --color-ocean-400: #e48aaf;
+  --color-ocean-500: #9a3060;
+  --color-ocean-600: #7c234d;
+  --color-ocean-700: #5e1a3b;
+  --color-ocean-800: #45142c;
+  --color-ocean-900: #32101f;
+  --color-ocean-950: #230914;
+
+  --background: #fff7f9;
+  --foreground: #230914;
+  --surface: #fff8fa;
+  --surface-elevated: #fff8fa;
+  --border: rgb(194 24 91 / 0.14);
+
+  --hero-overlay: #5c1230;
+  --hero-accent: #f9a8d4;
+  --hero-action: #c2185b;
+
+  --shadow-soft: 0 2px 12px -2px rgb(157 23 77 / 0.1), 0 1px 4px -1px rgb(157 23 77 / 0.06);
+  --shadow-tropical: 0 10px 30px -8px rgb(157 23 77 / 0.22), 0 4px 12px -4px rgb(107 18 56 / 0.14);
+  --shadow-sunset: 0 8px 24px -6px rgb(194 24 91 / 0.28);
+}
+
+html.octobre-rose ::selection {
+  background: #f9a8d4;
+  color: #4a0c28;
+}
+
+html.octobre-rose ::-webkit-scrollbar-track {
+  background: #fff7f9;
+}
+html.octobre-rose ::-webkit-scrollbar-thumb {
+  background: #f472b6;
+  border-color: #fff7f9;
+}
+html.octobre-rose ::-webkit-scrollbar-thumb:hover {
+  background: #c2185b;
+}
+
+html.octobre-rose .bg-island-sky {
+  background-color: #fff7f9;
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgb(249 168 212 / 0.42), transparent 55%),
+    radial-gradient(ellipse 80% 50% at 100% 0%, rgb(251 207 232 / 0.38), transparent 46%),
+    radial-gradient(ellipse 60% 40% at 0% 100%, rgb(194 24 91 / 0.07), transparent 50%),
+    linear-gradient(180deg, #fff1f6 0%, #fff7f9 42%, #fffdfd 100%);
+}
+
+html.octobre-rose .bg-palm-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 8c-4 8-8 14-8 22 0 6 4 10 8 10s8-4 8-10c0-8-4-14-8-22z' fill='%23c2185b' fill-opacity='0.035'/%3E%3C/svg%3E");
+}
+
+html.octobre-rose:not(.dark) .bg-white {
+  background-color: #fff8fa;
+}
+
+html.octobre-rose header {
+  background: rgb(255 245 248 / 0.94) !important;
+  border-color: rgb(249 168 212 / 0.75) !important;
+}
+
+html.octobre-rose .card-tropical,
+html.octobre-rose .card-island {
+  background: #fff5f8;
+  border-color: rgb(194 24 91 / 0.14);
+}
+
+html.octobre-rose .btn-tropical:hover {
+  box-shadow:
+    var(--shadow-tropical),
+    0 0 0 4px rgb(194 24 91 / 0.16);
+}
+
+html.dark.octobre-rose {
+  --background: #2a0c18;
+  --foreground: #fff1f5;
+  --surface: #3d1226;
+  --border: rgb(249 168 212 / 0.2);
+  --hero-overlay: #3d0c1e;
+}
+
+html.dark.octobre-rose body {
+  background-color: #2a0c18;
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgb(157 23 77 / 0.38), transparent 55%),
+    linear-gradient(180deg, #3d1226 0%, #2a0c18 100%);
+}
+
+html.dark.octobre-rose .bg-island-sky {
+  background-color: #2a0c18;
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgb(157 23 77 / 0.32), transparent 55%),
+    linear-gradient(180deg, #3d1226 0%, #2a0c18 100%);
+}
+
+html.dark.octobre-rose header {
+  background: rgb(42 12 24 / 0.95) !important;
+  border-color: rgb(249 168 212 / 0.22) !important;
+}
+
+html.dark.octobre-rose .card-tropical,
+html.dark.octobre-rose .card-island,
+html.dark.octobre-rose article.bg-white {
+  background: #3d1226;
+  border-color: rgb(249 168 212 / 0.18);
+  color: #fff1f5;
 }
