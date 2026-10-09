@@ -62,11 +62,12 @@ export async function runVeillePartRss() {
   if (s.articlesCreated > 0) {
     revalidatePath("/actualites");
     revalidatePath("/coupures");
-    revalidatePath("/", "layout");
+    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
   }
   if (s.alertsCreated > 0) {
     revalidatePath("/alertes");
-    revalidatePath("/", "layout");
+    revalidatePath("/api/alerts");
+    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
   }
 
   let telegramChannel = { sent: 0, failed: 0, errors: [] as string[] };
@@ -90,7 +91,7 @@ export async function runVeillePartWeb() {
   const s = summarize(bySource);
   if (s.articlesCreated > 0) {
     revalidatePath("/actualites");
-    revalidatePath("/", "layout");
+    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
   }
   return { ok: true, part: "web" as const, durationMs: Date.now() - start, bySource, ...s };
 }
@@ -112,8 +113,9 @@ export async function runVeillePartFinish() {
     utilityOutages.cleared > 0
   ) {
     revalidatePath("/alertes");
+    revalidatePath("/api/alerts");
     revalidatePath("/coupures");
-    revalidatePath("/", "layout");
+    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
   }
 
   let healthOnCall: Awaited<ReturnType<typeof syncHealthOnCall>> | {
@@ -129,7 +131,7 @@ export async function runVeillePartFinish() {
       if (healthOnCall.found) {
         revalidatePath("/sante-garde");
         revalidatePath("/actualites");
-        revalidatePath("/", "layout");
+        revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
       }
     } catch (e) {
       healthOnCall = {
@@ -183,6 +185,7 @@ export async function runVeillePartFinish() {
   if (falseHouleAlerts > 0 || falseFerryAlerts > 0 || falseMeteoAlerts > 0) {
     revalidatePath("/");
     revalidatePath("/alertes");
+    revalidatePath("/api/alerts");
   }
 
   const externalCleanup = await hideStaleExternalArticles();
@@ -195,7 +198,7 @@ export async function runVeillePartFinish() {
   const expiredEvents = await expirePastEvents();
   if (expiredEvents.unpublished > 0) {
     revalidatePath("/evenements");
-    revalidatePath("/", "layout");
+    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
   }
 
   const expiredAnnouncements = await expireStaleAnnouncements();

@@ -21,7 +21,7 @@ import { getBeachTideSlots } from "@/lib/beach-tide-slots";
 import { getMooreaDuJour } from "@/lib/moorea-du-jour";
 import { buildTouristMapMarkers } from "@/lib/tourist-map-markers";
 
-export const revalidate = 600;
+export const revalidate = 1800;
 
 export const metadata: Metadata = {
   title: "Visiteurs — Moorea",

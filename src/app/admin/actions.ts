@@ -240,6 +240,7 @@ function revalidateArticlePublicPaths(slug?: string) {
 
 function revalidateAlertPublicPaths() {
   revalidatePath("/alertes");
+  revalidatePath("/api/alerts");
   revalidatePath("/", "layout");
 }
 

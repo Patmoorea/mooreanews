@@ -13,7 +13,7 @@ import { getArticleBySlug, getArticles } from "@/lib/content";
 import { formatDateFR } from "@/lib/utils";
 import { newsArticleJsonLd, absoluteUrl } from "@/lib/seo";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 type Props = {
   params: Promise<{ slug: string }>;

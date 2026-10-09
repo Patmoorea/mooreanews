@@ -14,8 +14,9 @@ export async function GET(req: Request) {
   const result = await syncUtilityOutages();
   if (result.created > 0 || result.updated > 0 || result.cleared > 0) {
     revalidatePath("/alertes");
+    revalidatePath("/api/alerts");
     revalidatePath("/coupures");
-    revalidatePath("/", "layout");
+    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
   }
 
   return NextResponse.json(result);

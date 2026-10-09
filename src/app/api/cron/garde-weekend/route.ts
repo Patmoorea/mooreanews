@@ -48,7 +48,7 @@ async function runGardeSync() {
   revalidateTag("garde-moorea", "max");
   revalidatePath("/sante-garde");
   revalidatePath("/actualites");
-  revalidatePath("/", "layout");
+  revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
   if (result.articleSlug) {
     revalidatePath(`/actualites/${result.articleSlug}`);
   }

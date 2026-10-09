@@ -46,7 +46,7 @@ export async function expirePastEvents(now = new Date()): Promise<{
 
   const { revalidatePath } = await import("next/cache");
   revalidatePath("/evenements");
-  revalidatePath("/", "layout");
+  revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
 
   return {
     unpublished: ids.length,

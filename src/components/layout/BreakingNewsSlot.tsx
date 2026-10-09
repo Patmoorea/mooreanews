@@ -51,7 +51,10 @@ export function BreakingNewsSlot() {
       }
     }
     load();
-    const id = setInterval(load, 30_000);
+    // 2 min et seulement onglet visible : chaque appel réveillait une fonction Vercel.
+    const id = setInterval(() => {
+      if (!document.hidden) load();
+    }, 120_000);
     return () => {
       cancelled = true;
       clearInterval(id);

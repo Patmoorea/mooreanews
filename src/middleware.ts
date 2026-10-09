@@ -2,8 +2,16 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 /**
- * Refresh la session Supabase à chaque requête et protège /admin.
+ * Refresh la session Supabase et protège /admin.
  * Si Supabase n'est pas configuré, le middleware est neutre.
+ *
+ * Ne tourne plus que sur les pages qui lisent la session côté serveur
+ * (admin, compte, auth) + « / » pour le retour ?code=… de Supabase.
+ * Avant, il tournait sur CHAQUE requête (pages publiques, /api/alerts interrogé
+ * toutes les 30 s par chaque onglet, pageviews…) et appelait Supabase à chaque
+ * fois → « Fluid Active CPU » du plan gratuit épuisé. Les pages publiques
+ * n'utilisent que le client Supabase anonyme ; le menu compte (client) rafraîchit
+ * sa session lui-même.
  */
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -17,6 +25,9 @@ export async function middleware(request: NextRequest) {
     if (next) callback.searchParams.set("next", next);
     return NextResponse.redirect(callback);
   }
+
+  // « / » est dans le matcher uniquement pour la redirection ?code= ci-dessus.
+  if (!needsSession(pathname)) return NextResponse.next();
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -67,8 +78,20 @@ export async function middleware(request: NextRequest) {
   return response;
 }
 
+const SESSION_PREFIXES = ["/admin", "/mon-compte", "/auth", "/api/admin"];
+
+function needsSession(pathname: string): boolean {
+  return SESSION_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
+}
+
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest|xml|txt)$).*)",
+    "/",
+    "/admin/:path*",
+    "/mon-compte/:path*",
+    "/auth/:path*",
+    "/api/admin/:path*",
   ],
 };

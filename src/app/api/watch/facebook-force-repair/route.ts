@@ -31,7 +31,7 @@ export async function GET(req: Request) {
 
   if (payload.results.some((r) => r.ok)) {
     revalidatePath("/actualites");
-    revalidatePath("/", "layout");
+    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
   }
 
   return NextResponse.json(payload);

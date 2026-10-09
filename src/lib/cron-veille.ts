@@ -50,12 +50,13 @@ export async function runVeilleCron(): Promise<VeilleCronResult> {
 
   if (alertsCreated > 0) {
     revalidatePath("/alertes");
-    revalidatePath("/", "layout");
+    revalidatePath("/api/alerts");
+    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
   }
   if (articlesCreated > 0) {
     revalidatePath("/actualites");
     revalidatePath("/coupures");
-    revalidatePath("/", "layout");
+    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
   }
 
   const utilityOutages = await syncUtilityOutages();
@@ -65,8 +66,9 @@ export async function runVeilleCron(): Promise<VeilleCronResult> {
     utilityOutages.cleared > 0
   ) {
     revalidatePath("/alertes");
+    revalidatePath("/api/alerts");
     revalidatePath("/coupures");
-    revalidatePath("/", "layout");
+    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
   }
 
   let healthOnCall: VeilleCronResult["healthOnCall"];
@@ -78,7 +80,7 @@ export async function runVeilleCron(): Promise<VeilleCronResult> {
       if (healthOnCall.found) {
         revalidatePath("/sante-garde");
         revalidatePath("/actualites");
-        revalidatePath("/", "layout");
+        revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
       }
     } catch (e) {
       errors.push(`garde: ${String(e)}`);
