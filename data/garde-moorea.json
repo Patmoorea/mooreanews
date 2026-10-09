@@ -1,14 +1,18 @@
 {
-  "validFrom": "2026-08-29",
-  "validTo": "2026-08-30",
-  "label": "Samedi 29 / Dimanche 30 aout 2026",
-  "posterImageUrl": "https://fvksncxoievsrezdkmek.supabase.co/storage/v1/object/public/media/generated/garde-weekend/garde-moorea-2026-08-29.png",
+  "validFrom": "2026-09-12",
+  "validTo": "2026-09-13",
+  "label": "Samedi 12 / dimanche 13 septembre 2026",
   "doctor": {
-    "name": "FOUGEROUSE Pierre-Antoine",
-    "phone": "87 00 08 00",
+    "name": "GAUDARD Franck",
+    "phone": "40 56 44 63",
     "hours": {
       "saturday": "12h00 — 18h00",
       "sunday": "8h00 — 16h00"
     }
-  }
+  },
+  "pharmacyHours": [
+    { "district": "Afareaitu", "phone": "40 56 35 47" },
+    { "district": "Paopao", "phone": "40 55 20 75" },
+    { "district": "Tiahura", "phone": "40 56 41 16" }
+  ]
 }
