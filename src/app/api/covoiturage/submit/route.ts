@@ -153,7 +153,7 @@ export async function POST(req: Request) {
 
   revalidatePath("/covoiturage");
   revalidatePath("/annonces");
-  revalidatePath("/", "layout");
+  revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
 
   return NextResponse.json(
     {

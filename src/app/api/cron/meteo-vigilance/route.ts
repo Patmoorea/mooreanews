@@ -19,7 +19,8 @@ export async function GET(req: Request) {
     result.action === "cleared"
   ) {
     revalidatePath("/alertes");
-    revalidatePath("/", "layout");
+    revalidatePath("/api/alerts");
+    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
   }
 
   return NextResponse.json({ ok: result.action !== "error", ...result });

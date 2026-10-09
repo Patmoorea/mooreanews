@@ -23,9 +23,10 @@ export async function GET(req: Request) {
       imported.articlesCreated > 0
     ) {
       revalidatePath("/alertes");
+      revalidatePath("/api/alerts");
       revalidatePath("/coupures");
       revalidatePath("/actualites");
-      revalidatePath("/", "layout");
+      revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
     }
 
     return NextResponse.json({

@@ -5,7 +5,7 @@ import { Container } from "@/components/ui/Container";
 import { getMooreaDuJour } from "@/lib/moorea-du-jour";
 import { SITE, USEFUL_LINKS } from "@/lib/constants";
 
-export const revalidate = 600;
+export const revalidate = 1800;
 
 export const metadata: Metadata = {
   title: "Moorea Guide — English",

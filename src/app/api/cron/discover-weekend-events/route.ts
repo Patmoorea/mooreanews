@@ -64,7 +64,7 @@ export async function GET(req: Request) {
     const result = await discoverWeekendMooreaEvents();
 
     revalidatePath("/evenements");
-    revalidatePath("/", "layout");
+    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
 
     try {
       await notifyDiscovery(result, clock.label);

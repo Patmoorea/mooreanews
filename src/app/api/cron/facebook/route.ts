@@ -90,8 +90,9 @@ async function runFacebookImport(
   ) {
     revalidatePath("/actualites");
     revalidatePath("/alertes");
+    revalidatePath("/api/alerts");
     revalidatePath("/coupures");
-    revalidatePath("/", "layout");
+    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
   }
 
   if (!options?.skipTelegram) {

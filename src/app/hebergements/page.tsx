@@ -9,7 +9,7 @@ import {
   type AccommodationType,
 } from "@/lib/accommodations";
 
-export const revalidate = 600;
+export const revalidate = 3600;
 
 const TYPE_FILTERS: { value: AccommodationType | "all"; label: string }[] = [
   { value: "all", label: "Tous" },

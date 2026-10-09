@@ -29,7 +29,7 @@ export async function GET(req: Request) {
     const result = await syncWeeklyRecapFromMooreaNews();
 
     revalidatePath("/actualites");
-    revalidatePath("/", "layout");
+    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
 
     return NextResponse.json({
       tahiti: clock.label,

@@ -10,7 +10,7 @@ import { expireStaleAnnouncements } from "@/lib/announcement-expiry";
 import { getAnnouncementTypeMeta } from "@/lib/content-labels";
 import { timeAgo } from "@/lib/utils";
 
-export const revalidate = 300;
+export const revalidate = 900;
 
 export const metadata = listingPageMetadata({
   title: "Annonces — Moorea",

@@ -9,7 +9,7 @@ import { ExternalArticles } from "@/components/ExternalArticles";
 import { getArticles } from "@/lib/content";
 import { listingPageMetadata } from "@/lib/seo";
 
-export const revalidate = 300;
+export const revalidate = 900;
 
 export const metadata = listingPageMetadata({
   title: "Actualités de Moorea",

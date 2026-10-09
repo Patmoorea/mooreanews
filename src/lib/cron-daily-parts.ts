@@ -106,7 +106,8 @@ function revalidateFromAggregation(results: AggregationResult[]): void {
   );
   if (alertsCreated > 0) {
     revalidatePath("/alertes");
-    revalidatePath("/", "layout");
+    revalidatePath("/api/alerts");
+    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
   }
   const articlesCreated = results.reduce(
     (s, r) => s + (r.articlesCreated ?? 0),
@@ -114,7 +115,7 @@ function revalidateFromAggregation(results: AggregationResult[]): void {
   );
   if (articlesCreated > 0) {
     revalidatePath("/actualites");
-    revalidatePath("/", "layout");
+    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
   }
 }
 
@@ -165,11 +166,12 @@ export async function runDailyCronPart(
       jobs.expiredEvents = expiredEvents;
       if (expiredEvents.unpublished > 0) {
         revalidatePath("/evenements");
-        revalidatePath("/", "layout");
+        revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
       }
       if (expiredAlerts > 0) {
         revalidatePath("/alertes");
-        revalidatePath("/", "layout");
+        revalidatePath("/api/alerts");
+        revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
       }
 
       jobs.meteoVigilance = await syncMeteoVigilanceAlert();
@@ -181,7 +183,8 @@ export async function runDailyCronPart(
         const action = (jobs.meteoVigilance as { action: string }).action;
         if (action === "created" || action === "updated" || action === "cleared") {
           revalidatePath("/alertes");
-          revalidatePath("/", "layout");
+          revalidatePath("/api/alerts");
+          revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
         }
       }
 
@@ -194,7 +197,7 @@ export async function runDailyCronPart(
       if (shouldPublishWeeklyRecap(clock)) {
         jobs.weeklyRecap = await syncWeeklyRecapFromMooreaNews();
         revalidatePath("/actualites");
-        revalidatePath("/", "layout");
+        revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
       } else if (clock.weekday === 1) {
         jobs.weeklyRecap = {
           skipped: true,
@@ -304,8 +307,9 @@ export async function runDailyCronPart(
         (utilitySync.cleared ?? 0) > 0
       ) {
         revalidatePath("/alertes");
+        revalidatePath("/api/alerts");
         revalidatePath("/coupures");
-        revalidatePath("/", "layout");
+        revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
       }
       break;
     }
@@ -320,6 +324,7 @@ export async function runDailyCronPart(
       if (falseHouleAlerts > 0 || falseFerryAlerts > 0 || falseMeteoAlerts > 0) {
         revalidatePath("/");
         revalidatePath("/alertes");
+        revalidatePath("/api/alerts");
       }
 
       const facebookPurge = await purgeStaleFacebookImports();
@@ -337,7 +342,7 @@ export async function runDailyCronPart(
       ) {
         revalidatePath("/actualites");
         revalidatePath("/evenements");
-        revalidatePath("/", "layout");
+        revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
       }
 
       revalidatePath("/");
