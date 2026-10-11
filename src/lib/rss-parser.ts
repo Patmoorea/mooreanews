@@ -11,6 +11,9 @@ export type RssItem = {
   publishedAt: string; // ISO
   author?: string;
   imageUrl?: string;
+  /** Google Actualités : média d’origine (`<source url="…">Nom</source>`). */
+  sourceUrl?: string;
+  sourceName?: string;
 };
 
 function decodeEntities(s: string): string {
@@ -145,6 +148,8 @@ function parseRss(xml: string): RssItem[] {
       extractTag(raw, "author") ??
       undefined;
     const imageUrl = findFirstImage(raw);
+    const sourceUrl = extractAttr(raw, "source", "url") ?? undefined;
+    const sourceNameRaw = extractTag(raw, "source");
 
     if (!title || !link) continue;
 
@@ -156,6 +161,8 @@ function parseRss(xml: string): RssItem[] {
       publishedAt: new Date(pubDate).toISOString(),
       author: author ? stripTags(author) : undefined,
       imageUrl,
+      sourceUrl: sourceUrl?.trim() || undefined,
+      sourceName: sourceNameRaw ? stripTags(sourceNameRaw) : undefined,
     });
   }
 

@@ -85,6 +85,7 @@ Quartier : ${input.district ?? "non précisé"}`,
 
 export async function draftArticleFromExternal(
   item: ExternalArticleInput,
+  source?: { text: string; url: string },
 ): Promise<ArticleDraft | null> {
   if (!isAiVeilleEnabled()) return null;
 
@@ -108,11 +109,13 @@ JSON attendu :
 }
 
 publish=true SEULEMENT si l'info concerne clairement Moorea ou impacte directement ses résidents.
+Utilise UNIQUEMENT les faits du texte source ci-dessous (noms, dates, chiffres). Reformule avec tes mots, ne recopie pas des paragraphes entiers.
 
 Source : ${item.source_name}
 Titre : ${item.title}
 Extrait : ${item.excerpt ?? ""}
-URL : ${item.url}`,
+URL : ${source?.url ?? item.url}
+${source?.text ? `\nTexte source :\n${source.text}` : ""}`,
       },
     ],
     { maxTokens: 900, temperature: 0.35 },
@@ -123,7 +126,7 @@ URL : ${item.url}`,
   const parsed = parseAiJson<ArticleDraft>(result.text);
   if (!parsed?.title || !parsed.body) return null;
 
-  const sourceLine = `\n\n---\n*Source : [${item.source_name}](${item.url})*`;
+  const sourceLine = `\n\n---\n*Source : [${item.source_name}](${source?.url ?? item.url})*`;
   return {
     title: parsed.title.slice(0, 200),
     excerpt: (parsed.excerpt ?? parsed.title).slice(0, 280),
