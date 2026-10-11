@@ -49,10 +49,49 @@ function normalize(s: string): string {
     .toLowerCase();
 }
 
+function hostOf(url: string | undefined): string {
+  if (!url) return "";
+  try {
+    return new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
+
+/** Domaine réel de l’article (Google Actualités : balise <source url>). */
+export function itemOriginHost(item: RssItem): string {
+  const fromSource = hostOf(item.sourceUrl);
+  if (fromSource) return fromSource;
+  return hostOf(item.link);
+}
+
+function isAllowedOrigin(item: RssItem, source: RssSource): boolean {
+  const allowed = source.allowedSourceDomains;
+  if (!allowed || allowed.length === 0) return true;
+  const host = itemOriginHost(item);
+  if (!host) return false;
+  return allowed.some((d) => host === d || host.endsWith(`.${d}`));
+}
+
+/** Google Actualités suffixe le titre par « - Nom du média » : on le retire. */
+export function cleanGoogleNewsTitle(item: RssItem): string {
+  const name = item.sourceName?.trim();
+  if (!name) return item.title;
+  const suffix = ` - ${name}`;
+  return item.title.endsWith(suffix)
+    ? item.title.slice(0, -suffix.length).trim()
+    : item.title;
+}
+
 export function matchesSource(item: RssItem, source: RssSource): boolean {
+  if (!isAllowedOrigin(item, source)) return false;
   if (source.acceptAll) return true;
   if (!source.keywords || source.keywords.length === 0) return true;
-  const corpus = normalize(`${item.title} ${item.description}`);
+  // Google Actualités : la description ne contient que titre + média,
+  // on exige donc le mot-clé dans le titre (évite les faux positifs).
+  const corpus = item.sourceName
+    ? normalize(cleanGoogleNewsTitle(item))
+    : normalize(`${item.title} ${item.description}`);
   return source.keywords.some((kw) => corpus.includes(normalize(kw)));
 }
 
@@ -101,13 +140,15 @@ async function aggregateOne(source: RssSource): Promise<AggregationResult> {
 
   const rows = eligible.map((i) => ({
     source_id: source.id,
-    source_name: source.name,
+    source_name: i.sourceName
+      ? `${i.sourceName} (via ${source.name})`.slice(0, 200)
+      : source.name,
     external_id: i.guid,
     url: i.link,
-    title: i.title,
-    excerpt: i.description || null,
+    title: cleanGoogleNewsTitle(i),
+    excerpt: i.sourceName ? null : i.description || null,
     image_url: i.imageUrl ?? null,
-    author: i.author ?? null,
+    author: i.author ?? i.sourceName ?? null,
     published_at: i.publishedAt,
   }));
 

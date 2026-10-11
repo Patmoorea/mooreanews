@@ -61,12 +61,19 @@ async function aiCompleteOllama(
         model,
         messages,
         stream: false,
+        // Libère la RAM vite (Mac 16 Go partagé avec les bots).
+        keep_alive: process.env.OLLAMA_KEEP_ALIVE?.trim() || "2m",
         options: {
           temperature: options?.temperature ?? 0.35,
           num_predict: options?.maxTokens ?? 900,
         },
       }),
-      signal: AbortSignal.timeout(90_000),
+      // Qwen 14B sur Mac : une rédaction peut dépasser 90 s.
+      signal: AbortSignal.timeout(
+        Number(process.env.OLLAMA_TIMEOUT_MS) > 0
+          ? Number(process.env.OLLAMA_TIMEOUT_MS)
+          : 240_000,
+      ),
     });
 
     if (!res.ok) {
