@@ -11,7 +11,7 @@
 
 ## Agent IA (Mac, Ollama)
 
-- `npm run ai:moorea` lit `external_articles` (72 h) des sources RSS **non auto-publiées** (Google Actualités Moorea, La 1ère, Gouvernement, coupures) — plus les titres de pages d’accueil (web-watch).
+- `npm run ai:moorea` lit `external_articles` (72 h) des sources RSS **non auto-publiées** (Google Actualités Moorea, La 1ère, Gouvernement, coupures) ; exclut web-watch / facebook-watch (titres de pages d’accueil).
 - Résout le lien Google Actualités → article du média, récupère le texte (og:description + paragraphes). **Pas de texte = pas de rédaction** (aucune invention à partir du seul titre).
 - Ignore les sujets déjà publiés (titre similaire, 14 j).
 - **Brouillons** par défaut (Admin → Articles, tag `ai-draft`). `AI_VEILLE_AUTO_PUBLISH=true` → publie quand l’IA juge l’info Moorea.
