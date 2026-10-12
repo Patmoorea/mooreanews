@@ -57,6 +57,50 @@ function similarTitle(a: Set<string>, b: Set<string>): boolean {
   return inter / Math.min(a.size, b.size) >= 0.6;
 }
 
+/**
+ * Même événement couvert par plusieurs médias (titres très différents :
+ * « Incendie de brousse à Afareaitu » vs « Un hectare brûlé à Afareaitu »).
+ * Même type d’événement + même lieu de Moorea sur 72 h = doublon.
+ */
+const EVENT_GROUPS: string[][] = [
+  ["incendie", "incendies", "feu", "feux", "brousse", "brule", "brules", "brulee", "flammes", "hectare", "hectares"],
+  ["blocus", "greve", "manifestation", "mobilisation"],
+  ["accident", "collision", "carambolage"],
+  ["noyade", "noye", "disparu", "disparition", "recherches"],
+  ["coupure", "panne", "electricite"],
+  ["tempete", "houle", "vigilance", "inondation", "inondations", "eboulement"],
+];
+const MOOREA_PLACES = [
+  "afareaitu", "haapiti", "paopao", "papetoai", "maharepa", "teavaro", "vaiare",
+  "temae", "tiahura", "opunohu", "maiao", "hauru", "varari", "pihaena", "atiha",
+];
+
+function eventKey(text: string): { events: Set<number>; places: Set<string> } {
+  const words = new Set(
+    text
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .split(" "),
+  );
+  const events = new Set<number>();
+  EVENT_GROUPS.forEach((g, i) => {
+    if (g.some((w) => words.has(w))) events.add(i);
+  });
+  const places = new Set(MOOREA_PLACES.filter((p) => words.has(p)));
+  return { events, places };
+}
+
+function sameEvent(
+  a: { events: Set<number>; places: Set<string> },
+  b: { events: Set<number>; places: Set<string> },
+): boolean {
+  const ev = [...a.events].some((e) => b.events.has(e));
+  const pl = [...a.places].some((p) => b.places.has(p));
+  return ev && pl;
+}
+
 export type AiVeilleDraft = {
   slug: string;
   title: string;
@@ -169,6 +213,16 @@ export async function runAiVeilleProcessing(): Promise<AiVeilleResult> {
     titleTokens(String(a.title ?? "")),
   );
 
+  // Événements déjà couverts (publiés, brouillons en attente OU rejetés) sur 72 h.
+  const { data: recentEvents } = await supabase
+    .from("articles")
+    .select("title, excerpt")
+    .gte("created_at", new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString())
+    .limit(400);
+  const coveredEvents = (recentEvents ?? []).map((a) =>
+    eventKey(`${a.title ?? ""} ${a.excerpt ?? ""}`),
+  );
+
   for (const item of (items ?? []) as ExternalArticleInput[]) {
     if (processed >= MAX_ITEMS_PER_RUN) break;
     if (fetchAttempts >= MAX_FETCH_ATTEMPTS) break;
@@ -185,7 +239,11 @@ export async function runAiVeilleProcessing(): Promise<AiVeilleResult> {
     }
 
     const tokens = titleTokens(item.title);
-    if (existingTitles.some((t) => similarTitle(tokens, t))) {
+    const itemEvent = eventKey(item.title);
+    if (
+      existingTitles.some((t) => similarTitle(tokens, t)) ||
+      coveredEvents.some((e) => sameEvent(itemEvent, e))
+    ) {
       drafts.push({
         slug: "",
         title: item.title,
@@ -227,6 +285,23 @@ export async function runAiVeilleProcessing(): Promise<AiVeilleResult> {
       continue;
     }
 
+    // Même événement déjà couvert (vu après rédaction : titre IA + chapô).
+    const draftEvent = eventKey(`${draft.title} ${draft.excerpt}`);
+    if (coveredEvents.some((e) => sameEvent(draftEvent, e))) {
+      drafts.push({ slug, title: draft.title, excerpt: "déjà couvert", created: false, skipped: true });
+      continue;
+    }
+    // Garde-fou chiffres : tout nombre du titre/chapô doit exister dans la source
+    // (ex. « 1000 hectares » inventé alors que la source dit « un hectare »).
+    const sourceDigits = source.text.replace(/[\s\u00a0\u202f]/g, "");
+    const inventedNumber = (`${draft.title} ${draft.excerpt}`.match(/\d[\d\s\u00a0\u202f.,]*/g) ?? [])
+      .map((n) => n.replace(/[\s\u00a0\u202f]/g, "").replace(/[.,]$/, ""))
+      .find((n) => n.length > 0 && !sourceDigits.includes(n));
+    if (inventedNumber) {
+      errors.push(`Chiffre absent de la source (${inventedNumber}) : ${draft.title.slice(0, 50)}`);
+      continue;
+    }
+
     const published = draft.publish && aiAutoPublishEnabled();
     // Copie la photo dans Supabase : sinon couverture cassée sur le site
     // (domaine non autorisé par next/image) alors que Telegram l’affiche.
@@ -264,6 +339,7 @@ export async function runAiVeilleProcessing(): Promise<AiVeilleResult> {
 
     draftsCreated += 1;
     newTitles.push(draft.title);
+    coveredEvents.push(draftEvent);
     if (!published && inserted?.id) {
       reviewQueue.push({
         id: String(inserted.id),
