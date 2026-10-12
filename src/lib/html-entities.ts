@@ -67,7 +67,7 @@ function mapMathAlphanumeric(cp: number): string | null {
 
 /** Nettoie le texte importé depuis Facebook / RSS. */
 export function cleanImportedText(s: string): string {
-  return stripFacebookStyledUnicode(decodeHtmlEntities(s))
+  return stripFacebookStyledUnicode(decodeLiteralUnicodeEscapes(decodeHtmlEntities(s)))
     .replace(/\\'/g, "'")
     .replace(/\\"/g, '"')
     .replace(/\\\\/g, "\\")
@@ -83,4 +83,33 @@ export function cleanEmploymentTitle(s: string): string {
     .replace(/^(\d+)\s*:\s*/, "") // "12345 : Titre" → Titre
     .replace(/\s+/g, " ")
     .trim();
+}
+
+/**
+ * Séquences littérales JSON « \uD83D\uDCE3 » (texte Facebook/JSON mal décodé)
+ * → vrais caractères (📣). Les paires de substitution sont recomposées.
+ */
+export function decodeLiteralUnicodeEscapes(s: string): string {
+  if (!s || !s.includes("\\u")) return s;
+  return s.replace(/(?:\\u[0-9a-fA-F]{4})+/g, (seq) => {
+    try {
+      return JSON.parse(`"${seq}"`) as string;
+    } catch {
+      return seq;
+    }
+  });
+}
+
+/**
+ * Encode tout caractère non-ASCII (emoji, accents) en entité HTML numérique,
+ * pour les e-mails : certains webmails (Zimbra…) ré-échappent l’UTF-8 et
+ * affichent « \uD83D\uDCE3 » au lieu de 📣. En ASCII pur, ça s’affiche partout.
+ */
+export function toAsciiHtml(html: string): string {
+  let out = "";
+  for (const ch of html) {
+    const cp = ch.codePointAt(0)!;
+    out += cp > 0x7e ? `&#x${cp.toString(16).toUpperCase()};` : ch;
+  }
+  return out;
 }
