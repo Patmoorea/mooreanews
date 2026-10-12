@@ -4,6 +4,7 @@
 
 import webpush from "web-push";
 import { Resend } from "resend";
+import { toAsciiHtml } from "@/lib/html-entities";
 import { ENV, SITE } from "@/lib/constants";
 import {
   isValidPushSubscriptionKeys,
@@ -263,14 +264,14 @@ export async function notifyAlertSubscribers(
           subject: alert.urgent
             ? `🚨 Alerte Moorea — ${alert.title}`
             : `⚠️ Alerte Moorea — ${alert.title}`,
-          html: `
+          html: toAsciiHtml(`
             <div style="font-family:Inter,sans-serif;max-width:560px;padding:20px">
               <h2 style="color:#0c4a6e">${alert.title}</h2>
               ${alert.district ? `<p><strong>Quartier :</strong> ${alert.district}</p>` : ""}
               ${alert.details ? `<p>${alert.details.replace(/\n/g, "<br>")}</p>` : ""}
               <p><a href="${url}">Voir sur MooreaNews →</a></p>
             </div>
-          `,
+          `),
           text: `${alert.title}\n${alert.details ?? ""}\n${url}`,
         });
         if (!result.error) emailsSent += 1;

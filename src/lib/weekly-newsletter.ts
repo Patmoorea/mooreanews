@@ -4,6 +4,7 @@
  */
 
 import { Resend } from "resend";
+import { toAsciiHtml } from "@/lib/html-entities";
 import { ENV, SITE } from "@/lib/constants";
 import { escapeHtml } from "@/lib/telegram";
 import { expirePastAlerts } from "@/lib/alert-schedule";
@@ -55,7 +56,7 @@ function wrapNewsletterDocument(body: string): string {
 <title>MooreaNews — votre semaine à Moorea</title>
 </head>
 <body style="margin:0;padding:0;background:#e0f2fe;-webkit-text-size-adjust:100%;">
-${body}
+${toAsciiHtml(body)}
 </body>
 </html>`;
 }
