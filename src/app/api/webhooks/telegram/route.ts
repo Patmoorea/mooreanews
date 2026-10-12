@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
+import { handleAiDraftModerationUpdate } from "@/lib/telegram-ai-drafts";
+import { notifyPublicNewArticles } from "@/lib/telegram-notify";
 import { scheduleSignalementAiEnrichment } from "@/lib/ai-signalement-enrich";
 import {
   handleTelegramSignalementUpdate,
@@ -22,6 +25,21 @@ export async function POST(req: Request) {
     update = (await req.json()) as TelegramUpdate;
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+
+  // Modération des brouillons IA (bot admin, chat TELEGRAM_CHAT_ID).
+  try {
+    const handledAi = await handleAiDraftModerationUpdate(update, {
+      onPublished: async ({ slug, title }) => {
+        revalidatePath("/actualites");
+        revalidatePath(`/actualites/${slug}`);
+        revalidatePath("/", "layout");
+        await notifyPublicNewArticles([{ slug, title }]);
+      },
+    });
+    if (handledAi) return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[webhooks/telegram] ai-drafts", err);
   }
 
   let aiEnrich: { submissionId: string; input: Parameters<typeof scheduleSignalementAiEnrichment>[1] } | undefined;

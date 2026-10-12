@@ -17,3 +17,16 @@
 - **Brouillons** par défaut (Admin → Articles, tag `ai-draft`). `AI_VEILLE_AUTO_PUBLISH=true` → publie quand l’IA juge l’info Moorea.
 - Verrou anti-chevauchement, skip si mémoire libre < `AI_MIN_FREE_MEMORY_PCT` (35 %), modèle déchargé après 2 min (`OLLAMA_KEEP_ALIVE`).
 - Planification : `bash scripts/install-ai-veille-launchd.sh <dossier> qwen2.5:14b` → toutes les 2 h, 6h20–20h20. Log : `~/Library/Logs/mooreanews-ai-veille.log`.
+
+## Validation des brouillons IA par Telegram
+
+Chaque brouillon IA arrive sur le bot admin **@Mooreanews_bot** (chat `TELEGRAM_CHAT_ID`) :
+
+- **✅ Publier** → `published=true`, tag `ai-approved`, cache du site revalidé, post sur le canal public (comme les autres articles).
+- **❌ Rejeter** → reste hors ligne, tag `ai-rejected` (jamais régénéré).
+- **✏️ Plus tard** → reste en brouillon (tag `ai-later`), boutons Publier/Rejeter conservés.
+- **📝 Modifier dans l’admin** → `/admin/articles/<id>` pour corriger avant de publier.
+
+Commandes (chat admin uniquement) : `/brouillons`, `/publier <slug>`, `/rejeter <slug>`, `/aide_ia`.
+
+Technique : les clics arrivent sur `/api/webhooks/telegram` (webhook déjà configuré pour @Mooreanews_bot). Toute action venant d’un autre chat que `TELEGRAM_CHAT_ID` est refusée.
