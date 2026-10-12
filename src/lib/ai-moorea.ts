@@ -109,6 +109,7 @@ JSON attendu :
 }
 
 publish=true SEULEMENT si l'info concerne clairement Moorea ou impacte directement ses résidents.
+Le chapô (excerpt) résume en une phrase ; le corps ne doit PAS recommencer par la même phrase.
 Utilise UNIQUEMENT les faits du texte source ci-dessous (noms, dates, chiffres). Reformule avec tes mots, ne recopie pas des paragraphes entiers.
 
 Source : ${item.source_name}
@@ -126,7 +127,8 @@ ${source?.text ? `\nTexte source :\n${source.text}` : ""}`,
   const parsed = parseAiJson<ArticleDraft>(result.text);
   if (!parsed?.title || !parsed.body) return null;
 
-  const sourceLine = `\n\n---\n*Source : [${item.source_name}](${source?.url ?? item.url})*`;
+  const sourceName = item.source_name.replace(/\s*\(via [^)]*\)\s*$/i, "").trim() || item.source_name;
+  const sourceLine = `\n\nSource : [${sourceName}](${source?.url ?? item.url})`;
   return {
     title: parsed.title.slice(0, 200),
     excerpt: (parsed.excerpt ?? parsed.title).slice(0, 280),
