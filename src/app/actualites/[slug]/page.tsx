@@ -7,6 +7,7 @@ import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { resolveCoverImage } from "@/lib/cover-image";
 import { ShareButtons } from "@/components/ShareButtons";
+import { ArticleBodyText, publicArticleTags } from "@/components/ArticleBodyText";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getArticleBySlug, getArticles } from "@/lib/content";
@@ -107,10 +108,10 @@ export default async function ArticlePage({ params }: Props) {
                 {article.author}
               </span>
             )}
-            {article.tags && article.tags.length > 0 && (
+            {publicArticleTags(article.tags).length > 0 && (
               <span className="flex items-center gap-2">
                 <Tag size={14} />
-                {article.tags.join(", ")}
+                {publicArticleTags(article.tags).join(", ")}
               </span>
             )}
           </div>
@@ -144,11 +145,7 @@ export default async function ArticlePage({ params }: Props) {
       {/* Corps de l'article */}
       <Container size="narrow" className="py-12 sm:py-16">
         <div className="prose-tropical">
-          {article.body.split("\n\n").map((para, i) => (
-            <p key={i} className="text-lg leading-relaxed text-ocean-900 mb-6">
-              {para}
-            </p>
-          ))}
+          <ArticleBodyText body={article.body} />
         </div>
 
         {/* Partage */}

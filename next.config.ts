@@ -48,6 +48,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.googleusercontent.com" },
       { protocol: "https", hostname: "www.tahiti-infos.com" },
       { protocol: "https", hostname: "**.francetvinfo.fr" },
+      { protocol: "https", hostname: "**.franceinfo.fr" },
       { protocol: "https", hostname: "**.presidence.pf" },
       { protocol: "https", hostname: "**.radio1.pf" },
       { protocol: "https", hostname: "**.supabase.co" },

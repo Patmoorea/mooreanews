@@ -10,6 +10,7 @@ import { escapeHtml, sendTelegramNotification } from "@/lib/telegram";
 import { RSS_SOURCES } from "@/lib/rss-sources";
 import { fetchArticleText } from "@/lib/news-article-fetch";
 import { sendAiDraftForReview } from "@/lib/telegram-ai-drafts";
+import { persistRemoteCover } from "@/lib/remote-cover-persist";
 
 const MAX_ITEMS_PER_RUN = 5;
 const MAX_FETCH_ATTEMPTS = 12;
@@ -227,6 +228,11 @@ export async function runAiVeilleProcessing(): Promise<AiVeilleResult> {
     }
 
     const published = draft.publish && aiAutoPublishEnabled();
+    // Copie la photo dans Supabase : sinon couverture cassée sur le site
+    // (domaine non autorisé par next/image) alors que Telegram l’affiche.
+    const remoteCover = item.image_url ?? source.imageUrl;
+    const coverUrl =
+      (await persistRemoteCover(supabase, remoteCover, slug)) ?? null;
     const { data: inserted, error: insertErr } = await supabase.from("articles").insert({
       slug,
       title: draft.title,
@@ -234,7 +240,7 @@ export async function runAiVeilleProcessing(): Promise<AiVeilleResult> {
       body: draft.body,
       category: draft.category,
       tags: ["ai-draft", "veille-ia", tag, item.source_id],
-      cover_url: item.image_url ?? source.imageUrl,
+      cover_url: coverUrl,
       author: "Agent IA Moorea",
       featured: false,
       published,
