@@ -9,6 +9,7 @@ import { SITE } from "@/lib/constants";
 import { escapeHtml, sendTelegramNotification } from "@/lib/telegram";
 import { RSS_SOURCES } from "@/lib/rss-sources";
 import { fetchArticleText } from "@/lib/news-article-fetch";
+import { sendAiDraftForReview } from "@/lib/telegram-ai-drafts";
 
 const MAX_ITEMS_PER_RUN = 5;
 const MAX_FETCH_ATTEMPTS = 12;
@@ -151,6 +152,7 @@ export async function runAiVeilleProcessing(): Promise<AiVeilleResult> {
   let processed = 0;
   let draftsCreated = 0;
   let fetchAttempts = 0;
+  const reviewQueue: Parameters<typeof sendAiDraftForReview>[0][] = [];
   const newTitles: string[] = [];
 
   // Articles déjà en ligne (Tahiti Infos auto, Facebook…) → pas de doublon IA.
@@ -224,7 +226,8 @@ export async function runAiVeilleProcessing(): Promise<AiVeilleResult> {
       continue;
     }
 
-    const { error: insertErr } = await supabase.from("articles").insert({
+    const published = draft.publish && aiAutoPublishEnabled();
+    const { data: inserted, error: insertErr } = await supabase.from("articles").insert({
       slug,
       title: draft.title,
       excerpt: draft.excerpt,
@@ -234,9 +237,9 @@ export async function runAiVeilleProcessing(): Promise<AiVeilleResult> {
       cover_url: item.image_url ?? source.imageUrl,
       author: "Agent IA Moorea",
       featured: false,
-      published: draft.publish && aiAutoPublishEnabled(),
+      published,
       published_at: item.published_at,
-    });
+    }).select("id").single();
 
     if (insertErr) {
       if (insertErr.code === "23505") {
@@ -255,6 +258,16 @@ export async function runAiVeilleProcessing(): Promise<AiVeilleResult> {
 
     draftsCreated += 1;
     newTitles.push(draft.title);
+    if (!published && inserted?.id) {
+      reviewQueue.push({
+        id: String(inserted.id),
+        slug,
+        title: draft.title,
+        excerpt: draft.excerpt,
+        body: draft.body,
+        category: draft.category,
+      });
+    }
     drafts.push({
       slug,
       title: draft.title,
@@ -268,30 +281,24 @@ export async function runAiVeilleProcessing(): Promise<AiVeilleResult> {
   const headlineSummary =
     newTitles.length > 0 ? await summarizeMooreaHeadlines(newTitles) : null;
 
-  if (draftsCreated > 0 || headlineSummary) {
-    const lines = drafts
-      .filter((d) => d.created)
-      .map(
-        (d) =>
-          `• <a href="${SITE.url}/admin/articles">${escapeHtml(d.title)}</a>`,
-      );
-
+  if (draftsCreated > 0) {
     const parts = [
       `<b>🤖 Agent IA Moorea — ${draftsCreated} brouillon(s)</b>`,
-      "",
     ];
-
-    if (headlineSummary) {
-      parts.push(escapeHtml(headlineSummary), "");
-    }
-
-    if (lines.length) {
-      parts.push(...lines, "");
-    }
-
-    parts.push(`<i>Modération : Admin → Articles (tag ai-draft)</i>`);
-
+    if (headlineSummary) parts.push("", escapeHtml(headlineSummary));
+    parts.push(
+      "",
+      reviewQueue.length > 0
+        ? `<i>À valider ci-dessous : ✅ Publier · ❌ Rejeter · ✏️ Plus tard</i>`
+        : `<i>Publiés automatiquement (AI_VEILLE_AUTO_PUBLISH) — <a href="${SITE.url}/actualites">voir le site</a></i>`,
+    );
     await sendTelegramNotification(parts.join("\n"));
+
+    // Un message par brouillon avec boutons de modération (bot admin).
+    for (const d of reviewQueue) {
+      const r = await sendAiDraftForReview(d);
+      if (!r.ok) errors.push(`telegram ${d.slug}: ${r.error ?? "échec"}`);
+    }
   }
 
   return {
