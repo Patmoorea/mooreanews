@@ -388,6 +388,8 @@ async function enrichFromPosterOcr(
     isGardeOcrEnabled() &&
     (!snap.doctor?.name ||
       !isMooreaGardeDoctor(snap.doctor) ||
+      !snap.doctor.phone?.trim() ||
+      snap.doctor.phone.trim() === "—" ||
       !snap.pharmacyHours?.length ||
       (!snap.doctorHours?.saturday && !snap.doctorHours?.sunday));
 
