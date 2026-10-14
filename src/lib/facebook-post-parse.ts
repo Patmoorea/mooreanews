@@ -253,15 +253,31 @@ export function classifyFacebookPost(
 
 import { truncate } from "@/lib/utils";
 
+/**
+ * Fin de phrase = « . ! ? … » suivi d’un espace ou de la fin du texte.
+ * Un point suivi d’un chiffre/lettre (« 13.10.2026 », « 08h00.12 », « www.x.pf »)
+ * ne coupe plus le titre (avant : « PAPETOAI 13. »).
+ */
+const SENTENCE_RE = /^.+?[.!?…](?=\s|$)/;
+
+/** Retire l’emoji/puce de tête et les crochets d’un en-tête « 📢[INFO …] ». */
+function tidyTitleLine(line: string): string {
+  let t = line.replace(/^[^\p{L}\p{N}[(«"]+/u, "").trim();
+  const bracket = t.match(/^\[([^\]]{6,})\]\s*(.*)$/);
+  if (bracket) t = `${bracket[1]}${bracket[2] ? ` ${bracket[2]}` : ""}`.trim();
+  return t;
+}
+
 export function titleFromMessage(message: string, fallback: string): string {
   const lines = message
     .split("\n")
     .map((l) => l.trim())
     .filter((l) => l.length > 3);
-  for (const line of lines) {
-    if (/^https?:\/\//i.test(line)) continue;
-    if (/facebook\.com/i.test(line) && line.length < 150) continue;
-    const sentence = line.match(/^[^.!?…]+[.!?…]/)?.[0]?.trim();
+  for (const raw of lines) {
+    if (/^https?:\/\//i.test(raw)) continue;
+    if (/facebook\.com/i.test(raw) && raw.length < 150) continue;
+    const line = tidyTitleLine(raw) || raw;
+    const sentence = line.match(SENTENCE_RE)?.[0]?.trim();
     if (sentence && sentence.length >= 10 && sentence.length <= 120) {
       return truncate(sentence, 120);
     }
@@ -269,7 +285,7 @@ export function titleFromMessage(message: string, fallback: string): string {
   }
   const flat = message.replace(/\s+/g, " ").trim();
   if (!flat) return fallback;
-  const sentence = flat.match(/^[^.!?…]+[.!?…]/)?.[0]?.trim();
+  const sentence = flat.match(SENTENCE_RE)?.[0]?.trim();
   if (sentence && sentence.length >= 10) return truncate(sentence, 120);
   return truncate(flat, 120) || fallback;
 }
