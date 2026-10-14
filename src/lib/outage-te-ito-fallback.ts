@@ -134,6 +134,68 @@ async function teItoPostUrlsFromMbasic(limit = 12): Promise<string[]> {
   }
 }
 
+/**
+ * Page publique Te Ito Rau (www.facebook.com) lue comme un robot d’indexation.
+ * Depuis fin sept. 2026, mbasic.facebook.com exige une connexion et le partage
+ * sur la page MooreaNews renvoie « Ce contenu n’est pas disponible » via Graph :
+ * c’est la seule source qui voit encore le texte des posts coupures.
+ */
+const CRAWLER_HEADERS = {
+  Accept: "text/html,application/xhtml+xml",
+  "Accept-Language": "fr-FR,fr;q=0.9",
+  "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+};
+
+export async function teItoPostsFromPublicPage(limit = 10): Promise<FacebookPostForImport[]> {
+  try {
+    const res = await fetch(TE_ITO_PAGE, {
+      headers: CRAWLER_HEADERS,
+      cache: "no-store",
+      redirect: "follow",
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!res.ok) return [];
+    const html = await res.text();
+    const posts: FacebookPostForImport[] = [];
+    const seen = new Set<string>();
+    const matches = [...html.matchAll(/"message":\{"text":"((?:[^"\\]|\\.)*)"/g)];
+    matches.forEach((m, i) => {
+      if (posts.length >= limit) return;
+      let text: string;
+      try {
+        text = JSON.parse(`"${m[1]}"`) as string;
+      } catch {
+        return;
+      }
+      if (!isTeItoRauOutageMessage(text)) return;
+      const headline = text.split("\n")[0].trim().slice(0, 120);
+      if (seen.has(headline)) return;
+      seen.add(headline);
+      // Segment de ce post : jusqu’au message suivant (évite d’attraper l’URL/date d’un autre post).
+      const start = Math.max(0, (m.index ?? 0) - 4000);
+      const end = matches[i + 1]?.index ?? html.length;
+      const seg = html.slice(start, Math.min(end, (m.index ?? 0) + 20000));
+      const urlM = seg.match(
+        /"url":"(https:\\\/\\\/www\.facebook\.com\\\/permalink\.php\?story_fbid=pfbid[0-9A-Za-z]+(?:&|\\u0026)id=100088637945937)"/,
+      );
+      const permalink = urlM ? (JSON.parse(`"${urlM[1]}"`) as string) : null;
+      const ct = seg.match(/"creation_time":(\d{10})/)?.[1];
+      const idPart = permalink
+        ? externalIdFromFacebookUrl(permalink)
+        : `txt-${Buffer.from(headline).toString("base64url").slice(0, 24)}`;
+      posts.push({
+        id: `${TE_ITO_RAU_FACEBOOK_PAGE.pageId}_${idPart}`,
+        message: cleanImportedText(text),
+        permalink_url: permalink ?? TE_ITO_PAGE,
+        created_time: ct ? new Date(Number(ct) * 1000).toISOString() : new Date().toISOString(),
+      });
+    });
+    return posts;
+  } catch {
+    return [];
+  }
+}
+
 async function outagesFromOgUrls(urls: string[]): Promise<UtilityOutage[]> {
   const { fetchOpenGraph } = await import("@/lib/open-graph");
   const { externalIdFromFacebookUrl } = await import("@/lib/facebook-url");
@@ -177,13 +239,21 @@ export async function importTeItoRauOutageArticlesFromFallback(options?: {
   userToken?: string;
 }): Promise<{ articlesCreated: number; errors: string[] }> {
   const errors: string[] = [];
-  const urls = await collectTeItoRauPostUrls();
-  if (urls.length === 0) {
+  const [urls, pagePosts] = await Promise.all([
+    collectTeItoRauPostUrls(),
+    teItoPostsFromPublicPage(),
+  ]);
+  if (urls.length === 0 && pagePosts.length === 0) {
     return { articlesCreated: 0, errors };
   }
 
   const { fetchOpenGraph } = await import("@/lib/open-graph");
-  const posts: FacebookPostForImport[] = [];
+  // Import en article : seulement les posts récents (pas de rattrapage de l’historique).
+  const recentCutoff = Date.now() - 3 * 24 * 60 * 60 * 1000;
+  const posts: FacebookPostForImport[] = pagePosts.filter(
+    (p) => Date.parse(p.created_time ?? "") >= recentCutoff,
+  );
+  const pagePermalinks = new Set(pagePosts.map((p) => p.permalink_url));
   const token =
     options?.userToken?.trim() ??
     process.env.FACEBOOK_USER_ACCESS_TOKEN?.trim() ??
@@ -191,6 +261,7 @@ export async function importTeItoRauOutageArticlesFromFallback(options?: {
     "";
 
   for (const url of urls) {
+    if (pagePermalinks.has(url)) continue;
     try {
       const og = await fetchOpenGraph(url);
       if (!og) continue;
@@ -246,9 +317,22 @@ export async function fetchOutagesFromTeItoRauFallback(): Promise<{
   urlsTried: number;
   sources: string[];
 }> {
-  const urls = await collectTeItoRauPostUrls();
+  const [urls, pagePosts] = await Promise.all([
+    collectTeItoRauPostUrls(),
+    teItoPostsFromPublicPage(),
+  ]);
 
   const outages = await outagesFromOgUrls(urls);
+  for (const p of pagePosts) {
+    const o = outageFromText({
+      id: `teito-page-${externalIdFromFacebookUrl(p.permalink_url ?? p.id)}`,
+      title: (p.message ?? "").split("\n")[0] ?? "",
+      corpus: p.message ?? "",
+      sourceUrl: p.permalink_url ?? TE_ITO_PAGE,
+      sourceLabel: "Te Ito Rau — Facebook",
+    });
+    if (o) outages.push(o);
+  }
 
   const sources: string[] = [];
   if (urls.length > 0) sources.push(`urls:${urls.length}`);
