@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { isGardeCacheSource, parseGardeSnapshotJson } from "@/lib/card-excerpt";
 import { contentReferencesStaleYear } from "@/lib/facebook-import-filters";
 import { parseDatetimeLocalTahiti } from "@/lib/alert-schedule";
 import { hideExternalArticlesForArticleSlug } from "@/lib/facebook-external-sync";
@@ -507,10 +508,12 @@ export async function deleteLegacyFacebookImports(): Promise<{
 
   const { data: externalRows } = await admin
     .from("external_articles")
-    .select("id, title, excerpt")
+    .select("id, title, excerpt, source_id")
     .eq("hidden", false);
 
   for (const ext of externalRows ?? []) {
+    if (isGardeCacheSource(ext.source_id)) continue;
+    if (ext.excerpt && parseGardeSnapshotJson(ext.excerpt)) continue;
     const corpus = `${ext.title} ${ext.excerpt ?? ""}`;
     if (contentReferencesStaleYear(corpus)) {
       await admin

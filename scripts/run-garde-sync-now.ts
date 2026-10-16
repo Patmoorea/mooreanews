@@ -16,15 +16,22 @@ async function main() {
   }
 
   const { getAdminSupabase } = await import("../src/lib/supabase/admin");
-  const { GARDE_CACHE_SOURCE_ID, readGardeMooreaFromCache } = await import(
-    "../src/lib/garde-moorea-auto"
-  );
+  const {
+    GARDE_CACHE_SOURCE_ID,
+    GARDE_CACHE_PAYLOAD_SOURCE_ID,
+    readGardeMooreaFromCache,
+  } = await import("../src/lib/garde-moorea-auto");
   const supabase = getAdminSupabase();
   if (supabase) {
     await supabase
       .from("external_articles")
       .delete()
       .eq("source_id", GARDE_CACHE_SOURCE_ID)
+      .eq("external_id", "current");
+    await supabase
+      .from("external_articles")
+      .delete()
+      .eq("source_id", GARDE_CACHE_PAYLOAD_SOURCE_ID)
       .eq("external_id", "current");
     console.log("Cache garde Supabase purgé.");
   }

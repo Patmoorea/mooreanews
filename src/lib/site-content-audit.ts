@@ -16,6 +16,7 @@ import {
   blockImportedArticleSlug,
 } from "@/lib/import-blocklist";
 import { getAdminSupabase } from "@/lib/supabase/admin";
+import { isGardeCacheSource } from "@/lib/card-excerpt";
 import { ALL_EMPLOYMENT_SOURCE_IDS } from "@/lib/employment-sources";
 import { pastEventCutoffIso } from "@/lib/event-expiry";
 
@@ -70,6 +71,8 @@ function isStaleExternalRow(row: {
   ) {
     return false;
   }
+  // Le JSON de garde peut contenir une année : ne pas masquer la bannière agenda.
+  if (isGardeCacheSource(row.source_id)) return false;
   return contentReferencesFacebookStaleYear(
     `${row.title} ${row.excerpt ?? ""}`,
   );

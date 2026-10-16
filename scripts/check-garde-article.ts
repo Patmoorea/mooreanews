@@ -5,6 +5,7 @@ config({ path: ".env.local" });
 
 async function main() {
   const { getAdminSupabase } = await import("../src/lib/supabase/admin");
+  const { readGardeMooreaFromCache } = await import("../src/lib/garde-moorea-auto");
   const supabase = getAdminSupabase();
   if (!supabase) throw new Error("no supabase");
 
@@ -17,22 +18,16 @@ async function main() {
   console.log("=== Article ===");
   console.log(JSON.stringify(article, null, 2));
 
-  const { data: cache } = await supabase
-    .from("external_articles")
-    .select("title, excerpt, fetched_at")
-    .eq("source_id", "moorea-garde-weekend")
-    .eq("external_id", "current")
-    .maybeSingle();
+  const snap = await readGardeMooreaFromCache();
 
-  console.log("\n=== Cache excerpt (doctor) ===");
-  if (cache?.excerpt) {
-    const snap = JSON.parse(cache.excerpt);
-    console.log({
-      doctor: snap.doctor,
-      pharmacyHours: snap.pharmacyHours?.length,
-      label: snap.label,
-    });
-  }
+  console.log("\n=== Cache garde (bannière) ===");
+  console.log({
+    doctor: snap?.doctor,
+    pharmacyHours: snap?.pharmacyHours?.length,
+    label: snap?.label,
+    validFrom: snap?.validFrom,
+    validTo: snap?.validTo,
+  });
 }
 
 main().catch(console.error);
