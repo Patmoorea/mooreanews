@@ -6,6 +6,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { HealthOnCallPanel } from "@/components/health/HealthOnCallPanel";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { getHealthOnCall } from "@/lib/health-on-call";
+import { GardeWeekendCard } from "@/components/health/GardeWeekendCard";
+import { resolveGardeCardSnapshot } from "@/lib/garde-moorea-data";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +19,10 @@ export const metadata: Metadata = {
 };
 
 export default async function SanteGardePage() {
-  const data = await getHealthOnCall();
+  const [data, garde] = await Promise.all([
+    getHealthOnCall(),
+    resolveGardeCardSnapshot().catch(() => null),
+  ]);
 
   return (
     <>
@@ -35,7 +40,11 @@ export default async function SanteGardePage() {
           <ArrowLeft size={14} />
           Retour à l&apos;accueil
         </Link>
-        <HealthOnCallPanel data={data} variant="page" />
+        {garde ? (
+          <GardeWeekendCard snap={garde} />
+        ) : (
+          <HealthOnCallPanel data={data} variant="page" />
+        )}
         <p className="mt-8 text-xs text-ocean-500 max-w-2xl">
           Garde du jour : appelez la <strong>DSP (40 47 01 44 / 47)</strong>.
           Les noms sont lus automatiquement sur la page Facebook de la{" "}

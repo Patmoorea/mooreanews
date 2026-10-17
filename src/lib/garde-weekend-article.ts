@@ -35,8 +35,8 @@ export function buildGardeArticleTitle(snap: GardeMooreaSnapshot): string {
 async function resolveGardeArticleCoverUrl(
   snap: GardeMooreaSnapshot,
 ): Promise<string> {
-  const commune = snap.communePosterUrl?.trim();
-  if (commune?.startsWith("http")) {
+  const commune = resolveGardePosterPublicUrl(snap.communePosterUrl);
+  if (commune?.startsWith("http") && !commune.includes("ordre-pharmaciens")) {
     const persisted = await persistFacebookCoverUrl(
       commune,
       `garde-commune-${snap.validFrom}`,

@@ -24,6 +24,7 @@ import {
   fetchCoppfGardeSnapshot,
 } from "@/lib/garde-ordre-pharmaciens";
 import { isGardeOcrEnabled, withGardeOcrSession } from "@/lib/garde-poster-ocr";
+import { isCommuneGardePosterText } from "@/lib/garde-commune-poster";
 import {
   gardePosterHasContent,
   renderAndUploadMooreaNewsGardePoster,
@@ -450,21 +451,22 @@ async function enrichFromPosterOcr(
     (!snap.doctor?.name ||
       !isMooreaGardeDoctor(snap.doctor) ||
       !snap.pharmacyHours?.length ||
-      (!snap.doctorHours?.saturday && !snap.doctorHours?.sunday));
+      (!snap.doctorHours?.saturday && !snap.doctorHours?.sunday) ||
+      // Affiche commune repérée sur Facebook mais pas encore lue (lieu / horaires pharmacies).
+      (Boolean(snap.communePosterUrl) && !snap.doctorAddress) ||
+      !snap.pharmacyHours?.some((p) => p.saturday || p.sunday));
 
   if (!needsOcr) return { snap, ocrUsed: false };
 
   const coppfMeta = await fetchCoppfGardeImageUrl().catch(() => null);
   const coppfImages = await fetchCoppfGardeImageUrls().catch(() => []);
-  if (
-    coppfMeta?.imageUrl &&
-    !snap.communePosterUrl?.includes("ordre-pharmaciens")
-  ) {
-    snap = {
-      ...snap,
-      communePosterUrl: snap.communePosterUrl ?? coppfMeta.imageUrl,
-      sourceUrl: snap.sourceUrl ?? COPPF_MEDECINS_GARDE_URL,
-    };
+  // Le tableau COPPF (toute la Polynésie) n'est PAS l'affiche de la commune :
+  // ne plus le ranger dans communePosterUrl (il devenait l'image « garde-commune » de l'article).
+  if (snap.communePosterUrl?.includes("ordre-pharmaciens")) {
+    snap = { ...snap, communePosterUrl: null };
+  }
+  if (coppfMeta?.imageUrl && !snap.sourceUrl) {
+    snap = { ...snap, sourceUrl: COPPF_MEDECINS_GARDE_URL };
   }
 
   const urls: string[] = [];
@@ -490,6 +492,12 @@ async function enrichFromPosterOcr(
         const ocr = await session.recognizeImageUrl(url);
         if (ocr.ok && ocr.text) {
           working = mergeGardeOcrIntoSnapshot(working, ocr.text);
+          if (isCommuneGardePosterText(ocr.text) && !url.includes("ordre-pharmaciens")) {
+            working = { ...working, communePosterUrl: url };
+          } else if (url === working.communePosterUrl) {
+            // Image Facebook qui n'est pas l'affiche « Médecin de garde » : ne pas l'afficher.
+            working = { ...working, communePosterUrl: null };
+          }
           ocrUsed = true;
           if (working.doctor?.name && (working.pharmacyHours?.length ?? 0) > 0) {
             break;

@@ -3,6 +3,7 @@
  */
 
 import { MOOREA_PHARMACIES, type MooreaPharmacy } from "@/lib/moorea-pharmacies";
+import { parseCommuneGardePosterText } from "@/lib/garde-commune-poster";
 
 export type ParsedOnCall = {
   name: string;
@@ -204,6 +205,20 @@ export function mergeGardeOcrIntoSnapshot<
     pharmacyHours?: GardePharmacyHours[];
   },
 >(snap: T, ocrText: string): T {
+  // Affiche de la commune = source la plus fiable pour Moorea (médecin, lieu, tél., pharmacies).
+  const commune = parseCommuneGardePosterText(ocrText);
+  if (commune) {
+    return {
+      ...snap,
+      doctor: commune.doctor,
+      doctorAddress: commune.doctorAddress ?? snap.doctorAddress,
+      doctorHours:
+        commune.doctorHours.saturday || commune.doctorHours.sunday
+          ? commune.doctorHours
+          : snap.doctorHours,
+      pharmacyHours: commune.pharmacyHours.length ? commune.pharmacyHours : snap.pharmacyHours,
+    };
+  }
   const coppf = parseCoppfMooreaGarde(ocrText);
   const dates = parseWeekendDatesFromText(ocrText);
   const fromPoster = parseGardeFromPosterText(ocrText);
@@ -434,6 +449,27 @@ function parseDoctorHoursNearName(text: string, namePart: string): {
 }
 
 /**
+ * Une ligne du tableau COPPF peut avoir 2 numéros (« 40 80 00 80 / 87 77 75 37 »).
+ * Sans fusion, tous les numéros suivants sont décalés d'une ligne
+ * (bug du 17/10/2026 : Moorea affichait le numéro de Taravao).
+ */
+export function collapseAlternatePhones<T extends { phone: string; pos: number }>(
+  text: string,
+  phones: T[],
+): T[] {
+  const out: T[] = [];
+  for (const p of phones) {
+    const prev = out[out.length - 1];
+    if (prev) {
+      const between = text.slice(prev.pos, p.pos).replace(/^[\d .\-]+/, "");
+      if (/^\s*(?:\/|\||ou)\s*$/i.test(between)) continue;
+    }
+    out.push(p);
+  }
+  return out;
+}
+
+/**
  * Affiche COPPF = tableau (secteurs | médecins | téléphones).
  * L'OCR lit souvent colonne par colonne : on aligne Moorea = Nᵉ secteur → Nᵉ médecin.
  */
@@ -490,7 +526,7 @@ function parseMooreaDoctorFromCoppfTable(text: string): ParsedOnCall | null {
     pos: m.index ?? 0,
   }));
 
-  const dutyPhones = phones.filter(
+  const dutyPhones = collapseAlternatePhones(text, phones).filter(
     (p) => !/^87\s?77\s?78\s?28$/.test(p.phone.replace(/\s+/g, " ")),
   );
 

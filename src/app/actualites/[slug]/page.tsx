@@ -13,6 +13,8 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { getArticleBySlug, getArticles } from "@/lib/content";
 import { formatDateFR } from "@/lib/utils";
 import { newsArticleJsonLd, absoluteUrl } from "@/lib/seo";
+import { GardeWeekendCard } from "@/components/health/GardeWeekendCard";
+import { resolveGardeCardSnapshot } from "@/lib/garde-moorea-data";
 
 export const revalidate = 3600;
 
@@ -61,6 +63,10 @@ export default async function ArticlePage({ params }: Props) {
     .slice(0, 3);
 
   const shareUrl = absoluteUrl(`/actualites/${article.slug}`);
+  const gardeDate = article.slug.match(/^garde-moorea-(\d{4}-\d{2}-\d{2})$/)?.[1];
+  const garde = gardeDate
+    ? await resolveGardeCardSnapshot(gardeDate).catch(() => null)
+    : null;
   const coverForLd = resolveCoverImage({
     image: article.image,
     category: article.category,
@@ -128,6 +134,11 @@ export default async function ArticlePage({ params }: Props) {
         </Container>
       </section>
 
+      {garde ? (
+        <Container size="narrow" className="-mt-4 sm:-mt-8">
+          <GardeWeekendCard snap={garde} />
+        </Container>
+      ) : (
       <Container>
         <ContentCoverImage
           src={article.image}
@@ -141,6 +152,7 @@ export default async function ArticlePage({ params }: Props) {
           fit="contain"
         />
       </Container>
+      )}
 
       {/* Corps de l'article */}
       <Container size="narrow" className="py-12 sm:py-16">

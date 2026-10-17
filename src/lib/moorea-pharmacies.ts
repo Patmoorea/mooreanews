@@ -23,17 +23,17 @@ export const MOOREA_PHARMACIES: MooreaPharmacy[] = [
   {
     id: "pharmacie-tran-moorea",
     name: "Pharmacie Tran",
-    district: "Paopao",
-    address: "PK 6,5, Paopao",
+    district: "Maharepa",
+    address: "Maharepa",
     phone: "40 55 20 75",
     phoneHref: "tel:+68940552075",
   },
   {
     id: "pharmacie-moorea-haapiti",
     name: "Pharmacie Moorea Haapiti",
-    district: "Tiahura",
-    address: "Tiahura, Haapiti",
-    phone: "40 56 41 16",
-    phoneHref: "tel:+68940564116",
+    district: "Haapiti",
+    address: "Haapiti",
+    phone: "40 56 38 37",
+    phoneHref: "tel:+68940563837",
   },
 ];

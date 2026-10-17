@@ -20,6 +20,9 @@ export type GardeMooreaFile = {
   validTo: string;
   label?: string;
   posterImageUrl?: string;
+  /** Affiche officielle de la commune (Facebook Commune de Moorea-Maiao). */
+  communePosterUrl?: string;
+  sourceUrl?: string;
   pharmacy?: { name?: string; phone?: string; address?: string };
   doctor?: {
     name?: string;
@@ -238,13 +241,13 @@ export function fileToSnapshot(file: GardeMooreaFile): GardeMooreaSnapshot {
     doctor: doctorEntry,
     pharmacy: pharmacyEntry,
     posterImageUrl: file.posterImageUrl ?? null,
-    communePosterUrl: file.posterImageUrl ?? null,
+    communePosterUrl: file.communePosterUrl ?? null,
     doctorAddress: file.doctor?.address?.trim(),
     doctorHours: file.doctor?.hours,
     pharmacyHours: file.pharmacyHours,
     articleSlug: gardeArticleSlug(file.validFrom),
     syncedAt: new Date().toISOString(),
-    sourceUrl: "https://www.facebook.com/CommuneMooreaMaiao",
+    sourceUrl: file.sourceUrl ?? "https://www.facebook.com/CommuneMooreaMaiao",
   };
 }
 
@@ -361,4 +364,20 @@ export async function getGardeMooreaForNow(now = new Date()): Promise<{
 
   const file = await fromFile(now);
   return { ...file, posterImageUrl: file.weekendLabel ? posterImageUrl : null };
+}
+
+/**
+ * Snapshot pour la carte garde (article + /sante-garde).
+ * Une saisie manuelle depuis l'affiche commune (data/garde-moorea.json avec communePosterUrl)
+ * prime sur le cache OCR, qui peut être faux (ex. numéro d'un autre secteur).
+ */
+export async function resolveGardeCardSnapshot(
+  validFrom?: string,
+  now = new Date(),
+): Promise<GardeMooreaSnapshot | null> {
+  const file = await readGardeFileSnapshot();
+  const target = validFrom ?? (await resolveGardeWeekendSnapshot(now))?.validFrom;
+  if (!target) return null;
+  if (file && file.validFrom === target && file.communePosterUrl) return file;
+  return resolveGardeSnapshotForPoster(target);
 }

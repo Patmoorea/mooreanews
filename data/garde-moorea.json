@@ -1,14 +1,21 @@
 {
-  "validFrom": "2026-08-29",
-  "validTo": "2026-08-30",
-  "label": "Samedi 29 / Dimanche 30 aout 2026",
-  "posterImageUrl": "https://fvksncxoievsrezdkmek.supabase.co/storage/v1/object/public/media/generated/garde-weekend/garde-moorea-2026-08-29.png",
+  "validFrom": "2026-10-17",
+  "validTo": "2026-10-18",
+  "label": "Samedi 17 / Dimanche 18 octobre 2026",
+  "communePosterUrl": "/garde/commune-2026-10-17.jpg",
+  "sourceUrl": "https://www.facebook.com/CommuneMooreaMaiao",
   "doctor": {
-    "name": "FOUGEROUSE Pierre-Antoine",
-    "phone": "87 00 08 00",
+    "name": "BUONAMINI Sabrina",
+    "phone": "40 56 15 55",
+    "address": "Haapiti, PK 30,5 côté montagne",
     "hours": {
-      "saturday": "12h00 — 18h00",
-      "sunday": "8h00 — 16h00"
+      "saturday": "12h00 – 18h00",
+      "sunday": "8h00 – 16h00"
     }
-  }
+  },
+  "pharmacyHours": [
+    { "district": "Afareaitu", "phone": "40 56 35 47", "saturday": "7h30 – 13h30", "sunday": "7h30 – 11h30" },
+    { "district": "Maharepa", "phone": "40 55 20 75", "saturday": "7h30 – 12h15 et 14h30 – 16h30", "sunday": "8h00 – 11h00" },
+    { "district": "Haapiti", "phone": "40 56 38 37", "saturday": "8h00 – 12h00", "sunday": "8h00 – 10h00" }
+  ]
 }
