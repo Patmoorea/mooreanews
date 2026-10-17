@@ -31,6 +31,9 @@ export function validateGardeBeforePublish(
   snap: GardeMooreaSnapshot,
   now: Date,
 ): GardeValidation {
+  if (!isPlausibleGardeDates(snap.validFrom, snap.validTo, now)) {
+    return { ok: false, issues: [`dates invraisemblables ${snap.validFrom}/${snap.validTo}`] };
+  }
   const holiday = snap.validFrom === snap.validTo;
   const allow = holiday ? { validFrom: snap.validFrom, validTo: snap.validTo } : undefined;
   if (snap.officialCheck) {
@@ -58,6 +61,7 @@ import {
 } from "@/lib/garde-moorea-data";
 import { mergeGardeSnapshots } from "@/lib/garde-ordre-pharmaciens";
 import { MOOREA_PHARMACIES } from "@/lib/moorea-pharmacies";
+import { cleanupGardeData, isPlausibleGardeDates } from "@/lib/garde-cleanup";
 import {
   gardeArticleSlug,
   upsertGardeWeekendArticle,
@@ -132,19 +136,14 @@ function pharmacyDutyFromSnapshot(
   const hours =
     snap.pharmacyHours && snap.pharmacyHours.length > 0
       ? snap.pharmacyHours
-      : snap.doctor?.name
-        ? MOOREA_PHARMACIES.map((p) => ({
-            district: p.district,
-            phone: p.phone,
-          }))
-        : null;
+      : null;
   if (!hours?.length) return null;
   const summary = hours
     .map((h) => `${h.district} ${h.phone}`)
     .join(" · ");
   const first = hours[0]!;
   return {
-    name: "Pharmacies Moorea (Afareaitu · Paopao · Haapiti)",
+    name: `Pharmacies Moorea (${hours.map((h) => h.district).join(" · ")})`,
     phone: first.phone,
     phoneHref: first.phone ? phoneHref(first.phone) : "",
     address: summary,
@@ -164,7 +163,7 @@ export function snapshotToPublicDuties(
 
   const source = snap.sourceUrl?.includes("ordre-pharmaciens")
     ? "Ordre des médecins (COPPF)"
-    : "Commune Moorea-Maiao";
+    : "MooreaNews";
   return {
     weekendLabel: snap.label,
     pharmacy: pharmacyDutyFromSnapshot(snap, source),
@@ -383,7 +382,7 @@ export async function writeGardeMooreaCache(snap: GardeMooreaSnapshot): Promise<
     url: snap.sourceUrl ?? COMMUNE_FB,
     title: title.slice(0, 500),
     image_url: snap.posterImageUrl ?? null,
-    author: "Commune Moorea-Maiao",
+    author: "MooreaNews",
     published_at: `${snap.validFrom}T12:00:00.000Z`,
     fetched_at: snap.syncedAt,
     hidden: false,
@@ -555,6 +554,12 @@ export async function syncGardeMooreaFromCommune(
   validationIssues?: string[];
 }> {
   let snap: GardeMooreaSnapshot | null = null;
+  // Nettoyage : articles à date invraisemblable, signature, pharmacies non vérifiées.
+  const admin = getAdminSupabase();
+  if (admin) {
+    const report = await cleanupGardeData(admin).catch((e) => ({ errors: [String(e)] }));
+    console.log("[garde-cleanup]", JSON.stringify(report));
+  }
   try {
     snap = await resolveSnapshotForSync();
   } catch (err) {
@@ -644,6 +649,9 @@ export async function syncGardeMooreaFromCommune(
   }
 
   snap.syncedAt = new Date().toISOString();
+  // Pas de liste de pharmacies sans horaires lus sur une source (anciens numéros non vérifiés).
+  snap.pharmacyHours = (snap.pharmacyHours ?? []).filter((p) => p.saturday || p.sunday);
+  if (snap.pharmacy?.name?.startsWith("Pharmacies Moorea")) snap.pharmacy = null;
 
   // Garde-fou : on ne publie RIEN d'incohérent (médecin hors Moorea, n° décalé,
   // horaires absents, mauvaise semaine). On signale à la place.
