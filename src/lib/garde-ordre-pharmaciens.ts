@@ -60,7 +60,7 @@ export function holidayDatesFromFilename(
     base.match(/(\d{2})(\d{2})(?:maj|bis)$/i);
   if (!ddmmyy) return null;
 
-  let day = Number(ddmmyy[1]);
+  const day = Number(ddmmyy[1]);
   let month = Number(ddmmyy[2]);
 
   // Souvent JJ + version (ex. 1402maj = 14 du mois, maj n°2) quand le MM

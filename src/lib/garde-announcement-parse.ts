@@ -3,6 +3,7 @@
  */
 
 import { MOOREA_PHARMACIES, type MooreaPharmacy } from "@/lib/moorea-pharmacies";
+import { parseOfficialMooreaGarde, type OfficialMooreaGarde } from "@/lib/garde-official-table";
 
 export type ParsedOnCall = {
   name: string;
@@ -202,8 +203,31 @@ export function mergeGardeOcrIntoSnapshot<
     doctorAddress?: string;
     doctorHours?: { saturday?: string; sunday?: string };
     pharmacyHours?: GardePharmacyHours[];
+    officialCheck?: OfficialMooreaGarde;
   },
 >(snap: T, ocrText: string): T {
+  // Tableau officiel : lecture par ligne « Moorea » (robuste aux mises en page OCR).
+  const official = parseOfficialMooreaGarde(ocrText);
+  if (official) {
+    const phone = official.phone;
+    return {
+      ...snap,
+      ...(official.validFrom && official.validTo
+        ? {
+            validFrom: official.validFrom,
+            validTo: official.validTo,
+            label: `Samedi ${Number(official.validFrom.slice(8))} / Dimanche ${Number(official.validTo.slice(8))} ${new Date(`${official.validTo}T12:00:00Z`).toLocaleDateString("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" })}`,
+          }
+        : {}),
+      doctor: { name: official.doctorName, phone, phoneHref: phoneHref(phone) },
+      doctorHours: { saturday: official.saturday, sunday: official.sunday },
+      pharmacyHours:
+        snap.pharmacyHours && snap.pharmacyHours.length > 0
+          ? snap.pharmacyHours
+          : defaultMooreaPharmacyHours(),
+      officialCheck: official,
+    };
+  }
   const coppf = parseCoppfMooreaGarde(ocrText);
   const dates = parseWeekendDatesFromText(ocrText);
   const fromPoster = parseGardeFromPosterText(ocrText);
@@ -434,6 +458,27 @@ function parseDoctorHoursNearName(text: string, namePart: string): {
 }
 
 /**
+ * Une ligne du tableau officiel peut porter 2 numéros (« 40 80 00 80 / 87 77 75 37 »).
+ * Sans fusion, tous les numéros suivants sont décalés d'une ligne
+ * (17/10/2026 : Moorea affichait 40 57 51 57, le numéro de Taravao).
+ */
+export function collapseAlternatePhones<T extends { phone: string; pos: number }>(
+  text: string,
+  phones: T[],
+): T[] {
+  const out: T[] = [];
+  for (const p of phones) {
+    const prev = out[out.length - 1];
+    if (prev) {
+      const between = text.slice(prev.pos, p.pos).replace(/^[\d .\-]+/, "");
+      if (/^\s*(?:\/|\||ou)\s*$/i.test(between)) continue;
+    }
+    out.push(p);
+  }
+  return out;
+}
+
+/**
  * Affiche COPPF = tableau (secteurs | médecins | téléphones).
  * L'OCR lit souvent colonne par colonne : on aligne Moorea = Nᵉ secteur → Nᵉ médecin.
  */
@@ -490,7 +535,7 @@ function parseMooreaDoctorFromCoppfTable(text: string): ParsedOnCall | null {
     pos: m.index ?? 0,
   }));
 
-  const dutyPhones = phones.filter(
+  const dutyPhones = collapseAlternatePhones(text, phones).filter(
     (p) => !/^87\s?77\s?78\s?28$/.test(p.phone.replace(/\s+/g, " ")),
   );
 
