@@ -15,6 +15,9 @@ export const UNVERIFIED_PHARMACY_INFO_TITLES = ["Pharmacie Tran — Paopao", "Ph
 
 const DAY = 86400_000;
 
+/** Articles déjà supprimés de la base dont la page ISR doit être purgée. */
+export const PURGED_GARDE_SLUGS = ["garde-moorea-2028-09-12"];
+
 /** Une garde n'est publiable que pour le passé proche ou les 2 semaines à venir. */
 export function isPlausibleGardeDates(validFrom: string, validTo: string, now: Date): boolean {
   const from = Date.parse(`${validFrom}T12:00:00Z`);
