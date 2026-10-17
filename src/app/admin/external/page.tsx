@@ -9,6 +9,7 @@ import {
 import { AddFacebookLinkForm } from "@/components/admin/AddFacebookLinkForm";
 import { PurgeObsoleteVeilleBanner } from "@/components/admin/PurgeObsoleteVeilleBanner";
 import { runAggregation, toggleExternalArticle } from "@/app/admin/external-actions";
+import { excerptForCard } from "@/lib/card-excerpt";
 import { timeAgo } from "@/lib/utils";
 
 export const metadata = { title: "Veille externe" };
@@ -206,7 +207,9 @@ export default async function AdminExternalPage({ searchParams }: PageProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-ocean-100">
-            {(articles ?? []).map((a) => (
+            {(articles ?? []).map((a) => {
+              const excerpt = excerptForCard(a.excerpt);
+              return (
               <tr key={a.id} className="hover:bg-ocean-50/40">
                 <td className="px-4 py-3">
                   <a
@@ -223,9 +226,9 @@ export default async function AdminExternalPage({ searchParams }: PageProps) {
                     {a.title}
                     <ExternalLink size={10} className="text-ocean-400" />
                   </a>
-                  {a.excerpt && (
+                  {excerpt && (
                     <p className="text-xs text-ocean-500 mt-1 line-clamp-1 max-w-xl">
-                      {a.excerpt}
+                      {excerpt}
                     </p>
                   )}
                 </td>
@@ -258,7 +261,8 @@ export default async function AdminExternalPage({ searchParams }: PageProps) {
                   </form>
                 </td>
               </tr>
-            ))}
+              );
+            })}
             {(articles ?? []).length === 0 && (
               <tr>
                 <td colSpan={4} className="px-4 py-12 text-center text-ocean-500">

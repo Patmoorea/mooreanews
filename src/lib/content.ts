@@ -38,6 +38,7 @@ import {
   isAnnouncementVisible,
 } from "@/lib/announcement-expiry";
 import { catalogOpeningHoursForRestaurant } from "@/lib/restaurant-catalog";
+import { excerptForCard } from "@/lib/card-excerpt";
 import { enrichRestaurantsWithHours } from "@/lib/restaurant-hours";
 import type { RestaurantOpenMeta } from "@/lib/restaurant-open-status";
 
@@ -364,7 +365,7 @@ function articleFromRow(r: ArticleRow): Article {
   return {
     slug: r.slug,
     title: r.title,
-    excerpt: r.excerpt,
+    excerpt: excerptForCard(r.excerpt) ?? "",
     body: r.body,
     category: normalizeArticleCategory(r.category),
     tags: r.tags ?? undefined,

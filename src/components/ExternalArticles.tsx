@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ExternalLink, Rss, Settings } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { listExternalArticles } from "@/lib/aggregator";
+import { excerptForCard } from "@/lib/card-excerpt";
 import { FACEBOOK_WATCH_URLS } from "@/lib/watch-sources";
 import { timeAgo } from "@/lib/utils";
 
@@ -31,7 +32,9 @@ export async function ExternalArticles({ limit = 8 }: { limit?: number }) {
 
         {hasArticles ? (
           <ul className="grid gap-3 sm:grid-cols-2">
-            {articles!.map((a) => (
+            {articles!.map((a) => {
+              const excerpt = excerptForCard(a.excerpt);
+              return (
               <li key={a.id}>
                 <a
                   href={a.url}
@@ -63,9 +66,9 @@ export async function ExternalArticles({ limit = 8 }: { limit?: number }) {
                     <h3 className="font-display text-base text-ocean-900 leading-tight group-hover:text-tiare-600 transition-colors">
                       {a.title}
                     </h3>
-                    {a.excerpt && (
+                    {excerpt && (
                       <p className="mt-1 text-xs text-ocean-600 line-clamp-2">
-                        {a.excerpt}
+                        {excerpt}
                       </p>
                     )}
                   </div>
@@ -75,7 +78,8 @@ export async function ExternalArticles({ limit = 8 }: { limit?: number }) {
                   />
                 </a>
               </li>
-            ))}
+              );
+            })}
           </ul>
         ) : (
           <div className="rounded-3xl border border-ocean-100 bg-white p-6 sm:p-8">

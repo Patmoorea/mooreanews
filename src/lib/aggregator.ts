@@ -13,6 +13,10 @@ import { aggregateWebWatch } from "@/lib/facebook-watch";
 import { fetchRssFeed, type RssItem } from "@/lib/rss-parser";
 import { isTransientFeedError } from "@/lib/feed-errors";
 import { RSS_SOURCES, rssSourcesByPriority, type RssSource } from "@/lib/rss-sources";
+import {
+  excerptForCard,
+  externalArticleSourcesHiddenFromVeille,
+} from "@/lib/card-excerpt";
 import { ALL_EMPLOYMENT_SOURCE_IDS } from "@/lib/employment-sources";
 import { upsertExternalArticleRows } from "@/lib/external-articles-upsert";
 import { isAlertImportBlocked } from "@/lib/import-blocklist";
@@ -210,6 +214,9 @@ export async function listExternalArticles(limit = 20) {
     Date.now() - facebookImportMaxAgeDays() * 24 * 60 * 60 * 1000,
   ).toISOString();
 
+  const hiddenSources = externalArticleSourcesHiddenFromVeille(
+    ALL_EMPLOYMENT_SOURCE_IDS,
+  );
   const { data, error } = await supabase
     .from("external_articles")
     .select("*")
@@ -217,11 +224,14 @@ export async function listExternalArticles(limit = 20) {
     .not(
       "source_id",
       "in",
-      `(${ALL_EMPLOYMENT_SOURCE_IDS.map((id) => `"${id}"`).join(",")})`,
+      `(${hiddenSources.map((id) => `"${id}"`).join(",")})`,
     )
     .gte("published_at", cutoff)
     .order("published_at", { ascending: false })
     .limit(limit);
   if (error) return null;
-  return data;
+  return (data ?? []).map((row) => ({
+    ...row,
+    excerpt: excerptForCard(row.excerpt),
+  }));
 }

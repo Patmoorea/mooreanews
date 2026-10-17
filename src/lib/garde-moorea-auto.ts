@@ -39,11 +39,18 @@ import {
   gardeArticleSlug,
   upsertGardeWeekendArticle,
 } from "@/lib/garde-weekend-article";
+import {
+  GARDE_CACHE_PAYLOAD_SOURCE_ID,
+  GARDE_VEILLE_SOURCE_ID,
+  gardeCachePublicExcerpt,
+  parseGardeSnapshotJson,
+} from "@/lib/card-excerpt";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getPublicSupabase } from "@/lib/supabase/server";
 import type { OnCallDuty } from "@/lib/health-on-call-shared";
 
-export const GARDE_CACHE_SOURCE_ID = "moorea-garde-weekend";
+export const GARDE_CACHE_SOURCE_ID = GARDE_VEILLE_SOURCE_ID;
+export { GARDE_CACHE_PAYLOAD_SOURCE_ID };
 const GARDE_CACHE_EXTERNAL_ID = "current";
 const COMMUNE_FB = "https://www.facebook.com/CommuneMooreaMaiao";
 
@@ -276,32 +283,67 @@ const getCachedLiveGarde = unstable_cache(
   { revalidate: 3600, tags: ["garde-moorea"] },
 );
 
-export async function readGardeMooreaFromCache(): Promise<GardeMooreaSnapshot | null> {
-  const supabase = getPublicSupabase() ?? getAdminSupabase();
-  if (!supabase) return null;
+function snapshotFromCacheRow(data: {
+  excerpt?: string | null;
+  url?: string | null;
+  fetched_at?: string | null;
+  image_url?: string | null;
+} | null): GardeMooreaSnapshot | null {
+  if (!data?.excerpt) return null;
+  const parsed = parseGardeSnapshotJson(data.excerpt);
+  if (!parsed?.validFrom || !parsed.validTo) return null;
+  const snap = parsed as GardeMooreaSnapshot;
+  snap.sourceUrl = data.url ?? snap.sourceUrl;
+  snap.syncedAt = data.fetched_at ?? snap.syncedAt;
+  if (!snap.posterImageUrl && data.image_url) {
+    snap.posterImageUrl = data.image_url;
+  }
+  return snap;
+}
 
-  const { data } = await supabase
+function newerSnapshot(
+  left: GardeMooreaSnapshot | null,
+  right: GardeMooreaSnapshot | null,
+): GardeMooreaSnapshot | null {
+  if (!left) return right;
+  if (!right) return left;
+  const leftTime = Date.parse(left.syncedAt || "") || 0;
+  const rightTime = Date.parse(right.syncedAt || "") || 0;
+  return leftTime >= rightTime ? left : right;
+}
+
+async function readCacheArticle(
+  sourceId: string,
+  allowHidden: boolean,
+): Promise<{
+  excerpt?: string | null;
+  url?: string | null;
+  fetched_at?: string | null;
+  image_url?: string | null;
+} | null> {
+  const admin = getAdminSupabase();
+  const pub = getPublicSupabase();
+  const client = allowHidden && admin ? admin : (pub ?? admin);
+  if (!client) return null;
+
+  let query = client
     .from("external_articles")
     .select("excerpt, url, fetched_at, image_url")
-    .eq("source_id", GARDE_CACHE_SOURCE_ID)
-    .eq("external_id", GARDE_CACHE_EXTERNAL_ID)
-    .eq("hidden", false)
-    .maybeSingle();
+    .eq("source_id", sourceId)
+    .eq("external_id", GARDE_CACHE_EXTERNAL_ID);
+  if (!(allowHidden && admin)) query = query.eq("hidden", false);
 
-  if (!data?.excerpt) return null;
+  const { data } = await query.maybeSingle();
+  return data;
+}
 
-  try {
-    const snap = JSON.parse(data.excerpt) as GardeMooreaSnapshot;
-    if (!snap.validFrom || !snap.validTo) return null;
-    snap.sourceUrl = data.url ?? snap.sourceUrl;
-    snap.syncedAt = data.fetched_at ?? snap.syncedAt;
-    if (!snap.posterImageUrl && data.image_url) {
-      snap.posterImageUrl = data.image_url;
-    }
-    return snap;
-  } catch {
-    return null;
-  }
+export async function readGardeMooreaFromCache(): Promise<GardeMooreaSnapshot | null> {
+  const [payload, legacy] = await Promise.all([
+    readCacheArticle(GARDE_CACHE_PAYLOAD_SOURCE_ID, true),
+    readCacheArticle(GARDE_CACHE_SOURCE_ID, false),
+  ]);
+
+  return newerSnapshot(snapshotFromCacheRow(payload), snapshotFromCacheRow(legacy));
 }
 
 export async function writeGardeMooreaCache(snap: GardeMooreaSnapshot): Promise<boolean> {
@@ -310,19 +352,38 @@ export async function writeGardeMooreaCache(snap: GardeMooreaSnapshot): Promise<
 
   const title =
     [snap.pharmacy?.name, snap.doctor?.name].filter(Boolean).join(" · ") || "Garde Moorea";
+  const json = JSON.stringify(snap).slice(0, 8000);
+  const readable = gardeCachePublicExcerpt(snap);
+  const shared = {
+    url: snap.sourceUrl ?? COMMUNE_FB,
+    title: title.slice(0, 500),
+    image_url: snap.posterImageUrl ?? null,
+    author: "Commune Moorea-Maiao",
+    published_at: `${snap.validFrom}T12:00:00.000Z`,
+    fetched_at: snap.syncedAt,
+    hidden: false,
+  };
+
+  // Ligne technique, hors bloc veille : le JSON reste lisible par la bannière agenda
+  // (RLS public = hidden false). La carte publique reçoit une phrase.
+  const payload = await supabase.from("external_articles").upsert(
+    {
+      ...shared,
+      source_id: GARDE_CACHE_PAYLOAD_SOURCE_ID,
+      source_name: "Garde Moorea (cache)",
+      external_id: GARDE_CACHE_EXTERNAL_ID,
+      excerpt: json,
+    },
+    { onConflict: "source_id,external_id" },
+  );
+
   const { error } = await supabase.from("external_articles").upsert(
     {
+      ...shared,
       source_id: GARDE_CACHE_SOURCE_ID,
       source_name: "Garde Moorea (auto)",
       external_id: GARDE_CACHE_EXTERNAL_ID,
-      url: snap.sourceUrl ?? COMMUNE_FB,
-      title: title.slice(0, 500),
-      excerpt: JSON.stringify(snap).slice(0, 8000),
-      image_url: snap.posterImageUrl ?? null,
-      author: "Commune Moorea-Maiao",
-      published_at: `${snap.validFrom}T12:00:00.000Z`,
-      fetched_at: snap.syncedAt,
-      hidden: false,
+      excerpt: payload.error ? json : readable,
     },
     { onConflict: "source_id,external_id" },
   );
