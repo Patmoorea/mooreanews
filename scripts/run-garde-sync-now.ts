@@ -36,16 +36,7 @@ async function main() {
     console.log("Cache garde Supabase purgé.");
   }
 
-  const { listCommuneMooreaGraphPosts } = await import("../src/lib/facebook-watch");
-
-  console.log("=== Posts Commune (garde) ===");
-  const posts = await listCommuneMooreaGraphPosts();
-  for (const p of posts.slice(0, 10)) {
-    const msg = (p.message ?? "").slice(0, 100).replace(/\n/g, " ");
-    console.log(p.created_time, p.full_picture ? "IMG" : "---", msg);
-  }
-
-  console.log("\n=== Sync garde ===");
+  console.log("=== Sync garde (tableau officiel) ===");
   const { syncGardeMooreaFromCommune } = await import("../src/lib/garde-moorea-auto");
   const result = await syncGardeMooreaFromCommune({ fullWeekendPipeline: true });
   console.log(JSON.stringify(result, null, 2));
@@ -57,7 +48,7 @@ async function main() {
         validFrom: snap.validFrom,
         validTo: snap.validTo,
         label: snap.label,
-        posterImageUrl: snap.posterImageUrl ?? snap.communePosterUrl,
+        posterImageUrl: snap.posterImageUrl ?? undefined,
         doctor: snap.doctor
           ? {
               name: snap.doctor.name.replace(/^Dr\.?\s+/i, ""),

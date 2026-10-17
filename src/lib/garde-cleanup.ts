@@ -10,6 +10,17 @@ import { tahitiHolidayLabel } from "@/lib/tahiti-holidays";
 
 export const GARDE_ARTICLE_AUTHOR = "MooreaNews";
 
+/** Page Facebook ou site/RSS de la commune — interdit comme source de garde. */
+export function isCommuneGardeSourceUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const u = url.toLowerCase();
+  return (
+    u.includes("communemooreamaiao") ||
+    u.includes("commune-moorea.net") ||
+    u.includes("www.commune-moorea")
+  );
+}
+
 /** Fiches infos pratiques non vérifiées (numéros absents de toute source officielle). */
 export const UNVERIFIED_PHARMACY_INFO_TITLES = ["Pharmacie Tran — Paopao", "Pharmacie Moorea Haapiti"];
 

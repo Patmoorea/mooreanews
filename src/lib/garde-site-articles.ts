@@ -1,17 +1,18 @@
 /**
- * Garde week-end — reprise des articles Facebook déjà importés sur MooreaNews.
- * (ex. mooreanews-fb-350029589936-* publié par la veille Facebook)
+ * Garde week-end — reprise des articles déjà importés depuis la page MooreaNews.
+ * Les articles issus de la page Facebook de la commune ne sont pas une source.
  */
 
 import {
   parseGardeFromSiteContent,
   parseDoctorAddressFromText,
   parseDoctorHoursFromText,
-  parsePharmacyHoursFromText,
   type GardePharmacyHours,
   type ParsedGardeWeekend,
 } from "@/lib/garde-announcement-parse";
+import { isCommuneGardeSourceUrl } from "@/lib/garde-cleanup";
 import { pickBestGardeSnapshot } from "@/lib/garde-moorea-data";
+import { pickPublicGardePosterUrl } from "@/lib/garde-poster-url";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getPublicSupabase } from "@/lib/supabase/server";
 
@@ -26,8 +27,7 @@ type GardeMooreaSnapshot = ParsedGardeWeekend & {
   pharmacyHours?: GardePharmacyHours[];
 };
 
-const COMMUNE_FB = "https://www.facebook.com/CommuneMooreaMaiao";
-const GARDE_SLUG_PREFIXES = ["mooreanews-fb-", "commune-fb-"] as const;
+const GARDE_SLUG_PREFIXES = ["mooreanews-fb-"] as const;
 const LOOKBACK_MS = 21 * 86400000;
 
 function stripImportFooter(body: string): string {
@@ -70,24 +70,25 @@ function rowToSnapshot(row: {
   if (!parsed) return null;
 
   const doctorHours = parseDoctorHoursFromText(text);
-  const pharmacyHours = parsePharmacyHoursFromText(text);
   const doctorAddress = parseDoctorAddressFromText(text);
-
-  const permalink =
-    text.match(/facebook\.com[^\s)]+/)?.[0] ??
-    `https://www.mooreanews.com/actualites/${row.slug}`;
+  const fb = text.match(/https?:\/\/(?:www\.)?facebook\.com[^\s)]+/i)?.[0];
+  const sourceUrl =
+    fb && !isCommuneGardeSourceUrl(fb)
+      ? fb
+      : `https://www.mooreanews.com/actualites/${row.slug}`;
 
   return {
     ...parsed,
-    communePosterUrl: cover,
-    posterImageUrl: cover,
-    sourceUrl: permalink.includes("facebook.com") ? permalink : COMMUNE_FB,
+    pharmacy: null,
+    communePosterUrl: null,
+    posterImageUrl: pickPublicGardePosterUrl(cover),
+    sourceUrl,
     syncedAt: pub ?? new Date().toISOString(),
     articleSlug: row.slug,
     doctorAddress,
     doctorHours:
       doctorHours.saturday || doctorHours.sunday ? doctorHours : undefined,
-    pharmacyHours: pharmacyHours.length > 0 ? pharmacyHours : undefined,
+    pharmacyHours: undefined,
   };
 }
 
@@ -101,26 +102,16 @@ export async function fetchGardeFromImportedArticles(
   const select =
     "slug, title, excerpt, body, cover_url, published_at, created_at";
 
-  const [mooreaFb, communeFb] = await Promise.all([
-    supabase
-      .from("articles")
-      .select(select)
-      .eq("published", true)
-      .like("slug", "mooreanews-fb-%")
-      .gte("published_at", cutoff)
-      .order("published_at", { ascending: false })
-      .limit(40),
-    supabase
-      .from("articles")
-      .select(select)
-      .eq("published", true)
-      .like("slug", "commune-fb-%")
-      .gte("published_at", cutoff)
-      .order("published_at", { ascending: false })
-      .limit(40),
-  ]);
+  const mooreaFb = await supabase
+    .from("articles")
+    .select(select)
+    .eq("published", true)
+    .like("slug", "mooreanews-fb-%")
+    .gte("published_at", cutoff)
+    .order("published_at", { ascending: false })
+    .limit(40);
 
-  const rows = [...(mooreaFb.data ?? []), ...(communeFb.data ?? [])];
+  const rows = mooreaFb.data ?? [];
 
   const candidates: GardeMooreaSnapshot[] = [];
 
