@@ -15,6 +15,9 @@ export const UNVERIFIED_PHARMACY_INFO_TITLES = ["Pharmacie Tran — Paopao", "Ph
 
 const DAY = 86400_000;
 
+/** Articles déjà supprimés de la base dont la page ISR doit être purgée. */
+export const PURGED_GARDE_SLUGS = ["garde-moorea-2028-09-12"];
+
 /** Une garde n'est publiable que pour le passé proche ou les 2 semaines à venir. */
 export function isPlausibleGardeDates(validFrom: string, validTo: string, now: Date): boolean {
   const from = Date.parse(`${validFrom}T12:00:00Z`);
@@ -57,6 +60,8 @@ export type GardeCleanupReport = {
   deletedMedia: string[];
   fixedArticles: number;
   deletedInfo: number;
+  /** Slugs modifiés ou supprimés (à revalider côté Vercel). */
+  touchedSlugs: string[];
   errors: string[];
 };
 
@@ -69,13 +74,15 @@ export async function cleanupGardeData(
     deletedMedia: [],
     fixedArticles: 0,
     deletedInfo: 0,
+    touchedSlugs: [],
     errors: [],
   };
 
   const { data: rows, error } = await supabase
     .from("articles")
     .select("slug, author, body, tags")
-    .or("slug.like.garde-moorea-%,tags.cs.{garde-weekend}");
+    // Inclut les copies importées (mooreanews-fb-*) dont le titre est « Garde week-end Moorea … ».
+    .or("slug.like.garde-moorea-%,tags.cs.{garde-weekend},title.ilike.Garde week-end Moorea%");
   if (error) {
     report.errors.push(error.message);
     return report;
@@ -90,6 +97,7 @@ export async function cleanupGardeData(
         continue;
       }
       report.deletedArticles.push(row.slug as string);
+      report.touchedSlugs.push(row.slug as string);
       const paths = [
         `facebook-import/garde-commune-${date}.jpg`,
         `generated/garde-weekend/garde-moorea-${date}.png`,
@@ -110,7 +118,10 @@ export async function cleanupGardeData(
         .update({ body: newBody, author: GARDE_ARTICLE_AUTHOR, tags })
         .eq("slug", row.slug);
       if (updErr) report.errors.push(updErr.message);
-      else report.fixedArticles++;
+      else {
+        report.fixedArticles++;
+        report.touchedSlugs.push(row.slug as string);
+      }
     }
   }
 
