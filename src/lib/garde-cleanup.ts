@@ -11,7 +11,7 @@ import { tahitiHolidayLabel } from "@/lib/tahiti-holidays";
 export const GARDE_ARTICLE_AUTHOR = "MooreaNews";
 
 /** Fiches infos pratiques non vérifiées (numéros absents de toute source officielle). */
-export const UNVERIFIED_PHARMACY_INFO_SLUGS = ["pharmacie-tran-paopao", "pharmacie-haapiti"];
+export const UNVERIFIED_PHARMACY_INFO_TITLES = ["Pharmacie Tran — Paopao", "Pharmacie Moorea Haapiti"];
 
 const DAY = 86400_000;
 
@@ -117,8 +117,8 @@ export async function cleanupGardeData(
   const { data: del, error: infoErr } = await supabase
     .from("info_pratiques")
     .delete()
-    .in("slug", UNVERIFIED_PHARMACY_INFO_SLUGS)
-    .select("slug");
+    .in("title", UNVERIFIED_PHARMACY_INFO_TITLES)
+    .select("title");
   if (infoErr) report.errors.push(infoErr.message);
   else report.deletedInfo = del?.length ?? 0;
 
