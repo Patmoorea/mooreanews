@@ -11,13 +11,16 @@ const nextConfig: NextConfig = {
       "./node_modules/tesseract.js/dist/**",
       "./node_modules/tesseract.js/src/worker-script/**",
       "./data/ocr/**",
+      "./src/assets/**",
     ],
+    "/api/garde-weekend/poster/[validFrom]": ["./src/assets/**"],
     "/api/cron/daily": [
       "./node_modules/tesseract.js-core/**/*.wasm",
       "./node_modules/tesseract.js-core/**/*.wasm.js",
       "./node_modules/tesseract.js/dist/**",
       "./node_modules/tesseract.js/src/worker-script/**",
       "./data/ocr/**",
+      "./src/assets/**",
     ],
   },
   async redirects() {

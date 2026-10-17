@@ -8,11 +8,6 @@ import {
   mergeGardeSnapshotForDisplay,
   readGardeFileSnapshot,
 } from "@/lib/garde-moorea-data";
-import {
-  coverUrlForDatabase,
-  persistFacebookCoverUrl,
-} from "@/lib/facebook-cover-persist";
-import { resolveGardePosterPublicUrl } from "@/lib/garde-poster-url";
 import { renderAndUploadMooreaNewsGardePoster } from "@/lib/garde-weekend-poster-sync";
 import { SITE } from "@/lib/constants";
 
@@ -35,27 +30,13 @@ export function buildGardeArticleTitle(snap: GardeMooreaSnapshot): string {
 async function resolveGardeArticleCoverUrl(
   snap: GardeMooreaSnapshot,
 ): Promise<string> {
-  const commune = snap.communePosterUrl?.trim();
-  if (commune?.startsWith("http")) {
-    const persisted = await persistFacebookCoverUrl(
-      commune,
-      `garde-commune-${snap.validFrom}`,
-    );
-    const url = coverUrlForDatabase(persisted);
-    if (url) return url;
-  }
-
-  const poster = resolveGardePosterPublicUrl(snap.posterImageUrl);
-  if (poster?.includes("supabase.co/storage/")) return poster;
-
+  // Image générée aux couleurs de MooreaNews avec les données vérifiées.
+  // Jamais le tableau COPPF de toute la Polynésie (ancienne « image pourrie »).
   const uploaded = await renderAndUploadMooreaNewsGardePoster(snap);
-  if (uploaded?.includes("supabase.co/storage/")) return uploaded;
-  if (uploaded?.startsWith("http")) return uploaded;
-
-  if (poster?.startsWith("http") && !poster.includes("ordre-pharmaciens")) {
-    return poster;
+  if (uploaded?.startsWith("http")) {
+    const sep = uploaded.includes("?") ? "&" : "?";
+    return `${uploaded}${sep}v=${encodeURIComponent(snap.doctor?.phone?.replace(/\D/g, "") || snap.syncedAt.slice(0, 10))}`;
   }
-
   return `${SITE.url.replace(/\/$/, "")}/api/garde-weekend/poster/${snap.validFrom}`;
 }
 
@@ -68,14 +49,14 @@ export function buildGardeArticleExcerpt(snap: GardeMooreaSnapshot): string {
     parts.push(snap.doctor.phone);
   }
   if (parts.length === 0) {
-    return `Pharmacie et médecin de garde à Moorea — ${snap.label}. Informations communiquées par la Commune de Moorea-Maiao.`;
+    return `Pharmacie et médecin de garde à Moorea — ${snap.label}. Source : tour de garde officiel de l'Ordre des médecins de Polynésie française.`;
   }
   return `${parts.join(" · ")} — garde week-end Moorea (${snap.label}).`;
 }
 
 export function buildGardeArticleBody(snap: GardeMooreaSnapshot): string {
   const blocks: string[] = [
-    `Informations de garde pour le week-end ${snap.label}, communiquées par la Commune de Moorea-Maiao.`,
+    `Informations de garde pour le week-end ${snap.label}, d'après le tour de garde officiel des médecins généralistes (Conseil de l'Ordre des médecins de Polynésie française).`,
   ];
 
   if (snap.doctor?.name) {
@@ -118,7 +99,7 @@ export function buildGardeArticleBody(snap: GardeMooreaSnapshot): string {
   );
 
   blocks.push(
-    "Affiche MooreaNews générée à partir des informations officielles de la commune.",
+    "Image MooreaNews générée à partir du tour de garde officiel.",
   );
 
   if (snap.sourceUrl) {

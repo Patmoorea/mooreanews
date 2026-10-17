@@ -24,6 +24,29 @@ import {
   fetchCoppfGardeSnapshot,
 } from "@/lib/garde-ordre-pharmaciens";
 import { isGardeOcrEnabled, withGardeOcrSession } from "@/lib/garde-poster-ocr";
+import { validateOfficialMooreaGarde, type GardeValidation } from "@/lib/garde-official-table";
+
+/** Validation finale avant publication (article, cache, image). */
+export function validateGardeBeforePublish(
+  snap: GardeMooreaSnapshot,
+  now: Date,
+): GardeValidation {
+  const holiday = snap.validFrom === snap.validTo;
+  const allow = holiday ? { validFrom: snap.validFrom, validTo: snap.validTo } : undefined;
+  if (snap.officialCheck) {
+    const v = validateOfficialMooreaGarde(snap.officialCheck, now, allow);
+    // Le snapshot final doit être identique à la ligne officielle (pas de cache périmé fusionné).
+    if (snap.doctor?.phone !== snap.officialCheck.phone || snap.doctor?.name !== snap.officialCheck.doctorName) {
+      v.issues.push("données finales ≠ ligne Moorea du tableau officiel");
+      v.ok = false;
+    }
+    return v;
+  }
+  return {
+    ok: false,
+    issues: ["tableau officiel non lu (OCR indisponible) — rien n'est publié sans vérification"],
+  };
+}
 import {
   gardePosterHasContent,
   renderAndUploadMooreaNewsGardePoster,
@@ -65,6 +88,8 @@ export type GardeMooreaSnapshot = ParsedGardeWeekend & {
   doctorAddress?: string;
   doctorHours?: { saturday?: string; sunday?: string };
   pharmacyHours?: GardePharmacyHours[];
+  /** Ligne Moorea lue sur le tableau officiel (pour la validation avant publication). */
+  officialCheck?: import("@/lib/garde-official-table").OfficialMooreaGarde;
 };
 
 function toDuty(
@@ -443,11 +468,13 @@ async function resolveSnapshotForSync(): Promise<GardeMooreaSnapshot | null> {
 async function enrichFromPosterOcr(
   snap: GardeMooreaSnapshot,
   runOcr: boolean,
+  force = false,
 ): Promise<{ snap: GardeMooreaSnapshot; ocrUsed: boolean; ocrError?: string }> {
   const needsOcr =
     runOcr &&
     isGardeOcrEnabled() &&
-    (!snap.doctor?.name ||
+    (force ||
+      !snap.doctor?.name ||
       !isMooreaGardeDoctor(snap.doctor) ||
       !snap.pharmacyHours?.length ||
       (!snap.doctorHours?.saturday && !snap.doctorHours?.sunday));
@@ -456,24 +483,22 @@ async function enrichFromPosterOcr(
 
   const coppfMeta = await fetchCoppfGardeImageUrl().catch(() => null);
   const coppfImages = await fetchCoppfGardeImageUrls().catch(() => []);
-  if (
-    coppfMeta?.imageUrl &&
-    !snap.communePosterUrl?.includes("ordre-pharmaciens")
-  ) {
-    snap = {
-      ...snap,
-      communePosterUrl: snap.communePosterUrl ?? coppfMeta.imageUrl,
-      sourceUrl: snap.sourceUrl ?? COPPF_MEDECINS_GARDE_URL,
-    };
+  // Le tableau COPPF (toute la Polynésie) sert de SOURCE, jamais d'image d'article.
+  if (snap.communePosterUrl?.includes("ordre-pharmaciens")) {
+    snap = { ...snap, communePosterUrl: null };
+  }
+  if (coppfMeta?.imageUrl) {
+    snap = { ...snap, sourceUrl: snap.sourceUrl ?? COPPF_MEDECINS_GARDE_URL };
   }
 
   const urls: string[] = [];
   const add = (url: string | null | undefined) => {
     if (url && !urls.includes(url)) urls.push(url);
   };
-  add(snap.communePosterUrl);
+  // Tableau officiel d'abord ; les autres images ne servent qu'en complément.
   add(coppfMeta?.imageUrl);
   for (const img of coppfImages) add(img.imageUrl);
+  add(snap.communePosterUrl);
   if (snap.posterImageUrl?.startsWith("http")) add(snap.posterImageUrl);
 
   if (!urls.length) {
@@ -491,9 +516,7 @@ async function enrichFromPosterOcr(
         if (ocr.ok && ocr.text) {
           working = mergeGardeOcrIntoSnapshot(working, ocr.text);
           ocrUsed = true;
-          if (working.doctor?.name && (working.pharmacyHours?.length ?? 0) > 0) {
-            break;
-          }
+          if (working.officialCheck) break;
         } else if (!ocrError) {
           ocrError = ocr.error ?? `ocr vide (${url.slice(0, 80)})`;
         }
@@ -529,6 +552,7 @@ export async function syncGardeMooreaFromCommune(
   articleUpdated?: boolean;
   articleError?: string;
   posterUrl?: string | null;
+  validationIssues?: string[];
 }> {
   let snap: GardeMooreaSnapshot | null = null;
   try {
@@ -584,13 +608,9 @@ export async function syncGardeMooreaFromCommune(
     snap = mergeGardeSnapshots(snap, fileSnap);
   }
 
-  const ocrEnriched = await enrichFromPosterOcr(
-    snap,
-    // OCR seulement si données incomplètes (évite timeout Vercel qui écrase le cache).
-    !snap.doctor?.name ||
-      !isMooreaGardeDoctor(snap.doctor) ||
-      !snap.pharmacyHours?.length,
-  );
+  // Toujours relire le tableau officiel : ne plus se contenter d'un cache
+  // (un mauvais n° restait figé toute la semaine).
+  const ocrEnriched = await enrichFromPosterOcr(snap, true, true);
   snap = ocrEnriched.snap;
 
   const ocrUsed = ocrEnriched.ocrUsed;
@@ -602,7 +622,7 @@ export async function syncGardeMooreaFromCommune(
     snap.posterImageUrl.startsWith("/") ||
     Boolean(snap.doctor?.name || snap.pharmacy?.name);
 
-  if (shouldMakePoster && gardePosterHasContent(snap)) {
+  if (shouldMakePoster && gardePosterHasContent(snap) && validateGardeBeforePublish(snap, now).ok) {
     const mooreaPoster = await renderAndUploadMooreaNewsGardePoster(snap);
     if (mooreaPoster) {
       snap.posterImageUrl = mooreaPoster;
@@ -624,6 +644,25 @@ export async function syncGardeMooreaFromCommune(
   }
 
   snap.syncedAt = new Date().toISOString();
+
+  // Garde-fou : on ne publie RIEN d'incohérent (médecin hors Moorea, n° décalé,
+  // horaires absents, mauvaise semaine). On signale à la place.
+  const validation = validateGardeBeforePublish(snap, now);
+  if (!validation.ok) {
+    console.error("[garde] publication refusée :", validation.issues.join(" ; "));
+    return {
+      ok: false,
+      found: true,
+      pharmacy: null,
+      doctor: snap.doctor?.name ?? null,
+      weekend: snap.label,
+      articleSlug: null,
+      ocrUsed,
+      posterGenerated: false,
+      ocrError: `validation: ${validation.issues.join(" ; ")}`.slice(0, 400),
+      validationIssues: validation.issues,
+    };
+  }
 
   const article = await upsertGardeWeekendArticle(snap);
   snap.articleSlug = article.slug;

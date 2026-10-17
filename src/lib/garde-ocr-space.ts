@@ -71,6 +71,8 @@ export async function ocrSpaceFromUrl(imageUrl: string): Promise<OcrSpaceResult>
     form.append("OCREngine", "2");
     form.append("scale", "true");
     form.append("detectOrientation", "true");
+    // Lecture ligne par ligne du tableau officiel (évite la lecture colonne par colonne).
+    form.append("isTable", "true");
 
     const res = await fetch(OCR_SPACE_URL, {
       method: "POST",
@@ -100,6 +102,8 @@ export async function ocrSpaceFromBuffer(buffer: Buffer): Promise<OcrSpaceResult
     form.append("OCREngine", "2");
     form.append("scale", "true");
     form.append("detectOrientation", "true");
+    // Lecture ligne par ligne du tableau officiel (évite la lecture colonne par colonne).
+    form.append("isTable", "true");
     form.append(
       "file",
       new Blob([new Uint8Array(buffer)], { type: "image/jpeg" }),

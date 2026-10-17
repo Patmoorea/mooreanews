@@ -4,6 +4,7 @@ import { resolveGardeSnapshotForPoster } from "@/lib/garde-moorea-data";
 import {
   GardeWeekendPosterElement,
   GARDE_WEEKEND_POSTER_SIZE,
+  loadGardePosterAssets,
   posterHasDisplayContent,
 } from "@/lib/garde-weekend-poster";
 
@@ -24,10 +25,12 @@ export async function GET(
   }
 
   try {
-    return new ImageResponse(
-      GardeWeekendPosterElement({ snap }),
-      GARDE_WEEKEND_POSTER_SIZE,
-    );
+    const { fonts, logoSrc } = await loadGardePosterAssets();
+    return new ImageResponse(GardeWeekendPosterElement({ snap, logoSrc }), {
+      ...GARDE_WEEKEND_POSTER_SIZE,
+      fonts,
+      headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" },
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[garde-poster]", message);
