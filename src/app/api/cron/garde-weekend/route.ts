@@ -1,6 +1,8 @@
 import { after, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { verifyCronAuth } from "@/lib/cron-auth";
+import { cleanupGardeData } from "@/lib/garde-cleanup";
+import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getTahitiClock, shouldSyncGardeOnVeille } from "@/lib/cron-tahiti";
 import { syncHealthOnCall } from "@/lib/health-on-call";
 import { escapeHtml, sendTelegramNotification } from "@/lib/telegram";
@@ -44,6 +46,18 @@ async function notifyGardeGap(result: Awaited<ReturnType<typeof syncHealthOnCall
 }
 
 async function runGardeSync() {
+  // Nettoyage côté Vercel pour pouvoir revalider les pages touchées (articles supprimés / corrigés).
+  const admin = getAdminSupabase();
+  if (admin) {
+    const cleanup = await cleanupGardeData(admin).catch((e) => {
+      console.error("[garde-cleanup]", e);
+      return null;
+    });
+    if (cleanup) {
+      console.log("[garde-cleanup]", JSON.stringify(cleanup));
+      for (const slug of cleanup.touchedSlugs) revalidatePath(`/actualites/${slug}`);
+    }
+  }
   const result = await syncHealthOnCall({ fullWeekendPipeline: true });
   revalidateTag("garde-moorea", "max");
   revalidatePath("/sante-garde");

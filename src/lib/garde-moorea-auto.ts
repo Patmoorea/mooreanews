@@ -61,7 +61,7 @@ import {
 } from "@/lib/garde-moorea-data";
 import { mergeGardeSnapshots } from "@/lib/garde-ordre-pharmaciens";
 import { MOOREA_PHARMACIES } from "@/lib/moorea-pharmacies";
-import { cleanupGardeData, isPlausibleGardeDates } from "@/lib/garde-cleanup";
+import { isPlausibleGardeDates } from "@/lib/garde-cleanup";
 import {
   gardeArticleSlug,
   upsertGardeWeekendArticle,
@@ -554,12 +554,6 @@ export async function syncGardeMooreaFromCommune(
   validationIssues?: string[];
 }> {
   let snap: GardeMooreaSnapshot | null = null;
-  // Nettoyage : articles à date invraisemblable, signature, pharmacies non vérifiées.
-  const admin = getAdminSupabase();
-  if (admin) {
-    const report = await cleanupGardeData(admin).catch((e) => ({ errors: [String(e)] }));
-    console.log("[garde-cleanup]", JSON.stringify(report));
-  }
   try {
     snap = await resolveSnapshotForSync();
   } catch (err) {
