@@ -627,10 +627,8 @@ export function parseMooreaDoctorFromCoppfText(text: string): ParsedOnCall | nul
 
 /** Horaires / contacts pharmacies Moorea (COPPF ne publie pas d'affiche Moorea). */
 export function defaultMooreaPharmacyHours(): GardePharmacyHours[] {
-  return MOOREA_PHARMACIES.map((p) => ({
-    district: p.district,
-    phone: p.phone,
-  }));
+  // Aucun numéro de pharmacie par défaut : seules des données lues sur une source sont affichées.
+  return [];
 }
 
 function isPlausibleDoctor(entry: ParsedOnCall | null): boolean {

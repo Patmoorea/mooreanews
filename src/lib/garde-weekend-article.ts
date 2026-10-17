@@ -8,6 +8,7 @@ import {
   mergeGardeSnapshotForDisplay,
   readGardeFileSnapshot,
 } from "@/lib/garde-moorea-data";
+import { GARDE_ARTICLE_AUTHOR, isPlausibleGardeDates } from "@/lib/garde-cleanup";
 import { renderAndUploadMooreaNewsGardePoster } from "@/lib/garde-weekend-poster-sync";
 import { SITE } from "@/lib/constants";
 
@@ -162,6 +163,9 @@ export async function upsertGardeWeekendArticle(
   fbRepaired?: number;
 }> {
   const slug = gardeArticleSlug(snap.validFrom);
+  if (!isPlausibleGardeDates(snap.validFrom, snap.validTo, new Date())) {
+    return { slug, created: false, updated: false, error: `dates invraisemblables ${snap.validFrom}/${snap.validTo}` };
+  }
   const supabase = getAdminSupabase();
   if (!supabase) {
     return { slug, created: false, updated: false, error: "supabase_admin_missing" };
@@ -191,9 +195,9 @@ export async function upsertGardeWeekendArticle(
     excerpt,
     body,
     category: "sante",
-    tags: ["garde-weekend", "moorea", "commune-moorea"],
+    tags: ["garde-weekend", "moorea", "ordre-medecins"],
     cover_url: coverUrl,
-    author: "Commune Moorea-Maiao",
+    author: GARDE_ARTICLE_AUTHOR,
     featured: false,
     published: true,
     published_at: publishedAt,
