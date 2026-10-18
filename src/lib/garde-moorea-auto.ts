@@ -1,7 +1,8 @@
 /**
- * Veille automatique garde Moorea — tableau officiel de l'Ordre des médecins
- * (page COPPF) + cache Supabase.
- * La page Facebook, les affiches et le RSS de la commune ne sont pas des sources.
+ * Veille automatique garde Moorea.
+ * Médecin : tableau officiel de l'Ordre uniquement.
+ * Pharmacie de garde : commune (Facebook, RSS, affiche) ou autre source citée,
+ * seulement si le texte couvre le samedi et le dimanche en cours.
  */
 
 import path from "path";
@@ -26,7 +27,11 @@ import {
   fetchCoppfGardeSnapshot,
 } from "@/lib/garde-ordre-pharmaciens";
 import { isGardeOcrEnabled, withGardeOcrSession } from "@/lib/garde-poster-ocr";
-import { validateOfficialMooreaGarde, type GardeValidation } from "@/lib/garde-official-table";
+import { expectedWeekend, validateOfficialMooreaGarde, type GardeValidation } from "@/lib/garde-official-table";
+import {
+  resolveOnDutyPharmacy,
+  type PharmacyDuty,
+} from "@/lib/garde-pharmacy-duty";
 
 /** Validation finale avant publication (article, cache, image). */
 export function validateGardeBeforePublish(
@@ -85,7 +90,6 @@ import type { OnCallDuty } from "@/lib/health-on-call-shared";
 export const GARDE_CACHE_SOURCE_ID = GARDE_VEILLE_SOURCE_ID;
 export { GARDE_CACHE_PAYLOAD_SOURCE_ID };
 const GARDE_CACHE_EXTERNAL_ID = "current";
-const VERIFIED_PHARMACY_SOURCE = "ordre-pharmaciens-polynesie.com/pharmacies-de-garde";
 
 export type { GardePharmacyHours } from "@/lib/garde-announcement-parse";
 
@@ -100,6 +104,8 @@ export type GardeMooreaSnapshot = ParsedGardeWeekend & {
   pharmacyHours?: GardePharmacyHours[];
   /** Ligne Moorea lue sur le tableau officiel (pour la validation avant publication). */
   officialCheck?: import("@/lib/garde-official-table").OfficialMooreaGarde;
+  /** Pharmacie de garde citée pour ce samedi et ce dimanche. Jamais le médecin. */
+  pharmacyDuty?: PharmacyDuty | null;
 };
 
 function toDuty(
@@ -131,17 +137,18 @@ function toDuty(
   };
 }
 
-/** Pharmacie publiable uniquement depuis la page officielle des pharmacies de garde. */
-export function isVerifiedPharmacySource(sourceUrl?: string | null): boolean {
-  return Boolean(sourceUrl?.toLowerCase().includes(VERIFIED_PHARMACY_SOURCE));
-}
-
-function withoutUnverifiedPharmacy(snap: GardeMooreaSnapshot): GardeMooreaSnapshot {
-  if (isVerifiedPharmacySource(snap.sourceUrl)) return snap;
-  if (!snap.pharmacy && !(snap.pharmacyHours && snap.pharmacyHours.length > 0)) {
-    return snap;
+function applyPharmacyDuty(
+  snap: GardeMooreaSnapshot,
+  duty: PharmacyDuty | null,
+): GardeMooreaSnapshot {
+  if (!duty || duty.validFrom !== snap.validFrom || duty.validTo !== snap.validTo) {
+    return { ...snap, pharmacy: null, pharmacyDuty: null };
   }
-  return { ...snap, pharmacy: null, pharmacyHours: [] };
+  return {
+    ...snap,
+    pharmacy: { name: duty.name, phone: duty.phone, phoneHref: duty.phoneHref },
+    pharmacyDuty: duty,
+  };
 }
 
 function officialTableImage(
@@ -166,31 +173,13 @@ function preferredGardeSourceUrl(
   );
 }
 
-function pharmacyDutyFromSnapshot(
-  snap: GardeMooreaSnapshot,
-  source: string,
-): OnCallDuty | null {
-  if (!isVerifiedPharmacySource(snap.sourceUrl)) return null;
-  if (snap.pharmacy?.name) {
-    return toDuty("pharmacy", snap.pharmacy, source, snap.sourceUrl);
-  }
-  const hours =
-    snap.pharmacyHours && snap.pharmacyHours.length > 0
-      ? snap.pharmacyHours
-      : null;
-  if (!hours?.length) return null;
-  const summary = hours
-    .map((h) => `${h.district} ${h.phone}`)
-    .join(" · ");
-  const first = hours[0]!;
-  return {
-    name: `Pharmacies Moorea (${hours.map((h) => h.district).join(" · ")})`,
-    phone: first.phone,
-    phoneHref: first.phone ? phoneHref(first.phone) : "",
-    address: summary,
-    source,
-    sourceUrl: snap.sourceUrl,
-  };
+function pharmacyDutyForNow(snap: GardeMooreaSnapshot, now: Date): OnCallDuty | null {
+  const duty = snap.pharmacyDuty;
+  if (!duty?.name) return null;
+  const want = expectedWeekend(now);
+  if (duty.validFrom !== want.validFrom || duty.validTo !== want.validTo) return null;
+  if (duty.validFrom !== snap.validFrom || duty.validTo !== snap.validTo) return null;
+  return toDuty("pharmacy", duty, duty.sourceLabel, duty.sourceUrl);
 }
 
 /** Médecin / pharmacie affichés sur le site à partir du snapshot garde. */
@@ -202,30 +191,17 @@ export function snapshotToPublicDuties(
     return { pharmacy: null, doctor: null, weekendLabel: null };
   }
 
-  const source = snap.sourceUrl?.includes("pharmacies-de-garde")
-    ? "Ordre des pharmaciens (COPPF)"
-    : snap.sourceUrl?.includes("ordre-pharmaciens")
-      ? "Ordre des médecins (COPPF)"
-      : "MooreaNews";
   return {
     weekendLabel: snap.label,
-    pharmacy: pharmacyDutyFromSnapshot(snap, source),
+    pharmacy: pharmacyDutyForNow(snap, now),
     doctor: toDuty(
       "doctor",
       snap.doctor,
-      source,
-      snap.sourceUrl,
+      "Ordre des médecins",
+      COPPF_MEDECINS_GARDE_URL,
       snap.doctorAddress,
     ),
   };
-}
-
-function phoneHref(phone: string): string {
-  let d = phone.replace(/\D/g, "");
-  if (d.startsWith("689") && d.length >= 11) d = d.slice(3);
-  if (d.length < 8) return "";
-  d = d.slice(-8);
-  return `tel:+689${d}`;
 }
 
 function parseOwnFacebookPostToSnapshot(
@@ -296,7 +272,7 @@ async function fetchGardeFromFacebookPages(): Promise<GardeMooreaSnapshot | null
     if (t && t < cutoff) continue;
 
     const snap = parseOwnFacebookPostToSnapshot(post);
-    if (snap) candidates.push(withoutUnverifiedPharmacy(snap));
+    if (snap) candidates.push(snap);
   }
 
   return pickBestGardeSnapshot(candidates, now);
@@ -624,6 +600,9 @@ export async function syncGardeMooreaFromCommune(
   const ocrUsed = ocrEnriched.ocrUsed;
   const ocrError = ocrEnriched.ocrError;
 
+  const onDutyPharmacy = await resolveOnDutyPharmacy(now).catch(() => null);
+  snap = applyPharmacyDuty(snap, onDutyPharmacy);
+
   const shouldMakePoster =
     options.fullWeekendPipeline ||
     !snap.posterImageUrl ||
@@ -651,10 +630,9 @@ export async function syncGardeMooreaFromCommune(
   }
 
   snap.syncedAt = new Date().toISOString();
-  // Pas de liste de pharmacies sans horaires lus sur une source vérifiée.
   snap.pharmacyHours = (snap.pharmacyHours ?? []).filter((p) => p.saturday || p.sunday);
   if (snap.pharmacy?.name?.startsWith("Pharmacies Moorea")) snap.pharmacy = null;
-  snap = withoutUnverifiedPharmacy(snap);
+  snap = applyPharmacyDuty(snap, onDutyPharmacy);
 
   // Garde-fou : on ne publie RIEN d'incohérent (médecin hors Moorea, n° décalé,
   // horaires absents, mauvaise semaine). On signale à la place.
@@ -675,11 +653,11 @@ export async function syncGardeMooreaFromCommune(
     };
   }
 
-  if (!isVerifiedPharmacySource(snap.sourceUrl)) {
-    snap = { ...snap, sourceUrl: COPPF_MEDECINS_GARDE_URL };
-  }
   snap = {
     ...snap,
+    sourceUrl: snap.sourceUrl?.includes("medecins-de-garde")
+      ? snap.sourceUrl
+      : COPPF_MEDECINS_GARDE_URL,
     posterImageUrl: pickPublicGardePosterUrl(snap.posterImageUrl),
   };
 

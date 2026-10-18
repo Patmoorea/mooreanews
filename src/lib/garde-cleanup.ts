@@ -2,7 +2,8 @@
  * Garde-fous et nettoyage des articles garde (exécuté à chaque sync garde).
  * - Refuse les dates invraisemblables (ex. « Jour férié 12 septembre 2028 »).
  * - Signature normale du site (« MooreaNews ») au lieu de « Commune Moorea-Maiao ».
- * - Retire les numéros de pharmacies non vérifiés des articles et des infos pratiques.
+ * - Retire les lignes d'horaires de pharmacies vides (« : — »).
+ * - Les horaires vérifiés du fichier src/data/pharmacies-moorea.ts restent.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -10,7 +11,7 @@ import { tahitiHolidayLabel } from "@/lib/tahiti-holidays";
 
 export const GARDE_ARTICLE_AUTHOR = "MooreaNews";
 
-/** Page Facebook ou site/RSS de la commune — interdit comme source de garde. */
+/** Page Facebook ou site de la commune. Pas une source pour le médecin. */
 export function isCommuneGardeSourceUrl(url: string | null | undefined): boolean {
   if (!url) return false;
   const u = url.toLowerCase();
@@ -21,8 +22,9 @@ export function isCommuneGardeSourceUrl(url: string | null | undefined): boolean
   );
 }
 
-/** Fiches infos pratiques non vérifiées (numéros absents de toute source officielle). */
-export const UNVERIFIED_PHARMACY_INFO_TITLES = ["Pharmacie Tran — Paopao", "Pharmacie Moorea Haapiti"];
+/** Pied de page des articles garde : le visuel n'est pas « généré depuis la commune ». */
+export const GARDE_POSTER_CREDIT =
+  "Image MooreaNews. Médecin : tableau de l'Ordre des médecins. Pharmacie de garde : commune de Moorea-Maiao ou autre source citée, quand elle est publiée.";
 
 const DAY = 86400_000;
 
@@ -51,11 +53,18 @@ export function gardeDateFromSlug(slug: string): string | null {
   return slug.match(/^garde-moorea-(\d{4}-\d{2}-\d{2})$/)?.[1] ?? null;
 }
 
-/** Retire le paragraphe « Horaires pharmacies du week-end : … » (numéros non vérifiés). */
+/**
+ * Retire seulement la ligne d'horaires vide (« district (téléphone) : » sans heure).
+ * Une ligne qui contient un horaire (7h30…) est conservée.
+ */
 export function stripUnverifiedPharmacyParagraph(body: string): string {
   return body
     .split(/\n{2,}/)
-    .filter((p) => !/^Horaires pharmacies du week-end\s*:/.test(p.trim()))
+    .filter((p) => {
+      const trimmed = p.trim();
+      if (!/^Horaires pharmacies du week-end\s*:/.test(trimmed)) return true;
+      return /\d{1,2}\s*h/i.test(trimmed);
+    })
     .filter((p) => !/^Pharmacie de garde\s*:\s*Pharmacies Moorea/.test(p.trim()))
     .join("\n\n");
 }
@@ -63,7 +72,8 @@ export function stripUnverifiedPharmacyParagraph(body: string): string {
 export function stripCommuneMention(body: string): string {
   return body
     .replace(/, communiquées par la Commune de Moorea-Maiao\./g, ", d'après le tour de garde officiel des médecins généralistes (Conseil de l'Ordre des médecins de Polynésie française).")
-    .replace(/Affiche MooreaNews générée à partir des informations officielles de la commune\./g, "Image MooreaNews générée à partir du tour de garde officiel.");
+    .replace(/Affiche MooreaNews générée à partir des informations officielles de la commune\./g, GARDE_POSTER_CREDIT)
+    .replace(/Image MooreaNews générée à partir du tour de garde officiel\./g, GARDE_POSTER_CREDIT);
 }
 
 export type GardeCleanupReport = {
@@ -135,14 +145,6 @@ export async function cleanupGardeData(
       }
     }
   }
-
-  const { data: del, error: infoErr } = await supabase
-    .from("info_pratiques")
-    .delete()
-    .in("title", UNVERIFIED_PHARMACY_INFO_TITLES)
-    .select("title");
-  if (infoErr) report.errors.push(infoErr.message);
-  else report.deletedInfo = del?.length ?? 0;
 
   return report;
 }

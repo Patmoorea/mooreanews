@@ -7,7 +7,7 @@
     "build": "node scripts/ensure-tesseract-lang.mjs && next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test src/lib/card-excerpt.test.ts src/lib/garde-official-table.test.ts src/lib/garde-cleanup.test.ts",
+    "test": "tsx --test src/lib/card-excerpt.test.ts src/lib/garde-official-table.test.ts src/lib/garde-cleanup.test.ts src/lib/garde-pharmacy-duty.test.ts",
     "seed": "node scripts/seed.mjs",
     "check:live": "node scripts/check-live-services.mjs https://www.mooreanews.com",
     "watch:site": "node scripts/openclaw-watch.mjs",

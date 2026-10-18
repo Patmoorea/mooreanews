@@ -107,7 +107,28 @@
     "category": "sante",
     "address": "PK 8,7 côté montagne, Afareaitu",
     "phone": "40 56 35 47",
-    "hours": "Lun–ven 6h30–18h30 · sam 7h30–13h30 · dim & fériés 7h30–11h30"
+    "hours": "Lun–ven 6h30–18h30 · sam 7h30–13h30 · dim et fériés 7h30–11h30",
+    "website": "https://www.ordre-pharmaciens-polynesie.com/pharmacies_en_polynesie-francaise/"
+  },
+  {
+    "slug": "pharmacie-tran-paopao",
+    "title": "Pharmacie Tran",
+    "description": "Pharmacie de Paopao, PK 6,5. Le samedi, les horaires sont à confirmer.",
+    "category": "sante",
+    "address": "Paopao, PK 6,5",
+    "phone": "40 55 20 75",
+    "hours": "Lun–ven 7h00–12h15 et 14h00–17h30 · sam 7h30–12h15 et 14h00–16h30 (horaires à confirmer) · dim 8h00–11h00",
+    "website": "https://tahititourisme.pf/experiences/le-plein-activites/pharmacie-moorea-tran-paopao-moorea-fr-3455684/"
+  },
+  {
+    "slug": "pharmacie-haapiti",
+    "title": "Pharmacie Haapiti",
+    "description": "Pharmacie de Tiahura, PK 26,9. Ouverte le dimanche et jours fériés le matin (8h00–10h00).",
+    "category": "sante",
+    "address": "PK 26,9, Tiahura",
+    "phone": "40 56 41 16",
+    "hours": "Lun–ven 8h00–16h30 · sam 9h00–12h30 · dim et fériés 8h00–10h00",
+    "website": "https://www.ordre-pharmaciens-polynesie.com/pharmacies_en_polynesie-francaise/"
   },
   {
     "slug": "ecole-primaire-paopao",

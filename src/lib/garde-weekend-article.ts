@@ -8,7 +8,8 @@ import {
   mergeGardeSnapshotForDisplay,
   readGardeFileSnapshot,
 } from "@/lib/garde-moorea-data";
-import { GARDE_ARTICLE_AUTHOR, isPlausibleGardeDates } from "@/lib/garde-cleanup";
+import { GARDE_ARTICLE_AUTHOR, GARDE_POSTER_CREDIT, isPlausibleGardeDates } from "@/lib/garde-cleanup";
+import { weekendPharmacyHoursParagraph } from "@/data/pharmacies-moorea";
 import { renderAndUploadMooreaNewsGardePoster } from "@/lib/garde-weekend-poster-sync";
 import { SITE } from "@/lib/constants";
 
@@ -77,31 +78,29 @@ export function buildGardeArticleBody(snap: GardeMooreaSnapshot): string {
     blocks.push(doctorBlock);
   }
 
-  if (snap.pharmacy?.name) {
-    let phBlock = `Pharmacie de garde : ${snap.pharmacy.name}.`;
-    if (snap.pharmacy.phone && snap.pharmacy.phone !== "—") {
-      phBlock += ` Téléphone : ${snap.pharmacy.phone}.`;
+  const duty = snap.pharmacyDuty;
+  const dutyMatchesWeekend =
+    duty != null &&
+    duty.validFrom === snap.validFrom &&
+    duty.validTo === snap.validTo &&
+    Boolean(duty.name);
+  if (dutyMatchesWeekend && duty) {
+    let phBlock = `Pharmacie de garde : ${duty.name}.`;
+    if (duty.phone && duty.phone !== "—") {
+      phBlock += ` Téléphone : ${duty.phone}.`;
     }
+    phBlock += ` Source : ${duty.sourceLabel}.`;
     blocks.push(phBlock);
   }
 
-  if (snap.pharmacyHours && snap.pharmacyHours.length > 0) {
-    const lines = snap.pharmacyHours.map((p) => {
-      const sat = p.saturday ? `sam. ${p.saturday}` : "";
-      const sun = p.sunday ? `dim. ${p.sunday}` : "";
-      const schedule = [sat, sun].filter(Boolean).join(" · ");
-      return `${p.district} (${p.phone}) : ${schedule}`;
-    });
-    blocks.push(`Horaires pharmacies du week-end : ${lines.join(" — ")}.`);
-  }
+  const weekendHours = weekendPharmacyHoursParagraph();
+  if (weekendHours) blocks.push(weekendHours);
 
   blocks.push(
     "En cas d'urgence : SAMU 15 · Pompiers 18 · Hôpital Afareaitu 40 55 22 22 · DSP garde 40 47 01 44.",
   );
 
-  blocks.push(
-    "Image MooreaNews générée à partir du tour de garde officiel.",
-  );
+  blocks.push(GARDE_POSTER_CREDIT);
 
   if (snap.sourceUrl) {
     blocks.push(`Source officielle : ${snap.sourceUrl}`);

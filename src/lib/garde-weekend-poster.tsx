@@ -7,6 +7,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { GardeMooreaSnapshot } from "@/lib/garde-moorea-auto";
+import { MOOREA_PHARMACIES, PHARMACY_DUTY_UNLISTED } from "@/data/pharmacies-moorea";
 import { SITE } from "@/lib/constants";
 
 const POSTER_SIZE = { width: 1080, height: 1350 } as const;
@@ -45,6 +46,59 @@ function dayLabel(iso: string): string {
 
 function cap(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function PharmacyBlock({ snap }: { snap: GardeMooreaSnapshot }) {
+  const duty = snap.pharmacyDuty;
+  const onDutyId =
+    duty && duty.validFrom === snap.validFrom && duty.validTo === snap.validTo
+      ? duty.pharmacyId
+      : null;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        marginTop: 18,
+        padding: "18px 22px",
+        borderRadius: 28,
+        background: "rgba(255,255,255,0.14)",
+        gap: 8,
+      }}
+    >
+      <div style={{ display: "flex", fontSize: 22, fontWeight: 800, color: WHITE }}>
+        {onDutyId && duty
+          ? `Pharmacie de garde : ${duty.name} — ${duty.sourceLabel}`
+          : `Pharmacie de garde : ${PHARMACY_DUTY_UNLISTED}`}
+      </div>
+      {MOOREA_PHARMACIES.map((pharmacy) => {
+        const saturday = pharmacy.saturdayUnconfirmed
+          ? `${pharmacy.saturday} (à confirmer)`
+          : pharmacy.saturday;
+        const highlighted = pharmacy.id === onDutyId;
+        return (
+          <div
+            key={pharmacy.id}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              padding: "6px 12px",
+              borderRadius: 14,
+              background: highlighted ? WHITE : "transparent",
+              color: highlighted ? OCEAN_950 : WHITE,
+              fontSize: 20,
+              fontWeight: highlighted ? 800 : 600,
+            }}
+          >
+            <div style={{ display: "flex" }}>{`${pharmacy.name} · ${pharmacy.phone}`}</div>
+            <div style={{ display: "flex", fontSize: 18 }}>{`sam ${saturday} · dim ${pharmacy.sunday}`}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function HoursRow({ day, hours }: { day: string; hours?: string }) {
@@ -90,7 +144,7 @@ export function GardeWeekendPosterElement({
         flexDirection: "column",
         fontFamily: "Inter",
         background: `linear-gradient(160deg, ${LAGON_500} 0%, ${OCEAN_700} 55%, ${OCEAN_950} 100%)`,
-        padding: 56,
+        padding: 40,
       }}
     >
       {/* En-tête marque */}
@@ -112,9 +166,9 @@ export function GardeWeekendPosterElement({
       <div
         style={{
           display: "flex",
-          marginTop: 44,
+          marginTop: 22,
           fontFamily: "Marcellus",
-          fontSize: 76,
+          fontSize: 56,
           lineHeight: 1.05,
           color: WHITE,
         }}
@@ -130,15 +184,15 @@ export function GardeWeekendPosterElement({
         style={{
           display: "flex",
           flexDirection: "column",
-          marginTop: 40,
-          padding: 44,
-          borderRadius: 40,
+          marginTop: 24,
+          padding: 28,
+          borderRadius: 36,
           background: WHITE,
-          gap: 22,
+          gap: 16,
           boxShadow: "0 20px 50px rgba(8,47,73,0.35)",
         }}
       >
-        <div style={{ display: "flex", fontFamily: "Marcellus", fontSize: 62, color: OCEAN_950 }}>
+        <div style={{ display: "flex", fontFamily: "Marcellus", fontSize: 48, color: OCEAN_950 }}>
           {doctor?.name ? formatDoctorDisplay(doctor.name) : "Médecin non communiqué"}
         </div>
         {snap.doctorAddress ? (
@@ -160,7 +214,7 @@ export function GardeWeekendPosterElement({
               borderRadius: 999,
               background: `linear-gradient(90deg, ${TIARE_500}, ${TIARE_600})`,
               color: WHITE,
-              fontSize: 56,
+              fontSize: 48,
               fontWeight: 800,
               letterSpacing: 1,
             }}
@@ -174,8 +228,9 @@ export function GardeWeekendPosterElement({
         )}
       </div>
 
-      {/* Pharmacies : absentes du tableau officiel des médecins → pas affichées ici (aucune donnée non vérifiée). */}
-      <div style={{ display: "flex", marginTop: 30, fontSize: 28, color: WHITE }}>
+      <PharmacyBlock snap={snap} />
+
+      <div style={{ display: "flex", marginTop: 18, fontSize: 26, color: WHITE }}>
         Urgence vitale : appelez le 15
       </div>
 
