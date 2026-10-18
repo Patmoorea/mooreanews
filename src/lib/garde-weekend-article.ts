@@ -10,6 +10,7 @@ import {
 } from "@/lib/garde-moorea-data";
 import { GARDE_ARTICLE_AUTHOR, GARDE_POSTER_CREDIT, isPlausibleGardeDates } from "@/lib/garde-cleanup";
 import { weekendPharmacyHoursParagraph } from "@/data/pharmacies-moorea";
+import { GARDE_POSTER_REVISION } from "@/lib/garde-weekend-poster-model";
 import { renderAndUploadMooreaNewsGardePoster } from "@/lib/garde-weekend-poster-sync";
 import { SITE } from "@/lib/constants";
 
@@ -37,7 +38,8 @@ async function resolveGardeArticleCoverUrl(
   const uploaded = await renderAndUploadMooreaNewsGardePoster(snap);
   if (uploaded?.startsWith("http")) {
     const sep = uploaded.includes("?") ? "&" : "?";
-    return `${uploaded}${sep}v=${encodeURIComponent(snap.doctor?.phone?.replace(/\D/g, "") || snap.syncedAt.slice(0, 10))}`;
+    const stamp = snap.doctor?.phone?.replace(/\D/g, "") || snap.syncedAt.slice(0, 10);
+    return `${uploaded}${sep}v=${encodeURIComponent(`${stamp}-${GARDE_POSTER_REVISION}`)}`;
   }
   return `${SITE.url.replace(/\/$/, "")}/api/garde-weekend/poster/${snap.validFrom}`;
 }

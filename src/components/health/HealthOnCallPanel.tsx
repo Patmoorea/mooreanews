@@ -136,13 +136,13 @@ export function HealthOnCallPanel({ data, variant = "page" }: Props) {
               href={data.posterImageUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="block rounded-2xl overflow-hidden border-2 border-tiare-300 shadow-lg max-w-lg mx-auto sm:mx-0"
+              className="block rounded-2xl overflow-hidden border-2 border-tiare-300 shadow-lg max-w-sm mx-auto sm:mx-0"
             >
               <Image
                 src={data.posterImageUrl}
                 alt={`Affiche garde week-end Moorea — ${data.weekendLabel ?? ""}`}
-                width={540}
-                height={675}
+                width={1080}
+                height={1920}
                 className="w-full h-auto"
                 unoptimized={data.posterImageUrl.includes("/api/garde-weekend/poster/")}
                 priority

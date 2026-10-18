@@ -25,8 +25,8 @@ export async function GET(
   }
 
   try {
-    const { fonts, logoSrc } = await loadGardePosterAssets();
-    return new ImageResponse(GardeWeekendPosterElement({ snap, logoSrc }), {
+    const { fonts } = await loadGardePosterAssets();
+    return new ImageResponse(GardeWeekendPosterElement({ snap }), {
       ...GARDE_WEEKEND_POSTER_SIZE,
       fonts,
       headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" },

@@ -1,295 +1,602 @@
 /**
- * Image garde week-end aux couleurs de MooreaNews (1080×1350, Satori / next/og).
- * Palette lagon / océan / tiare et polices Marcellus + Inter du site, logo MooreaNews.
- * Données : tour de garde officiel (Conseil de l'Ordre des médecins de Polynésie française).
+ * Affiche garde week-end MooreaNews (1080×1920, Satori / next/og).
+ * Papier sable, colonne de dates, bandeau téléphone, trois pharmacies.
+ * Frise de losanges. Pas de photo, pas de dégradé, pas de fleur.
+ * Le rose n'existe que dans le bandeau Octobre Rose (calendrier saisonnier).
  */
 
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { ImageResponse } from "next/og";
 import type { GardeMooreaSnapshot } from "@/lib/garde-moorea-auto";
-import { MOOREA_PHARMACIES, PHARMACY_DUTY_UNLISTED } from "@/data/pharmacies-moorea";
-import { SITE } from "@/lib/constants";
+import {
+  GARDE_IMAGE_CREDIT,
+  GARDE_WEEKEND_POSTER_SIZE,
+  gardeDateColumn,
+  gardeHourRows,
+  gardePharmacyRows,
+  gardePosterDoctorName,
+  gardePosterDutySource,
+  gardePosterLocation,
+  gardePosterPhone,
+  gardePosterSeason,
+} from "@/lib/garde-weekend-poster-model";
 
-const POSTER_SIZE = { width: 1080, height: 1350 } as const;
+const OCEAN = "#072844";
+const LAGON = "#0F6E73";
+const SAND = "#F4EFE6";
 
-// Couleurs de src/app/globals.css
-const OCEAN_950 = "#082f49";
-const OCEAN_900 = "#0c4a6e";
-const OCEAN_700 = "#0369a1";
-const OCEAN_100 = "#e0f2fe";
-const OCEAN_50 = "#f0f9ff";
-const LAGON_500 = "#06b6d4";
-const TIARE_500 = "#f43f5e";
-const TIARE_600 = "#e11d48";
-const WHITE = "#ffffff";
+const WIDTH = GARDE_WEEKEND_POSTER_SIZE.width;
+const FRIEZE_H = 56;
+const DIAMOND = 22;
+const DIAMOND_GAP = 18;
 
-export const GARDE_OFFICIAL_SOURCE_LABEL =
-  "Tour de garde officiel — Conseil de l'Ordre des médecins de Polynésie française";
+function diamondPoints(x: number, y: number, size: number): string {
+  const midX = x + size / 2;
+  const midY = y + size / 2;
+  return `${midX},${y} ${x + size},${midY} ${midX},${y + size} ${x},${midY}`;
+}
+
+function DiamondFrieze() {
+  const count = 26;
+  const span = count * DIAMOND + (count - 1) * DIAMOND_GAP;
+  const start = (WIDTH - span) / 2;
+  const top = (FRIEZE_H - DIAMOND) / 2;
+  const diamonds = Array.from({ length: count }, (_, index) => {
+    const x = start + index * (DIAMOND + DIAMOND_GAP);
+    return {
+      points: diamondPoints(x, top, DIAMOND),
+      fill: index % 2 === 0 ? SAND : LAGON,
+    };
+  });
+
+  return (
+    <svg
+      width={WIDTH}
+      height={FRIEZE_H}
+      viewBox={`0 0 ${WIDTH} ${FRIEZE_H}`}
+      shapeRendering="geometricPrecision"
+    >
+      <rect width={WIDTH} height={FRIEZE_H} fill={OCEAN} />
+      {diamonds.map((diamond) => (
+        <polygon key={diamond.points} points={diamond.points} fill={diamond.fill} />
+      ))}
+    </svg>
+  );
+}
+
+function DateColumn({ validFrom, validTo }: { validFrom: string; validTo: string }) {
+  const column = gardeDateColumn(validFrom, validTo);
+  const dayNodes = column.days.flatMap((day, index) => {
+    const nodes = [];
+    if (index > 0) {
+      nodes.push(
+        <div
+          key={`slash-${day}`}
+          style={{
+            display: "flex",
+            fontFamily: "Inter",
+            fontWeight: 800,
+            fontSize: 56,
+            lineHeight: 1,
+            color: LAGON,
+            marginTop: 4,
+            marginBottom: 4,
+          }}
+        >
+          /
+        </div>,
+      );
+    }
+    nodes.push(
+      <div
+        key={day}
+        style={{
+          display: "flex",
+          fontFamily: "Inter",
+          fontWeight: 800,
+          fontSize: 132,
+          lineHeight: 1,
+          color: SAND,
+        }}
+      >
+        {day}
+      </div>,
+    );
+    return nodes;
+  });
+
+  return (
+    <div
+      style={{
+        width: 300,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        background: OCEAN,
+        padding: "40px 32px",
+      }}
+    >
+      {dayNodes}
+      <div
+        style={{
+          display: "flex",
+          marginTop: 18,
+          fontFamily: "Marcellus",
+          fontSize: 36,
+          lineHeight: 1,
+          color: SAND,
+        }}
+      >
+        {column.month}
+      </div>
+    </div>
+  );
+}
+
+function TitleBlock({ snap }: { snap: GardeMooreaSnapshot }) {
+  const location = gardePosterLocation(snap);
+  const hours = gardeHourRows(snap);
+
+  return (
+    <div
+      style={{
+        width: 780,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        background: SAND,
+        padding: "44px 48px 40px 44px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          fontFamily: "Marcellus",
+          fontSize: 30,
+          lineHeight: 1.2,
+          color: LAGON,
+        }}
+      >
+        MooreaNews vous informe que le
+      </div>
+      <div
+        style={{
+          display: "flex",
+          marginTop: 14,
+          fontFamily: "Inter",
+          fontWeight: 800,
+          fontSize: 78,
+          lineHeight: 0.96,
+          color: OCEAN,
+        }}
+      >
+        médecin
+      </div>
+      <div
+        style={{
+          display: "flex",
+          fontFamily: "Inter",
+          fontWeight: 800,
+          fontSize: 78,
+          lineHeight: 0.96,
+          color: OCEAN,
+        }}
+      >
+        de garde
+      </div>
+      <div
+        style={{
+          display: "flex",
+          marginTop: 28,
+          fontFamily: "Inter",
+          fontWeight: 800,
+          fontSize: 40,
+          lineHeight: 1.1,
+          color: OCEAN,
+        }}
+      >
+        {gardePosterDoctorName(snap.doctor?.name)}
+      </div>
+      {location ? (
+        <div
+          style={{
+            display: "flex",
+            marginTop: 8,
+            fontFamily: "Marcellus",
+            fontSize: 28,
+            lineHeight: 1.2,
+            color: LAGON,
+          }}
+        >
+          {location}
+        </div>
+      ) : null}
+      {hours.length > 0 ? (
+        <div style={{ display: "flex", flexDirection: "column", marginTop: 26 }}>
+          {hours.map((row) => (
+            <div
+              key={row.label}
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingTop: 12,
+                paddingBottom: 12,
+                borderTopWidth: 2,
+                borderTopStyle: "solid",
+                borderTopColor: LAGON,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  fontFamily: "Marcellus",
+                  fontSize: 30,
+                  color: OCEAN,
+                }}
+              >
+                {row.label}
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  fontFamily: "Inter",
+                  fontWeight: 800,
+                  fontSize: 32,
+                  color: OCEAN,
+                }}
+              >
+                {row.hours}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function PhoneBand({ phone }: { phone: string | null }) {
+  return (
+    <div
+      style={{
+        width: WIDTH,
+        height: 176,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        background: LAGON,
+        color: SAND,
+      }}
+    >
+      {phone ? (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <div
+            style={{
+              display: "flex",
+              fontFamily: "Marcellus",
+              fontSize: 26,
+              lineHeight: 1,
+            }}
+          >
+            Téléphone
+          </div>
+          <div
+            style={{
+              display: "flex",
+              marginTop: 8,
+              fontFamily: "Inter",
+              fontWeight: 800,
+              fontSize: 84,
+              lineHeight: 1,
+              letterSpacing: 2,
+            }}
+          >
+            {phone}
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <div style={{ display: "flex", fontFamily: "Marcellus", fontSize: 32 }}>
+            Numéro non communiqué
+          </div>
+          <div
+            style={{
+              display: "flex",
+              marginTop: 8,
+              fontFamily: "Inter",
+              fontWeight: 800,
+              fontSize: 42,
+            }}
+          >
+            DSP 40 47 01 44
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PharmacyRows({ snap }: { snap: GardeMooreaSnapshot }) {
+  const rows = gardePharmacyRows(snap);
+  return (
+    <div
+      style={{
+        width: WIDTH,
+        display: "flex",
+        flexDirection: "column",
+        flexGrow: 1,
+        background: SAND,
+        padding: "32px 48px 12px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          fontFamily: "Inter",
+          fontWeight: 800,
+          fontSize: 26,
+          letterSpacing: 1.2,
+          color: OCEAN,
+        }}
+      >
+        Pharmacies
+      </div>
+      {rows.map((pharmacy) => (
+        <div
+          key={pharmacy.id}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            flexGrow: 1,
+            marginTop: 8,
+            paddingTop: 12,
+            borderTopWidth: 2,
+            borderTopStyle: "solid",
+            borderTopColor: LAGON,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                fontFamily: "Marcellus",
+                fontSize: 34,
+                color: OCEAN,
+              }}
+            >
+              {pharmacy.name}
+            </div>
+            {pharmacy.onDuty ? (
+              <div
+                style={{
+                  display: "flex",
+                  background: OCEAN,
+                  color: SAND,
+                  fontFamily: "Inter",
+                  fontWeight: 800,
+                  fontSize: 18,
+                  letterSpacing: 1,
+                  padding: "8px 12px",
+                }}
+              >
+                DE GARDE
+              </div>
+            ) : null}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              marginTop: 6,
+              fontFamily: "Inter",
+              fontWeight: 800,
+              fontSize: 28,
+              color: OCEAN,
+            }}
+          >
+            {pharmacy.phone}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              marginTop: 4,
+              fontFamily: "Marcellus",
+              fontSize: 24,
+              color: LAGON,
+            }}
+          >
+            {`sam. ${pharmacy.saturday}`}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              marginTop: 2,
+              fontFamily: "Marcellus",
+              fontSize: 24,
+              color: LAGON,
+            }}
+          >
+            {`dim. ${pharmacy.sunday}`}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SeasonalBand({ validFrom }: { validFrom: string }) {
+  const band = gardePosterSeason(validFrom);
+  const campaign = band.label.length > 0;
+  return (
+    <div
+      style={{
+        width: WIDTH,
+        height: campaign ? 92 : 18,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: band.background,
+        color: band.color,
+      }}
+    >
+      {campaign ? (
+        <div
+          style={{
+            display: "flex",
+            fontFamily: "Inter",
+            fontWeight: 800,
+            fontSize: 36,
+            letterSpacing: 1,
+          }}
+        >
+          {band.label}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function Credit({ snap }: { snap: GardeMooreaSnapshot }) {
+  const dutySource = gardePosterDutySource(snap);
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        background: SAND,
+        padding: "26px 48px 22px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          fontFamily: "Marcellus",
+          fontSize: 26,
+          color: OCEAN,
+        }}
+      >
+        {GARDE_IMAGE_CREDIT}
+      </div>
+      {dutySource ? (
+        <div
+          style={{
+            display: "flex",
+            marginTop: 6,
+            fontFamily: "Marcellus",
+            fontSize: 22,
+            color: LAGON,
+          }}
+        >
+          {`Pharmacie de garde : ${dutySource}`}
+        </div>
+      ) : null}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          marginTop: 10,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            fontFamily: "Marcellus",
+            fontSize: 24,
+            color: OCEAN,
+          }}
+        >
+          Urgence vitale :
+        </div>
+        <div
+          style={{
+            display: "flex",
+            marginLeft: 10,
+            fontFamily: "Inter",
+            fontWeight: 800,
+            fontSize: 28,
+            color: OCEAN,
+          }}
+        >
+          15
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function GardeWeekendPosterElement({ snap }: { snap: GardeMooreaSnapshot }) {
+  return (
+    <div
+      style={{
+        width: GARDE_WEEKEND_POSTER_SIZE.width,
+        height: GARDE_WEEKEND_POSTER_SIZE.height,
+        display: "flex",
+        flexDirection: "column",
+        background: SAND,
+      }}
+    >
+      <DiamondFrieze />
+      <div style={{ display: "flex", flexDirection: "row", background: SAND }}>
+        <DateColumn validFrom={snap.validFrom} validTo={snap.validTo} />
+        <TitleBlock snap={snap} />
+      </div>
+      <PhoneBand phone={gardePosterPhone(snap)} />
+      <PharmacyRows snap={snap} />
+      <SeasonalBand validFrom={snap.validFrom} />
+      <Credit snap={snap} />
+      <DiamondFrieze />
+    </div>
+  );
+}
+
+export { GARDE_WEEKEND_POSTER_SIZE };
 
 export function posterHasDisplayContent(snap: GardeMooreaSnapshot): boolean {
   return Boolean(snap.doctor?.name);
 }
 
-function formatDoctorDisplay(name: string): string {
-  return `Dr ${name.replace(/^Dr\.?\s+/i, "").trim()}`;
-}
-
-function dayLabel(iso: string): string {
-  const d = new Date(`${iso}T12:00:00Z`);
-  return d.toLocaleDateString("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    timeZone: "UTC",
-  });
-}
-
-function cap(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-function PharmacyBlock({ snap }: { snap: GardeMooreaSnapshot }) {
-  const duty = snap.pharmacyDuty;
-  const onDutyId =
-    duty && duty.validFrom === snap.validFrom && duty.validTo === snap.validTo
-      ? duty.pharmacyId
-      : null;
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        marginTop: 18,
-        padding: "18px 22px",
-        borderRadius: 28,
-        background: "rgba(255,255,255,0.14)",
-        gap: 8,
-      }}
-    >
-      <div style={{ display: "flex", fontSize: 22, fontWeight: 800, color: WHITE }}>
-        {onDutyId && duty
-          ? `Pharmacie de garde : ${duty.name} — ${duty.sourceLabel}`
-          : `Pharmacie de garde : ${PHARMACY_DUTY_UNLISTED}`}
-      </div>
-      {MOOREA_PHARMACIES.map((pharmacy) => {
-        const saturday = pharmacy.saturdayUnconfirmed
-          ? `${pharmacy.saturday} (à confirmer)`
-          : pharmacy.saturday;
-        const highlighted = pharmacy.id === onDutyId;
-        return (
-          <div
-            key={pharmacy.id}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 2,
-              padding: "6px 12px",
-              borderRadius: 14,
-              background: highlighted ? WHITE : "transparent",
-              color: highlighted ? OCEAN_950 : WHITE,
-              fontSize: 20,
-              fontWeight: highlighted ? 800 : 600,
-            }}
-          >
-            <div style={{ display: "flex" }}>{`${pharmacy.name} · ${pharmacy.phone}`}</div>
-            <div style={{ display: "flex", fontSize: 18 }}>{`sam ${saturday} · dim ${pharmacy.sunday}`}</div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function HoursRow({ day, hours }: { day: string; hours?: string }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "18px 26px",
-        borderRadius: 22,
-        background: OCEAN_50,
-        border: `2px solid ${OCEAN_100}`,
-      }}
-    >
-      <div style={{ display: "flex", fontSize: 32, fontWeight: 700, color: OCEAN_950 }}>
-        {cap(day)}
-      </div>
-      <div style={{ display: "flex", fontSize: 34, fontWeight: 800, color: OCEAN_700 }}>
-        {hours ?? "—"}
-      </div>
-    </div>
-  );
-}
-
-export function GardeWeekendPosterElement({
-  snap,
-  logoSrc,
-}: {
-  snap: GardeMooreaSnapshot;
-  logoSrc?: string;
-}) {
-  const doctor = snap.doctor;
-  const sameDay = snap.validFrom === snap.validTo;
-  const phone = doctor?.phone && doctor.phone !== "—" ? doctor.phone : null;
-
-  return (
-    <div
-      style={{
-        width: POSTER_SIZE.width,
-        height: POSTER_SIZE.height,
-        display: "flex",
-        flexDirection: "column",
-        fontFamily: "Inter",
-        background: `linear-gradient(160deg, ${LAGON_500} 0%, ${OCEAN_700} 55%, ${OCEAN_950} 100%)`,
-        padding: 40,
-      }}
-    >
-      {/* En-tête marque */}
-      <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
-        {logoSrc ? (
-          // eslint-disable-next-line @next/next/no-img-element -- Satori
-          <img src={logoSrc} width={96} height={96} style={{ borderRadius: 48, border: `4px solid ${WHITE}` }} alt="" />
-        ) : null}
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", fontFamily: "Marcellus", fontSize: 50, color: WHITE }}>
-            MooreaNews
-          </div>
-          <div style={{ display: "flex", fontSize: 24, color: OCEAN_100 }}>
-            L&apos;info de Moorea
-          </div>
-        </div>
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          marginTop: 22,
-          fontFamily: "Marcellus",
-          fontSize: 56,
-          lineHeight: 1.05,
-          color: WHITE,
-        }}
-      >
-        Médecin de garde
-      </div>
-      <div style={{ display: "flex", marginTop: 8, fontSize: 36, fontWeight: 700, color: OCEAN_100 }}>
-        {`Moorea · ${snap.label}`}
-      </div>
-
-      {/* Carte principale */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          marginTop: 24,
-          padding: 28,
-          borderRadius: 36,
-          background: WHITE,
-          gap: 16,
-          boxShadow: "0 20px 50px rgba(8,47,73,0.35)",
-        }}
-      >
-        <div style={{ display: "flex", fontFamily: "Marcellus", fontSize: 48, color: OCEAN_950 }}>
-          {doctor?.name ? formatDoctorDisplay(doctor.name) : "Médecin non communiqué"}
-        </div>
-        {snap.doctorAddress ? (
-          <div style={{ display: "flex", fontSize: 28, color: OCEAN_900 }}>{snap.doctorAddress}</div>
-        ) : null}
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <HoursRow day={dayLabel(snap.validFrom)} hours={snap.doctorHours?.saturday} />
-          {!sameDay ? (
-            <HoursRow day={dayLabel(snap.validTo)} hours={snap.doctorHours?.sunday} />
-          ) : null}
-        </div>
-        {phone ? (
-          <div
-            style={{
-              display: "flex",
-              alignSelf: "flex-start",
-              marginTop: 8,
-              padding: "20px 44px",
-              borderRadius: 999,
-              background: `linear-gradient(90deg, ${TIARE_500}, ${TIARE_600})`,
-              color: WHITE,
-              fontSize: 48,
-              fontWeight: 800,
-              letterSpacing: 1,
-            }}
-          >
-            {`☎ ${phone}`}
-          </div>
-        ) : (
-          <div style={{ display: "flex", fontSize: 30, color: TIARE_600, fontWeight: 700 }}>
-            Numéro non communiqué — DSP 40 47 01 44
-          </div>
-        )}
-      </div>
-
-      <PharmacyBlock snap={snap} />
-
-      <div style={{ display: "flex", marginTop: 18, fontSize: 26, color: WHITE }}>
-        Urgence vitale : appelez le 15
-      </div>
-
-      <div style={{ display: "flex", flex: 1 }} />
-
-      {/* Pied */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 21, color: OCEAN_100 }}>
-        <div style={{ display: "flex" }}>{`Source : ${GARDE_OFFICIAL_SOURCE_LABEL}`}</div>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", fontWeight: 700, color: WHITE }}>
-            Urgences : SAMU 15 · Pompiers 18
-          </div>
-          <div style={{ display: "flex", fontWeight: 700, color: WHITE }}>
-            {SITE.url.replace(/^https?:\/\//, "")}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export const GARDE_WEEKEND_POSTER_SIZE = POSTER_SIZE;
-
 let assetsCache: Promise<{
   fonts: { name: string; data: Buffer; weight: 400 | 700 | 800; style: "normal" }[];
-  logoSrc?: string;
 }> | null = null;
 
-/** Polices du site (Marcellus + Inter) et logo, embarqués dans src/assets. */
+/** Polices du site : Inter 800 pour titres et chiffres, Marcellus pour le texte. */
 export function loadGardePosterAssets() {
   if (!assetsCache) {
-    const dir = path.join(process.cwd(), "src/assets");
-    const font = (f: string) => readFile(path.join(dir, "fonts", f));
+    const dir = path.join(process.cwd(), "src/assets/fonts");
+    const font = (file: string) => readFile(path.join(dir, file));
     assetsCache = Promise.all([
       font("Marcellus-400.woff"),
       font("Inter-400.woff"),
       font("Inter-700.woff"),
       font("Inter-800.woff"),
-      readFile(path.join(dir, "brand-logo.png")).catch(() => null),
-    ]).then(([marc, i4, i7, i8, logo]) => ({
+    ]).then(([marc, inter400, inter700, inter800]) => ({
       fonts: [
         { name: "Marcellus", data: marc, weight: 400 as const, style: "normal" as const },
-        { name: "Inter", data: i4, weight: 400 as const, style: "normal" as const },
-        { name: "Inter", data: i7, weight: 700 as const, style: "normal" as const },
-        { name: "Inter", data: i8, weight: 800 as const, style: "normal" as const },
+        { name: "Inter", data: inter400, weight: 400 as const, style: "normal" as const },
+        { name: "Inter", data: inter700, weight: 700 as const, style: "normal" as const },
+        { name: "Inter", data: inter800, weight: 800 as const, style: "normal" as const },
       ],
-      logoSrc: logo ? `data:image/png;base64,${logo.toString("base64")}` : undefined,
     }));
   }
   return assetsCache;
 }
 
-export async function renderGardeWeekendPosterPng(
-  snap: GardeMooreaSnapshot,
-): Promise<Buffer> {
-  const { ImageResponse } = await import("next/og");
-  const { fonts, logoSrc } = await loadGardePosterAssets();
-  const res = new ImageResponse(GardeWeekendPosterElement({ snap, logoSrc }), {
-    ...POSTER_SIZE,
+export async function renderGardeWeekendPosterPng(snap: GardeMooreaSnapshot): Promise<Buffer> {
+  const { fonts } = await loadGardePosterAssets();
+  const res = new ImageResponse(GardeWeekendPosterElement({ snap }), {
+    ...GARDE_WEEKEND_POSTER_SIZE,
     fonts,
   });
   return Buffer.from(await res.arrayBuffer());
