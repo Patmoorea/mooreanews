@@ -14,7 +14,7 @@ async function main() {
   const file = JSON.parse(readFileSync("./data/garde-moorea.json", "utf8"));
   const snap = fileToSnapshot(file);
   snap.sourceUrl = "https://www.ordre-pharmaciens-polynesie.com/medecins-de-garde/";
-  snap.communePosterUrl = file.posterImageUrl;
+  snap.communePosterUrl = null;
   snap.syncedAt = new Date().toISOString();
 
   const ok = await writeGardeMooreaCache(snap);

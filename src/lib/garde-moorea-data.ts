@@ -1,5 +1,6 @@
 /**
- * Garde week-end Moorea — auto (Facebook commune) + secours data/garde-moorea.json.
+ * Garde week-end Moorea — cache validé + secours data/garde-moorea.json.
+ * Le fichier secours n'est pas une source communale.
  */
 
 import { readFile } from "fs/promises";
@@ -10,7 +11,7 @@ import {
   type GardeMooreaSnapshot,
 } from "@/lib/garde-moorea-auto";
 import { gardeArticleSlug } from "@/lib/garde-weekend-article";
-import { resolveGardePosterPublicUrl } from "@/lib/garde-poster-url";
+import { pickPublicGardePosterUrl, resolveGardePosterPublicUrl } from "@/lib/garde-poster-url";
 import { isMooreaGardeDoctor } from "@/lib/garde-announcement-parse";
 import { tahitiDateKey, tahitiParts } from "@/lib/tahiti-holidays";
 import type { OnCallDuty } from "@/lib/health-on-call-shared";
@@ -155,31 +156,21 @@ function formatPhone(phone: string): string {
   return `${d.slice(0, 2)} ${d.slice(2, 4)} ${d.slice(4, 6)} ${d.slice(6, 8)}`;
 }
 
-function fileToDuty(
-  kind: "pharmacy" | "doctor",
-  entry: GardeMooreaFile["pharmacy"] | GardeMooreaFile["doctor"],
+function fileDoctorToDuty(
+  entry: GardeMooreaFile["doctor"] | null | undefined,
   label: string,
 ): OnCallDuty | null {
-  const name = entry?.name?.trim();
+  if (!entry) return null;
+  const name = entry.name?.trim();
   if (!name) return null;
-  const phoneRaw = entry?.phone?.trim() ?? "";
+  const phoneRaw = entry.phone?.trim() ?? "";
   const phone = phoneRaw ? formatPhone(phoneRaw) : "—";
   const href = phoneRaw ? phoneHref(phoneRaw) : "";
-
-  if (kind === "doctor") {
-    return {
-      name: name.startsWith("Dr") ? name : `Dr ${name}`,
-      phone,
-      phoneHref: href,
-      address: (entry as GardeMooreaFile["doctor"])?.address?.trim(),
-      source: `Garde week-end — ${label}`,
-    };
-  }
   return {
-    name,
+    name: name.startsWith("Dr") ? name : `Dr ${name}`,
     phone,
     phoneHref: href,
-    address: (entry as GardeMooreaFile["pharmacy"])?.address?.trim(),
+    address: entry.address?.trim(),
     source: `Garde week-end — ${label}`,
   };
 }
@@ -219,32 +210,17 @@ export function fileToSnapshot(file: GardeMooreaFile): GardeMooreaSnapshot {
       }
     : null;
 
-  const pharmacyEntry = file.pharmacy?.name?.trim()
-    ? {
-        name: file.pharmacy.name,
-        phone: file.pharmacy.phone?.trim()
-          ? formatPhone(file.pharmacy.phone)
-          : "—",
-        phoneHref: file.pharmacy.phone?.trim()
-          ? phoneHref(file.pharmacy.phone)
-          : "",
-      }
-    : null;
-
   return {
     validFrom: file.validFrom,
     validTo: file.validTo,
     label,
     doctor: doctorEntry,
-    pharmacy: pharmacyEntry,
-    posterImageUrl: file.posterImageUrl ?? null,
-    communePosterUrl: file.posterImageUrl ?? null,
+    pharmacy: null,
+    posterImageUrl: pickPublicGardePosterUrl(file.posterImageUrl),
     doctorAddress: file.doctor?.address?.trim(),
     doctorHours: file.doctor?.hours,
-    pharmacyHours: file.pharmacyHours,
     articleSlug: gardeArticleSlug(file.validFrom),
     syncedAt: new Date().toISOString(),
-    sourceUrl: "https://www.facebook.com/CommuneMooreaMaiao",
   };
 }
 
@@ -329,8 +305,8 @@ async function fromFile(now: Date): Promise<{
   const label = file.label?.trim() || `${file.validFrom} → ${file.validTo}`;
   return {
     weekendLabel: label,
-    pharmacy: fileToDuty("pharmacy", file.pharmacy, label),
-    doctor: fileToDuty("doctor", file.doctor, label),
+    pharmacy: null,
+    doctor: fileDoctorToDuty(file.doctor, label),
   };
 }
 
@@ -342,7 +318,7 @@ export async function getGardeMooreaForNow(now = new Date()): Promise<{
 }> {
   const snap = await resolveGardeWeekendSnapshot(now);
   const posterImageUrl = resolveGardePosterPublicUrl(
-    snap?.posterImageUrl ?? snap?.communePosterUrl,
+    pickPublicGardePosterUrl(snap?.posterImageUrl, snap?.communePosterUrl),
   );
 
   if (snap) {
@@ -351,9 +327,6 @@ export async function getGardeMooreaForNow(now = new Date()): Promise<{
       if (!duties.doctor) {
         const file = await fromFile(now);
         if (file.doctor) duties = { ...duties, doctor: file.doctor };
-        if (!duties.pharmacy && file.pharmacy) {
-          duties = { ...duties, pharmacy: file.pharmacy };
-        }
       }
       return { ...duties, posterImageUrl };
     }

@@ -32,6 +32,7 @@ import {
   mergeInfoPratiqueCatalog,
   normalizeInfoTitle,
 } from "@/lib/info-catalog";
+import { overlayPharmacyInfo } from "@/lib/moorea-pharmacies";
 import { isClosedRestaurant } from "@/lib/closed-restaurants";
 import { isStaleFacebookEvent } from "@/lib/facebook-event-filters";
 import {
@@ -299,9 +300,9 @@ function sortInfoPratiques(items: InfoPratique[]): InfoPratique[] {
 export async function getInfoPratiques(): Promise<InfoPratique[]> {
   const json = infoData as InfoPratique[];
   const db = await dbListInfoPratiques();
-  if (!db) return sortInfoPratiques(json);
+  if (!db) return sortInfoPratiques(overlayPharmacyInfo(json));
   const dbItems = db.map(infoFromRow);
-  return sortInfoPratiques(mergeInfoPratiqueCatalog(dbItems, json));
+  return sortInfoPratiques(overlayPharmacyInfo(mergeInfoPratiqueCatalog(dbItems, json)));
 }
 
 export async function getInfoPratiqueBySlug(

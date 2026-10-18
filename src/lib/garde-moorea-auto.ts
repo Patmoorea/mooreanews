@@ -1,11 +1,14 @@
 /**
- * Veille automatique garde Moorea — Facebook commune (+ cache Supabase).
+ * Veille automatique garde Moorea.
+ * Médecin : tableau officiel de l'Ordre uniquement.
+ * Pharmacie de garde : commune (Facebook, RSS, affiche) ou autre source citée,
+ * seulement si le texte couvre le samedi et le dimanche en cours.
  */
 
 import path from "path";
 import { access } from "fs/promises";
 import { unstable_cache } from "next/cache";
-import { listCommuneMooreaGraphPosts, listMooreaNewsGraphPosts } from "@/lib/facebook-watch";
+import { listMooreaNewsGraphPosts } from "@/lib/facebook-watch";
 import {
   inferWeekendFromPostDate,
   isGardeImagePost,
@@ -24,7 +27,11 @@ import {
   fetchCoppfGardeSnapshot,
 } from "@/lib/garde-ordre-pharmaciens";
 import { isGardeOcrEnabled, withGardeOcrSession } from "@/lib/garde-poster-ocr";
-import { validateOfficialMooreaGarde, type GardeValidation } from "@/lib/garde-official-table";
+import { expectedWeekend, validateOfficialMooreaGarde, type GardeValidation } from "@/lib/garde-official-table";
+import {
+  resolveOnDutyPharmacy,
+  type PharmacyDuty,
+} from "@/lib/garde-pharmacy-duty";
 
 /** Validation finale avant publication (article, cache, image). */
 export function validateGardeBeforePublish(
@@ -61,7 +68,11 @@ import {
 } from "@/lib/garde-moorea-data";
 import { mergeGardeSnapshots } from "@/lib/garde-ordre-pharmaciens";
 import { MOOREA_PHARMACIES } from "@/lib/moorea-pharmacies";
-import { isPlausibleGardeDates } from "@/lib/garde-cleanup";
+import { isCommuneGardeSourceUrl, isPlausibleGardeDates } from "@/lib/garde-cleanup";
+import {
+  isCommuneOrFacebookGardeAsset,
+  pickPublicGardePosterUrl,
+} from "@/lib/garde-poster-url";
 import {
   gardeArticleSlug,
   upsertGardeWeekendArticle,
@@ -79,7 +90,6 @@ import type { OnCallDuty } from "@/lib/health-on-call-shared";
 export const GARDE_CACHE_SOURCE_ID = GARDE_VEILLE_SOURCE_ID;
 export { GARDE_CACHE_PAYLOAD_SOURCE_ID };
 const GARDE_CACHE_EXTERNAL_ID = "current";
-const COMMUNE_FB = "https://www.facebook.com/CommuneMooreaMaiao";
 
 export type { GardePharmacyHours } from "@/lib/garde-announcement-parse";
 
@@ -94,6 +104,8 @@ export type GardeMooreaSnapshot = ParsedGardeWeekend & {
   pharmacyHours?: GardePharmacyHours[];
   /** Ligne Moorea lue sur le tableau officiel (pour la validation avant publication). */
   officialCheck?: import("@/lib/garde-official-table").OfficialMooreaGarde;
+  /** Pharmacie de garde citée pour ce samedi et ce dimanche. Jamais le médecin. */
+  pharmacyDuty?: PharmacyDuty | null;
 };
 
 function toDuty(
@@ -125,31 +137,49 @@ function toDuty(
   };
 }
 
-function pharmacyDutyFromSnapshot(
+function applyPharmacyDuty(
   snap: GardeMooreaSnapshot,
-  source: string,
-): OnCallDuty | null {
-  if (snap.pharmacy?.name) {
-    return toDuty("pharmacy", snap.pharmacy, source, snap.sourceUrl);
+  duty: PharmacyDuty | null,
+): GardeMooreaSnapshot {
+  if (!duty || duty.validFrom !== snap.validFrom || duty.validTo !== snap.validTo) {
+    return { ...snap, pharmacy: null, pharmacyDuty: null };
   }
-  // COPPF n'a pas d'affiche pharmacies Moorea : afficher les 3 officines.
-  const hours =
-    snap.pharmacyHours && snap.pharmacyHours.length > 0
-      ? snap.pharmacyHours
-      : null;
-  if (!hours?.length) return null;
-  const summary = hours
-    .map((h) => `${h.district} ${h.phone}`)
-    .join(" · ");
-  const first = hours[0]!;
   return {
-    name: `Pharmacies Moorea (${hours.map((h) => h.district).join(" · ")})`,
-    phone: first.phone,
-    phoneHref: first.phone ? phoneHref(first.phone) : "",
-    address: summary,
-    source,
-    sourceUrl: snap.sourceUrl,
+    ...snap,
+    pharmacy: { name: duty.name, phone: duty.phone, phoneHref: duty.phoneHref },
+    pharmacyDuty: duty,
   };
+}
+
+function officialTableImage(
+  ...urls: Array<string | null | undefined>
+): string | null {
+  for (const url of urls) {
+    if (url?.includes("ordre-pharmaciens-polynesie.com")) return url;
+  }
+  return null;
+}
+
+function preferredGardeSourceUrl(
+  ...urls: Array<string | null | undefined>
+): string | undefined {
+  const usable = urls.filter(
+    (url): url is string => Boolean(url) && !isCommuneGardeSourceUrl(url),
+  );
+  return (
+    usable.find((url) => url.includes("ordre-pharmaciens-polynesie.com/medecins-de-garde")) ??
+    usable.find((url) => url.includes("ordre-pharmaciens-polynesie.com")) ??
+    usable[0]
+  );
+}
+
+function pharmacyDutyForNow(snap: GardeMooreaSnapshot, now: Date): OnCallDuty | null {
+  const duty = snap.pharmacyDuty;
+  if (!duty?.name) return null;
+  const want = expectedWeekend(now);
+  if (duty.validFrom !== want.validFrom || duty.validTo !== want.validTo) return null;
+  if (duty.validFrom !== snap.validFrom || duty.validTo !== snap.validTo) return null;
+  return toDuty("pharmacy", duty, duty.sourceLabel, duty.sourceUrl);
 }
 
 /** Médecin / pharmacie affichés sur le site à partir du snapshot garde. */
@@ -161,31 +191,20 @@ export function snapshotToPublicDuties(
     return { pharmacy: null, doctor: null, weekendLabel: null };
   }
 
-  const source = snap.sourceUrl?.includes("ordre-pharmaciens")
-    ? "Ordre des médecins (COPPF)"
-    : "MooreaNews";
   return {
     weekendLabel: snap.label,
-    pharmacy: pharmacyDutyFromSnapshot(snap, source),
+    pharmacy: pharmacyDutyForNow(snap, now),
     doctor: toDuty(
       "doctor",
       snap.doctor,
-      source,
-      snap.sourceUrl,
+      "Ordre des médecins",
+      COPPF_MEDECINS_GARDE_URL,
       snap.doctorAddress,
     ),
   };
 }
 
-function phoneHref(phone: string): string {
-  let d = phone.replace(/\D/g, "");
-  if (d.startsWith("689") && d.length >= 11) d = d.slice(3);
-  if (d.length < 8) return "";
-  d = d.slice(-8);
-  return `tel:+689${d}`;
-}
-
-function parseCommunePostToSnapshot(
+function parseOwnFacebookPostToSnapshot(
   post: {
     created_time?: string;
     message?: string;
@@ -193,6 +212,7 @@ function parseCommunePostToSnapshot(
     full_picture?: string;
   },
 ): GardeMooreaSnapshot | null {
+  if (isCommuneGardeSourceUrl(post.permalink_url)) return null;
   const msg = post.message ?? "";
   const picture = post.full_picture?.trim() || null;
   let parsed = parseGardePost(msg, post.created_time);
@@ -229,19 +249,16 @@ function parseCommunePostToSnapshot(
 
   return {
     ...parsed,
-    communePosterUrl: picture,
-    posterImageUrl: null,
-    sourceUrl: post.permalink_url ?? COMMUNE_FB,
+    pharmacy: null,
+    communePosterUrl: null,
+    posterImageUrl: picture && !isCommuneOrFacebookGardeAsset(picture) ? picture : null,
+    sourceUrl: post.permalink_url,
     syncedAt: new Date().toISOString(),
   };
 }
 
 async function fetchGardeFromFacebookPages(): Promise<GardeMooreaSnapshot | null> {
-  const [communePosts, mooreaNewsPosts] = await Promise.all([
-    listCommuneMooreaGraphPosts(),
-    listMooreaNewsGraphPosts(),
-  ]);
-  const posts = [...communePosts, ...mooreaNewsPosts];
+  const posts = await listMooreaNewsGraphPosts();
   const cutoff = Date.now() - 21 * 86400000;
   const now = new Date();
   const candidates: GardeMooreaSnapshot[] = [];
@@ -254,50 +271,20 @@ async function fetchGardeFromFacebookPages(): Promise<GardeMooreaSnapshot | null
     const t = Date.parse(post.created_time ?? "");
     if (t && t < cutoff) continue;
 
-    const snap = parseCommunePostToSnapshot(post);
+    const snap = parseOwnFacebookPostToSnapshot(post);
     if (snap) candidates.push(snap);
   }
 
   return pickBestGardeSnapshot(candidates, now);
 }
 
-async function fetchCommuneRssGarde(): Promise<GardeMooreaSnapshot | null> {
-  try {
-    const res = await fetch("https://www.commune-moorea.net/feed/", {
-      headers: { Accept: "application/rss+xml" },
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    const xml = await res.text();
-    for (const item of xml.split("<item>").slice(1, 40)) {
-      const titleM = item.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/);
-      const descM = item.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/);
-      const dateM = item.match(/<pubDate>([\s\S]*?)<\/pubDate>/);
-      const linkM = item.match(/<link>([\s\S]*?)<\/link>/);
-      const text = `${titleM?.[1] ?? ""} ${descM?.[1] ?? ""}`;
-      const pub = dateM?.[1] ? new Date(dateM[1]).toISOString() : undefined;
-      const parsed = parseGardePost(text, pub);
-      if (!parsed || (!parsed.doctor && !parsed.pharmacy)) continue;
-      return {
-        ...parsed,
-        sourceUrl: linkM?.[1]?.trim() ?? "https://www.commune-moorea.net",
-        syncedAt: new Date().toISOString(),
-      };
-    }
-  } catch {
-    /* optionnel */
-  }
-  return null;
-}
-
 export async function fetchLiveGardeMooreaSnapshot(): Promise<GardeMooreaSnapshot | null> {
-  const [coppf, site, fb, rss] = await Promise.all([
+  const [coppf, site, fb] = await Promise.all([
     fetchCoppfGardeSnapshot().catch(() => null),
     fetchGardeFromImportedArticles().catch(() => null),
     fetchGardeFromFacebookPages().catch(() => null),
-    fetchCommuneRssGarde().catch(() => null),
   ]);
-  const candidates = [coppf, site, fb, rss].filter(Boolean) as GardeMooreaSnapshot[];
+  const candidates = [coppf, site, fb].filter(Boolean) as GardeMooreaSnapshot[];
   return pickBestGardeSnapshot(candidates);
 }
 
@@ -379,9 +366,9 @@ export async function writeGardeMooreaCache(snap: GardeMooreaSnapshot): Promise<
   const json = JSON.stringify(snap).slice(0, 8000);
   const readable = gardeCachePublicExcerpt(snap);
   const shared = {
-    url: snap.sourceUrl ?? COMMUNE_FB,
+    url: preferredGardeSourceUrl(snap.sourceUrl) ?? COPPF_MEDECINS_GARDE_URL,
     title: title.slice(0, 500),
-    image_url: snap.posterImageUrl ?? null,
+    image_url: pickPublicGardePosterUrl(snap.posterImageUrl),
     author: "MooreaNews",
     published_at: `${snap.validFrom}T12:00:00.000Z`,
     fetched_at: snap.syncedAt,
@@ -455,11 +442,8 @@ async function resolveSnapshotForSync(): Promise<GardeMooreaSnapshot | null> {
   }
   return {
     ...merged,
-    communePosterUrl:
-      live?.communePosterUrl ??
-      merged.communePosterUrl ??
-      (merged.posterImageUrl?.startsWith("http") ? merged.posterImageUrl : null),
-    sourceUrl: live?.sourceUrl ?? merged.sourceUrl,
+    communePosterUrl: officialTableImage(live?.communePosterUrl, merged.communePosterUrl),
+    sourceUrl: preferredGardeSourceUrl(merged.sourceUrl, live?.sourceUrl),
     syncedAt: new Date().toISOString(),
   };
 }
@@ -483,7 +467,13 @@ async function enrichFromPosterOcr(
   const coppfMeta = await fetchCoppfGardeImageUrl().catch(() => null);
   const coppfImages = await fetchCoppfGardeImageUrls().catch(() => []);
   // Le tableau COPPF (toute la Polynésie) sert de SOURCE, jamais d'image d'article.
-  if (snap.communePosterUrl?.includes("ordre-pharmaciens")) {
+  // Les affiches commune / Facebook ne sont pas des entrées OCR.
+  if (
+    snap.communePosterUrl &&
+    (snap.communePosterUrl.includes("ordre-pharmaciens") ||
+      isCommuneOrFacebookGardeAsset(snap.communePosterUrl) ||
+      isCommuneGardeSourceUrl(snap.communePosterUrl))
+  ) {
     snap = { ...snap, communePosterUrl: null };
   }
   if (coppfMeta?.imageUrl) {
@@ -491,14 +481,13 @@ async function enrichFromPosterOcr(
   }
 
   const urls: string[] = [];
-  const add = (url: string | null | undefined) => {
-    if (url && !urls.includes(url)) urls.push(url);
+  const addOfficial = (url: string | null | undefined) => {
+    if (!url || urls.includes(url)) return;
+    if (!url.includes("ordre-pharmaciens-polynesie.com")) return;
+    urls.push(url);
   };
-  // Tableau officiel d'abord ; les autres images ne servent qu'en complément.
-  add(coppfMeta?.imageUrl);
-  for (const img of coppfImages) add(img.imageUrl);
-  add(snap.communePosterUrl);
-  if (snap.posterImageUrl?.startsWith("http")) add(snap.posterImageUrl);
+  addOfficial(coppfMeta?.imageUrl);
+  for (const img of coppfImages) addOfficial(img.imageUrl);
 
   if (!urls.length) {
     return { snap, ocrUsed: false, ocrError: "aucune image affiche" };
@@ -531,7 +520,7 @@ async function enrichFromPosterOcr(
 }
 
 export type GardeSyncOptions = {
-  /** Vendredi matin : OCR affiche commune + affiche MooreaNews */
+  /** Vendredi matin : OCR du tableau officiel + affiche MooreaNews. */
   fullWeekendPipeline?: boolean;
 };
 
@@ -598,10 +587,6 @@ export async function syncGardeMooreaFromCommune(
     };
   }
 
-  if (!snap.communePosterUrl && snap.posterImageUrl?.startsWith("http")) {
-    snap.communePosterUrl = snap.posterImageUrl;
-  }
-
   const fileSnap = await readGardeFileSnapshot();
   if (fileSnap?.validFrom === snap.validFrom) {
     snap = mergeGardeSnapshots(snap, fileSnap);
@@ -615,6 +600,9 @@ export async function syncGardeMooreaFromCommune(
   const ocrUsed = ocrEnriched.ocrUsed;
   const ocrError = ocrEnriched.ocrError;
 
+  const onDutyPharmacy = await resolveOnDutyPharmacy(now).catch(() => null);
+  snap = applyPharmacyDuty(snap, onDutyPharmacy);
+
   const shouldMakePoster =
     options.fullWeekendPipeline ||
     !snap.posterImageUrl ||
@@ -627,8 +615,7 @@ export async function syncGardeMooreaFromCommune(
       snap.posterImageUrl = mooreaPoster;
     } else {
       const local = await localGardePosterPath(snap.validFrom);
-      snap.posterImageUrl =
-        local ?? snap.communePosterUrl ?? snap.posterImageUrl;
+      snap.posterImageUrl = pickPublicGardePosterUrl(local, snap.posterImageUrl);
     }
   }
 
@@ -643,9 +630,9 @@ export async function syncGardeMooreaFromCommune(
   }
 
   snap.syncedAt = new Date().toISOString();
-  // Pas de liste de pharmacies sans horaires lus sur une source (anciens numéros non vérifiés).
   snap.pharmacyHours = (snap.pharmacyHours ?? []).filter((p) => p.saturday || p.sunday);
   if (snap.pharmacy?.name?.startsWith("Pharmacies Moorea")) snap.pharmacy = null;
+  snap = applyPharmacyDuty(snap, onDutyPharmacy);
 
   // Garde-fou : on ne publie RIEN d'incohérent (médecin hors Moorea, n° décalé,
   // horaires absents, mauvaise semaine). On signale à la place.
@@ -665,6 +652,14 @@ export async function syncGardeMooreaFromCommune(
       validationIssues: validation.issues,
     };
   }
+
+  snap = {
+    ...snap,
+    sourceUrl: snap.sourceUrl?.includes("medecins-de-garde")
+      ? snap.sourceUrl
+      : COPPF_MEDECINS_GARDE_URL,
+    posterImageUrl: pickPublicGardePosterUrl(snap.posterImageUrl),
+  };
 
   const article = await upsertGardeWeekendArticle(snap);
   snap.articleSlug = article.slug;

@@ -1,5 +1,6 @@
 /**
- * Garde week-end Moorea — pharmacie + médecin (veille auto commune Facebook).
+ * Garde week-end Moorea — médecin (tour de garde officiel) et pharmacie
+ * seulement si une source vérifiée la nomme.
  */
 
 import { cache } from "react";
@@ -10,6 +11,7 @@ import {
 } from "@/lib/garde-moorea-data";
 import { syncGardeMooreaFromCommune, type GardeSyncOptions } from "@/lib/garde-moorea-auto";
 import { getGardeWeekendHighlight } from "@/lib/garde-weekend-public";
+import { COPPF_MEDECINS_GARDE_URL } from "@/lib/garde-ordre-pharmaciens";
 import {
   formatTahitiDay,
   isHealthOnCallPeriod,
@@ -23,12 +25,19 @@ export type {
   OnCallDuty,
 } from "@/lib/health-on-call-shared";
 
-const COMMUNE_FB = "https://www.facebook.com/CommuneMooreaMaiao";
-
 const DSP_GARDE_PHONES = [
   { label: "Direction de la santé", phone: "40 47 01 44", phoneHref: "tel:+68940470144" },
   { label: "Direction de la santé", phone: "40 47 01 47", phoneHref: "tel:+68940470147" },
 ] as const;
+
+/** Sources affichées / exposées par l'API : DSP + tableau officiel, jamais la commune. */
+export const HEALTH_ON_CALL_SOURCES: { label: string; href: string }[] = [
+  { label: "DSP garde — 40 47 01 44", href: "tel:+68940470144" },
+  {
+    label: "Tour de garde officiel — Ordre des médecins",
+    href: COPPF_MEDECINS_GARDE_URL,
+  },
+];
 
 const CACHE_MS = 5 * 60 * 1000;
 let dataCache: { at: number; data: HealthOnCallData } | null = null;
@@ -52,10 +61,7 @@ function buildEmptyHealthData(now: Date): HealthOnCallData {
     onDutyPharmacy: null,
     onDutyDoctor: null,
     dspContacts: [...DSP_GARDE_PHONES],
-    sources: [
-      { label: "DSP garde — 40 47 01 44", href: "tel:+68940470144" },
-      { label: "Commune Moorea-Maiao", href: COMMUNE_FB },
-    ],
+    sources: HEALTH_ON_CALL_SOURCES,
   };
 }
 
@@ -75,10 +81,7 @@ export async function getHealthOnCallUncached(now = new Date()): Promise<HealthO
       onDutyPharmacy: garde.pharmacy,
       onDutyDoctor: garde.doctor,
       dspContacts: [...DSP_GARDE_PHONES],
-      sources: [
-        { label: "DSP garde — 40 47 01 44", href: "tel:+68940470144" },
-        { label: "Commune Moorea-Maiao", href: COMMUNE_FB },
-      ],
+      sources: HEALTH_ON_CALL_SOURCES,
       posterImageUrl: garde.posterImageUrl ?? null,
       articleHref: highlight?.href ?? null,
     };

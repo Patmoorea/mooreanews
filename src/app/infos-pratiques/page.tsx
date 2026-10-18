@@ -181,9 +181,9 @@ export default async function InfosPratiquesPage() {
                               </p>
                             )}
                             {info.hours && (
-                              <p className="flex items-center gap-1.5">
-                                <Clock size={12} className="shrink-0" />
-                                <span className="line-clamp-1">{info.hours}</span>
+                              <p className="flex items-start gap-1.5">
+                                <Clock size={12} className="shrink-0 mt-0.5" />
+                                <span>{info.hours}</span>
                               </p>
                             )}
                             {info.website && (

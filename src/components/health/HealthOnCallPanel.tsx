@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Cross, Phone, Pill, Stethoscope } from "lucide-react";
 import type { HealthOnCallData, OnCallDuty } from "@/lib/health-on-call-shared";
+import { PHARMACY_DUTY_UNLISTED } from "@/data/pharmacies-moorea";
 
 type Props = {
   data: HealthOnCallData;
@@ -19,7 +20,7 @@ function OnDutyCard({
   const Icon = isPharmacy ? Pill : Stethoscope;
   const title = isPharmacy ? "Pharmacie de garde" : "Médecin de garde";
   const emptyHint = isPharmacy
-    ? "Non renseignée — appelez la DSP (40 47 01 44)."
+    ? PHARMACY_DUTY_UNLISTED
     : "Non renseigné — appelez la DSP (40 47 01 44).";
 
   return (
@@ -45,6 +46,23 @@ function OnDutyCard({
                 {duty.phone}
               </a>
             )}
+            {duty.source ? (
+              <p className="mt-3 text-xs text-ocean-600">
+                Source :{" "}
+                {duty.sourceUrl ? (
+                  <a
+                    href={duty.sourceUrl}
+                    className="underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {duty.source}
+                  </a>
+                ) : (
+                  duty.source
+                )}
+              </p>
+            ) : null}
           </>
         ) : (
           <>

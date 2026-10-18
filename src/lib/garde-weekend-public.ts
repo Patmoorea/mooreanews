@@ -9,7 +9,7 @@ import {
   resolveGardeWeekendSnapshot,
   snapshotHasGardeContent,
 } from "@/lib/garde-moorea-data";
-import { resolveGardePosterPublicUrl } from "@/lib/garde-poster-url";
+import { pickPublicGardePosterUrl, resolveGardePosterPublicUrl } from "@/lib/garde-poster-url";
 import { tahitiParts } from "@/lib/tahiti-holidays";
 
 export type GardeWeekendHighlight = {
@@ -85,7 +85,7 @@ export async function getGardeWeekendHighlight(
     weekendLabel: snap.label,
     doctorName: snap.doctor?.name ?? null,
     posterImageUrl: resolveGardePosterPublicUrl(
-      snap.posterImageUrl ?? snap.communePosterUrl,
+      pickPublicGardePosterUrl(snap.posterImageUrl, snap.communePosterUrl),
     ),
   };
 }
