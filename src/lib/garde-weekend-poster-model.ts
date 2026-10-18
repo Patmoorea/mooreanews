@@ -13,7 +13,7 @@ import {
 export const GARDE_WEEKEND_POSTER_SIZE = { width: 1080, height: 1620 } as const;
 
 /** Change quand le gabarit change, pour que le cron réécrive une URL d'article neuve. */
-export const GARDE_POSTER_REVISION = "maquette1620b";
+export const GARDE_POSTER_REVISION = "maquette1620c";
 
 export const GARDE_IMAGE_CREDIT = "Source médecin : tableau de l'Ordre des médecins";
 

@@ -38,8 +38,8 @@ const MUTED = "#4E7194";
 const WAVE = "#D6EEF8";
 
 const WIDTH = GARDE_WEEKEND_POSTER_SIZE.width;
-const HEADER_H = 312;
-const PHOTO_H = 248;
+const HEADER_H = 300;
+const PHOTO_H = 300;
 
 export type GardePosterImages = {
   banner: string;
@@ -60,7 +60,7 @@ function splitConfirm(value: string): { hours: string; note: string | null } {
 
 function LogoMark() {
   return (
-    <svg width={108} height={108} viewBox="0 0 108 108">
+    <svg width={124} height={124} viewBox="0 0 108 108">
       <circle cx="54" cy="54" r="52" fill={BLUE} />
       <path
         d="M18 62 C34 38 48 46 58 58 C68 70 82 56 92 42"
@@ -174,30 +174,34 @@ function HeaderCross() {
 
 function AwarenessRibbon({ color }: { color: string }) {
   return (
-    <svg width={68} height={82} viewBox="0 0 68 82">
-      <path
-        d="M34 4 C26 14 6 16 8 34 C10 46 22 44 30 34 C22 48 14 60 18 78 L30 60 L34 68 L38 60 L50 78 C54 60 46 48 38 34 C46 44 58 46 60 34 C62 16 42 14 34 4 Z"
-        fill={color}
-      />
+    <svg width={74} height={90} viewBox="0 0 90 110">
+      <g fill="none" stroke={color} strokeWidth={8} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M45 16 C30 8 12 18 14 36 C16 50 32 52 42 40" />
+        <path d="M45 16 C60 8 78 18 76 36 C74 50 58 52 48 40" />
+        <path d="M36 44 C30 58 24 78 18 100" />
+        <path d="M54 44 C60 58 66 78 72 100" />
+        <path d="M24 84 L45 68 L66 96" />
+      </g>
     </svg>
   );
 }
 
 function WomanSilhouette({ color }: { color: string }) {
   return (
-    <svg width={90} height={84} viewBox="0 0 90 84">
-      <path d="M6 84 C16 60 30 52 46 52 C62 52 76 62 86 84 Z" fill={color} />
-      <path d="M40 48 h12 v12 H36 C36 54 38 50 40 48 Z" fill={color} />
-      <path
-        d="M60 16 C60 8 48 6 40 14 C32 8 24 14 24 22 L18 26 C16 30 20 34 26 34 C24 40 28 46 36 48 C44 52 56 48 58 40 C66 38 70 30 66 22 C70 18 68 12 60 16 Z"
-        fill={color}
-      />
-      <path d="M42 12 C58 4 74 14 70 28 C64 18 54 14 44 16 C40 12 42 12 42 12 Z" fill={color} />
-      <circle cx="16" cy="22" r="5.5" fill={color} />
-      <circle cx="24" cy="14" r="4.5" fill={color} />
-      <circle cx="9" cy="14" r="4" fill={color} />
-      <circle cx="8" cy="24" r="3.6" fill={color} />
-      <circle cx="16" cy="22" r="2" fill={WHITE} />
+    <svg width={86} height={100} viewBox="0 0 90 110">
+      <g fill="none" stroke={color} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M58 30 C62 16 46 8 36 18 C28 12 20 20 24 30" />
+        <path d="M24 30 C16 34 14 42 20 48 C14 52 18 60 28 64 C38 68 50 62 54 52" />
+        <path d="M42 64 C40 74 38 82 36 90" />
+        <path d="M36 90 C22 96 10 106 6 110" />
+        <path d="M50 66 C64 76 78 90 86 104" />
+        <path d="M34 20 C46 10 60 16 58 28" />
+        <circle cx="16" cy="24" r="5" />
+        <circle cx="24" cy="16" r="4" />
+        <circle cx="9" cy="16" r="3.4" />
+        <circle cx="10" cy="28" r="3" />
+      </g>
+      <circle cx="16" cy="24" r="1.7" fill={color} />
     </svg>
   );
 }
@@ -241,6 +245,7 @@ function SeasonMark({ id, color }: { id: GardeSeasonId; color: string }) {
 }
 
 function Header({ images }: { images: GardePosterImages }) {
+  const script = "Moorea au cœur de l'info";
   return (
     <div style={{ display: "flex", position: "relative", width: WIDTH, height: HEADER_H, flexShrink: 0 }}>
       <img
@@ -251,57 +256,107 @@ function Header({ images }: { images: GardePosterImages }) {
       />
       <svg
         width={WIDTH}
-        height={64}
-        viewBox={`0 0 ${WIDTH} 64`}
-        style={{ position: "absolute", left: 0, top: PHOTO_H - 36 }}
+        height={36}
+        viewBox={`0 0 ${WIDTH} 36`}
+        style={{ position: "absolute", left: 0, top: HEADER_H - 28 }}
       >
         <path
-          d={`M0 28 C160 58 320 4 500 30 C680 56 860 6 ${WIDTH} 26 L${WIDTH} 64 L0 64 Z`}
+          d={`M0 16 C180 34 380 4 560 16 C760 30 920 6 ${WIDTH} 14 L${WIDTH} 36 L0 36 Z`}
           fill={WHITE}
         />
       </svg>
       <div
         style={{
           position: "absolute",
-          top: 22,
-          right: 32,
+          top: 18,
+          right: 28,
           display: "flex",
           flexDirection: "row",
           alignItems: "center",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            fontFamily: "Pacifico",
-            fontSize: 32,
-            color: WHITE,
-            marginRight: 8,
-          }}
-        >
-          {"Moorea au cœur de l'info"}
+        <div style={{ display: "flex", position: "relative" }}>
+          <div
+            style={{
+              display: "flex",
+              position: "absolute",
+              top: 2,
+              left: 2,
+              fontFamily: "Pacifico",
+              fontSize: 34,
+              color: NAVY,
+            }}
+          >
+            {script}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              fontFamily: "Pacifico",
+              fontSize: 34,
+              color: WHITE,
+              marginRight: 8,
+            }}
+          >
+            {script}
+          </div>
         </div>
-        <Heart color={WHITE} size={20} />
+        <Heart color={WHITE} size={22} />
       </div>
       <div
         style={{
           position: "absolute",
-          left: 28,
-          bottom: 0,
+          left: 26,
+          bottom: 46,
           display: "flex",
           flexDirection: "row",
           alignItems: "center",
         }}
       >
         <LogoMark />
-        <div style={{ display: "flex", flexDirection: "column", marginLeft: 16 }}>
+        <div style={{ display: "flex", position: "relative", flexDirection: "column", marginLeft: 14 }}>
+          <div
+            style={{
+              display: "flex",
+              position: "absolute",
+              top: 2,
+              left: 2,
+              flexDirection: "column",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                fontFamily: "Inter",
+                fontWeight: 800,
+                fontSize: 46,
+                color: NAVY,
+                lineHeight: 1,
+              }}
+            >
+              MooreaNews.com
+            </div>
+            <div
+              style={{
+                display: "flex",
+                marginTop: 6,
+                fontFamily: "Inter",
+                fontWeight: 700,
+                fontSize: 17,
+                letterSpacing: 1.3,
+                color: NAVY,
+              }}
+            >
+              INFOS LOCALES • ACTUALITÉS • POLYNÉSIE
+            </div>
+          </div>
           <div
             style={{
               display: "flex",
               fontFamily: "Inter",
               fontWeight: 800,
-              fontSize: 42,
-              color: NAVY,
+              fontSize: 46,
+              color: WHITE,
               lineHeight: 1,
             }}
           >
@@ -313,9 +368,9 @@ function Header({ images }: { images: GardePosterImages }) {
               marginTop: 6,
               fontFamily: "Inter",
               fontWeight: 700,
-              fontSize: 16,
-              letterSpacing: 1.4,
-              color: CYAN_DEEP,
+              fontSize: 17,
+              letterSpacing: 1.3,
+              color: WHITE,
             }}
           >
             INFOS LOCALES • ACTUALITÉS • POLYNÉSIE
@@ -445,18 +500,18 @@ function DateCards({ cards }: { cards: GardePosterDayCard[] }) {
             borderStyle: "solid",
             borderColor: CARD_LINE,
             borderRadius: 26,
-            padding: "16px 22px 18px",
+            padding: "20px 24px 22px",
           }}
         >
           <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
-            <CalendarIcon size={40} />
+            <CalendarIcon size={44} />
             <div
               style={{
                 display: "flex",
                 marginLeft: 12,
                 fontFamily: "Inter",
                 fontWeight: 800,
-                fontSize: 26,
+                fontSize: 28,
                 color: CYAN_DEEP,
               }}
             >
@@ -472,14 +527,14 @@ function DateCards({ cards }: { cards: GardePosterDayCard[] }) {
                 marginTop: 10,
               }}
             >
-              <ClockIcon size={40} />
+              <ClockIcon size={44} />
               <div
                 style={{
                   display: "flex",
                   marginLeft: 12,
                   fontFamily: "Inter",
                   fontWeight: 800,
-                  fontSize: 38,
+                  fontSize: 42,
                   color: NAVY,
                 }}
               >
@@ -600,13 +655,13 @@ function TaglineSeason({ snap }: { snap: GardeMooreaSnapshot }) {
           display: "flex",
           flexDirection: "row",
           alignItems: "center",
-          background: band.background,
+          background: band.surface,
           borderRadius: 22,
-          padding: "8px 14px 10px 10px",
+          padding: "10px 16px 12px 12px",
           flexShrink: 0,
         }}
       >
-        <SeasonMark id={band.id} color={band.color} />
+        <SeasonMark id={band.id} color={band.background} />
         <div
           style={{
             display: "flex",
@@ -622,7 +677,7 @@ function TaglineSeason({ snap }: { snap: GardeMooreaSnapshot }) {
                 display: "flex",
                 fontFamily: "Great Vibes",
                 fontSize: 34,
-                color: band.color,
+                color: band.background,
                 lineHeight: 1,
               }}
             >
@@ -638,7 +693,7 @@ function TaglineSeason({ snap }: { snap: GardeMooreaSnapshot }) {
                 fontWeight: 800,
                 fontSize: 12,
                 letterSpacing: 0.4,
-                color: band.color,
+                color: band.background,
                 textAlign: "center",
               }}
             >
@@ -646,7 +701,7 @@ function TaglineSeason({ snap }: { snap: GardeMooreaSnapshot }) {
             </div>
           ) : null}
         </div>
-        {band.id === "octobre-rose" ? <WomanSilhouette color={band.color} /> : null}
+        {band.id === "octobre-rose" ? <WomanSilhouette color={band.background} /> : null}
       </div>
     </div>
   );
@@ -660,10 +715,10 @@ function HourLine({ label, value }: { label: string; value: string }) {
         <div
           style={{
             display: "flex",
-            width: 108,
+            width: 116,
             fontFamily: "Inter",
             fontWeight: 800,
-            fontSize: 16,
+            fontSize: 18,
             color: NAVY,
           }}
         >
@@ -672,10 +727,10 @@ function HourLine({ label, value }: { label: string; value: string }) {
         <div
           style={{
             display: "flex",
-            width: 132,
+            width: 130,
             fontFamily: "Inter",
             fontWeight: 700,
-            fontSize: 16,
+            fontSize: 18,
             lineHeight: 1.2,
             color: NAVY,
           }}
@@ -687,7 +742,7 @@ function HourLine({ label, value }: { label: string; value: string }) {
         <div
           style={{
             display: "flex",
-            marginLeft: 108,
+            marginLeft: 116,
             marginTop: 1,
             fontFamily: "Inter",
             fontWeight: 700,
@@ -715,7 +770,7 @@ function PharmacyCard({ pharmacy }: { pharmacy: GardePosterPharmacyRow }) {
         borderStyle: "solid",
         borderColor: CARD_LINE,
         borderRadius: 16,
-        padding: "12px 12px 10px",
+        padding: "16px 12px 16px",
         marginLeft: 7,
         marginRight: 7,
       }}
@@ -744,7 +799,7 @@ function PharmacyCard({ pharmacy }: { pharmacy: GardePosterPharmacyRow }) {
           display: "flex",
           fontFamily: "Inter",
           fontWeight: 800,
-          fontSize: 18,
+          fontSize: 20,
           color: NAVY,
           lineHeight: 1.15,
         }}
@@ -759,7 +814,7 @@ function PharmacyCard({ pharmacy }: { pharmacy: GardePosterPharmacyRow }) {
             marginLeft: 6,
             fontFamily: "Inter",
             fontWeight: 800,
-            fontSize: 22,
+            fontSize: 24,
             color: NAVY,
           }}
         >
@@ -783,7 +838,7 @@ function PharmacyCard({ pharmacy }: { pharmacy: GardePosterPharmacyRow }) {
 function Pharmacies({ snap }: { snap: GardeMooreaSnapshot }) {
   const rows = gardePharmacyRows(snap);
   return (
-    <div style={{ display: "flex", flexDirection: "column", padding: "14px 28px 0", flexShrink: 0 }}>
+    <div style={{ display: "flex", flexDirection: "column", padding: "18px 28px 0", flexShrink: 0 }}>
       <div
         style={{
           display: "flex",
@@ -826,7 +881,7 @@ function Pharmacies({ snap }: { snap: GardeMooreaSnapshot }) {
             display: "flex",
             flexDirection: "row",
             alignItems: "stretch",
-            padding: "12px 8px 12px",
+            padding: "16px 8px 18px",
           }}
         >
           {rows.map((pharmacy) => (
@@ -871,14 +926,21 @@ function Credit({ snap }: { snap: GardeMooreaSnapshot }) {
 }
 
 function TribalBand() {
-  const marks = Array.from({ length: 22 }, (_, index) => {
-    const x = 8 + index * 49;
-    return `${x},42 ${x + 16},8 ${x + 32},42`;
+  const up = Array.from({ length: 16 }, (_, index) => {
+    const x = index * 70;
+    return `${x},58 ${x + 24},8 ${x + 48},58`;
+  });
+  const down = Array.from({ length: 16 }, (_, index) => {
+    const x = 24 + index * 70;
+    return `${x},6 ${x + 20},42 ${x + 40},6`;
   });
   return (
-    <svg width={WIDTH} height={46} viewBox={`0 0 ${WIDTH} 46`}>
-      {marks.map((points) => (
-        <polygon key={points} points={points} fill="rgba(255,255,255,0.28)" />
+    <svg width={WIDTH} height={62} viewBox={`0 0 ${WIDTH} 62`}>
+      {up.map((points) => (
+        <polygon key={`u-${points}`} points={points} fill="rgba(255,255,255,0.95)" />
+      ))}
+      {down.map((points) => (
+        <polygon key={`d-${points}`} points={points} fill="rgba(255,255,255,0.72)" />
       ))}
     </svg>
   );
@@ -932,15 +994,21 @@ function Footer({ images }: { images: GardePosterImages }) {
       </div>
       <img
         src={images.palm}
-        width={230}
-        height={120}
-        style={{ position: "absolute", left: -8, bottom: 0, objectFit: "contain" }}
+        width={340}
+        height={168}
+        style={{ position: "absolute", left: -16, bottom: -4, objectFit: "contain" }}
+      />
+      <img
+        src={images.palm}
+        width={180}
+        height={110}
+        style={{ position: "absolute", right: 150, bottom: 8, objectFit: "contain" }}
       />
       <img
         src={images.frangipani}
-        width={108}
-        height={108}
-        style={{ position: "absolute", left: 8, bottom: 8, objectFit: "contain" }}
+        width={118}
+        height={118}
+        style={{ position: "absolute", left: 18, bottom: 10, objectFit: "contain" }}
       />
       <svg width={240} height={100} viewBox="0 0 240 100" style={{ position: "absolute", right: 6, bottom: 22 }}>
         <path d="M0 86 L46 42 L78 66 L124 16 L168 60 L206 34 L240 72 L240 100 L0 100 Z" fill={WAVE} />

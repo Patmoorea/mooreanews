@@ -14,6 +14,8 @@ export const GARDE_SEASONAL_CALENDAR = [
     subtitle: "Tous unis pour la santé des femmes",
     background: "#C2185B",
     color: "#F4EFE6",
+    /** Fond clair du cartouche. Le rose foncé reste `background`. */
+    surface: "#F7D0E2",
   },
   {
     id: "novembre-bleu",
@@ -22,6 +24,7 @@ export const GARDE_SEASONAL_CALENDAR = [
     subtitle: "Tous unis pour la santé des hommes",
     background: "#1B4F8A",
     color: "#F4EFE6",
+    surface: "#E4EEF8",
   },
   {
     id: "fetes",
@@ -30,6 +33,7 @@ export const GARDE_SEASONAL_CALENDAR = [
     subtitle: "De belles fêtes en bonne santé",
     background: "#0F6E73",
     color: "#F4EFE6",
+    surface: "#E5F6F6",
   },
 ] as const;
 
@@ -42,6 +46,8 @@ export type GardeSeasonBand = {
   subtitle: string;
   background: string;
   color: string;
+  /** Fond du cartouche. Plus clair que `background`, qui sert d'encre. */
+  surface: string;
 };
 
 /** Bandeau sans campagne : océan, sans titre, sans rose. */
@@ -51,6 +57,7 @@ export const GARDE_NEUTRAL_BAND: GardeSeasonBand = {
   subtitle: "Prenez soin de vous",
   background: "#072844",
   color: "#F4EFE6",
+  surface: "#E7F2FA",
 };
 
 export function gardeSeasonForMonth(month: number): GardeSeasonBand {
@@ -64,6 +71,7 @@ export function gardeSeasonForMonth(month: number): GardeSeasonBand {
     subtitle: found.subtitle,
     background: found.background,
     color: found.color,
+    surface: found.surface,
   };
 }
 
