@@ -13,6 +13,7 @@ import {
   gardeHourRows,
   gardeOnDutyPharmacyId,
   gardePharmacyRows,
+  gardePosterDayCards,
   gardePosterLocation,
   gardePosterPhone,
   GARDE_IMAGE_CREDIT,
@@ -102,7 +103,7 @@ describe("calendrier du bandeau saisonnier", () => {
     assert.match(poster, /MooreaNews vous informe que le/);
     assert.match(poster, /GARDE_IMAGE_CREDIT/);
     assert.match(poster, /DE GARDE/);
-    assert.deepEqual(GARDE_WEEKEND_POSTER_SIZE, { width: 1080, height: 1920 });
+    assert.deepEqual(GARDE_WEEKEND_POSTER_SIZE, { width: 1080, height: 1620 });
   });
 });
 
@@ -122,7 +123,11 @@ describe("données affichées sur l'affiche", () => {
     assert.equal(gardePosterPhone(sem42), "40 56 15 55");
     assert.equal(gardePosterLocation(sem42), null);
     assert.equal(gardePosterLocation({ ...sem42, doctorAddress: "PK 5, Maharepa" }), "PK 5, Maharepa");
-    assert.match(GARDE_IMAGE_CREDIT, /tableau de l'Ordre des médecins/);
+    assert.equal(GARDE_IMAGE_CREDIT, "Source médecin : tableau de l'Ordre des médecins");
+    assert.deepEqual(gardePosterDayCards(sem42), [
+      { label: "Samedi 17 octobre", hours: "12h00 – 18h00" },
+      { label: "Dimanche 18 octobre", hours: "8h00 – 16h00" },
+    ]);
   });
 
   it("badge DE GARDE seulement pour la pharmacie citée ce week-end", () => {
@@ -145,6 +150,15 @@ describe("données affichées sur l'affiche", () => {
       ["pharmacie-tran-moorea"],
     );
     assert.equal(rows.length, 3);
+    assert.deepEqual(
+      rows.map((row) => row.name),
+      ["Pharmacie d'Afareaitu", "Pharmacie Tran (Paopao)", "Pharmacie de Haapiti"],
+    );
+    assert.equal(rows[2]?.saturday, "9h00–12h30");
+    assert.match(rows[2]?.sunday ?? "", /^8h00–10h00/);
+    assert.equal(rows[0]?.phone, "40 56 35 47");
+    assert.equal(rows[1]?.phone, "40 55 20 75");
+    assert.equal(rows[2]?.phone, "40 56 41 16");
     assert.match(rows[1]?.saturday ?? "", /à confirmer/);
 
     const otherWeekend = {
