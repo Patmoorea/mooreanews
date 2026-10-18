@@ -10,12 +10,12 @@ import {
   type GardeSeasonBand,
 } from "@/data/garde-seasonal-calendar";
 
-export const GARDE_WEEKEND_POSTER_SIZE = { width: 1080, height: 1920 } as const;
+export const GARDE_WEEKEND_POSTER_SIZE = { width: 1080, height: 1620 } as const;
 
 /** Change quand le gabarit change, pour que le cron réécrive une URL d'article neuve. */
-export const GARDE_POSTER_REVISION = "editorial1920";
+export const GARDE_POSTER_REVISION = "maquette1620";
 
-export const GARDE_IMAGE_CREDIT = "Médecin : tableau de l'Ordre des médecins.";
+export const GARDE_IMAGE_CREDIT = "Source médecin : tableau de l'Ordre des médecins";
 
 const MONTHS = [
   "janvier",
@@ -66,6 +66,12 @@ export type GardeHourRow = {
   hours: string;
 };
 
+export type GardePosterDayCard = {
+  /** Ex. « Samedi 17 octobre ». */
+  label: string;
+  hours: string;
+};
+
 export type GardePosterPharmacyRow = {
   id: string;
   name: string;
@@ -101,6 +107,24 @@ export function gardeDateColumn(validFrom: string, validTo: string): GardeDateCo
     days: sameDay ? [dayNumber(validFrom)] : [dayNumber(validFrom), dayNumber(validTo)],
     month: sameDay || fromMonth === toMonth ? fromMonth : `${fromMonth} / ${toMonth}`,
   };
+}
+
+function dayCard(iso: string, hours: string | undefined): GardePosterDayCard {
+  return {
+    label: `${weekdayName(iso)} ${dayNumber(iso)} ${monthName(iso)}`,
+    hours: hours?.trim() ?? "",
+  };
+}
+
+/** Deux cartes samedi / dimanche, ou une seule si la garde tient sur un jour. */
+export function gardePosterDayCards(snap: GardePosterInput): GardePosterDayCard[] {
+  if (snap.validFrom === snap.validTo) {
+    return [dayCard(snap.validFrom, snap.doctorHours?.saturday || snap.doctorHours?.sunday)];
+  }
+  return [
+    dayCard(snap.validFrom, snap.doctorHours?.saturday),
+    dayCard(snap.validTo, snap.doctorHours?.sunday),
+  ];
 }
 
 export function gardeHourRows(snap: GardePosterInput): GardeHourRow[] {
@@ -143,11 +167,17 @@ export function gardeOnDutyPharmacyId(snap: GardePosterInput): string | null {
   return duty.pharmacyId;
 }
 
+const POSTER_PHARMACY_NAMES: Record<string, string> = {
+  "pharmacie-moorea-afareaitu": "Pharmacie d'Afareaitu",
+  "pharmacie-tran-moorea": "Pharmacie Tran (Paopao)",
+  "pharmacie-moorea-haapiti": "Pharmacie de Haapiti",
+};
+
 export function gardePharmacyRows(snap: GardePosterInput): GardePosterPharmacyRow[] {
   const onDutyId = gardeOnDutyPharmacyId(snap);
   return MOOREA_PHARMACIES.map((pharmacy) => ({
     id: pharmacy.id,
-    name: pharmacy.name,
+    name: POSTER_PHARMACY_NAMES[pharmacy.id] ?? pharmacy.name,
     phone: pharmacy.phone,
     saturday: pharmacy.saturdayUnconfirmed
       ? `${pharmacy.saturday} (à confirmer)`
