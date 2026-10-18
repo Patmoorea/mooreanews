@@ -2,7 +2,7 @@
  * Affiche garde week-end MooreaNews (1080×1620, Satori / next/og).
  * Gabarit bleu et blanc : paysage, cartes de dates, pilule téléphone,
  * trois pharmacies. Le rose n'est pas codé ici : il vient du bandeau
- * Octobre Rose (calendrier) et de l'illustration de ce seul mois.
+ * Octobre Rose (calendrier). Le ruban et la silhouette sont des SVG.
  */
 
 import { readFile } from "node:fs/promises";
@@ -38,36 +38,42 @@ const MUTED = "#4E7194";
 const WAVE = "#D6EEF8";
 
 const WIDTH = GARDE_WEEKEND_POSTER_SIZE.width;
+const HEADER_H = 312;
+const PHOTO_H = 248;
 
 export type GardePosterImages = {
   banner: string;
   hibiscus: string;
   frangipani: string;
   palm: string;
-  roseRibbon: string;
-  roseFigure: string;
 };
 
 function up(value: string): string {
   return value.toLocaleUpperCase("fr-FR");
 }
 
+function splitConfirm(value: string): { hours: string; note: string | null } {
+  const match = /^(.*?)\s*\(à confirmer\)\s*$/.exec(value);
+  if (!match?.[1]) return { hours: value, note: null };
+  return { hours: match[1].trim(), note: "(à confirmer)" };
+}
+
 function LogoMark() {
   return (
-    <svg width={92} height={92} viewBox="0 0 92 92">
-      <circle cx="46" cy="46" r="44" fill={BLUE} />
+    <svg width={108} height={108} viewBox="0 0 108 108">
+      <circle cx="54" cy="54" r="52" fill={BLUE} />
       <path
-        d="M16 54 C28 34 40 40 48 50 C56 60 68 48 78 36"
+        d="M18 62 C34 38 48 46 58 58 C68 70 82 56 92 42"
         fill="none"
         stroke={WHITE}
-        strokeWidth={8}
+        strokeWidth={9}
         strokeLinecap="round"
       />
       <path
-        d="M14 66 C30 50 44 58 54 66 C64 74 74 62 82 52"
+        d="M16 76 C36 56 52 66 64 76 C76 86 88 72 96 60"
         fill="none"
         stroke={WHITE}
-        strokeWidth={6}
+        strokeWidth={7}
         strokeLinecap="round"
       />
     </svg>
@@ -87,46 +93,46 @@ function Heart({ color, size }: { color: string; size: number }) {
 
 function StethoscopeMark() {
   return (
-    <svg width={108} height={108} viewBox="0 0 108 108">
-      <circle cx="54" cy="54" r="52" fill={BLUE} />
+    <svg width={124} height={124} viewBox="0 0 124 124">
+      <circle cx="62" cy="62" r="60" fill={BLUE} />
       <path
-        d="M36 28 v18 c0 12 6 18 18 18 s18-6 18-18 V28"
+        d="M40 32 v22 c0 14 8 22 22 22 s22-8 22-22 V32"
         fill="none"
         stroke={WHITE}
-        strokeWidth={5}
+        strokeWidth={6}
         strokeLinecap="round"
       />
-      <circle cx="36" cy="26" r="5" fill={WHITE} />
-      <circle cx="72" cy="26" r="5" fill={WHITE} />
-      <path d="M54 64 v10" stroke={WHITE} strokeWidth={5} strokeLinecap="round" />
-      <circle cx="54" cy="82" r="9" fill="none" stroke={WHITE} strokeWidth={5} />
-      <path d="M84 40 v14 M77 47 h14" stroke={WHITE} strokeWidth={4} strokeLinecap="round" />
+      <circle cx="40" cy="30" r="6" fill={WHITE} />
+      <circle cx="84" cy="30" r="6" fill={WHITE} />
+      <path d="M62 76 v12" stroke={WHITE} strokeWidth={6} strokeLinecap="round" />
+      <circle cx="62" cy="98" r="11" fill="none" stroke={WHITE} strokeWidth={6} />
+      <path d="M98 46 v16 M90 54 h16" stroke={WHITE} strokeWidth={5} strokeLinecap="round" />
     </svg>
   );
 }
 
-function CalendarIcon() {
+function CalendarIcon({ size }: { size: number }) {
   return (
-    <svg width={28} height={28} viewBox="0 0 32 32">
-      <rect x="4" y="7" width="24" height="20" rx="3" fill="none" stroke={CYAN_DEEP} strokeWidth={2.4} />
-      <path d="M4 13 h24" stroke={CYAN_DEEP} strokeWidth={2.4} />
-      <path d="M11 4 v6 M21 4 v6" stroke={CYAN_DEEP} strokeWidth={2.4} strokeLinecap="round" />
+    <svg width={size} height={size} viewBox="0 0 32 32">
+      <rect x="3" y="6" width="26" height="22" rx="3" fill="none" stroke={CYAN_DEEP} strokeWidth={2.6} />
+      <path d="M3 13 h26" stroke={CYAN_DEEP} strokeWidth={2.6} />
+      <path d="M11 3 v7 M21 3 v7" stroke={CYAN_DEEP} strokeWidth={2.6} strokeLinecap="round" />
     </svg>
   );
 }
 
-function ClockIcon() {
+function ClockIcon({ size }: { size: number }) {
   return (
-    <svg width={28} height={28} viewBox="0 0 32 32">
-      <circle cx="16" cy="16" r="11" fill="none" stroke={CYAN_DEEP} strokeWidth={2.4} />
-      <path d="M16 10 v7 l5 3" fill="none" stroke={CYAN_DEEP} strokeWidth={2.4} strokeLinecap="round" />
+    <svg width={size} height={size} viewBox="0 0 32 32">
+      <circle cx="16" cy="16" r="12" fill="none" stroke={CYAN_DEEP} strokeWidth={2.6} />
+      <path d="M16 9 v8 l5 3" fill="none" stroke={CYAN_DEEP} strokeWidth={2.6} strokeLinecap="round" />
     </svg>
   );
 }
 
 function PinIcon() {
   return (
-    <svg width={36} height={36} viewBox="0 0 32 32">
+    <svg width={46} height={46} viewBox="0 0 32 32">
       <path
         d="M16 3 C10 3 6 8 6 13 c0 8 10 16 10 16 s10-8 10-16 c0-5-4-10-10-10 z"
         fill={CYAN_DEEP}
@@ -136,9 +142,9 @@ function PinIcon() {
   );
 }
 
-function PhoneIcon({ color }: { color: string }) {
+function PhoneIcon({ color, size }: { color: string; size: number }) {
   return (
-    <svg width={34} height={34} viewBox="0 0 32 32">
+    <svg width={size} height={size} viewBox="0 0 32 32">
       <path
         d="M8 6 h5 l2 5 -3 2 a12 12 0 0 0 7 7 l2-3 5 2 v5 c0 1-1 3-3 3 C12 27 5 18 5 9 c0-2 1-3 3-3 z"
         fill={color}
@@ -149,7 +155,7 @@ function PhoneIcon({ color }: { color: string }) {
 
 function GreenCross() {
   return (
-    <svg width={34} height={34} viewBox="0 0 36 36">
+    <svg width={36} height={36} viewBox="0 0 36 36">
       <rect x="13" y="2" width="10" height="32" rx="2" fill={GREEN} />
       <rect x="2" y="13" width="32" height="10" rx="2" fill={GREEN} />
     </svg>
@@ -158,7 +164,7 @@ function GreenCross() {
 
 function HeaderCross() {
   return (
-    <svg width={36} height={36} viewBox="0 0 36 36">
+    <svg width={40} height={40} viewBox="0 0 36 36">
       <circle cx="18" cy="18" r="16" fill={WHITE} />
       <rect x="15" y="8" width="6" height="20" rx="1" fill={PHARM} />
       <rect x="8" y="15" width="20" height="6" rx="1" fill={PHARM} />
@@ -166,20 +172,99 @@ function HeaderCross() {
   );
 }
 
+function AwarenessRibbon({ color }: { color: string }) {
+  return (
+    <svg width={68} height={82} viewBox="0 0 68 82">
+      <path
+        d="M34 4 C26 14 6 16 8 34 C10 46 22 44 30 34 C22 48 14 60 18 78 L30 60 L34 68 L38 60 L50 78 C54 60 46 48 38 34 C46 44 58 46 60 34 C62 16 42 14 34 4 Z"
+        fill={color}
+      />
+    </svg>
+  );
+}
+
+function WomanSilhouette({ color }: { color: string }) {
+  return (
+    <svg width={90} height={84} viewBox="0 0 90 84">
+      <path d="M6 84 C16 60 30 52 46 52 C62 52 76 62 86 84 Z" fill={color} />
+      <path d="M40 48 h12 v12 H36 C36 54 38 50 40 48 Z" fill={color} />
+      <path
+        d="M60 16 C60 8 48 6 40 14 C32 8 24 14 24 22 L18 26 C16 30 20 34 26 34 C24 40 28 46 36 48 C44 52 56 48 58 40 C66 38 70 30 66 22 C70 18 68 12 60 16 Z"
+        fill={color}
+      />
+      <path d="M42 12 C58 4 74 14 70 28 C64 18 54 14 44 16 C40 12 42 12 42 12 Z" fill={color} />
+      <circle cx="16" cy="22" r="5.5" fill={color} />
+      <circle cx="24" cy="14" r="4.5" fill={color} />
+      <circle cx="9" cy="14" r="4" fill={color} />
+      <circle cx="8" cy="24" r="3.6" fill={color} />
+      <circle cx="16" cy="22" r="2" fill={WHITE} />
+    </svg>
+  );
+}
+
+function SeasonFestive({ color }: { color: string }) {
+  return (
+    <svg width={68} height={82} viewBox="0 0 68 82">
+      <path
+        d="M34 8 L42 32 H68 L47 46 L55 72 L34 56 L13 72 L21 46 L0 32 H26 Z"
+        fill={color}
+      />
+    </svg>
+  );
+}
+
+function SeasonCare({ color }: { color: string }) {
+  return (
+    <svg width={68} height={82} viewBox="0 0 68 82">
+      <circle cx="34" cy="41" r="26" fill={color} />
+      <rect x="29" y="22" width="10" height="38" rx="2" fill={WHITE} />
+      <rect x="16" y="36" width="36" height="10" rx="2" fill={WHITE} />
+    </svg>
+  );
+}
+
+function SeasonMark({ id, color }: { id: GardeSeasonId; color: string }) {
+  switch (id) {
+    case "octobre-rose":
+      return <AwarenessRibbon color={color} />;
+    case "novembre-bleu":
+      return <AwarenessRibbon color={color} />;
+    case "fetes":
+      return <SeasonFestive color={color} />;
+    case "neutral":
+      return <SeasonCare color={color} />;
+    default: {
+      const unreachable: never = id;
+      return unreachable;
+    }
+  }
+}
+
 function Header({ images }: { images: GardePosterImages }) {
   return (
-    <div style={{ display: "flex", position: "relative", width: WIDTH, height: 248 }}>
+    <div style={{ display: "flex", position: "relative", width: WIDTH, height: HEADER_H, flexShrink: 0 }}>
       <img
         src={images.banner}
         width={WIDTH}
-        height={196}
+        height={PHOTO_H}
         style={{ position: "absolute", top: 0, left: 0, objectFit: "cover" }}
       />
+      <svg
+        width={WIDTH}
+        height={64}
+        viewBox={`0 0 ${WIDTH} 64`}
+        style={{ position: "absolute", left: 0, top: PHOTO_H - 36 }}
+      >
+        <path
+          d={`M0 28 C160 58 320 4 500 30 C680 56 860 6 ${WIDTH} 26 L${WIDTH} 64 L0 64 Z`}
+          fill={WHITE}
+        />
+      </svg>
       <div
         style={{
           position: "absolute",
-          top: 18,
-          right: 36,
+          top: 22,
+          right: 32,
           display: "flex",
           flexDirection: "row",
           alignItems: "center",
@@ -189,14 +274,14 @@ function Header({ images }: { images: GardePosterImages }) {
           style={{
             display: "flex",
             fontFamily: "Pacifico",
-            fontSize: 30,
+            fontSize: 32,
             color: WHITE,
             marginRight: 8,
           }}
         >
           {"Moorea au cœur de l'info"}
         </div>
-        <Heart color={WHITE} size={18} />
+        <Heart color={WHITE} size={20} />
       </div>
       <div
         style={{
@@ -209,13 +294,13 @@ function Header({ images }: { images: GardePosterImages }) {
         }}
       >
         <LogoMark />
-        <div style={{ display: "flex", flexDirection: "column", marginLeft: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", marginLeft: 16 }}>
           <div
             style={{
               display: "flex",
               fontFamily: "Inter",
               fontWeight: 800,
-              fontSize: 40,
+              fontSize: 42,
               color: NAVY,
               lineHeight: 1,
             }}
@@ -228,8 +313,8 @@ function Header({ images }: { images: GardePosterImages }) {
               marginTop: 6,
               fontFamily: "Inter",
               fontWeight: 700,
-              fontSize: 15,
-              letterSpacing: 1.2,
+              fontSize: 16,
+              letterSpacing: 1.4,
               color: CYAN_DEEP,
             }}
           >
@@ -244,17 +329,17 @@ function Header({ images }: { images: GardePosterImages }) {
 function TitleBlock({ snap, hibiscus }: { snap: GardeMooreaSnapshot; hibiscus: string }) {
   const name = gardePosterDoctorName(snap.doctor?.name);
   return (
-    <div style={{ display: "flex", flexDirection: "column", padding: "8px 40px 0" }}>
+    <div style={{ display: "flex", flexDirection: "column", padding: "4px 36px 0", flexShrink: 0 }}>
       <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
         <StethoscopeMark />
-        <div style={{ display: "flex", flexDirection: "column", marginLeft: 18, flexGrow: 1 }}>
+        <div style={{ display: "flex", flexDirection: "column", marginLeft: 16, flexGrow: 1 }}>
           <div
             style={{
               display: "flex",
               fontFamily: "Inter",
               fontWeight: 800,
-              fontSize: 78,
-              lineHeight: 0.92,
+              fontSize: 86,
+              lineHeight: 0.9,
               color: NAVY,
               letterSpacing: 1,
             }}
@@ -265,32 +350,32 @@ function TitleBlock({ snap, hibiscus }: { snap: GardeMooreaSnapshot; hibiscus: s
             style={{
               display: "flex",
               alignSelf: "flex-start",
-              marginTop: 6,
+              marginTop: 8,
               background: CYAN,
               color: WHITE,
-              borderRadius: 18,
-              padding: "6px 22px 8px",
+              borderRadius: 20,
+              padding: "8px 26px 10px",
               fontFamily: "Inter",
               fontWeight: 800,
-              fontSize: 52,
+              fontSize: 56,
               lineHeight: 1,
-              letterSpacing: 1,
+              letterSpacing: 1.2,
             }}
           >
             DE GARDE
           </div>
         </div>
-        <img src={hibiscus} width={168} height={158} style={{ objectFit: "contain" }} />
+        <img src={hibiscus} width={176} height={166} style={{ objectFit: "contain" }} />
       </div>
       <div
         style={{
           display: "flex",
           justifyContent: "center",
-          marginTop: 4,
+          marginTop: 6,
           fontFamily: "Inter",
           fontWeight: 800,
-          fontSize: 28,
-          letterSpacing: 3,
+          fontSize: 32,
+          letterSpacing: 4,
           color: CYAN,
         }}
       >
@@ -301,33 +386,34 @@ function TitleBlock({ snap, hibiscus }: { snap: GardeMooreaSnapshot; hibiscus: s
           display: "flex",
           marginTop: 8,
           fontFamily: "Inter",
-          fontSize: 24,
+          fontSize: 26,
           color: NAVY,
         }}
       >
         MooreaNews vous informe que le
       </div>
-      <div style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", marginTop: 2 }}>
+      <div style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", alignItems: "center" }}>
         <div
           style={{
             display: "flex",
             fontFamily: "Inter",
             fontWeight: 800,
-            fontSize: 26,
+            fontSize: 28,
             color: NAVY,
           }}
         >
           {name}
         </div>
+        <div style={{ display: "flex", width: 10 }} />
         <div
           style={{
             display: "flex",
             fontFamily: "Inter",
-            fontSize: 26,
+            fontSize: 28,
             color: NAVY,
           }}
         >
-          {" assurera la permanence médicale :"}
+          assurera la permanence médicale :
         </div>
       </div>
     </div>
@@ -341,7 +427,8 @@ function DateCards({ cards }: { cards: GardePosterDayCard[] }) {
         display: "flex",
         flexDirection: "row",
         justifyContent: "center",
-        padding: "14px 28px 0",
+        padding: "16px 28px 0",
+        flexShrink: 0,
       }}
     >
       {cards.map((card, index) => (
@@ -351,25 +438,25 @@ function DateCards({ cards }: { cards: GardePosterDayCard[] }) {
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
-            width: cards.length === 1 ? 640 : 478,
-            marginLeft: index === 0 ? 0 : 16,
+            width: cards.length === 1 ? 680 : 492,
+            marginLeft: index === 0 ? 0 : 20,
             background: WHITE,
             borderWidth: 3,
             borderStyle: "solid",
             borderColor: CARD_LINE,
-            borderRadius: 22,
-            padding: "14px 18px",
+            borderRadius: 26,
+            padding: "16px 22px 18px",
           }}
         >
           <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
-            <CalendarIcon />
+            <CalendarIcon size={40} />
             <div
               style={{
                 display: "flex",
-                marginLeft: 10,
+                marginLeft: 12,
                 fontFamily: "Inter",
                 fontWeight: 800,
-                fontSize: 22,
+                fontSize: 26,
                 color: CYAN_DEEP,
               }}
             >
@@ -382,17 +469,17 @@ function DateCards({ cards }: { cards: GardePosterDayCard[] }) {
                 display: "flex",
                 flexDirection: "row",
                 alignItems: "center",
-                marginTop: 8,
+                marginTop: 10,
               }}
             >
-              <ClockIcon />
+              <ClockIcon size={40} />
               <div
                 style={{
                   display: "flex",
-                  marginLeft: 10,
+                  marginLeft: 12,
                   fontFamily: "Inter",
                   fontWeight: 800,
-                  fontSize: 32,
+                  fontSize: 38,
                   color: NAVY,
                 }}
               >
@@ -415,7 +502,8 @@ function LocationPhone({ snap }: { snap: GardeMooreaSnapshot }) {
         display: "flex",
         flexDirection: "row",
         alignItems: "center",
-        padding: "16px 40px 0",
+        padding: "18px 36px 0",
+        flexShrink: 0,
       }}
     >
       {location ? (
@@ -424,12 +512,12 @@ function LocationPhone({ snap }: { snap: GardeMooreaSnapshot }) {
           <div
             style={{
               display: "flex",
-              marginLeft: 8,
+              marginLeft: 10,
               fontFamily: "Inter",
               fontWeight: 800,
-              fontSize: 26,
+              fontSize: 28,
               color: NAVY,
-              maxWidth: 460,
+              maxWidth: 480,
             }}
           >
             {location}
@@ -445,17 +533,17 @@ function LocationPhone({ snap }: { snap: GardeMooreaSnapshot }) {
           alignItems: "center",
           background: BLUE,
           borderRadius: 999,
-          padding: "14px 32px",
+          padding: phone ? "16px 36px" : "12px 28px",
         }}
       >
-        <PhoneIcon color={WHITE} />
-        <div style={{ display: "flex", flexDirection: "column", marginLeft: 12 }}>
+        <PhoneIcon color={WHITE} size={40} />
+        <div style={{ display: "flex", flexDirection: "column", marginLeft: 14 }}>
           <div
             style={{
               display: "flex",
               fontFamily: "Inter",
               fontWeight: 800,
-              fontSize: phone ? 40 : 28,
+              fontSize: phone ? 46 : 30,
               color: WHITE,
               letterSpacing: 1,
               lineHeight: 1,
@@ -482,75 +570,7 @@ function LocationPhone({ snap }: { snap: GardeMooreaSnapshot }) {
   );
 }
 
-function SeasonRibbon({ accent }: { accent: string }) {
-  return (
-    <svg width={78} height={88} viewBox="0 0 78 88">
-      <path
-        d="M24 8 C24 8 8 18 14 40 C18 54 30 48 34 36 C38 48 50 54 54 40 C60 18 44 8 44 8"
-        fill="none"
-        stroke={accent}
-        strokeWidth={10}
-        strokeLinecap="round"
-      />
-      <path d="M30 40 L22 82 L36 62 L34 40" fill={accent} />
-      <path d="M42 40 L54 82 L40 62 L40 40" fill={accent} />
-    </svg>
-  );
-}
-
-function SeasonFestive({ accent }: { accent: string }) {
-  return (
-    <svg width={78} height={88} viewBox="0 0 78 88">
-      <path
-        d="M39 8 L46 30 H70 L51 44 L58 68 L39 54 L20 68 L27 44 L8 30 H32 Z"
-        fill={accent}
-      />
-    </svg>
-  );
-}
-
-function SeasonCare({ accent }: { accent: string }) {
-  return (
-    <svg width={78} height={88} viewBox="0 0 78 88">
-      <circle cx="39" cy="44" r="30" fill={accent} />
-      <rect x="33" y="24" width="12" height="40" rx="2" fill={WHITE} />
-      <rect x="19" y="38" width="40" height="12" rx="2" fill={WHITE} />
-    </svg>
-  );
-}
-
-function SeasonArtwork({
-  id,
-  accent,
-  images,
-}: {
-  id: GardeSeasonId;
-  accent: string;
-  images: GardePosterImages;
-}) {
-  switch (id) {
-    case "octobre-rose":
-      return (
-        <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
-          <img src={images.roseRibbon} width={78} height={86} style={{ objectFit: "contain" }} />
-          <div style={{ display: "flex", width: 8 }} />
-          <img src={images.roseFigure} width={150} height={78} style={{ objectFit: "contain" }} />
-        </div>
-      );
-    case "novembre-bleu":
-      return <SeasonRibbon accent={accent} />;
-    case "fetes":
-      return <SeasonFestive accent={accent} />;
-    case "neutral":
-      return <SeasonCare accent={accent} />;
-    default: {
-      const unreachable: never = id;
-      return unreachable;
-    }
-  }
-}
-
-function TaglineSeason({ snap, images }: { snap: GardeMooreaSnapshot; images: GardePosterImages }) {
+function TaglineSeason({ snap }: { snap: GardeMooreaSnapshot }) {
   const band = gardePosterSeason(snap.validFrom);
   return (
     <div
@@ -558,17 +578,18 @@ function TaglineSeason({ snap, images }: { snap: GardeMooreaSnapshot; images: Ga
         display: "flex",
         flexDirection: "row",
         alignItems: "center",
-        padding: "12px 36px 4px",
+        padding: "16px 32px 0",
+        flexShrink: 0,
       }}
     >
-      <div style={{ display: "flex", flexDirection: "row", alignItems: "center", flexGrow: 1 }}>
+      <div style={{ display: "flex", flexGrow: 1, flexShrink: 1, marginRight: 12 }}>
         <div
           style={{
             display: "flex",
             fontFamily: "Great Vibes",
-            fontSize: 40,
+            fontSize: 56,
             color: NAVY,
-            lineHeight: 1.1,
+            lineHeight: 1.05,
           }}
         >
           Votre santé notre priorité !
@@ -579,22 +600,20 @@ function TaglineSeason({ snap, images }: { snap: GardeMooreaSnapshot; images: Ga
           display: "flex",
           flexDirection: "row",
           alignItems: "center",
-          width: band.id === "octobre-rose" ? 520 : 420,
+          background: band.background,
+          borderRadius: 22,
+          padding: "8px 14px 10px 10px",
+          flexShrink: 0,
         }}
       >
-        {band.id === "octobre-rose" ? (
-          <img src={images.roseRibbon} width={72} height={80} style={{ objectFit: "contain" }} />
-        ) : (
-          <SeasonArtwork id={band.id} accent={band.background} images={images} />
-        )}
+        <SeasonMark id={band.id} color={band.color} />
         <div
           style={{
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            flexGrow: 1,
             marginLeft: 8,
-            marginRight: 8,
+            marginRight: band.id === "octobre-rose" ? 8 : 4,
           }}
         >
           {band.label ? (
@@ -602,8 +621,8 @@ function TaglineSeason({ snap, images }: { snap: GardeMooreaSnapshot; images: Ga
               style={{
                 display: "flex",
                 fontFamily: "Great Vibes",
-                fontSize: 36,
-                color: band.background,
+                fontSize: 34,
+                color: band.color,
                 lineHeight: 1,
               }}
             >
@@ -614,12 +633,12 @@ function TaglineSeason({ snap, images }: { snap: GardeMooreaSnapshot; images: Ga
             <div
               style={{
                 display: "flex",
-                marginTop: band.label ? 4 : 0,
+                marginTop: band.label ? 2 : 0,
                 fontFamily: "Inter",
                 fontWeight: 800,
-                fontSize: 13,
-                letterSpacing: 0.6,
-                color: NAVY,
+                fontSize: 12,
+                letterSpacing: 0.4,
+                color: band.color,
                 textAlign: "center",
               }}
             >
@@ -627,10 +646,58 @@ function TaglineSeason({ snap, images }: { snap: GardeMooreaSnapshot; images: Ga
             </div>
           ) : null}
         </div>
-        {band.id === "octobre-rose" ? (
-          <img src={images.roseFigure} width={132} height={72} style={{ objectFit: "contain" }} />
-        ) : null}
+        {band.id === "octobre-rose" ? <WomanSilhouette color={band.color} /> : null}
       </div>
+    </div>
+  );
+}
+
+function HourLine({ label, value }: { label: string; value: string }) {
+  const { hours, note } = splitConfirm(value);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", marginTop: 3 }}>
+      <div style={{ display: "flex", flexDirection: "row" }}>
+        <div
+          style={{
+            display: "flex",
+            width: 108,
+            fontFamily: "Inter",
+            fontWeight: 800,
+            fontSize: 16,
+            color: NAVY,
+          }}
+        >
+          {label}
+        </div>
+        <div
+          style={{
+            display: "flex",
+            width: 132,
+            fontFamily: "Inter",
+            fontWeight: 700,
+            fontSize: 16,
+            lineHeight: 1.2,
+            color: NAVY,
+          }}
+        >
+          {hours}
+        </div>
+      </div>
+      {note ? (
+        <div
+          style={{
+            display: "flex",
+            marginLeft: 108,
+            marginTop: 1,
+            fontFamily: "Inter",
+            fontWeight: 700,
+            fontSize: 13,
+            color: MUTED,
+          }}
+        >
+          {note}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -643,16 +710,14 @@ function PharmacyCard({ pharmacy }: { pharmacy: GardePosterPharmacyRow }) {
         flexDirection: "column",
         flexGrow: 1,
         flexBasis: 0,
-        width: 312,
         background: WHITE,
         borderWidth: 2,
         borderStyle: "solid",
         borderColor: CARD_LINE,
         borderRadius: 16,
-        padding: "12px 12px 40px",
-        marginLeft: 8,
-        marginRight: 8,
-        position: "relative",
+        padding: "12px 12px 10px",
+        marginLeft: 7,
+        marginRight: 7,
       }}
     >
       {pharmacy.onDuty ? (
@@ -679,7 +744,7 @@ function PharmacyCard({ pharmacy }: { pharmacy: GardePosterPharmacyRow }) {
           display: "flex",
           fontFamily: "Inter",
           fontWeight: 800,
-          fontSize: 16,
+          fontSize: 18,
           color: NAVY,
           lineHeight: 1.15,
         }}
@@ -687,14 +752,14 @@ function PharmacyCard({ pharmacy }: { pharmacy: GardePosterPharmacyRow }) {
         {up(pharmacy.name)}
       </div>
       <div style={{ display: "flex", flexDirection: "row", alignItems: "center", marginTop: 8 }}>
-        <PhoneIcon color={CYAN_DEEP} />
+        <PhoneIcon color={CYAN_DEEP} size={26} />
         <div
           style={{
             display: "flex",
             marginLeft: 6,
             fontFamily: "Inter",
             fontWeight: 800,
-            fontSize: 18,
+            fontSize: 22,
             color: NAVY,
           }}
         >
@@ -702,25 +767,13 @@ function PharmacyCard({ pharmacy }: { pharmacy: GardePosterPharmacyRow }) {
         </div>
       </div>
       <div style={{ display: "flex", flexDirection: "row", marginTop: 8 }}>
-        <CalendarIcon />
+        <CalendarIcon size={24} />
         <div style={{ display: "flex", flexDirection: "column", marginLeft: 6 }}>
-          <div style={{ display: "flex", fontFamily: "Inter", fontSize: 15, color: NAVY }}>
-            {`Samedi : ${pharmacy.saturday}`}
-          </div>
-          <div
-            style={{
-              display: "flex",
-              marginTop: 3,
-              fontFamily: "Inter",
-              fontSize: 15,
-              color: NAVY,
-            }}
-          >
-            {`Dimanche : ${pharmacy.sunday}`}
-          </div>
+          <HourLine label="Samedi :" value={pharmacy.saturday} />
+          <HourLine label="Dimanche :" value={pharmacy.sunday} />
         </div>
       </div>
-      <div style={{ position: "absolute", right: 10, bottom: 8, display: "flex" }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
         <GreenCross />
       </div>
     </div>
@@ -730,12 +783,11 @@ function PharmacyCard({ pharmacy }: { pharmacy: GardePosterPharmacyRow }) {
 function Pharmacies({ snap }: { snap: GardeMooreaSnapshot }) {
   const rows = gardePharmacyRows(snap);
   return (
-    <div style={{ display: "flex", flexDirection: "column", flexGrow: 1, padding: "10px 28px 0" }}>
+    <div style={{ display: "flex", flexDirection: "column", padding: "14px 28px 0", flexShrink: 0 }}>
       <div
         style={{
           display: "flex",
           flexDirection: "column",
-          flexGrow: 1,
           background: SKY,
           borderRadius: 26,
           overflow: "hidden",
@@ -761,8 +813,8 @@ function Pharmacies({ snap }: { snap: GardeMooreaSnapshot }) {
               marginLeft: 12,
               fontFamily: "Inter",
               fontWeight: 800,
-              fontSize: 30,
-              letterSpacing: 1.4,
+              fontSize: 32,
+              letterSpacing: 1.5,
               color: WHITE,
             }}
           >
@@ -774,8 +826,7 @@ function Pharmacies({ snap }: { snap: GardeMooreaSnapshot }) {
             display: "flex",
             flexDirection: "row",
             alignItems: "stretch",
-            justifyContent: "center",
-            padding: "14px 8px 18px",
+            padding: "12px 8px 12px",
           }}
         >
           {rows.map((pharmacy) => (
@@ -795,7 +846,8 @@ function Credit({ snap }: { snap: GardeMooreaSnapshot }) {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        padding: "8px 32px 2px",
+        padding: "10px 32px 0",
+        flexShrink: 0,
       }}
     >
       <div style={{ display: "flex", fontFamily: "Inter", fontSize: 16, color: MUTED }}>
@@ -819,14 +871,14 @@ function Credit({ snap }: { snap: GardeMooreaSnapshot }) {
 }
 
 function TribalBand() {
-  const marks = Array.from({ length: 18 }, (_, index) => {
-    const x = index * 62;
-    return `${x},44 ${x + 18},10 ${x + 36},44`;
+  const marks = Array.from({ length: 22 }, (_, index) => {
+    const x = 8 + index * 49;
+    return `${x},42 ${x + 16},8 ${x + 32},42`;
   });
   return (
-    <svg width={WIDTH} height={48} viewBox={`0 0 ${WIDTH} 48`}>
+    <svg width={WIDTH} height={46} viewBox={`0 0 ${WIDTH} 46`}>
       {marks.map((points) => (
-        <polygon key={points} points={points} fill="rgba(255,255,255,0.18)" />
+        <polygon key={points} points={points} fill="rgba(255,255,255,0.28)" />
       ))}
     </svg>
   );
@@ -834,59 +886,67 @@ function TribalBand() {
 
 function Footer({ images }: { images: GardePosterImages }) {
   return (
-    <div style={{ display: "flex", position: "relative", width: WIDTH, height: 214, background: FOOTER }}>
-      <svg width={WIDTH} height={46} viewBox={`0 0 ${WIDTH} 46`} style={{ position: "absolute", top: 0, left: 0 }}>
+    <div
+      style={{
+        display: "flex",
+        position: "relative",
+        width: WIDTH,
+        height: 228,
+        background: FOOTER,
+        flexShrink: 0,
+        marginTop: "auto",
+      }}
+    >
+      <svg width={WIDTH} height={52} viewBox={`0 0 ${WIDTH} 52`} style={{ position: "absolute", top: 0, left: 0 }}>
         <path
-          d={`M0,0 H${WIDTH} V18 C900,42 720,4 540,22 C360,40 180,6 0,26 Z`}
+          d={`M0 0 H${WIDTH} V16 C920 48 740 2 540 24 C340 46 160 4 0 28 Z`}
           fill={WHITE}
         />
       </svg>
       <div
         style={{
           position: "absolute",
-          left: 120,
-          right: 120,
-          top: 28,
+          left: 150,
+          right: 160,
+          top: 36,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
-          <div
-            style={{
-              display: "flex",
-              fontFamily: "Great Vibes",
-              fontSize: 36,
-              color: WHITE,
-              lineHeight: 1.1,
-            }}
-          >
-            Ensemble pour une population en bonne santé
-          </div>
+        <div
+          style={{
+            display: "flex",
+            fontFamily: "Great Vibes",
+            fontSize: 40,
+            color: WHITE,
+            lineHeight: 1.05,
+          }}
+        >
+          Ensemble pour une population en bonne santé
         </div>
-        <Heart color={WHITE} size={16} />
+        <Heart color={WHITE} size={18} />
       </div>
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 8, display: "flex" }}>
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: 6, display: "flex" }}>
         <TribalBand />
       </div>
       <img
         src={images.palm}
-        width={210}
-        height={108}
-        style={{ position: "absolute", left: -6, bottom: 0, objectFit: "contain" }}
+        width={230}
+        height={120}
+        style={{ position: "absolute", left: -8, bottom: 0, objectFit: "contain" }}
       />
       <img
         src={images.frangipani}
-        width={92}
-        height={92}
-        style={{ position: "absolute", left: 12, bottom: 4, objectFit: "contain" }}
+        width={108}
+        height={108}
+        style={{ position: "absolute", left: 8, bottom: 8, objectFit: "contain" }}
       />
-      <svg width={220} height={90} viewBox="0 0 220 90" style={{ position: "absolute", right: 8, bottom: 18 }}>
-        <path d="M0 78 L40 40 L70 62 L110 18 L150 58 L190 34 L220 70 L220 90 L0 90 Z" fill={WAVE} />
-        <path d="M150 70 C150 50 168 38 168 38 C168 38 186 50 186 70" fill="none" stroke={WHITE} strokeWidth={3} />
-        <path d="M158 46 L168 28 L178 46" fill={WHITE} />
-        <path d="M168 70 V38" stroke={WHITE} strokeWidth={3} />
+      <svg width={240} height={100} viewBox="0 0 240 100" style={{ position: "absolute", right: 6, bottom: 22 }}>
+        <path d="M0 86 L46 42 L78 66 L124 16 L168 60 L206 34 L240 72 L240 100 L0 100 Z" fill={WAVE} />
+        <path d="M168 74 C168 50 190 36 190 36 C190 36 212 50 212 74" fill="none" stroke={WHITE} strokeWidth={3} />
+        <path d="M178 48 L190 26 L202 48" fill={WHITE} />
+        <path d="M190 74 V40" stroke={WHITE} strokeWidth={3} />
       </svg>
     </div>
   );
@@ -913,7 +973,7 @@ export function GardeWeekendPosterElement({
       <TitleBlock snap={snap} hibiscus={images.hibiscus} />
       <DateCards cards={gardePosterDayCards(snap)} />
       <LocationPhone snap={snap} />
-      <TaglineSeason snap={snap} images={images} />
+      <TaglineSeason snap={snap} />
       <Pharmacies snap={snap} />
       <Credit snap={snap} />
       <Footer images={images} />
@@ -956,9 +1016,7 @@ export function loadGardePosterAssets() {
       png("hibiscus.png"),
       png("frangipani.png"),
       png("palm-leaves.png"),
-      png("octobre-rose-ribbon.png"),
-      png("octobre-rose-figure.png"),
-    ]).then(([marc, inter400, inter700, inter800, pacifico, vibes, banner, hibiscus, frangipani, palm, roseRibbon, roseFigure]) => ({
+    ]).then(([marc, inter400, inter700, inter800, pacifico, vibes, banner, hibiscus, frangipani, palm]) => ({
       fonts: [
         { name: "Marcellus", data: marc, weight: 400 as const, style: "normal" as const },
         { name: "Inter", data: inter400, weight: 400 as const, style: "normal" as const },
@@ -972,8 +1030,6 @@ export function loadGardePosterAssets() {
         hibiscus: pngDataUrl(hibiscus),
         frangipani: pngDataUrl(frangipani),
         palm: pngDataUrl(palm),
-        roseRibbon: pngDataUrl(roseRibbon),
-        roseFigure: pngDataUrl(roseFigure),
       },
     }));
   }
