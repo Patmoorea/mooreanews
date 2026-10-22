@@ -43,8 +43,19 @@ jobs:
       - name: Langue OCR Tesseract (fra)
         run: node scripts/ensure-tesseract-lang.mjs
 
+      # Lun–mer Tahiti (date +%u = 1..3) : found=false sort en code 1 et ne
+      # doit pas faire échouer le job (pas d'email d'échec). Un férié trouvé
+      # (exit 0) suit la revalidation habituelle. Jeu–dim : échec réel.
+      - name: Jour Tahiti
+        id: tahiti
+        run: |
+          dow=$(TZ=Pacific/Tahiti date +%u)
+          echo "dow=${dow}" >> "$GITHUB_OUTPUT"
+          echo "Jour Tahiti DOW=${dow} ($(TZ=Pacific/Tahiti date))"
+
       - name: Sync garde avec OCR (CI)
         id: sync
+        continue-on-error: ${{ steps.tahiti.outputs.dow == '1' || steps.tahiti.outputs.dow == '2' || steps.tahiti.outputs.dow == '3' }}
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
