@@ -468,10 +468,25 @@ async function resolveSnapshotForSync(): Promise<GardeMooreaSnapshot | null> {
     file && isGardeWeekRelevant(now, file.validFrom, file.validTo) ? file : null;
 
   const coppf = await fetchCoppfGardeSnapshot(now).catch(() => null);
-  const best = pickBestGardeSnapshot(
+  let best = pickBestGardeSnapshot(
     [coppf, live, fileCandidate].filter(Boolean) as GardeMooreaSnapshot[],
     now,
   );
+  // Aucune source pour le week-end courant : squelette daté pour lancer les
+  // secours OCR (Ordre 987, TNTV, Commune) ; la validation reste obligatoire.
+  if (!best || !isGardeWeekRelevant(now, best.validFrom, best.validTo)) {
+    const wk = inferWeekendFromPostDate(now.toISOString());
+    if (wk && isPlausibleGardeDates(wk.validFrom, wk.validTo, now)) {
+      best = {
+        validFrom: wk.validFrom,
+        validTo: wk.validTo,
+        label: wk.label,
+        doctor: null,
+        pharmacy: null,
+        syncedAt: now.toISOString(),
+      } as GardeMooreaSnapshot;
+    }
+  }
 
   if (!best) return null;
 
