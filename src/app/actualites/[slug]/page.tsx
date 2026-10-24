@@ -14,7 +14,7 @@ import { getArticleBySlug, getArticles } from "@/lib/content";
 import { formatDateFR } from "@/lib/utils";
 import { newsArticleJsonLd, absoluteUrl } from "@/lib/seo";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 type Props = {
   params: Promise<{ slug: string }>;

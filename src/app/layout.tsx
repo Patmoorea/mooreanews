@@ -95,11 +95,11 @@ export const metadata: Metadata = {
 
 /**
  * Plancher ISR de tout le site (chaque page hérite au plus de cette valeur).
- * 1 h : les crons/admin revalident déjà à la demande les pages qui changent.
+ * 24 h : les crons/admin revalident déjà à la demande les pages qui changent.
  * (600 s régénérait chaque page visitée — articles compris — toutes les 10 min
  * → quota « ISR Writes » + « Fluid Active CPU » du plan gratuit épuisé.)
  */
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export function generateViewport(): Viewport {
   const season = activeSeason();
