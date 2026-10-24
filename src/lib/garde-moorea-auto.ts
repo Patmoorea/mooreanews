@@ -19,6 +19,7 @@ import {
   type ParsedGardeWeekend,
   type GardePharmacyHours,
 } from "@/lib/garde-announcement-parse";
+import { fetchExtraGardeImages } from "@/lib/garde-extra-sources";
 import { fetchGardeFromImportedArticles } from "@/lib/garde-site-articles";
 import {
   COPPF_MEDECINS_GARDE_URL,
@@ -535,8 +536,9 @@ async function enrichFromPosterOcr(
   const now = new Date();
   const want = expectedWeekend(now);
   const communePosts = await listRecentCommuneGardePosts();
+  const extraImages = await fetchExtraGardeImages(want.validFrom, want.validTo).catch(() => []);
 
-  if (!urls.length && !communePosts.length) {
+  if (!urls.length && !communePosts.length && !extraImages.length) {
     return { snap, ocrUsed: false, ocrError: "aucune image affiche" };
   }
 
@@ -559,6 +561,22 @@ async function enrichFromPosterOcr(
           if (working.officialCheck) break;
         } else if (!ocrError) {
           ocrError = ocr.error ?? `ocr vide (${url.slice(0, 80)})`;
+        }
+      }
+
+      // Secours : Ordre des médecins 987 / TNTV (images du week-end attendu).
+      if (!isGoodForWeekend(working)) {
+        for (const img of extraImages) {
+          const ocr = await session.recognizeImageUrl(img.url);
+          if (!ocr.ok || !ocr.text) continue;
+          const base: GardeMooreaSnapshot = { ...snap, validFrom: want.validFrom, validTo: want.validTo };
+          const cand = mergeGardeOcrIntoSnapshot(base, ocr.text);
+          if (isGoodForWeekend(cand)) {
+            working = { ...cand, communePosterUrl: null };
+            ocrUsed = true;
+            ocrError = undefined;
+            break;
+          }
         }
       }
 
