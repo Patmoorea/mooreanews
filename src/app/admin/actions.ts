@@ -235,14 +235,14 @@ function adminPathFor(table: TableName): string {
 
 function revalidateArticlePublicPaths(slug?: string) {
   revalidatePath("/actualites");
-  revalidatePath("/", "layout");
+  revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
   if (slug) revalidatePath(`/actualites/${slug}`);
 }
 
 function revalidateAlertPublicPaths() {
   revalidatePath("/alertes");
   revalidatePath("/api/alerts");
-  revalidatePath("/", "layout");
+  revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
 }
 
 async function dispatchAlertNotifications(alert: AlertRow) {
@@ -313,7 +313,7 @@ export async function createContent(table: TableName, formData: FormData) {
   revalidatePath(adminPathFor(table));
   revalidatePath(publicPathFor(table));
   if (table === "events" || table === "announcements") {
-    revalidatePath("/", "layout");
+    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
   }
   if (table === "accommodations") {
     revalidatePath("/visiteurs");
@@ -690,7 +690,7 @@ export async function approveSubmission(id: string, formData: FormData) {
   revalidatePath("/admin/submissions");
   revalidatePath("/evenements");
   revalidatePath("/annonces");
-  revalidatePath("/", "layout");
+  revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
 }
 
 export async function rejectSubmission(id: string, formData: FormData) {

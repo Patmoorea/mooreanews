@@ -8,7 +8,7 @@
       "includeFiles": "node_modules/tesseract.js-core/**"
     },
     "src/app/api/cron/ai/route.ts": {
-      "memory": 1024,
+      "memory": 512,
       "maxDuration": 120
     },
     "src/app/api/cron/daily/route.ts": {
@@ -17,11 +17,11 @@
       "includeFiles": "node_modules/tesseract.js-core/**"
     },
     "src/app/api/cron/aggregate/route.ts": {
-      "memory": 1024,
+      "memory": 512,
       "maxDuration": 300
     },
     "src/app/api/cron/facebook/route.ts": {
-      "memory": 1024,
+      "memory": 512,
       "maxDuration": 300
     },
     "src/app/api/cron/te-ito-rau/route.ts": {
@@ -29,15 +29,15 @@
       "maxDuration": 120
     },
     "src/app/api/cron/weekly-recap/route.ts": {
-      "memory": 1024,
+      "memory": 512,
       "maxDuration": 300
     },
     "src/app/api/cron/weekly-newsletter/route.ts": {
-      "memory": 1024,
+      "memory": 512,
       "maxDuration": 300
     },
     "src/app/api/cron/discover-weekend-events/route.ts": {
-      "memory": 1024,
+      "memory": 512,
       "maxDuration": 300
     }
   }

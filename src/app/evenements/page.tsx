@@ -12,7 +12,7 @@ import { listingPageMetadata } from "@/lib/seo";
 import { PosterImage } from "@/components/PosterImage";
 import { hasPoster } from "@/lib/has-poster";
 
-export const revalidate = 900;
+export const revalidate = 1800;
 
 export const metadata = listingPageMetadata({
   title: "Agenda des événements à Moorea",

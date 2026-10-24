@@ -1,9 +1,9 @@
-# Surveillance MooreaNews toutes les 5 min → alerte Telegram si panne.
+# Surveillance MooreaNews toutes les 30 min → alerte Telegram si panne.
 name: Site health MooreaNews
 
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "*/30 * * * *"
   workflow_dispatch:
 
 concurrency:

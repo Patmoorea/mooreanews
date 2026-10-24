@@ -34,6 +34,8 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
+    // Pas d'optimisation Vercel (quota gratuit 5K) : images servies telles quelles.
+    unoptimized: true,
     localPatterns: [
       { pathname: "/images/**" },
       { pathname: "/brand/**" },

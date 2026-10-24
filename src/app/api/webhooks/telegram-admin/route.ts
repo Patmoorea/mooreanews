@@ -51,7 +51,7 @@ export async function POST(req: Request) {
       onPublished: async ({ slug, title }) => {
         revalidatePath("/actualites");
         revalidatePath(`/actualites/${slug}`);
-        revalidatePath("/", "layout");
+        revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
         await notifyPublicNewArticles([{ slug, title }]);
       },
     });
