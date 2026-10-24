@@ -47,12 +47,16 @@ export function articlePath(a: Pick<Article, "slug" | "title">): string {
 // Garde week-end : seule la plus récente est listée / indexée.
 // ---------------------------------------------------------------------------
 
-export function isGardeArticle(a: Pick<Article, "slug">): boolean {
-  return a.slug.startsWith("garde-moorea") || a.slug.startsWith("garde-weekend");
+const GARDE_RE = /^garde-(moorea|week-?end)/;
+
+/** Article de garde : slug auto (garde-moorea-*) ou import Facebook titré « Garde week-end … ». */
+export function isGardeArticle(a: Pick<Article, "slug"> & { title?: string }): boolean {
+  if (GARDE_RE.test(a.slug)) return true;
+  return typeof a.title === "string" && GARDE_RE.test(titleSlug(a.title));
 }
 
 /** Slug de l'article de garde le plus récent (liste triée ou non). */
-export function latestGardeSlug(articles: Pick<Article, "slug" | "publishedAt">[]): string | null {
+export function latestGardeSlug(articles: (Pick<Article, "slug" | "publishedAt"> & { title?: string })[]): string | null {
   let best: { slug: string; t: number } | null = null;
   for (const a of articles) {
     if (!isGardeArticle(a)) continue;
@@ -63,7 +67,7 @@ export function latestGardeSlug(articles: Pick<Article, "slug" | "publishedAt">[
 }
 
 /** Retire des listes les anciennes gardes (garde la plus récente uniquement). */
-export function withoutStaleGarde<T extends Pick<Article, "slug" | "publishedAt">>(
+export function withoutStaleGarde<T extends Pick<Article, "slug" | "publishedAt"> & { title?: string }>(
   articles: T[],
 ): T[] {
   const latest = latestGardeSlug(articles);
@@ -98,7 +102,7 @@ export function rssSourceUrl(a: Pick<Article, "slug" | "body">): string | null {
 
 /** Article à exclure des sitemaps (doublon / périmé / reprise). */
 export function excludeFromSitemap(
-  a: Pick<Article, "slug">,
+  a: Pick<Article, "slug"> & { title?: string },
   latestGarde: string | null,
 ): boolean {
   if (isRssCopy(a)) return true;

@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  isGardeArticle,
   facebookPostIdFromPublicSlug,
   publicArticleSlug,
   rssSourceUrl,
@@ -34,4 +35,9 @@ test("garde : seule la plus récente", () => {
     { slug: "garde-moorea-b", publishedAt: "2026-10-17" },
   ]);
   assert.deepEqual(out.map((a) => a.slug), ["x", "garde-moorea-b"]);
+});
+
+test("garde week-end importée de Facebook détectée par le titre", () => {
+  assert.equal(isGardeArticle({ slug: "mooreanews-fb-350029589936-1844810040193318", title: "🩺 Garde week-end Moorea samedi 05" }), true);
+  assert.equal(isGardeArticle({ slug: "mooreanews-fb-350029589936-1902101807797474", title: "Maison de quartier de Papetoai" }), false);
 });
