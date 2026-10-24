@@ -8,7 +8,7 @@
 import path from "path";
 import { access } from "fs/promises";
 import { unstable_cache } from "next/cache";
-import { listMooreaNewsGraphPosts } from "@/lib/facebook-watch";
+import { listCommuneMooreaGraphPosts, listMooreaNewsGraphPosts } from "@/lib/facebook-watch";
 import {
   inferWeekendFromPostDate,
   isGardeImagePost,
@@ -211,8 +211,9 @@ function parseOwnFacebookPostToSnapshot(
     permalink_url?: string;
     full_picture?: string;
   },
+  allowCommune = false,
 ): GardeMooreaSnapshot | null {
-  if (isCommuneGardeSourceUrl(post.permalink_url)) return null;
+  if (!allowCommune && isCommuneGardeSourceUrl(post.permalink_url)) return null;
   const msg = post.message ?? "";
   const picture = post.full_picture?.trim() || null;
   let parsed = parseGardePost(msg, post.created_time);
@@ -278,14 +279,56 @@ async function fetchGardeFromFacebookPages(): Promise<GardeMooreaSnapshot | null
   return pickBestGardeSnapshot(candidates, now);
 }
 
+type CommuneGardePost = { message: string; picture: string | null; createdTime?: string };
+
+/** Publications récentes de la page Commune de Moorea (secours si COPPF absent). */
+async function listRecentCommuneGardePosts(): Promise<CommuneGardePost[]> {
+  const posts = await listCommuneMooreaGraphPosts().catch(() => []);
+  const cutoff = Date.now() - 10 * 86400000;
+  const out: CommuneGardePost[] = [];
+  for (const post of posts) {
+    const t = Date.parse(post.created_time ?? "");
+    if (t && t < cutoff) continue;
+    const msg = post.message ?? "";
+    if (!/garde|m[ée]decin|pharmacie/i.test(msg)) continue;
+    out.push({ message: msg, picture: post.full_picture?.trim() || null, createdTime: post.created_time });
+  }
+  return out;
+}
+
+/** Secours Commune : uniquement le week-end courant, dates plausibles. */
+async function fetchGardeFromCommunePage(now = new Date()): Promise<GardeMooreaSnapshot | null> {
+  const posts = await listCommuneMooreaGraphPosts();
+  const cutoff = Date.now() - 10 * 86400000;
+  const candidates: GardeMooreaSnapshot[] = [];
+  for (const post of posts) {
+    const t = Date.parse(post.created_time ?? "");
+    if (t && t < cutoff) continue;
+    const snap = parseOwnFacebookPostToSnapshot(post, true);
+    if (!snap) continue;
+    if (!isPlausibleGardeDates(snap.validFrom, snap.validTo, now)) continue;
+    if (!isGardeWeekRelevant(now, snap.validFrom, snap.validTo)) continue;
+    candidates.push({ ...snap, posterImageUrl: null });
+  }
+  return pickBestGardeSnapshot(candidates, now);
+}
+
 export async function fetchLiveGardeMooreaSnapshot(): Promise<GardeMooreaSnapshot | null> {
+  const now = new Date();
   const [coppf, site, fb] = await Promise.all([
     fetchCoppfGardeSnapshot().catch(() => null),
     fetchGardeFromImportedArticles().catch(() => null),
     fetchGardeFromFacebookPages().catch(() => null),
   ]);
   const candidates = [coppf, site, fb].filter(Boolean) as GardeMooreaSnapshot[];
-  return pickBestGardeSnapshot(candidates);
+  const hasCurrent = candidates.some(
+    (c) => Boolean(c.doctor?.name) && isGardeWeekRelevant(now, c.validFrom, c.validTo),
+  );
+  if (!hasCurrent) {
+    const commune = await fetchGardeFromCommunePage(now).catch(() => null);
+    if (commune) candidates.push(commune);
+  }
+  return pickBestGardeSnapshot(candidates, now);
 }
 
 const getCachedLiveGarde = unstable_cache(
@@ -489,13 +532,22 @@ async function enrichFromPosterOcr(
   addOfficial(coppfMeta?.imageUrl);
   for (const img of coppfImages) addOfficial(img.imageUrl);
 
-  if (!urls.length) {
+  const now = new Date();
+  const want = expectedWeekend(now);
+  const communePosts = await listRecentCommuneGardePosts();
+
+  if (!urls.length && !communePosts.length) {
     return { snap, ocrUsed: false, ocrError: "aucune image affiche" };
   }
 
   let ocrUsed = false;
   let ocrError: string | undefined;
   let working = snap;
+  const isGoodForWeekend = (s: GardeMooreaSnapshot) =>
+    Boolean(s.doctor?.name) &&
+    isMooreaGardeDoctor(s.doctor) &&
+    s.validFrom === want.validFrom &&
+    isPlausibleGardeDates(s.validFrom, s.validTo, now);
 
   try {
     await withGardeOcrSession(async (session) => {
@@ -507,6 +559,30 @@ async function enrichFromPosterOcr(
           if (working.officialCheck) break;
         } else if (!ocrError) {
           ocrError = ocr.error ?? `ocr vide (${url.slice(0, 80)})`;
+        }
+      }
+
+      // Secours : affiche de la Commune de Moorea (COPPF sans tableau du week-end).
+      if (!isGoodForWeekend(working)) {
+        for (const post of communePosts) {
+          let text = post.message;
+          if (post.picture) {
+            const ocr = await session.recognizeImageUrl(post.picture);
+            if (ocr.ok && ocr.text) text = `${text}\n${ocr.text}`;
+            else if (!ocrError) ocrError = ocr.error ?? "ocr commune vide";
+          }
+          const base: GardeMooreaSnapshot = { ...snap, validFrom: want.validFrom, validTo: want.validTo };
+          let cand = mergeGardeOcrIntoSnapshot(base, text);
+          if (!cand.doctor?.name) {
+            const parsed = parseGardeFromSiteContent(text, post.createdTime, Boolean(post.picture));
+            if (parsed?.doctor) cand = mergeGardeSnapshots({ ...base, ...parsed, pharmacy: null }, cand);
+          }
+          if (isGoodForWeekend(cand)) {
+            working = { ...cand, communePosterUrl: null };
+            ocrUsed = true;
+            ocrError = undefined;
+            break;
+          }
         }
       }
     });
