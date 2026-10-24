@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/Badge";
 import { getFeaturedArticles, getArticles } from "@/lib/content";
 import type { Article } from "@/lib/content-types";
 import { formatDateShortFR, timeAgo, truncate } from "@/lib/utils";
+import { articlePath } from "@/lib/article-url";
 
 export async function FeaturedArticles() {
   const [featuredAll, allArticles] = await Promise.all([
@@ -61,7 +62,7 @@ export async function FeaturedArticles() {
           {hasFeatured &&
             featured.map((a, idx) => (
             <Link
-              href={`/actualites/${a.slug}`}
+              href={articlePath(a)}
               key={a.slug}
               className={`group relative overflow-hidden rounded-3xl bg-white border border-ocean-100 shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:-translate-y-1 transition-all block ${
                 idx === 0 ? "lg:row-span-2" : ""
@@ -140,7 +141,7 @@ function ArticleHomeCard({
 }) {
   return (
     <PublicationCard
-      href={`/actualites/${a.slug}`}
+      href={articlePath(a)}
       title={a.title}
       image={a.image}
       imageAlt={`Affiche — ${a.title}`}

@@ -18,7 +18,7 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: `${origin}/sitemap.xml`,
+    sitemap: [`${origin}/sitemap.xml`, `${origin}/news-sitemap.xml`],
     host: origin,
   };
 }

@@ -15,6 +15,7 @@ import {
 import { isOptionalVeilleWarning } from "@/lib/feed-errors";
 import { getMooreaDuJour } from "@/lib/moorea-du-jour";
 import { enrichMorningBriefWithGarde, formatMorningBrief30s } from "@/lib/moorea-brief";
+import { articlePath } from "@/lib/article-url";
 
 function siteUrl(): string {
   return (
@@ -354,7 +355,7 @@ export async function notifyVeilleReport(input: {
     const base = siteUrl();
     for (const a of input.repairedArticles.slice(0, 6)) {
       lines.push(
-        `• <a href="${base}/actualites/${encodeURIComponent(a.slug)}">${escapeHtml(truncate(a.title, 80))}</a>`,
+        `• <a href="${base}${articlePath(a)}">${escapeHtml(truncate(a.title, 80))}</a>`,
       );
     }
     if (input.repairedArticles.length > 6) {
@@ -367,7 +368,7 @@ export async function notifyVeilleReport(input: {
     const base = siteUrl();
     for (const a of input.createdArticles.slice(0, 8)) {
       lines.push(
-        `• <a href="${base}/actualites/${encodeURIComponent(a.slug)}">${escapeHtml(truncate(a.title, 80))}</a>`,
+        `• <a href="${base}${articlePath(a)}">${escapeHtml(truncate(a.title, 80))}</a>`,
       );
     }
     if (input.createdArticles.length > 8) {
@@ -553,7 +554,7 @@ export async function notifyPublicNewArticles(
     const html = [
       `<b>📰 MooreaNews</b>`,
       escapeHtml(truncate(a.title, 120)),
-      `<a href="${base}/actualites/${encodeURIComponent(a.slug)}">Lire sur le site →</a>`,
+      `<a href="${base}${articlePath(a)}">Lire sur le site →</a>`,
     ].join("\n");
 
     try {

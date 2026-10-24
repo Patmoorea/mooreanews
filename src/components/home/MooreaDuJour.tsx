@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { getMooreaDuJour } from "@/lib/moorea-du-jour";
+import { articlePath } from "@/lib/article-url";
+import { formatMinutesUntil } from "@/lib/ferries";
 
 function ReadMore({ href, label }: { href: string; label: string }) {
   return (
@@ -102,7 +104,7 @@ export async function MooreaDuJour() {
                         <strong className="text-base">{d.company}</strong>{" "}
                         {d.time}
                         <span className="text-ocean-200 text-xs ml-1">
-                          ({d.minutesUntil} min)
+                          ({formatMinutesUntil(d.minutesUntil)})
                         </span>
                       </li>
                     ))}
@@ -118,7 +120,7 @@ export async function MooreaDuJour() {
                         <strong className="text-base">{d.company}</strong>{" "}
                         {d.time}
                         <span className="text-ocean-200 text-xs ml-1">
-                          ({d.minutesUntil} min)
+                          ({formatMinutesUntil(d.minutesUntil)})
                         </span>
                       </li>
                     ))}
@@ -249,7 +251,7 @@ export async function MooreaDuJour() {
                   {data.headlines.slice(0, 3).map((a) => (
                     <li key={a.slug}>
                       <Link
-                        href={`/actualites/${a.slug}`}
+                        href={articlePath(a)}
                         className="text-sm hover:text-lagon-200 transition-colors line-clamp-2"
                       >
                         {a.title}

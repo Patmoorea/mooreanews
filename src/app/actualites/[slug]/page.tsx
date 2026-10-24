@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { ArrowLeft, Calendar, User, Tag } from "lucide-react";
 import { ContentCoverImage } from "@/components/ContentCoverImage";
 import { Container } from "@/components/ui/Container";
@@ -13,6 +13,27 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { getArticleBySlug, getArticles } from "@/lib/content";
 import { formatDateFR } from "@/lib/utils";
 import { newsArticleJsonLd, absoluteUrl } from "@/lib/seo";
+import {
+  articlePath,
+  facebookPostIdFromDbSlug,
+  facebookPostIdFromPublicSlug,
+  isGardeArticle,
+  latestGardeSlug,
+  publicArticleSlug,
+  rssSourceUrl,
+} from "@/lib/article-url";
+import type { Article } from "@/lib/content-types";
+
+/** Résout un slug public (lisible ou ancien) vers l'article en base. */
+async function resolveArticle(slug: string): Promise<Article | undefined> {
+  const direct = await getArticleBySlug(slug);
+  if (direct) return direct;
+  const postId = facebookPostIdFromPublicSlug(slug);
+  if (!postId) return undefined;
+  const all = await getArticles();
+  const match = all.find((a) => facebookPostIdFromDbSlug(a.slug) === postId);
+  return match ? getArticleBySlug(match.slug) : undefined;
+}
 
 export const revalidate = 86400;
 
@@ -22,13 +43,18 @@ type Props = {
 
 export async function generateStaticParams() {
   const articles = await getArticles();
-  return articles.map((a) => ({ slug: a.slug }));
+  return articles.map((a) => ({ slug: publicArticleSlug(a) }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const article = await getArticleBySlug(slug);
+  const article = await resolveArticle(decodeURIComponent(slug));
   if (!article) return { title: "Article introuvable" };
+  const sourceCanonical = rssSourceUrl(article);
+  let staleGarde = false;
+  if (isGardeArticle(article)) {
+    staleGarde = latestGardeSlug(await getArticles()) !== article.slug;
+  }
   const cover = resolveCoverImage({
     image: article.image,
     category: article.category,
@@ -37,7 +63,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: article.title,
     description: article.excerpt,
-    alternates: { canonical: `/actualites/${article.slug}` },
+    alternates: { canonical: sourceCanonical ?? articlePath(article) },
+    ...(staleGarde || (article.slug.startsWith("rss-") && !sourceCanonical)
+      ? { robots: { index: false, follow: true } }
+      : {}),
     openGraph: {
       title: article.title,
       description: article.excerpt,
@@ -51,16 +80,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ArticlePage({ params }: Props) {
-  const { slug } = await params;
-  const article = await getArticleBySlug(slug);
+  const { slug: rawSlug } = await params;
+  const slug = decodeURIComponent(rawSlug);
+  const article = await resolveArticle(slug);
   if (!article) notFound();
+  const canonicalSlug = publicArticleSlug(article);
+  if (canonicalSlug !== slug) permanentRedirect(`/actualites/${canonicalSlug}`);
 
   const all = await getArticles();
   const related = all
     .filter((a) => a.slug !== article.slug && a.category === article.category)
     .slice(0, 3);
 
-  const shareUrl = absoluteUrl(`/actualites/${article.slug}`);
+  const shareUrl = absoluteUrl(articlePath(article));
   const coverForLd = resolveCoverImage({
     image: article.image,
     category: article.category,
@@ -173,7 +205,7 @@ export default async function ArticlePage({ params }: Props) {
               {related.map((a) => (
                 <Link
                   key={a.slug}
-                  href={`/actualites/${a.slug}`}
+                  href={articlePath(a)}
                   className="group bg-white rounded-2xl border border-ocean-100 overflow-hidden hover:border-tiare-300 hover:shadow-[var(--shadow-tropical)] hover:-translate-y-1 transition-all"
                 >
                   <ContentCoverImage

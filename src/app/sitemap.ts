@@ -9,6 +9,7 @@ import {
   getRestaurants,
 } from "@/lib/content";
 import { absoluteUrl, STATIC_SITEMAP_PATHS } from "@/lib/seo";
+import { articlePath, excludeFromSitemap, latestGardeSlug } from "@/lib/article-url";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
@@ -31,13 +32,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: r.priority,
   }));
 
+  const latestGarde = latestGardeSlug(articles);
+  const dayMs = 86_400_000;
   const dynamicRoutes: MetadataRoute.Sitemap = [
-    ...articles.map((a) => ({
-      url: absoluteUrl(`/actualites/${a.slug}`),
-      lastModified: new Date(a.publishedAt),
-      changeFrequency: "monthly" as const,
-      priority: 0.7,
-    })),
+    ...articles
+      .filter((a) => !excludeFromSitemap(a, latestGarde))
+      .map((a) => {
+        const ageDays = (now.getTime() - new Date(a.publishedAt).getTime()) / dayMs;
+        return {
+          url: absoluteUrl(articlePath(a)),
+          lastModified: new Date(a.publishedAt),
+          changeFrequency: (ageDays < 2 ? "hourly" : ageDays < 14 ? "daily" : "monthly") as
+            | "hourly"
+            | "daily"
+            | "monthly",
+          priority: ageDays < 2 ? 0.9 : ageDays < 14 ? 0.75 : 0.5,
+        };
+      }),
     ...events.map((e) => ({
       url: absoluteUrl(`/evenements/${e.slug}`),
       lastModified: new Date(e.date),

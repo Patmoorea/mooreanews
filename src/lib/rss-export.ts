@@ -5,6 +5,7 @@
 import type { Article } from "@/lib/content-types";
 import { SITE } from "@/lib/constants";
 import { absoluteUrl } from "@/lib/seo";
+import { articlePath } from "@/lib/article-url";
 
 function escapeXml(value: string): string {
   return value
@@ -29,7 +30,7 @@ export function buildArticlesRssFeed(articles: Article[], limit = 50): string {
 
   const itemXml = items
     .map((a) => {
-      const link = absoluteUrl(`/actualites/${a.slug}`);
+      const link = absoluteUrl(articlePath(a));
       const desc = escapeXml(a.excerpt || a.title);
       return `<item>
   <title>${escapeXml(a.title)}</title>

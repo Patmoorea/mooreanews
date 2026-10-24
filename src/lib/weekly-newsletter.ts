@@ -22,6 +22,7 @@ import {
   type UtilityOutage,
 } from "@/lib/utility-outages-shared";
 import { getUtilityOutages } from "@/lib/utility-outages";
+import { articlePath } from "@/lib/article-url";
 
 export type WeeklyNewsletterData = {
   week: ReturnType<typeof getNextWeekRange>;
@@ -257,7 +258,7 @@ export function buildWeeklyNewsletterHtml(data: WeeklyNewsletterData): string {
   const articlesHtml = listItems(
     data.articles.map(
       (a) =>
-        `<li style="margin:0 0 8px;padding-left:14px;border-left:3px solid #38bdf8;font-size:14px"><a href="${base}/actualites/${a.slug}" style="color:#0369a1">${escapeHtml(truncateTitle(a.title))}</a></li>`,
+        `<li style="margin:0 0 8px;padding-left:14px;border-left:3px solid #38bdf8;font-size:14px"><a href="${base}${articlePath(a)}" style="color:#0369a1">${escapeHtml(truncateTitle(a.title))}</a></li>`,
     ),
     "Pas de nouvelle actu majeure — le site se met à jour en continu.",
   );
