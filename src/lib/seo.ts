@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import type { Metadata } from "next";
 import { SITE, RAI_TAHITI, GOOGLE_BUSINESS_URL, SOCIAL } from "@/lib/constants";
+import { articlePath } from "@/lib/article-url";
 
 /** Origine canonique (www.mooreanews.com en prod). */
 export function getSiteOrigin(): string {
@@ -330,7 +331,7 @@ export function newsArticleJsonLd(article: {
   tags?: string[];
   imageUrl?: string | null;
 }) {
-  const url = absoluteUrl(`/actualites/${article.slug}`);
+  const url = absoluteUrl(articlePath(article));
   const image =
     article.imageUrl?.trim().startsWith("http")
       ? article.imageUrl.trim()

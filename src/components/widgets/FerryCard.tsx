@@ -62,11 +62,13 @@ export function FerryCard() {
           label="Moorea → Tahiti"
           icon={<ArrowRight size={16} className="text-lagon-600" />}
           departures={data?.fromMoorea ?? []}
+          loading={data === null}
         />
         <FerryDirection
           label="Tahiti → Moorea"
           icon={<ArrowRight size={16} className="text-tiare-500" />}
           departures={data?.fromTahiti ?? []}
+          loading={data === null}
         />
       </div>
 
@@ -111,8 +113,10 @@ function FerryDirection({
   label,
   icon,
   departures,
+  loading = false,
 }: {
   label: string;
+  loading?: boolean;
   icon: React.ReactNode;
   departures: {
     time: string;
@@ -127,9 +131,11 @@ function FerryDirection({
         {icon}
         <span>{label}</span>
       </div>
-      {departures.length === 0 && (
-        <p className="text-sm text-ocean-500">Aucun départ aujourd&apos;hui</p>
-      )}
+      {loading ? (
+        <p className="text-sm text-ocean-500">Chargement des horaires…</p>
+      ) : departures.length === 0 ? (
+        <p className="text-sm text-ocean-500">Aucun départ prévu prochainement</p>
+      ) : null}
       <ul className="space-y-2">
         {departures.slice(0, 5).map((d, i) => (
           <li

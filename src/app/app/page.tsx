@@ -11,6 +11,7 @@ import {
 import { Logo } from "@/components/ui/Logo";
 import { getMooreaDuJour } from "@/lib/moorea-du-jour";
 import { SITE } from "@/lib/constants";
+import { articlePath } from "@/lib/article-url";
 
 export const revalidate = 3600;
 
@@ -145,7 +146,7 @@ export default async function AppPage() {
               {data.headlines.map((a) => (
                 <li key={a.slug}>
                   <a
-                    href={`${base}/actualites/${a.slug}`}
+                    href={`${base}${articlePath(a)}`}
                     className="flex items-center justify-between gap-2 text-sm hover:text-lagon-200 py-2 border-b border-white/5 last:border-0"
                   >
                     <span className="line-clamp-2">{a.title}</span>

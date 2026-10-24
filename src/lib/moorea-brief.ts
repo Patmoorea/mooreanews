@@ -6,6 +6,7 @@ import type { MooreaDuJour } from "@/lib/moorea-du-jour";
 import { humanEventTitle } from "@/lib/event-title";
 import { getHealthOnCallUncached } from "@/lib/health-on-call";
 import { tahitiParts } from "@/lib/tahiti-holidays";
+import { articlePath } from "@/lib/article-url";
 
 export function formatMorningBrief30s(d: MooreaDuJour): {
   title: string;
@@ -57,7 +58,7 @@ export function formatMorningBrief30s(d: MooreaDuJour): {
   } else if (headline) {
     eventLabel = headline.title;
     eventSlug = headline.slug;
-    linkPath = `/actualites/${headline.slug}`;
+    linkPath = articlePath(headline);
     parts.push(`📰 ${eventLabel}`);
   } else if (weekendEv) {
     eventLabel = humanEventTitle(weekendEv.title);

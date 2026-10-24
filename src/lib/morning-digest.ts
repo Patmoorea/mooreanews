@@ -7,6 +7,7 @@ import { ENV, SITE } from "@/lib/constants";
 import { escapeHtml } from "@/lib/telegram";
 import { getMooreaDuJour } from "@/lib/moorea-du-jour";
 import { getAdminSupabase } from "@/lib/supabase/admin";
+import { articlePath } from "@/lib/article-url";
 
 export async function sendMorningDigest(): Promise<{
   sent: number;
@@ -77,7 +78,7 @@ export async function sendMorningDigest(): Promise<{
         digest.headlines.length > 0
           ? `<div style="margin:16px 0">
         <h2 style="font-size:16px">📰 À la une</h2>
-        <ul>${digest.headlines.slice(0, 3).map((a) => `<li><a href="${base}/actualites/${a.slug}">${escapeHtml(a.title)}</a></li>`).join("")}</ul>
+        <ul>${digest.headlines.slice(0, 3).map((a) => `<li><a href="${base}${articlePath(a)}">${escapeHtml(a.title)}</a></li>`).join("")}</ul>
       </div>`
           : ""
       }

@@ -6,6 +6,7 @@ import { PublicationCard } from "@/components/PublicationCard";
 import { Badge } from "@/components/ui/Badge";
 import type { Article } from "@/lib/content-types";
 import { formatDateShortFR, truncate } from "@/lib/utils";
+import { articlePath } from "@/lib/article-url";
 
 type Props = {
   articles: Article[];
@@ -81,7 +82,7 @@ export function ArticlesFilterClient({
                 <div className="sm:col-span-2 lg:col-span-3">{inlineAd}</div>
               ) : null}
               <PublicationCard
-                href={`/actualites/${a.slug}`}
+                href={articlePath(a)}
                 title={a.title}
                 image={a.image}
                 imageAlt={`Affiche — ${a.title}`}

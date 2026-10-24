@@ -10,6 +10,7 @@ import {
   getActivities,
   getInfoPratiques,
 } from "@/lib/content";
+import { articlePath } from "@/lib/article-url";
 
 export type SearchResult = {
   type: "article" | "event" | "annonce" | "restaurant" | "activite" | "info";
@@ -65,7 +66,7 @@ export async function searchAll(
     if (s > 0) {
       results.push({
         type: "article",
-        href: `/actualites/${a.slug}`,
+        href: articlePath(a),
         title: a.title,
         excerpt: a.excerpt,
         badge: "Actualité",
