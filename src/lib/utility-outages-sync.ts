@@ -38,7 +38,12 @@ export type UtilityOutagesSyncResult = {
   error?: string;
 };
 
-async function listSyncedAlerts(): Promise<AlertRow[]> {
+/**
+ * Alertes synchronisées : actives + inactives encore à venir (ends_at futur).
+ * Les inactives futures sont réactivées au lieu de créer un doublon quand une
+ * source a été momentanément indisponible.
+ */
+async function listSyncedAlerts(nowIso: string): Promise<AlertRow[]> {
   const admin = getAdminSupabase();
   if (!admin) return [];
 
@@ -46,13 +51,19 @@ async function listSyncedAlerts(): Promise<AlertRow[]> {
     .from("alerts")
     .select("*")
     .in("type", ["coupure_edt", "coupure_eau"])
-    .eq("active", true)
+    .or(`active.eq.true,ends_at.gte.${nowIso}`)
+    .order("active", { ascending: false })
     .order("created_at", { ascending: false })
-    .limit(200);
+    .limit(300);
 
   return (data ?? []).filter((a) =>
     a.details?.includes(SYNC_TAG_PREFIX),
   );
+}
+
+function sameInstant(a: string | null, b: string | null): boolean {
+  if (!a || !b) return a === b;
+  return Date.parse(a) === Date.parse(b);
 }
 
 function tahitiDateKey(d: Date = new Date()): string {
@@ -179,11 +190,12 @@ export async function syncUtilityOutages(): Promise<UtilityOutagesSyncResult> {
   }
 
   const now = new Date().toISOString();
-  const existing = await listSyncedAlerts();
+  const existing = await listSyncedAlerts(now);
   const byFp = new Map<string, AlertRow>();
   for (const row of existing) {
     const fp = extractSyncFingerprint(row.details);
-    if (fp) byFp.set(fp, row);
+    // Ligne active prioritaire, puis la plus récente (tri de la requête).
+    if (fp && !byFp.has(fp)) byFp.set(fp, row);
   }
 
   const activeFps = new Set<string>();
@@ -198,8 +210,9 @@ export async function syncUtilityOutages(): Promise<UtilityOutagesSyncResult> {
 
     if (prev) {
       const same =
+        prev.active === true &&
         prev.title === payload.title &&
-        prev.ends_at === payload.ends_at &&
+        sameInstant(prev.ends_at, payload.ends_at) &&
         prev.district === payload.district &&
         prev.urgent === payload.urgent &&
         extractSyncFingerprint(prev.details) === fp;
@@ -220,9 +233,15 @@ export async function syncUtilityOutages(): Promise<UtilityOutagesSyncResult> {
   }
 
   let cleared = 0;
+  const nowMs = Date.parse(now);
   for (const row of existing) {
+    if (!row.active) continue;
     const fp = extractSyncFingerprint(row.details);
     if (!fp || activeFps.has(fp)) continue;
+    // Coupure encore à venir : ne pas désactiver parce qu'une source
+    // (Facebook, articles, PDE…) a expiré ou échoué sur ce passage.
+    // L'expiration naturelle (ends_at passé) est gérée par expirePastAlerts.
+    if (row.ends_at && Date.parse(row.ends_at) > nowMs) continue;
     const { error } = await admin
       .from("alerts")
       .update({ active: false, updated_at: now })

@@ -18,6 +18,15 @@ function corpusNeedsOgEnrich(corpus: string): boolean {
   );
 }
 
+const OG_ENRICH_TIMEOUT_MS = 5_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise.catch(() => fallback),
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
 async function enrichCorpusFromFacebookOg(
   slug: string,
   corpus: string,
@@ -35,7 +44,11 @@ async function enrichCorpusFromFacebookOg(
 
   for (const url of candidates) {
     try {
-      const og = await fetchOpenGraph(url);
+      const og = await withTimeout(
+        fetchOpenGraph(url),
+        OG_ENRICH_TIMEOUT_MS,
+        null,
+      );
       if (!og) continue;
       const merged = cleanImportedText(`${og.title} ${og.description}`).trim();
       if (merged.length > corpus.length + 20) return merged;
@@ -64,31 +77,37 @@ export async function fetchOutagesFromArticles(): Promise<UtilityOutage[]> {
 
   if (!data?.length) return [];
 
-  const outages: UtilityOutage[] = [];
+  // En parallèle (et OG borné à 5 s) : en série, l'enrichissement Facebook
+  // dépassait le timeout global de 20 s de getUtilityOutages → [] → la sync
+  // désactivait les alertes coupures Te Ito Rau.
+  const parsed = await Promise.all(
+    data.map(async (row) => {
+      let corpus = cleanImportedText(
+        `${row.title ?? ""} ${row.excerpt ?? ""} ${row.body ?? ""}`,
+      );
+      corpus = await enrichCorpusFromFacebookOg(row.slug, corpus);
 
-  for (const row of data) {
-    let corpus = cleanImportedText(
-      `${row.title ?? ""} ${row.excerpt ?? ""} ${row.body ?? ""}`,
-    );
-    corpus = await enrichCorpusFromFacebookOg(row.slug, corpus);
-
-    const sourceLabel = row.slug.startsWith("te-ito-rau-fb-")
-      ? "Te Ito Rau — Facebook"
-      : /te ito rau|ito rau no moorea/i.test(corpus)
+      const sourceLabel = row.slug.startsWith("te-ito-rau-fb-")
         ? "Te Ito Rau — Facebook"
-        : "MooreaNews — actualités";
+        : /te ito rau|ito rau no moorea/i.test(corpus)
+          ? "Te Ito Rau — Facebook"
+          : "MooreaNews — actualités";
 
-    const source: OutageTextSource = {
-      id: `article:${row.slug}`,
-      title: cleanImportedText(row.title ?? "Coupure programmée").slice(0, 200),
-      corpus,
-      sourceUrl: `/actualites/${row.slug}`,
-      sourceLabel,
-    };
+      const source: OutageTextSource = {
+        id: `article:${row.slug}`,
+        title: cleanImportedText(row.title ?? "Coupure programmée").slice(0, 200),
+        corpus,
+        sourceUrl: `/actualites/${row.slug}`,
+        sourceLabel,
+      };
 
-    const o = outageFromText(source);
-    if (o) outages.push(o);
-  }
+      return outageFromText(source);
+    }),
+  );
+
+  const outages: UtilityOutage[] = parsed.filter(
+    (o): o is UtilityOutage => o != null,
+  );
 
   return outages;
 }
