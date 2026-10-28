@@ -1,6 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "crons": [],
+  "crons": [
+    {
+      "path": "/api/cron/te-ito-rau",
+      "schedule": "30 17 * * *"
+    }
+  ],
   "functions": {
     "src/app/api/cron/garde-weekend/route.ts": {
       "memory": 1024,
