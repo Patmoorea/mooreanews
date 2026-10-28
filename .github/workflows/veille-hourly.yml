@@ -61,6 +61,7 @@ jobs:
             fi
 
             if [ "$optional" = "1" ]; then
+              echo "::warning title=Veille ${label}::HTTP ${code} (curl exit ${curl_exit}) — étape en échec, suite de la chaîne"
               echo "Avertissement ${label} — suite de la chaîne"
               return 0
             fi
@@ -74,6 +75,12 @@ jobs:
 
           # Te Ito Rau — coupures (hors limite 1 post/h Facebook)
           run_step "Te Ito Rau" "/api/cron/te-ito-rau" "" "1" "55"
+          # Échecs silencieux coupures : HTTP 200 mais rien lu / sync KO → annotation visible
+          if grep -q '"ok":false' /tmp/veille-step.json 2>/dev/null \
+            || grep -q '"synced":false' /tmp/veille-step.json 2>/dev/null \
+            || grep -q '"postsRead":0[,}]' /tmp/veille-step.json 2>/dev/null; then
+            echo "::warning title=Coupures Te Ito Rau::sync coupures incomplète ou 0 post Te Ito Rau lu — voir la réponse ci-dessus"
+          fi
 
           # Facebook (observé ~48 s)
           run_step "FB nouveau" "/api/cron/facebook" "chain=1&newOnly=1&limit=1" "1" "75"

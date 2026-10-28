@@ -237,14 +237,17 @@ async function collectTeItoRauPostUrls(): Promise<string[]> {
 /** Importe les posts coupures Te Ito Rau via OG / mbasic (sans Graph API). */
 export async function importTeItoRauOutageArticlesFromFallback(options?: {
   userToken?: string;
-}): Promise<{ articlesCreated: number; errors: string[] }> {
+}): Promise<{ articlesCreated: number; errors: string[]; postsRead?: number }> {
   const errors: string[] = [];
   const [urls, pagePosts] = await Promise.all([
     collectTeItoRauPostUrls(),
     teItoPostsFromPublicPage(),
   ]);
+  // Diagnostic : nombre de posts coupure lus sur la page publique Te Ito Rau
+  // (0 = Facebook bloqué / page illisible depuis Vercel → échec silencieux).
+  const postsRead = pagePosts.length;
   if (urls.length === 0 && pagePosts.length === 0) {
-    return { articlesCreated: 0, errors };
+    return { articlesCreated: 0, errors, postsRead };
   }
 
   const { fetchOpenGraph } = await import("@/lib/open-graph");
@@ -289,7 +292,7 @@ export async function importTeItoRauOutageArticlesFromFallback(options?: {
   }
 
   if (posts.length === 0) {
-    return { articlesCreated: 0, errors };
+    return { articlesCreated: 0, errors, postsRead };
   }
 
   try {
@@ -304,10 +307,10 @@ export async function importTeItoRauOutageArticlesFromFallback(options?: {
       graphPageId: TE_ITO_RAU_FACEBOOK_PAGE.pageId,
     });
     errors.push(...imported.errors);
-    return { articlesCreated: imported.articlesCreated, errors };
+    return { articlesCreated: imported.articlesCreated, errors, postsRead };
   } catch (e) {
     errors.push(String(e));
-    return { articlesCreated: 0, errors };
+    return { articlesCreated: 0, errors, postsRead };
   }
 }
 
