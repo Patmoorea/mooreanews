@@ -3,6 +3,7 @@
  * seulement si une source vérifiée la nomme.
  */
 
+import type { GardeFailureCause } from "@/lib/garde-alerts";
 import { cache } from "react";
 import { revalidateTag } from "next/cache";
 import {
@@ -118,6 +119,11 @@ export async function syncHealthOnCall(
   articleUpdated?: boolean;
   articleError?: string;
   posterUrl?: string | null;
+  cause?: GardeFailureCause;
+  expected?: { validFrom: string; validTo: string };
+  validationIssues?: string[];
+  /** Médecin effectivement extrait/validé par CETTE synchro (≠ `doctor` affiché, qui peut venir d'un cache). */
+  syncedDoctor?: string | null;
 }> {
   clearHealthOnCallCache();
   const synced = await syncGardeMooreaFromCommune(options);
@@ -135,5 +141,9 @@ export async function syncHealthOnCall(
     articleUpdated: synced.articleUpdated,
     articleError: synced.articleError,
     posterUrl: synced.posterUrl,
+    cause: synced.cause,
+    expected: synced.expected,
+    validationIssues: synced.validationIssues,
+    syncedDoctor: synced.ok ? synced.doctor : null,
   };
 }

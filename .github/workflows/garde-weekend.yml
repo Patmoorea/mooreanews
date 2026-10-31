@@ -1,5 +1,6 @@
 # Garde Moorea — COPPF + OCR + affiche MooreaNews.
 # Tahiti UTC−10. OCR en CI (Tesseract) + OCR.space si clé configurée.
+# Jeu–dim : le job est ROUGE si la garde du week-end n'est pas publiée (ok:false).
 
 name: Garde week-end MooreaNews
 
@@ -11,10 +12,19 @@ on:
     - cron: "0 16 * * 4"
     - cron: "0 22 * * 4"
     - cron: "0 3 * * 5"
-    # Vendredi 6h Tahiti
+    # Vendredi 6h / 12h Tahiti
     - cron: "0 16 * * 5"
-    # Samedi 8h / Dimanche 6h Tahiti
+    - cron: "0 22 * * 5"
+    # Vendredi 14h / 17h / 20h Tahiti (= samedi 00h / 03h / 06h UTC) — l'affiche COPPF
+    # sort souvent vendredi après-midi (SEM44 : vendredi 13h52).
+    - cron: "0 0 * * 6"
+    - cron: "0 3 * * 6"
+    - cron: "0 6 * * 6"
+    # Samedi 6h / 8h / 10h Tahiti
+    - cron: "0 16 * * 6"
     - cron: "0 18 * * 6"
+    - cron: "0 20 * * 6"
+    # Dimanche 6h Tahiti
     - cron: "0 16 * * 0"
     # Secours férié midweek : lun/mar 6h et 12h Tahiti
     - cron: "0 16 * * 1,2"
@@ -43,9 +53,8 @@ jobs:
       - name: Langue OCR Tesseract (fra)
         run: node scripts/ensure-tesseract-lang.mjs
 
-      # Lun–mer Tahiti (date +%u = 1..3) : found=false sort en code 1 et ne
-      # doit pas faire échouer le job (pas d'email d'échec). Un férié trouvé
-      # (exit 0) suit la revalidation habituelle. Jeu–dim : échec réel.
+      # Lun–mer Tahiti (date +%u = 1..3) : pas de garde attendue → job vert.
+      # Jeu–dim : job ROUGE si ok:false (CI et secours Vercel).
       - name: Jour Tahiti
         id: tahiti
         run: |
@@ -55,7 +64,9 @@ jobs:
 
       - name: Sync garde avec OCR (CI)
         id: sync
-        continue-on-error: ${{ steps.tahiti.outputs.dow == '1' || steps.tahiti.outputs.dow == '2' || steps.tahiti.outputs.dow == '3' }}
+        # Le verdict (vert/rouge) est rendu par « Vérifier le résultat » : le secours
+        # Vercel peut encore publier si la CI échoue.
+        continue-on-error: true
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
@@ -88,41 +99,45 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           DOW=$(TZ=Pacific/Tahiti date +%u)
           echo "Jour Tahiti DOW=${DOW} ($(TZ=Pacific/Tahiti date))"
 
-          if [ "${{ steps.sync.outcome }}" = "success" ]; then
-            echo "Sync CI OK — médecin extrait"
+          # Le script sort en 0 UNIQUEMENT si ok:true + médecin validé et publié.
+          if [ "${{ steps.sync.outcome }}" = "success" ] && \
+             jq -e '.ok == true and .found == true and (.doctor // "") != ""' /tmp/garde-sync-result.json >/dev/null 2>&1; then
+            echo "✔ Garde publiée (CI) : $(jq -r '.doctor + " — " + (.weekend // "")' /tmp/garde-sync-result.json)"
             exit 0
+          fi
+          if [ -f /tmp/garde-sync-result.json ]; then
+            echo "CI : ok=$(jq -r '.ok' /tmp/garde-sync-result.json) cause=$(jq -r '.cause // "-"' /tmp/garde-sync-result.json)"
+            jq -r '.ocrError // empty' /tmp/garde-sync-result.json || true
           fi
 
           # Secours : appel direct Vercel (OCR.space si clé sur Vercel)
           if [ -z "${CRON_SECRET:-}" ]; then
             echo "CRON_SECRET manquant"
+            [ "$DOW" -ge 1 ] && [ "$DOW" -le 3 ] && exit 0
             exit 1
           fi
 
           url="https://www.mooreanews.com/api/cron/garde-weekend?secret=${CRON_SECRET}&force=1&wait=1"
-          code=$(curl -sS -o /tmp/garde.json -w "%{http_code}" --http1.1 --max-time 300 "$url")
+          code=$(curl -sS -o /tmp/garde.json -w "%{http_code}" --http1.1 --max-time 300 "$url" || echo "000")
           echo "Secours Vercel HTTP ${code}"
-          head -c 1200 /tmp/garde.json || true
-          echo ""
+          jq -c '{ok, found, doctor, weekend, cause, ocrError, validationIssues}' /tmp/garde.json 2>/dev/null \
+            || head -c 600 /tmp/garde.json || true
 
-          found=0
-          doctor=0
-          grep -q '"found":true' /tmp/garde.json 2>/dev/null && found=1 || true
-          grep -qE '"doctor":"[^"]+' /tmp/garde.json 2>/dev/null && doctor=1 || true
-
-          if [ "$found" = "1" ] && [ "$doctor" = "1" ]; then
-            echo "Garde OK (secours Vercel)"
+          if jq -e '.ok == true and .found == true and (.doctor // "") != ""' /tmp/garde.json >/dev/null 2>&1; then
+            echo "✔ Garde publiée (secours Vercel)"
             exit 0
           fi
 
           if [ "$DOW" -ge 1 ] && [ "$DOW" -le 3 ]; then
-            echo "found=false en milieu de semaine — normal"
+            echo "Pas de garde validée en milieu de semaine — normal"
             exit 0
           fi
 
-          echo "Garde attendue (jeu–dim) mais médecin absent"
+          cause=$(jq -r '.cause // empty' /tmp/garde.json 2>/dev/null || true)
+          [ -z "$cause" ] && cause=$(jq -r '.cause // "inconnue"' /tmp/garde-sync-result.json 2>/dev/null || echo inconnue)
+          echo "::error title=Garde Moorea non publiée::cause=${cause} (jeu–dim : garde du week-end attendue)"
           exit 1

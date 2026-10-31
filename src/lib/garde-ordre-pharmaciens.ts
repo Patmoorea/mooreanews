@@ -140,7 +140,7 @@ function scoreCoppfImageFileName(
   return score;
 }
 
-function parseCoppfGardeImagesFromHtml(html: string, now = new Date()): {
+export function parseCoppfGardeImagesFromHtml(html: string, now = new Date()): {
   url: string;
   score: number;
   postedAt?: string;
@@ -153,8 +153,10 @@ function parseCoppfGardeImagesFromHtml(html: string, now = new Date()): {
     postedAt?: string;
     dates: GardeDateRange | null;
   }[] = [];
+  // src / data-src (lazy-load) / srcset / href, http(s), avec ou sans www, JPG/PNG/WEBP
+  // (l'affiche est parfois une capture d'écran téléphone en .jpg).
   const re =
-    /src="(https:\/\/www\.ordre-pharmaciens-polynesie\.com\/wp-content\/uploads\/(\d{4})\/(\d{2})\/([^"]+\.(?:jpg|jpeg|png|webp)))"/gi;
+    /(https?:\/\/(?:www\.)?ordre-pharmaciens-polynesie\.com\/wp-content\/uploads\/(\d{4})\/(\d{2})\/([^"'\s,<>?]+\.(?:jpe?g|png|webp)))/gi;
 
   let match: RegExpExecArray | null;
   while ((match = re.exec(html)) !== null) {

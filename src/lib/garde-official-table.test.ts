@@ -5,9 +5,11 @@ import { describe, it } from "node:test";
 import {
   expectedWeekend,
   parseOfficialMooreaGarde,
+  phoneDigits,
   validateOfficialMooreaGarde,
 } from "./garde-official-table";
-import { parseCoppfMooreaGarde } from "./garde-announcement-parse";
+import { mergeGardeOcrIntoSnapshot, parseCoppfMooreaGarde } from "./garde-announcement-parse";
+import { parseCoppfGardeImagesFromHtml } from "./garde-ordre-pharmaciens";
 
 const fx = (f: string) =>
   readFileSync(path.join(__dirname, "__fixtures__/garde", f), "utf8");
@@ -81,5 +83,89 @@ describe("validation — refuse les données incohérentes", () => {
       validFrom: "2026-10-17",
       validTo: "2026-10-18",
     });
+  });
+});
+
+// SEM44 (31/10–01/11/2026, dimanche férié) : vraie affiche COPPF publiée en capture
+// d'écran JPG (Screenshot_20261031_004112_Samsung-Browser-1.jpg), n° imprimé « 87 000 800 ».
+describe("SEM44 — capture d'écran, n° groupé 2-3-3", () => {
+  for (const mode of ["table", "plain"] as const) {
+    it(`SEM44 (${mode}) : Dr FOUGEROUSE, 87 000 800, sam 12h–18h, dim/férié 8h–16h`, () => {
+      const g = parseOfficialMooreaGarde(fx(`sem44-${mode}.txt`));
+      assert.ok(g, "ligne Moorea trouvée");
+      assert.equal(g.doctorName, "Dr FOUGEROUSE Pierre-Antoine");
+      assert.equal(g.phone, "87 000 800");
+      assert.equal(g.week, 44);
+      assert.equal(g.validFrom, "2026-10-31");
+      assert.equal(g.validTo, "2026-11-01");
+      assert.equal(g.saturday, "12h00 – 18h00");
+      assert.equal(g.sunday, "8h00 – 16h00");
+      const v = validateOfficialMooreaGarde(g, new Date("2026-10-30T14:00:00-10:00"));
+      assert.deepEqual(v.issues, []);
+    });
+  }
+
+  it("merge OCR → snapshot publiable (n° + lien tel)", () => {
+    const snap = mergeGardeOcrIntoSnapshot(
+      {
+        validFrom: "2026-10-31",
+        validTo: "2026-11-01",
+        label: "",
+        doctor: null as { name: string; phone: string; phoneHref: string } | null,
+        pharmacy: null as { name: string; phone: string; phoneHref: string } | null,
+      },
+      fx("sem44-table.txt"),
+    );
+    assert.equal(snap.doctor?.name, "Dr FOUGEROUSE Pierre-Antoine");
+    assert.equal(snap.doctor?.phone, "87 000 800");
+    assert.equal(snap.doctor?.phoneHref, "tel:+68987000800");
+  });
+
+  for (const printed of ["87 000 800", "87 00 08 00", "87000800", "87.00.08.00", "87-000-800"]) {
+    it(`n° « ${printed} » accepté (8 chiffres)`, () => {
+      const txt = fx("sem44-table.txt").replace("87 000 800", printed);
+      const g = parseOfficialMooreaGarde(txt);
+      assert.ok(g);
+      assert.equal(phoneDigits(g.phone), "87000800");
+      assert.deepEqual(validateOfficialMooreaGarde(g, new Date("2026-10-31T08:00:00-10:00")).issues, []);
+    });
+  }
+
+  it("deux n° collés sur une ligne ne fusionnent pas", () => {
+    const txt = "Dr X Y\nMoorea\t40 56 15 55 87 77 75 37\nSamedi : 12h00 - 18h00";
+    const g = parseOfficialMooreaGarde(txt);
+    assert.equal(g?.phone, "40 56 15 55");
+  });
+
+  it("refuse toujours un n° à 7 ou 9 chiffres", () => {
+    const g = parseOfficialMooreaGarde(fx("sem44-table.txt"))!;
+    const now = new Date("2026-10-31T08:00:00-10:00");
+    assert.match(validateOfficialMooreaGarde({ ...g, phone: "87 000 80" }, now).issues.join(), /invalide/);
+    assert.match(validateOfficialMooreaGarde({ ...g, phone: "87 000 8001" }, now).issues.join(), /invalide/);
+  });
+});
+
+describe("COPPF — sélection de l'image du week-end", () => {
+  const base = "https://www.ordre-pharmaciens-polynesie.com/wp-content/uploads";
+  const html = [
+    `<img src="${base}/2022/07/logo-Texte-coppf.png">`,
+    `<img src="${base}/2026/10/2026_GARDES_SEM43.png">`,
+    `<img src="${base}/2026/10/Screenshot_20261031_004112_Samsung-Browser-1.jpg">`,
+    `<img src="${base}/2026/11/2026_GARDES_SEM45.webp">`,
+  ].join("\n");
+
+  it("capture d'écran JPG datée du samedi = week-end 31/10–01/11, prioritaire le vendredi", () => {
+    const list = parseCoppfGardeImagesFromHtml(html, new Date("2026-10-30T14:00:00-10:00"));
+    assert.match(list[0]!.url, /Screenshot_20261031_004112/);
+    assert.deepEqual(
+      { from: list[0]!.dates?.validFrom, to: list[0]!.dates?.validTo },
+      { from: "2026-10-31", to: "2026-11-01" },
+    );
+    assert.ok(!list.some((c) => /logo/i.test(c.url)));
+  });
+
+  it("PNG / WEBP « SEMnn » restent reconnus", () => {
+    const list = parseCoppfGardeImagesFromHtml(html, new Date("2026-11-06T14:00:00-10:00"));
+    assert.match(list[0]!.url, /SEM45\.webp$/);
   });
 });

@@ -5,44 +5,31 @@ import { cleanupGardeData, PURGED_GARDE_SLUGS } from "@/lib/garde-cleanup";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getTahitiClock, shouldSyncGardeOnVeille } from "@/lib/cron-tahiti";
 import { syncHealthOnCall } from "@/lib/health-on-call";
-import { escapeHtml, sendTelegramNotification } from "@/lib/telegram";
-import { gardeArticleSlug } from "@/lib/garde-weekend-article";
-import { COPPF_MEDECINS_GARDE_URL } from "@/lib/garde-ordre-pharmaciens";
+import { notifyGardeFailureOnce } from "@/lib/garde-alerts";
+import { expectedWeekend } from "@/lib/garde-official-table";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
+/**
+ * Alerte Telegram si la synchro n'a rien publié — 1 seule par week-end et par cause,
+ * avec la vraie raison (affiche pas encore publiée / OCR / validation / erreur).
+ * NB : COPPF ne publie pas d'affiche « pharmacie Moorea » → pas d'alerte pharmacie.
+ */
 async function notifyGardeGap(result: Awaited<ReturnType<typeof syncHealthOnCall>>) {
-  const hasDoctor = Boolean(result.doctor);
-  /**
-   * COPPF publie une affiche médecins (avec ligne Moorea) mais PAS d’affiche
-   * « pharmacie de garde Moorea ». Le site liste alors les 3 officines — ce n’est
-   * pas une panne. On n’alerte Telegram que si le médecin manque ou si aucune
-   * affiche n’a été trouvée (jeu–dim).
-   */
-  if (result.found && hasDoctor) return;
-
-  // Lun–mer : pas d’affiche WE attendue → pas d’alerte (évite le spam).
-  const clock = getTahitiClock();
-  if (clock.weekday >= 1 && clock.weekday <= 3 && !result.found) return;
-
-  const lines = [
-    "<b>⚠️ Garde week-end — sync incomplète</b>",
-    "",
-    result.found
-      ? "Affiche trouvée mais médecin non extrait (OCR trop lent ou illisible)."
-      : "Aucune affiche médecins de garde détectée (COPPF / Commune).",
-    "",
-    `Médecin : ${escapeHtml(result.doctor ?? "—")}`,
-    `Pharmacie : ${escapeHtml(result.pharmacy ?? "— (COPPF ne publie pas d’affiche Moorea → 3 officines listées)")}`,
-    result.ocrError
-      ? `OCR : ${escapeHtml(result.ocrError)}${result.ocrError.includes("timeout") ? " — réessayez dans 5 min ou relancez le cron force=1" : ""}`
-      : "",
-    "",
-    `<a href="${COPPF_MEDECINS_GARDE_URL}">COPPF — médecins de garde</a>`,
-    `<a href="https://www.mooreanews.com/admin">Admin MooreaNews</a>`,
-  ].filter(Boolean);
-  await sendTelegramNotification(lines.join("\n"));
+  if (result.ok) return;
+  const cause = result.cause ?? "erreur";
+  const weekend = result.expected ?? expectedWeekend(new Date());
+  const detail = result.validationIssues?.length
+    ? result.validationIssues.join(" ; ")
+    : result.ocrError;
+  const sent = await notifyGardeFailureOnce({
+    cause,
+    weekendFrom: weekend.validFrom,
+    weekendTo: weekend.validTo,
+    detail,
+  });
+  console.log("[garde-weekend] alerte", cause, JSON.stringify(sent));
 }
 
 async function runGardeSync() {
@@ -68,8 +55,8 @@ async function runGardeSync() {
   if (result.articleSlug) {
     revalidatePath(`/actualites/${result.articleSlug}`);
   }
-  if (!result.found || !result.doctor) {
-    await notifyGardeGap(result).catch(() => {});
+  if (!result.ok) {
+    await notifyGardeGap(result).catch((e) => console.error("[garde-weekend] alerte", e));
   }
   return result;
 }
@@ -122,7 +109,8 @@ export async function GET(req: Request) {
 
   try {
     const result = await runGardeSync();
-    const httpStatus = result.found && result.doctor ? 200 : result.ok ? 200 : 500;
+    // ok:false (rien publié pour le week-end attendu) = 500 → le workflow GitHub passe au rouge.
+    const httpStatus = result.ok ? 200 : 500;
     return NextResponse.json(
       {
         tahiti: clock.label,

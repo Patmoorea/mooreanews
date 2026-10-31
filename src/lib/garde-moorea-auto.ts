@@ -28,7 +28,13 @@ import {
   fetchCoppfGardeSnapshot,
 } from "@/lib/garde-ordre-pharmaciens";
 import { isGardeOcrEnabled, withGardeOcrSession } from "@/lib/garde-poster-ocr";
-import { expectedWeekend, validateOfficialMooreaGarde, type GardeValidation } from "@/lib/garde-official-table";
+import { classifyGardeFailure, type GardeFailureCause } from "@/lib/garde-alerts";
+import {
+  expectedWeekend,
+  phoneDigits,
+  validateOfficialMooreaGarde,
+  type GardeValidation,
+} from "@/lib/garde-official-table";
 import {
   resolveOnDutyPharmacy,
   type PharmacyDuty,
@@ -47,7 +53,10 @@ export function validateGardeBeforePublish(
   if (snap.officialCheck) {
     const v = validateOfficialMooreaGarde(snap.officialCheck, now, allow);
     // Le snapshot final doit être identique à la ligne officielle (pas de cache périmé fusionné).
-    if (snap.doctor?.phone !== snap.officialCheck.phone || snap.doctor?.name !== snap.officialCheck.doctorName) {
+    if (
+      phoneDigits(snap.doctor?.phone ?? "") !== phoneDigits(snap.officialCheck.phone) ||
+      snap.doctor?.name !== snap.officialCheck.doctorName
+    ) {
       v.issues.push("données finales ≠ ligne Moorea du tableau officiel");
       v.ok = false;
     }
@@ -511,7 +520,13 @@ async function enrichFromPosterOcr(
   snap: GardeMooreaSnapshot,
   runOcr: boolean,
   force = false,
-): Promise<{ snap: GardeMooreaSnapshot; ocrUsed: boolean; ocrError?: string }> {
+): Promise<{
+  snap: GardeMooreaSnapshot;
+  ocrUsed: boolean;
+  ocrError?: string;
+  /** Une image COPPF datée du week-end attendu est en ligne. */
+  posterForWeekend?: boolean;
+}> {
   const needsOcr =
     runOcr &&
     isGardeOcrEnabled() &&
@@ -550,11 +565,14 @@ async function enrichFromPosterOcr(
 
   const now = new Date();
   const want = expectedWeekend(now);
+  const posterForWeekend = coppfImages.some(
+    (img) => img.dates && img.dates.validFrom <= want.validTo && img.dates.validTo >= want.validFrom,
+  );
   const communePosts = await listRecentCommuneGardePosts();
   const extraImages = await fetchExtraGardeImages(want.validFrom, want.validTo).catch(() => []);
 
   if (!urls.length && !communePosts.length && !extraImages.length) {
-    return { snap, ocrUsed: false, ocrError: "aucune image affiche" };
+    return { snap, ocrUsed: false, ocrError: "aucune image affiche", posterForWeekend };
   }
 
   let ocrUsed = false;
@@ -568,16 +586,33 @@ async function enrichFromPosterOcr(
 
   try {
     await withGardeOcrSession(async (session) => {
-      for (const url of urls) {
-        const ocr = await session.recognizeImageUrl(url);
-        if (ocr.ok && ocr.text) {
-          working = mergeGardeOcrIntoSnapshot(working, ocr.text);
+      // Tableau officiel : on garde en priorité la ligne Moorea DU WEEK-END ATTENDU
+      // (avant, la 1re affiche lue — parfois celle de la semaine passée — arrêtait la boucle).
+      // Chaque image : OCR « tableau » puis, si la ligne Moorea manque, OCR texte libre.
+      const matchesWeekend = (s: GardeMooreaSnapshot) =>
+        Boolean(s.officialCheck) &&
+        (!s.officialCheck!.validFrom || s.officialCheck!.validFrom === want.validFrom);
+      let firstOfficial: GardeMooreaSnapshot | null = null;
+      outer: for (const url of urls) {
+        for (const isTable of [true, false]) {
+          const ocr = await session.recognizeImageUrl(url, { isTable });
+          if (!ocr.ok || !ocr.text) {
+            if (!ocrError) ocrError = ocr.error ?? `ocr vide (${url.slice(0, 80)})`;
+            continue;
+          }
           ocrUsed = true;
-          if (working.officialCheck) break;
-        } else if (!ocrError) {
-          ocrError = ocr.error ?? `ocr vide (${url.slice(0, 80)})`;
+          const cand = mergeGardeOcrIntoSnapshot(working, ocr.text);
+          if (!cand.officialCheck) continue;
+          if (matchesWeekend(cand)) {
+            working = cand;
+            ocrError = undefined;
+            break outer;
+          }
+          firstOfficial ??= cand;
+          break; // ligne Moorea lue mais autre semaine : image suivante
         }
       }
+      if (!matchesWeekend(working) && firstOfficial) working = firstOfficial;
 
       // Secours : Ordre des médecins 987 / TNTV (images du week-end attendu).
       if (!isGoodForWeekend(working)) {
@@ -625,7 +660,7 @@ async function enrichFromPosterOcr(
     console.error("[garde-ocr] session failed:", ocrError);
   }
 
-  return { snap: working, ocrUsed, ocrError };
+  return { snap: working, ocrUsed, ocrError, posterForWeekend };
 }
 
 export type GardeSyncOptions = {
@@ -650,6 +685,10 @@ export async function syncGardeMooreaFromCommune(
   articleError?: string;
   posterUrl?: string | null;
   validationIssues?: string[];
+  /** Cause de l'échec (ok:false) — sert aux alertes et au statut CI. */
+  cause?: GardeFailureCause;
+  /** Week-end visé par la synchro. */
+  expected?: { validFrom: string; validTo: string };
 }> {
   let snap: GardeMooreaSnapshot | null = null;
   try {
@@ -666,6 +705,8 @@ export async function syncGardeMooreaFromCommune(
       ocrUsed: false,
       posterGenerated: false,
       ocrError: msg.slice(0, 200),
+      cause: "erreur",
+      expected: expectedWeekend(new Date()),
     };
   }
 
@@ -748,7 +789,16 @@ export async function syncGardeMooreaFromCommune(
   const validation = validateGardeBeforePublish(snap, now);
   if (!validation.ok) {
     console.error("[garde] publication refusée :", validation.issues.join(" ; "));
+    const want = expectedWeekend(now);
+    const official = snap.officialCheck;
+    const cause = classifyGardeFailure({
+      posterForWeekend: Boolean(ocrEnriched.posterForWeekend),
+      officialRead: Boolean(official),
+      officialForWeekend: Boolean(official?.validFrom && official.validFrom === want.validFrom),
+    });
     return {
+      cause,
+      expected: want,
       ok: false,
       found: true,
       pharmacy: null,

@@ -40,8 +40,14 @@ async function main() {
   const { syncGardeMooreaFromCommune } = await import("../src/lib/garde-moorea-auto");
   const result = await syncGardeMooreaFromCommune({ fullWeekendPipeline: true });
   console.log(JSON.stringify(result, null, 2));
+  // Résultat lisible par le workflow (étape « Vérifier le résultat »).
+  await writeFile(
+    process.env.GARDE_RESULT_FILE || "/tmp/garde-sync-result.json",
+    JSON.stringify(result),
+    "utf8",
+  ).catch(() => {});
 
-  if (result.found && result.doctor) {
+  if (result.ok && result.found && result.doctor) {
     const snap = await readGardeMooreaFromCache();
     if (snap) {
       const filePayload = {
@@ -64,9 +70,15 @@ async function main() {
     }
   }
 
-  if (!result.found || !result.doctor) {
+  // Code de sortie = vérité : ok:false (rien de publié / refusé) ⇒ échec.
+  // Avant, un résultat ok:false avec un ancien médecin en cache sortait en 0 (« Sync CI OK »).
+  if (!result.ok || !result.found || !result.doctor) {
+    console.error(
+      `\n✖ Garde NON publiée — cause: ${result.cause ?? "inconnue"}${result.ocrError ? ` — ${result.ocrError}` : ""}`,
+    );
     process.exit(1);
   }
+  console.log(`\n✔ Garde publiée : ${result.doctor} (${result.weekend})`);
 }
 
 main().catch((err) => {

@@ -9,6 +9,7 @@ import {
   isOcrSpaceEnabled,
   ocrSpaceFromBuffer,
   ocrSpaceFromUrl,
+  type OcrSpaceOptions,
 } from "@/lib/garde-ocr-space";
 
 const MIN_TEXT_LEN = 40;
@@ -132,17 +133,24 @@ export class GardeOcrSession {
     }
   }
 
-  async recognizeBuffer(buffer: Buffer): Promise<{ text: string | null; error?: string }> {
+  async recognizeBuffer(
+    buffer: Buffer,
+    options: OcrSpaceOptions = {},
+  ): Promise<{ text: string | null; error?: string }> {
+    let onlineError: string | undefined;
     if (isOcrSpaceEnabled()) {
-      const online = await ocrSpaceFromBuffer(buffer);
+      const online = await ocrSpaceFromBuffer(buffer, options);
       if (online.ok && online.text) {
         return { text: online.text };
       }
+      onlineError = online.error;
+      if (onlineError) console.warn("[garde-ocr] OCR.space (fichier) :", onlineError);
     }
 
     const initError = await this.init();
     if (initError || !this.worker) {
-      return { text: null, error: initError ?? "worker OCR indisponible" };
+      const base = initError ?? "worker OCR indisponible";
+      return { text: null, error: onlineError ? `${base} ; OCR.space : ${onlineError}` : base };
     }
 
     try {
@@ -162,11 +170,14 @@ export class GardeOcrSession {
     }
   }
 
-  async recognizeImageUrl(imageUrl: string): Promise<GardeOcrResult> {
+  async recognizeImageUrl(
+    imageUrl: string,
+    options: OcrSpaceOptions = {},
+  ): Promise<GardeOcrResult> {
     const t0 = Date.now();
 
     if (isOcrSpaceEnabled() && imageUrl.startsWith("http")) {
-      const online = await ocrSpaceFromUrl(imageUrl);
+      const online = await ocrSpaceFromUrl(imageUrl, options);
       if (online.ok && online.text) {
         return {
           ok: true,
@@ -174,6 +185,7 @@ export class GardeOcrSession {
           durationMs: Date.now() - t0,
         };
       }
+      if (online.error) console.warn("[garde-ocr] OCR.space (url) :", online.error);
     }
 
     const buffer = await loadImageBuffer(imageUrl);
@@ -188,7 +200,7 @@ export class GardeOcrSession {
       };
     }
 
-    const result = await this.recognizeBuffer(buffer);
+    const result = await this.recognizeBuffer(buffer, options);
     return {
       ok: Boolean(result.text),
       text: result.text,

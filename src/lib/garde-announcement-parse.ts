@@ -377,7 +377,7 @@ function parseDoctorFromText(text: string): ParsedOnCall | null {
   const phoneMatch =
     text.match(
       /(?:T[ée]l\.?|Tel\.?|☎|phone|au)\s*[:\.]?\s*((?:\+689\s*)?(?:40|87|89)\s*[\d\s\.]{6,})/i,
-    ) ?? text.match(/((?:40|87|89)\s?\d{2}\s?\d{2}\s?\d{2})/);
+    ) ?? text.match(/(?<!\d)((?:40|87|89)(?:[ .\-]?\d){6})(?!\d)/);
 
   const phone = phoneMatch ? cleanPhone(phoneMatch[1]) : "";
   return {
@@ -529,7 +529,8 @@ function parseMooreaDoctorFromCoppfTable(text: string): ParsedOnCall | null {
 
   // Tel. PF type 40 XX XX XX (8 chiffres) — evite de fusionner 2 numeros.
   const phones = [
-    ...text.matchAll(/\b((?:40|87|89)(?:[ .\-]?\d{2}){3})\b/g),
+    // 8 chiffres quel que soit le regroupement (« 87 000 800 », « 87 00 08 00 »…).
+    ...text.matchAll(/(?<!\d)((?:40|87|89)(?:[ .\-]?\d){6})(?!\d)/g),
   ].map((m) => ({
     phone: cleanPhone(m[1]!),
     pos: m.index ?? 0,

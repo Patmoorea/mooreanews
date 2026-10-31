@@ -32,7 +32,11 @@ const MONTHS: Record<string, number> = {
 
 const SECTOR_RE =
   /^(secteur\s+papeete|et\s+punaa|arue|paea\b|papara|taravao|moorea\b|bora|huahine|raiatea|tahaa|rangiroa|clinique|polyclinique)/;
-const PHONE_G = /\b((?:40|87|89)(?:[ .\-]?\d{2}){3})\b/g;
+/**
+ * N° polynésien = 8 chiffres (40/87/89 + 6), quel que soit le regroupement imprimé :
+ * « 87 000 800 » (SEM44), « 87 00 08 00 », « 87000800 », « 87.00.08.00 », « 4046 1818 ».
+ */
+const PHONE_G = /(?<!\d)((?:40|87|89)(?:[ .\-]?\d){6})(?!\d)/g;
 const DOCTOR_RE = /^(?:Dr\.?\s+.+|CENTRE\s+M[ÉE]DICAL.+)$/i;
 const HOURS_RE = /samedi|dimanche|f[ée]ri|\d{1,2}h/i;
 
@@ -40,8 +44,22 @@ function strip(s: string): string {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
 
-function fmtPhone(raw: string): string {
-  return (raw.replace(/\D/g, "").match(/\d{2}/g) ?? []).join(" ");
+/** Chiffres seuls (comparaisons, validation). */
+export function phoneDigits(phone: string): string {
+  return phone.replace(/\D/g, "");
+}
+
+/**
+ * Garde le regroupement imprimé sur l'affiche (« 87 000 800 ») ; sans séparateur
+ * ou avec un regroupement bancal, retombe sur des paires (« 87 00 08 00 »).
+ */
+export function fmtPhone(raw: string): string {
+  const groups = raw.trim().split(/[ .\-]+/).filter(Boolean);
+  const digits = phoneDigits(raw);
+  if (groups.length >= 3 && groups.every((g) => g.length >= 2 && g.length <= 3)) {
+    return groups.join(" ");
+  }
+  return (digits.match(/\d{2}/g) ?? []).join(" ");
 }
 
 function phonesIn(line: string): string[] {
@@ -117,7 +135,7 @@ export function parseOfficialMooreaGarde(text: string): OfficialMooreaGarde | nu
       ...parseOfficialHours(hoursLine),
       layout,
       otherDoctors: allDoctors.filter((d) => d !== doctorName),
-      otherPhones: allPhones.filter((p) => p !== phone),
+      otherPhones: allPhones.filter((p) => phoneDigits(p) !== phoneDigits(phone)),
     };
   };
 
@@ -184,13 +202,14 @@ export function validateOfficialMooreaGarde(
   if (!/^Dr [A-ZÀ-Ü'\-]{2,}/.test(g.doctorName) && !/^CENTRE/i.test(g.doctorName)) {
     issues.push(`nom de médecin suspect : « ${g.doctorName} »`);
   }
-  if (!/^(40|87|89)( \d{2}){3}$/.test(g.phone)) issues.push(`numéro invalide : ${g.phone}`);
+  const digits = phoneDigits(g.phone);
+  if (!/^(40|87|89)\d{6}$/.test(digits)) issues.push(`numéro invalide : ${g.phone}`);
   // Fixe à Moorea = 40 55 / 40 56. Un 40 57, 40 50, 40 80… = autre secteur (décalage de ligne).
-  if (/^40 /.test(g.phone) && !/^40 5[56] /.test(g.phone)) {
-    issues.push(`préfixe ${g.phone.slice(0, 5)} hors Moorea (décalage de ligne probable)`);
+  if (digits.startsWith("40") && !/^405[56]/.test(digits)) {
+    issues.push(`préfixe ${digits.slice(0, 2)} ${digits.slice(2, 4)} hors Moorea (décalage de ligne probable)`);
   }
   if (g.otherDoctors.includes(g.doctorName)) issues.push("médecin présent sur une autre ligne");
-  if (g.otherPhones.includes(g.phone)) issues.push("numéro présent sur une autre ligne");
+  if (g.otherPhones.some((p) => phoneDigits(p) === digits)) issues.push("numéro présent sur une autre ligne");
   if (!g.saturday && !g.sunday) issues.push("horaires absents");
 
   const want = allowDates ?? expectedWeekend(now);
