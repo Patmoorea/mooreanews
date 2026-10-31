@@ -8,7 +8,11 @@ import {
   phoneDigits,
   validateOfficialMooreaGarde,
 } from "./garde-official-table";
-import { mergeGardeOcrIntoSnapshot, parseCoppfMooreaGarde } from "./garde-announcement-parse";
+import {
+  mergeGardeOcrIntoSnapshot,
+  parseCoppfMooreaGarde,
+  parseWeekendDatesFromText,
+} from "./garde-announcement-parse";
 import { parseCoppfGardeImagesFromHtml } from "./garde-ordre-pharmaciens";
 
 const fx = (f: string) =>
@@ -167,5 +171,12 @@ describe("COPPF — sélection de l'image du week-end", () => {
   it("PNG / WEBP « SEMnn » restent reconnus", () => {
     const list = parseCoppfGardeImagesFromHtml(html, new Date("2026-11-06T14:00:00-10:00"));
     assert.match(list[0]!.url, /SEM45\.webp$/);
+  });
+});
+
+describe("dates — week-end à cheval sur deux mois", () => {
+  it("« Samedi 31 octobre / Dimanche 01 novembre » ⇒ 2026-10-31 → 2026-11-01", () => {
+    const d = parseWeekendDatesFromText("Semaine n°44 - Samedi 31 octobre 2026 / Dimanche 01 novembre 2026 férié");
+    assert.deepEqual([d?.validFrom, d?.validTo], ["2026-10-31", "2026-11-01"]);
   });
 });

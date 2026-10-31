@@ -55,6 +55,14 @@ function dateKey(y: number, m: number, d: number): string {
   return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 }
 
+/** Dimanche = samedi + 1 jour (gère le changement de mois : sam. 31 oct. → dim. 1er nov.). */
+function sundayAfter(validFrom: string, sundayDay: number, fallback: string): string {
+  const d = new Date(`${validFrom}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return fallback;
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.getUTCDate() === sundayDay ? d.toISOString().slice(0, 10) : fallback;
+}
+
 export function parseWeekendDatesFromText(text: string): {
   validFrom: string;
   validTo: string;
@@ -69,9 +77,16 @@ export function parseWeekendDatesFromText(text: string): {
     const year = range[4] ? Number(range[4]) : new Date().getFullYear();
     const month = FRENCH_MONTHS[stripAccents(range[3]!)];
     if (!month) return null;
+    const from = dateKey(year, month, Number(range[1]));
+    const sameMonthTo = dateKey(year, month, Number(range[2]));
+    // « samedi 31 et dimanche 1er novembre » : le mois cité est celui du dimanche.
+    const crossFrom =
+      Number(range[2]) < Number(range[1])
+        ? dateKey(month === 1 ? year - 1 : year, month === 1 ? 12 : month - 1, Number(range[1]))
+        : from;
     return {
-      validFrom: dateKey(year, month, Number(range[1])),
-      validTo: dateKey(year, month, Number(range[2])),
+      validFrom: crossFrom,
+      validTo: sundayAfter(crossFrom, Number(range[2]), sameMonthTo),
       label: `Samedi ${range[1]} / Dimanche ${range[2]} ${range[3]} ${year}`,
     };
   }
@@ -83,9 +98,10 @@ export function parseWeekendDatesFromText(text: string): {
     const year = Number(coppfRange[3] ?? coppfRange[6] ?? new Date().getFullYear());
     const month = FRENCH_MONTHS[stripAccents(coppfRange[2]!)];
     if (!month) return null;
+    const from = dateKey(year, month, Number(coppfRange[1]));
     return {
-      validFrom: dateKey(year, month, Number(coppfRange[1])),
-      validTo: dateKey(year, month, Number(coppfRange[4])),
+      validFrom: from,
+      validTo: sundayAfter(from, Number(coppfRange[4]), dateKey(year, month, Number(coppfRange[4]))),
       label: `Samedi ${coppfRange[1]} / Dimanche ${coppfRange[4]} ${coppfRange[5]} ${year}`,
     };
   }
