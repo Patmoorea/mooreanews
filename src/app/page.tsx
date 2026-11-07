@@ -18,7 +18,12 @@ import { TelegramCommunityPromo } from "@/components/telegram/TelegramCommunityP
 import { CommunityCTA } from "@/components/home/CommunityCTA";
 import { CovoituragePromo } from "@/components/home/CovoituragePromo";
 
-export const revalidate = 1800;
+/**
+ * Accueil ~300 Ko et déjà non mis en cache (fetch ferry `no-store`).
+ * `force-dynamic` empêche qu'il entre dans l'ISR si ce fetch disparaît :
+ * une réécriture toutes les 30 min vaudrait ~40 unités de 8 Ko.
+ */
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   alternates: {

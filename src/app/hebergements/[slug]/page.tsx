@@ -15,7 +15,8 @@ import {
   lodgingBusinessJsonLd,
 } from "@/lib/seo";
 
-export const revalidate = 86400;
+/** Mise à jour via revalidatePath (disponibilité commerçant), pas en continu. */
+export const revalidate = false;
 
 type Props = { params: Promise<{ slug: string }> };
 

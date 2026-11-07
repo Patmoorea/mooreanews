@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/bus-moorea" },
 };
 
-export const revalidate = 120;
+export const dynamic = "force-dynamic";
 
 const LINE_IDS: BusLineId[] = ["L1", "L2", "L3", "L4"];
 

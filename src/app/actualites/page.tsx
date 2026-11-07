@@ -1,7 +1,8 @@
 import { ActualitesListing } from "@/components/ActualitesListing";
 import { listingPageMetadata } from "@/lib/seo";
 
-export const revalidate = 1800;
+/** Liste d'actus : 1 h suffit, et évite de réécrire ~170 Ko toutes les 30 min. */
+export const revalidate = 3600;
 
 export const metadata = listingPageMetadata({
   title: "Actualités de Moorea",

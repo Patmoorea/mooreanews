@@ -7,7 +7,12 @@ import {
 } from "@/components/ActualitesListing";
 import { listingPageMetadata } from "@/lib/seo";
 
-export const revalidate = 1800;
+/**
+ * Archives paginées (~170 Ko). Sans `generateStaticParams` elles sont déjà
+ * dynamiques ; on le fige pour qu'un bot sur `/actualites/page/99999` ne crée
+ * jamais une entrée ISR.
+ */
+export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ n: string }> };
 

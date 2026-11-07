@@ -53,7 +53,9 @@ export async function fetchTidesFromApi(): Promise<TidesData | null> {
   }
 
   const now = tahitiNow();
-  const start = Math.floor(now.getTime() / 1000);
+  // Fenêtre d'une heure : un `start` à la seconde créait une clé de data cache
+  // nouvelle à chaque appel (écriture ISR jamais relue).
+  const start = Math.floor(now.getTime() / 1000 / 3600) * 3600;
   const url = new URL("https://www.worldtides.info/api/v3");
   url.searchParams.set("extremes", "");
   url.searchParams.set("lat", String(STATION_LAT));

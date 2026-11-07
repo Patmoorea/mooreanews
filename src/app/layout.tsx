@@ -94,12 +94,13 @@ export const metadata: Metadata = {
 };
 
 /**
- * Plancher ISR de tout le site (chaque page hérite au plus de cette valeur).
- * 24 h : les crons/admin revalident déjà à la demande les pages qui changent.
- * (600 s régénérait chaque page visitée — articles compris — toutes les 10 min
- * → quota « ISR Writes » + « Fluid Active CPU » du plan gratuit épuisé.)
+ * Pas de `revalidate` ici. Dans l'App Router, la plus petite valeur du segment
+ * s'applique à la page entière : un délai sur le layout réécrivait chaque URL
+ * statique (articles, fiches, 404 de bots) dès qu'un crawler repassait, et
+ * chaque écriture compte dans le quota Vercel « ISR Writes » (blocs de 8 Ko).
+ * Les pages qui doivent changer déclarent leur propre délai, ou restent en
+ * cache jusqu'à un `revalidatePath` (admin / cron).
  */
-export const revalidate = 86400;
 
 export function generateViewport(): Viewport {
   const season = activeSeason();

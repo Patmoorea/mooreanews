@@ -6,7 +6,7 @@ import { QuickSignalementForm } from "@/components/signalements/QuickSignalement
 import { TelegramCommunityPromo } from "@/components/telegram/TelegramCommunityPromo";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
 
-export const revalidate = 600;
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Signalements — alertes locales",

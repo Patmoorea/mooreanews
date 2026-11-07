@@ -117,15 +117,15 @@ async function fetchFromDatabaseUncached(): Promise<AdsConfig | null> {
 }
 
 /**
- * Lu par le layout racine → sa durée devient le plafond ISR de TOUTES les pages
- * (600 s forçait chaque page du site à se régénérer toutes les 10 min, même celles
- * déclarées à 1 h ou 6 h). L'admin pubs invalide déjà ce tag à chaque modif
- * (revalidateTag dans admin/ads-actions.ts), donc 24 h ne retarde rien.
+ * Lu par le layout racine : la plus petite durée de cache du rendu devient
+ * le `revalidate` de CHAQUE page. 24 h réécrivait donc tout le site (articles
+ * compris, ~100 Ko) dès qu'un crawler repassait — quota ISR Writes.
+ * Pas de délai : l'admin invalide le tag à chaque modification.
  */
 const fetchAdsConfigCached = unstable_cache(
   fetchFromDatabaseUncached,
   ["ads-config-v1"],
-  { revalidate: 86400, tags: [ADS_CONFIG_CACHE_TAG] },
+  { revalidate: false, tags: [ADS_CONFIG_CACHE_TAG] },
 );
 
 export const getAdsConfig = cache(async (): Promise<AdsConfig> => {

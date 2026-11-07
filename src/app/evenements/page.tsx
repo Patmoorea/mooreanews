@@ -12,7 +12,8 @@ import { listingPageMetadata } from "@/lib/seo";
 import { PosterImage } from "@/components/PosterImage";
 import { hasPoster } from "@/lib/has-poster";
 
-export const revalidate = 1800;
+/** `?du=&au=` (filtres, bots) ne doit pas devenir une variante ISR. */
+export const dynamic = "force-dynamic";
 
 export const metadata = listingPageMetadata({
   title: "Agenda des événements à Moorea",

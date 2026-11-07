@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getHomeHighlights } from "@/lib/home-highlights";
 
-export const revalidate = 600;
+export const revalidate = 1800;
 
 export async function GET() {
   try {
@@ -10,7 +10,7 @@ export async function GET() {
       { highlights },
       {
         headers: {
-          "Cache-Control": "public, max-age=120, s-maxage=600, stale-while-revalidate=3600",
+          "Cache-Control": "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600",
         },
       },
     );

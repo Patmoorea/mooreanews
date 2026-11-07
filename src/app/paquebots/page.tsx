@@ -19,7 +19,8 @@ import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 
 /** Moorea (TCC) prioritaire ; le Port de Papeete reste en cache ~1 mois côté API. */
-export const revalidate = 21600;
+/** Calendrier d'escales : une fois par jour (~150 Ko), pas toutes les 6 h. */
+export const revalidate = 86400;
 
 export const metadata = {
   title: "Paquebots & escales en Polynésie",

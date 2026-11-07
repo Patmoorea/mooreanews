@@ -42,7 +42,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/emploi-formation" },
 };
 
-export const revalidate = 1800;
+/** Offres synchronisées au quotidien : pas de réécriture (~155 Ko) toutes les 30 min. */
+export const revalidate = 86400;
 
 export default async function EmploiFormationPage() {
   const [sefiJobs, aravihiJobs, cgfJobs, communePosts, trainings, lastSync] =

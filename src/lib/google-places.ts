@@ -32,7 +32,7 @@ async function fetchPlaceOpeningHoursText(placeId: string): Promise<string | nul
         "X-Goog-Api-Key": key,
         "X-Goog-FieldMask": "regularOpeningHours.weekdayDescriptions",
       },
-      next: { revalidate: 604800 },
+      cache: "no-store",
     });
     if (!res.ok) return null;
     const data = (await res.json()) as {
@@ -70,7 +70,7 @@ async function fetchPlaceOpenNow(placeId: string): Promise<boolean | null> {
         "X-Goog-Api-Key": key,
         "X-Goog-FieldMask": "currentOpeningHours.openNow",
       },
-      next: { revalidate: 900 },
+      cache: "no-store",
     });
 
     if (!res.ok) {
@@ -92,13 +92,13 @@ async function fetchPlaceOpenNow(placeId: string): Promise<boolean | null> {
   }
 }
 
-/** Cache 15 min par établissement (évite quota API). */
+/** Cache 1 h par établissement (évite quota API et écritures data cache). */
 export function getPlaceOpenNowCached(placeId: string): Promise<boolean | null> {
   const id = normalizePlaceId(placeId);
   return unstable_cache(
     () => fetchPlaceOpenNow(id),
     [`google-place-open-${id}`],
-    { revalidate: 900 },
+    { revalidate: 3600 },
   )();
 }
 

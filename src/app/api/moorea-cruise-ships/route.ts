@@ -4,7 +4,7 @@ import {
   MOOREA_CRUISE_REVALIDATE_SEC,
 } from "@/lib/moorea-cruise-schedule";
 
-export const revalidate = 21600;
+export const revalidate = 86400;
 
 export async function GET() {
   try {

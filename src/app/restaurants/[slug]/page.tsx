@@ -23,6 +23,9 @@ import {
 } from "@/lib/restaurant-open-status";
 import { SITE } from "@/lib/constants";
 
+/** Peu de fiches ; le statut « ouvert » peut bouger dans la journée, pas plus souvent. */
+export const revalidate = 86400;
+
 type Props = {
   params: Promise<{ slug: string }>;
 };
