@@ -5,7 +5,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { TripPlanClient } from "@/components/trip/TripPlanClient";
 import { buildTripPlan } from "@/lib/mon-sejour";
 
-export const revalidate = 3600;
+/** `?duree=` ne doit pas créer une entrée ISR par variante. */
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Mon séjour à Moorea",

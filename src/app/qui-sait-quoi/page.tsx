@@ -6,7 +6,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { listFaqByCategory, listFaqEntries } from "@/lib/faq";
 import { faqPageJsonLd } from "@/lib/seo";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export const metadata: Metadata = {
   title: "Qui sait quoi — Infos utiles à Moorea",

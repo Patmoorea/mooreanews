@@ -7,6 +7,9 @@ import { PageHeader } from "@/components/PageHeader";
 import { SearchBar } from "@/components/layout/SearchBar";
 import { searchAll } from "@/lib/search";
 
+/** Chaque `?q=` est unique : ne jamais l'écrire dans l'ISR. */
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Recherche",
   description: "Rechercher dans toute la base de MooreaNews.",

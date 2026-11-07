@@ -5,7 +5,8 @@ import { Container } from "@/components/ui/Container";
 import { getMooreaDuJour } from "@/lib/moorea-du-jour";
 import { SITE, USEFUL_LINKS } from "@/lib/constants";
 
-export const revalidate = 1800;
+/** Dépend du digest live (ferry `no-store`) : ne pas en faire une page ISR. */
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Moorea Guide — English",

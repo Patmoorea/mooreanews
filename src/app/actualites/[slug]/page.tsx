@@ -35,7 +35,12 @@ async function resolveArticle(slug: string): Promise<Article | undefined> {
   return match ? getArticleBySlug(match.slug) : undefined;
 }
 
-export const revalidate = 86400;
+/**
+ * Pas de délai court : un article ne change qu'à la publication ou à l'édition
+ * (`revalidatePath`). `false` évite la réécriture quotidienne (~100 Ko) quand
+ * un crawler repasse. Un slug nouveau est quand même généré à la première visite.
+ */
+export const revalidate = false;
 
 type Props = {
   params: Promise<{ slug: string }>;

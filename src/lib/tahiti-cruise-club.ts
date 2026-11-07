@@ -69,7 +69,7 @@ export async function fetchTccPublicStopovers(): Promise<TccStopoverRow[]> {
       Origin: "https://www.tahiticruiseclub.com",
     },
     body: "action=getPublicTable",
-    next: { revalidate: 6 * 60 * 60 },
+    next: { revalidate: 24 * 60 * 60 },
   });
 
   if (!res.ok) {

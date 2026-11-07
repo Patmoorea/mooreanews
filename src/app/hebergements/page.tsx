@@ -9,7 +9,8 @@ import {
   type AccommodationType,
 } from "@/lib/accommodations";
 
-export const revalidate = 3600;
+/** `?type=` ne doit pas devenir une variante ISR. */
+export const dynamic = "force-dynamic";
 
 const TYPE_FILTERS: { value: AccommodationType | "all"; label: string }[] = [
   { value: "all", label: "Tous" },

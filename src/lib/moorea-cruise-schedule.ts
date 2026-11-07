@@ -15,7 +15,7 @@ import {
 /** Calendrier mensuel CruiseTimetables (horizon long) — ~1×/mois suffit. */
 export const CRUISE_TIMETABLES_REVALIDATE_SEC = 30 * 24 * 60 * 60;
 /** Agenda Moorea (TCC 7 jours + fusion) — plusieurs fois par jour. */
-export const MOOREA_CRUISE_REVALIDATE_SEC = 6 * 60 * 60;
+export const MOOREA_CRUISE_REVALIDATE_SEC = 24 * 60 * 60;
 
 /** Alias : page/API paquebots « Port de Papeete » uniquement. */
 export const CRUISE_SCHEDULE_REVALIDATE_SEC = CRUISE_TIMETABLES_REVALIDATE_SEC;

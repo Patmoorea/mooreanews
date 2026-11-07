@@ -3,7 +3,7 @@ import { SITE } from "@/lib/constants";
 import { absoluteUrl } from "@/lib/seo";
 import { articlePath, excludeFromSitemap, latestGardeSlug } from "@/lib/article-url";
 
-export const revalidate = 1800;
+export const revalidate = 3600;
 
 function escapeXml(s: string): string {
   return s
@@ -48,7 +48,7 @@ ${urls}
   return new Response(xml, {
     headers: {
       "Content-Type": "application/xml; charset=utf-8",
-      "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=3600",
+      "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=7200",
     },
   });
 }

@@ -11,6 +11,9 @@ import { getAdminSupabase } from "@/lib/supabase/admin";
 import { stripePublicEnabled, formatXpf, STRIPE_PRICES } from "@/lib/stripe";
 import { staticPageMetadata } from "@/lib/seo";
 
+/** Retour Stripe `?premium=` : pas une variante de cache. */
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = staticPageMetadata({
   title: "Espace commerçant",
   description:

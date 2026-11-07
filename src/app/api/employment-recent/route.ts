@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getRecentMooreaJobOffers } from "@/lib/employment-listings";
 
-export const revalidate = 1800;
+export const revalidate = 3600;
 
 export async function GET() {
   try {
@@ -11,7 +11,7 @@ export async function GET() {
       {
         headers: {
           "Cache-Control":
-            "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600",
+            "public, max-age=600, s-maxage=3600, stale-while-revalidate=7200",
         },
       },
     );

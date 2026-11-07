@@ -8,6 +8,9 @@ import {
   searchLocalAssistant,
 } from "@/lib/local-assistant";
 
+/** Chaque `?q=` est unique : ne jamais l'écrire dans l'ISR. */
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Assistant Moorea — infos vérifiées",
   description:

@@ -9,7 +9,7 @@ import { listingPageMetadata } from "@/lib/seo";
 import { SOCIAL } from "@/lib/constants";
 import { Share2 } from "lucide-react";
 
-export const revalidate = 600;
+export const revalidate = 3600;
 
 export const metadata = listingPageMetadata({
   title: "Covoiturage voiture — Quai Vaiare Moorea",

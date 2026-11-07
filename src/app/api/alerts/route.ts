@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { expirePastAlerts } from "@/lib/alert-schedule";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
 
-export const revalidate = 300;
+export const revalidate = 600;
 
 export async function GET() {
   await expirePastAlerts();
@@ -14,7 +14,7 @@ export async function GET() {
     },
     {
       headers: {
-        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
+        "Cache-Control": "public, s-maxage=600, stale-while-revalidate=1800",
       },
     },
   );

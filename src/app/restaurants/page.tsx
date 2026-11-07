@@ -17,8 +17,8 @@ import {
   isOpenStatusConfigured,
 } from "@/lib/restaurant-open-status";
 
-/** Statuts « ouvert » calculés côté serveur : ne pas hériter du plafond 24 h du layout. */
-export const revalidate = 1800;
+/** `?open=` ne doit pas devenir une variante ISR. */
+export const dynamic = "force-dynamic";
 
 export const metadata = listingPageMetadata({
   title: "Restaurants de Moorea",

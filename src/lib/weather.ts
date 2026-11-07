@@ -55,7 +55,7 @@ export async function getCurrentWeather(): Promise<WeatherSummary> {
   url.searchParams.set("lang", "fr");
 
   try {
-    const res = await fetch(url, { next: { revalidate: 600 } });
+    const res = await fetch(url, { next: { revalidate: 1800 } });
     if (!res.ok) return FALLBACK;
     const data = await res.json();
     return {

@@ -13,8 +13,44 @@ import { createServerClient } from "@supabase/ssr";
  * n'utilisent que le client Supabase anonyme ; le menu compte (client) rafraîchit
  * sa session lui-même.
  */
+const SLUG_SECTIONS = new Set([
+  "actualites",
+  "evenements",
+  "restaurants",
+  "annonces",
+  "activites",
+  "infos-pratiques",
+]);
+
+/**
+ * Sonde (wp-login.php, .env, …) sous une route ISR `[slug]`.
+ * Sans ce court-circuit, Next pré-rend et écrit une entrée de cache par chemin
+ * (~24 Ko). Les vrais slugs du site n'ont pas de point.
+ */
+function isSlugProbe(pathname: string): boolean {
+  const parts = pathname.split("/").filter(Boolean);
+  if (parts.length !== 2 || !SLUG_SECTIONS.has(parts[0])) return false;
+  let slug = parts[1];
+  try {
+    slug = decodeURIComponent(slug);
+  } catch {
+    return true;
+  }
+  return slug.includes(".") || slug.includes("\\") || slug.length > 140;
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+
+  if (isSlugProbe(pathname)) {
+    return new NextResponse(null, {
+      status: 404,
+      headers: {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex",
+      },
+    });
+  }
 
   // Supabase renvoie parfois vers la Site URL (/?code=…) au lieu de /auth/callback
   const authCode = request.nextUrl.searchParams.get("code");
@@ -93,5 +129,12 @@ export const config = {
     "/mon-compte/:path*",
     "/auth/:path*",
     "/api/admin/:path*",
+    // Uniquement les slugs avec un point (fichiers sondés), pas les articles réels.
+    "/actualites/:slug(.*\\..*)",
+    "/evenements/:slug(.*\\..*)",
+    "/restaurants/:slug(.*\\..*)",
+    "/annonces/:slug(.*\\..*)",
+    "/activites/:slug(.*\\..*)",
+    "/infos-pratiques/:slug(.*\\..*)",
   ],
 };

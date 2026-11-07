@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getWeeklyRecapHighlight } from "@/lib/weekly-recap-public";
 
-export const revalidate = 600;
+export const revalidate = 3600;
 
 export async function GET() {
   try {
@@ -21,7 +21,7 @@ export async function GET() {
       {
         headers: {
           "Cache-Control":
-            "public, max-age=120, s-maxage=600, stale-while-revalidate=1800",
+            "public, max-age=600, s-maxage=3600, stale-while-revalidate=7200",
         },
       },
     );

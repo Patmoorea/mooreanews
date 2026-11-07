@@ -18,7 +18,8 @@ export const metadata = {
   alternates: { canonical: "/trafic-ferry" },
 };
 
-export const revalidate = 600;
+/** Statistiques annuelles (DPAM) : la page faisait ~83 Ko toutes les 10 min. */
+export const revalidate = 86400;
 
 function ChangeBadge({
   current,
