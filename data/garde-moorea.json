@@ -1,14 +1,13 @@
 {
-  "validFrom": "2026-08-29",
-  "validTo": "2026-08-30",
-  "label": "Samedi 29 / Dimanche 30 aout 2026",
-  "posterImageUrl": "https://fvksncxoievsrezdkmek.supabase.co/storage/v1/object/public/media/generated/garde-weekend/garde-moorea-2026-08-29.png",
+  "validFrom": "2026-11-11",
+  "validTo": "2026-11-11",
+  "label": "Mercredi 11 novembre — Armistice",
+  "posterImageUrl": "/images/garde/garde-2026-11-11.png",
   "doctor": {
-    "name": "FOUGEROUSE Pierre-Antoine",
-    "phone": "87 00 08 00",
+    "name": "GAUDARD Franck",
+    "phone": "40 56 44 63",
     "hours": {
-      "saturday": "12h00 — 18h00",
-      "sunday": "8h00 — 16h00"
+      "sunday": "8h00 – 16h00"
     }
   }
 }

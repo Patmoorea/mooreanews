@@ -124,6 +124,7 @@ export async function syncHealthOnCall(
   validationIssues?: string[];
   /** Médecin effectivement extrait/validé par CETTE synchro (≠ `doctor` affiché, qui peut venir d'un cache). */
   syncedDoctor?: string | null;
+  holidayRoster?: boolean;
 }> {
   clearHealthOnCallCache();
   const synced = await syncGardeMooreaFromCommune(options);
@@ -145,5 +146,6 @@ export async function syncHealthOnCall(
     expected: synced.expected,
     validationIssues: synced.validationIssues,
     syncedDoctor: synced.ok ? synced.doctor : null,
+    holidayRoster: synced.holidayRoster,
   };
 }

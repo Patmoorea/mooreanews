@@ -13,7 +13,7 @@ import {
 import { gardeArticleSlug } from "@/lib/garde-weekend-article";
 import { pickPublicGardePosterUrl, resolveGardePosterPublicUrl } from "@/lib/garde-poster-url";
 import { isMooreaGardeDoctor } from "@/lib/garde-announcement-parse";
-import { tahitiDateKey, tahitiParts } from "@/lib/tahiti-holidays";
+import { isWeekdayPublicHolidayIso, tahitiDateKey, tahitiParts } from "@/lib/tahiti-holidays";
 import type { OnCallDuty } from "@/lib/health-on-call-shared";
 
 export type GardeMooreaFile = {
@@ -99,7 +99,17 @@ export function pickBestGardeSnapshot(
   const best = ranked[0];
   // Ne jamais coller une affiche périmée (ex. férié 14/07) sur le jeudi du WE suivant.
   if (!best?.active) return null;
-  return best.snap;
+  // Un férié en semaine plus proche (mercredi) passe avant le week-end qui suit.
+  const soonerHoliday = ranked
+    .filter(
+      (row) =>
+        row.active &&
+        row.snap.validFrom === row.snap.validTo &&
+        row.snap.validFrom < best.snap.validFrom &&
+        isWeekdayPublicHolidayIso(row.snap.validFrom),
+    )
+    .sort((a, b) => a.snap.validFrom.localeCompare(b.snap.validFrom))[0];
+  return (soonerHoliday ?? best).snap;
 }
 
 function isWeakGardeLabel(label: string): boolean {

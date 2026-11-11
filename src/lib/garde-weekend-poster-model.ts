@@ -4,7 +4,7 @@
  * fichier pharmacies, sans inventer un lieu ni une pharmacie de garde.
  */
 
-import { MOOREA_PHARMACIES } from "@/data/pharmacies-moorea";
+import { holidayOpeningHours, MOOREA_PHARMACIES } from "@/data/pharmacies-moorea";
 import {
   gardeSeasonForIsoDate,
   type GardeSeasonBand,
@@ -78,6 +78,8 @@ export type GardePosterPharmacyRow = {
   phone: string;
   saturday: string;
   sunday: string;
+  /** Jour férié en semaine : une seule ligne, à la place de samedi / dimanche. */
+  holidayLine?: string;
   onDuty: boolean;
 };
 
@@ -175,6 +177,7 @@ const POSTER_PHARMACY_NAMES: Record<string, string> = {
 
 export function gardePharmacyRows(snap: GardePosterInput): GardePosterPharmacyRow[] {
   const onDutyId = gardeOnDutyPharmacyId(snap);
+  const singleDay = snap.validFrom === snap.validTo;
   return MOOREA_PHARMACIES.map((pharmacy) => ({
     id: pharmacy.id,
     name: POSTER_PHARMACY_NAMES[pharmacy.id] ?? pharmacy.name,
@@ -183,6 +186,7 @@ export function gardePharmacyRows(snap: GardePosterInput): GardePosterPharmacyRo
       ? `${pharmacy.saturday} (à confirmer)`
       : pharmacy.saturday,
     sunday: pharmacy.sunday,
+    holidayLine: singleDay ? (holidayOpeningHours(pharmacy) ?? "non indiqué") : undefined,
     onDuty: pharmacy.id === onDutyId,
   }));
 }

@@ -23,13 +23,16 @@ import { fetchExtraGardeImages } from "@/lib/garde-extra-sources";
 import { fetchGardeFromImportedArticles } from "@/lib/garde-site-articles";
 import {
   COPPF_MEDECINS_GARDE_URL,
+  coppfSnapshotFromImages,
   fetchCoppfGardeImageUrl,
   fetchCoppfGardeImageUrls,
   fetchCoppfGardeSnapshot,
+  isListedWeekdayHolidayRoster,
 } from "@/lib/garde-ordre-pharmaciens";
 import { isGardeOcrEnabled, withGardeOcrSession } from "@/lib/garde-poster-ocr";
 import { classifyGardeFailure, type GardeFailureCause } from "@/lib/garde-alerts";
 import {
+  expectedGardePeriod,
   expectedWeekend,
   phoneDigits,
   validateOfficialMooreaGarde,
@@ -466,7 +469,10 @@ async function localGardePosterPath(validFrom: string): Promise<string | null> {
   }
 }
 
-async function resolveSnapshotForSync(): Promise<GardeMooreaSnapshot | null> {
+async function resolveSnapshotForSync(): Promise<{
+  snap: GardeMooreaSnapshot | null;
+  holidayRoster: boolean;
+}> {
   const [live, file] = await Promise.all([
     fetchLiveGardeMooreaSnapshot().catch(() => null),
     readGardeFileSnapshot(),
@@ -476,7 +482,11 @@ async function resolveSnapshotForSync(): Promise<GardeMooreaSnapshot | null> {
   const fileCandidate =
     file && isGardeWeekRelevant(now, file.validFrom, file.validTo) ? file : null;
 
-  const coppf = await fetchCoppfGardeSnapshot(now).catch(() => null);
+  const coppfImages = await fetchCoppfGardeImageUrls(now).catch(() => []);
+  const holidayRoster =
+    coppfImages.some((img) => isListedWeekdayHolidayRoster(img.dates, now)) ||
+    isListedWeekdayHolidayRoster(fileCandidate, now);
+  const coppf = coppfSnapshotFromImages(coppfImages, now);
   let best = pickBestGardeSnapshot(
     [coppf, live, fileCandidate].filter(Boolean) as GardeMooreaSnapshot[],
     now,
@@ -497,7 +507,7 @@ async function resolveSnapshotForSync(): Promise<GardeMooreaSnapshot | null> {
     }
   }
 
-  if (!best) return null;
+  if (!best) return { snap: null, holidayRoster };
 
   let merged = best;
   for (const c of [coppf, live, fileCandidate].filter(Boolean) as GardeMooreaSnapshot[]) {
@@ -509,10 +519,14 @@ async function resolveSnapshotForSync(): Promise<GardeMooreaSnapshot | null> {
     merged = mergeGardeSnapshots(merged, fileCandidate);
   }
   return {
-    ...merged,
-    communePosterUrl: officialTableImage(live?.communePosterUrl, merged.communePosterUrl),
-    sourceUrl: preferredGardeSourceUrl(merged.sourceUrl, live?.sourceUrl),
-    syncedAt: new Date().toISOString(),
+    snap: {
+      ...merged,
+      communePosterUrl: officialTableImage(live?.communePosterUrl, merged.communePosterUrl),
+      sourceUrl: preferredGardeSourceUrl(merged.sourceUrl, live?.sourceUrl),
+      syncedAt: new Date().toISOString(),
+    },
+    holidayRoster:
+      holidayRoster || isListedWeekdayHolidayRoster(merged, now),
   };
 }
 
@@ -564,7 +578,7 @@ async function enrichFromPosterOcr(
   for (const img of coppfImages) addOfficial(img.imageUrl);
 
   const now = new Date();
-  const want = expectedWeekend(now);
+  const want = expectedGardePeriod(now);
   const posterForWeekend = coppfImages.some(
     (img) => img.dates && img.dates.validFrom <= want.validTo && img.dates.validTo >= want.validFrom,
   );
@@ -687,12 +701,21 @@ export async function syncGardeMooreaFromCommune(
   validationIssues?: string[];
   /** Cause de l'échec (ok:false) — sert aux alertes et au statut CI. */
   cause?: GardeFailureCause;
-  /** Week-end visé par la synchro. */
+  /** Période visée (week-end, ou jour férié en semaine). */
   expected?: { validFrom: string; validTo: string };
+  /**
+   * Un tableau de jour férié en semaine est en ligne (ou déjà en fichier).
+   * Lun–mer, l'absence de ce drapeau reste un passage normal ; sa présence
+   * sans publication est un échec.
+   */
+  holidayRoster: boolean;
 }> {
   let snap: GardeMooreaSnapshot | null = null;
+  let holidayRoster = false;
   try {
-    snap = await resolveSnapshotForSync();
+    const resolved = await resolveSnapshotForSync();
+    snap = resolved.snap;
+    holidayRoster = resolved.holidayRoster;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return {
@@ -706,7 +729,8 @@ export async function syncGardeMooreaFromCommune(
       posterGenerated: false,
       ocrError: msg.slice(0, 200),
       cause: "erreur",
-      expected: expectedWeekend(new Date()),
+      expected: expectedGardePeriod(new Date()),
+      holidayRoster: false,
     };
   }
 
@@ -720,6 +744,7 @@ export async function syncGardeMooreaFromCommune(
       articleSlug: null,
       ocrUsed: false,
       posterGenerated: false,
+      holidayRoster,
     };
   }
 
@@ -734,6 +759,7 @@ export async function syncGardeMooreaFromCommune(
       articleSlug: gardeArticleSlug(snap.validFrom),
       ocrUsed: false,
       posterGenerated: false,
+      holidayRoster,
     };
   }
 
@@ -787,9 +813,22 @@ export async function syncGardeMooreaFromCommune(
   // Garde-fou : on ne publie RIEN d'incohérent (médecin hors Moorea, n° décalé,
   // horaires absents, mauvaise semaine). On signale à la place.
   const validation = validateGardeBeforePublish(snap, now);
+  if (
+    isListedWeekdayHolidayRoster(
+      snap.officialCheck?.validFrom
+        ? {
+            validFrom: snap.officialCheck.validFrom,
+            validTo: snap.officialCheck.validTo ?? snap.officialCheck.validFrom,
+          }
+        : { validFrom: snap.validFrom, validTo: snap.validTo },
+      now,
+    )
+  ) {
+    holidayRoster = true;
+  }
   if (!validation.ok) {
     console.error("[garde] publication refusée :", validation.issues.join(" ; "));
-    const want = expectedWeekend(now);
+    const want = expectedGardePeriod(now);
     const official = snap.officialCheck;
     const cause = classifyGardeFailure({
       posterForWeekend: Boolean(ocrEnriched.posterForWeekend),
@@ -809,6 +848,7 @@ export async function syncGardeMooreaFromCommune(
       posterGenerated: false,
       ocrError: `validation: ${validation.issues.join(" ; ")}`.slice(0, 400),
       validationIssues: validation.issues,
+      holidayRoster,
     };
   }
 
@@ -844,6 +884,7 @@ export async function syncGardeMooreaFromCommune(
     articleUpdated,
     articleError,
     posterUrl: snap.posterImageUrl ?? null,
+    holidayRoster,
   };
 }
 

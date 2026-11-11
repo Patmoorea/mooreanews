@@ -824,8 +824,14 @@ function PharmacyCard({ pharmacy }: { pharmacy: GardePosterPharmacyRow }) {
       <div style={{ display: "flex", flexDirection: "row", marginTop: 8 }}>
         <CalendarIcon size={24} />
         <div style={{ display: "flex", flexDirection: "column", marginLeft: 6 }}>
-          <HourLine label="Samedi :" value={pharmacy.saturday} />
-          <HourLine label="Dimanche :" value={pharmacy.sunday} />
+          {pharmacy.holidayLine ? (
+            <HourLine label="Férié :" value={pharmacy.holidayLine} />
+          ) : (
+            <>
+              <HourLine label="Samedi :" value={pharmacy.saturday} />
+              <HourLine label="Dimanche :" value={pharmacy.sunday} />
+            </>
+          )}
         </div>
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
