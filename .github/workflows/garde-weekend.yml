@@ -1,5 +1,7 @@
 # Garde Moorea — COPPF + OCR + affiche MooreaNews.
 # Tahiti UTC−10. OCR en CI (Tesseract) + OCR.space si clé configurée.
+# Lun–mer : VERT s'il n'y a pas de tableau férié (holidayRoster != true).
+# Un férié en semaine trouvé mais non publié = ROUGE, comme un week-end manquant.
 # Jeu–dim : le job est ROUGE si la garde du week-end n'est pas publiée (ok:false).
 
 name: Garde week-end MooreaNews
@@ -29,6 +31,11 @@ on:
     # Secours férié midweek : lun/mar 6h et 12h Tahiti
     - cron: "0 16 * * 1,2"
     - cron: "0 22 * * 1,2"
+    # Mardi 17h Tahiti (mercredi 03:00 UTC) — l'affiche d'un férié du mercredi
+    # sort souvent l'après-midi, après le passage de 12h.
+    - cron: "0 3 * * 3"
+    # Mercredi 6h Tahiti — avant l'ouverture habituelle de la garde (8h)
+    - cron: "0 16 * * 3"
   workflow_dispatch:
 
 concurrency:
@@ -117,6 +124,10 @@ jobs:
           # Secours : appel direct Vercel (OCR.space si clé sur Vercel)
           if [ -z "${CRON_SECRET:-}" ]; then
             echo "CRON_SECRET manquant"
+            if [ -f /tmp/garde-sync-result.json ] && jq -e '.holidayRoster == true' /tmp/garde-sync-result.json >/dev/null 2>&1; then
+              echo "::error title=Garde férié Moorea non publiée::CRON_SECRET manquant alors qu'un tableau férié est en ligne"
+              exit 1
+            fi
             [ "$DOW" -ge 1 ] && [ "$DOW" -le 3 ] && exit 0
             exit 1
           fi
@@ -124,7 +135,7 @@ jobs:
           url="https://www.mooreanews.com/api/cron/garde-weekend?secret=${CRON_SECRET}&force=1&wait=1"
           code=$(curl -sS -o /tmp/garde.json -w "%{http_code}" --http1.1 --max-time 300 "$url" || echo "000")
           echo "Secours Vercel HTTP ${code}"
-          jq -c '{ok, found, doctor, weekend, cause, ocrError, validationIssues}' /tmp/garde.json 2>/dev/null \
+          jq -c '{ok, found, doctor, weekend, cause, ocrError, validationIssues, holidayRoster}' /tmp/garde.json 2>/dev/null \
             || head -c 600 /tmp/garde.json || true
 
           if jq -e '.ok == true and .found == true and (.doctor // "") != ""' /tmp/garde.json >/dev/null 2>&1; then
@@ -132,9 +143,22 @@ jobs:
             exit 0
           fi
 
-          if [ "$DOW" -ge 1 ] && [ "$DOW" -le 3 ]; then
+          # Même règle que gardeRunShouldFail (src/lib/garde-sync-verdict.ts).
+          # holidayRoster = tableau d'un férié en semaine vu par la synchro.
+          roster=false
+          if [ -f /tmp/garde-sync-result.json ] && jq -e '.holidayRoster == true' /tmp/garde-sync-result.json >/dev/null 2>&1; then
+            roster=true
+          fi
+          if [ -f /tmp/garde.json ] && jq -e '.holidayRoster == true' /tmp/garde.json >/dev/null 2>&1; then
+            roster=true
+          fi
+          if [ "$DOW" -ge 1 ] && [ "$DOW" -le 3 ] && [ "$roster" != true ]; then
             echo "Pas de garde validée en milieu de semaine — normal"
             exit 0
+          fi
+          if [ "$roster" = true ]; then
+            echo "::error title=Garde férié Moorea non publiée::tableau férié en semaine trouvé, publication refusée ou incomplète"
+            exit 1
           fi
 
           cause=$(jq -r '.cause // empty' /tmp/garde.json 2>/dev/null || true)

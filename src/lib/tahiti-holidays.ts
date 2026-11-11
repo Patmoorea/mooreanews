@@ -92,6 +92,36 @@ export function tahitiHolidayLabel(d = new Date()): string | null {
   return tahitiPublicHolidays(y).find((h) => h.month === m && h.day === day)?.label ?? null;
 }
 
+function isoAddDays(iso: string, days: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(Date.UTC(y!, (m ?? 1) - 1, (d ?? 1) + days));
+  return dt.toISOString().slice(0, 10);
+}
+
+/** Jour férié un lundi–vendredi (un dimanche férié reste dans le week-end). */
+export function isWeekdayPublicHolidayIso(iso: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+  const d = new Date(`${iso}T12:00:00-10:00`);
+  const { dow } = tahitiParts(d);
+  if (dow === 0 || dow === 6) return false;
+  return tahitiHolidayLabel(d) != null;
+}
+
+/**
+ * Prochain jour férié en semaine, aujourd'hui ou dans les 2 jours
+ * (même fenêtre que la veille du week-end).
+ */
+export function upcomingWeekdayHoliday(
+  now = new Date(),
+): { validFrom: string; validTo: string } | null {
+  const today = tahitiDateKey(now);
+  for (let delta = 0; delta <= 2; delta += 1) {
+    const iso = isoAddDays(today, delta);
+    if (isWeekdayPublicHolidayIso(iso)) return { validFrom: iso, validTo: iso };
+  }
+  return null;
+}
+
 /** Week-end ou jour férié — période d’affichage « garde ». */
 export function isHealthOnCallPeriod(d = new Date()): boolean {
   const { dow } = tahitiParts(d);

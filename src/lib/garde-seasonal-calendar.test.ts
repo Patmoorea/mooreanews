@@ -16,6 +16,7 @@ import {
   gardePosterDayCards,
   gardePosterLocation,
   gardePosterPhone,
+  gardePosterSeason,
   GARDE_IMAGE_CREDIT,
   GARDE_WEEKEND_POSTER_SIZE,
 } from "./garde-weekend-poster-model";
@@ -159,6 +160,7 @@ describe("données affichées sur l'affiche", () => {
     assert.equal(rows[0]?.phone, "40 56 35 47");
     assert.equal(rows[1]?.phone, "40 55 20 75");
     assert.equal(rows[2]?.phone, "40 56 41 16");
+    assert.equal(rows[0]?.holidayLine, undefined);
     assert.match(rows[1]?.saturday ?? "", /à confirmer/);
 
     const otherWeekend = {
@@ -170,5 +172,27 @@ describe("données affichées sur l'affiche", () => {
       },
     };
     assert.equal(gardeOnDutyPharmacyId(otherWeekend), null);
+  });
+
+  it("11 novembre : une carte mercredi, pharmacies en horaire férié, bandeau bleu", () => {
+    const armistice = {
+      validFrom: "2026-11-11",
+      validTo: "2026-11-11",
+      doctor: { name: "Dr GAUDARD Franck", phone: "40 56 44 63" },
+      doctorHours: { sunday: "8h00 – 16h00" },
+    };
+    assert.deepEqual(gardePosterDayCards(armistice), [
+      { label: "Mercredi 11 novembre", hours: "8h00 – 16h00" },
+    ]);
+    assert.equal(gardePosterSeason("2026-11-11").id, "novembre-bleu");
+    assert.equal(isPink(gardePosterSeason("2026-11-11").background), false);
+    const rows = gardePharmacyRows(armistice);
+    assert.equal(rows[0]?.holidayLine, "7h30–11h30");
+    assert.equal(rows[0]?.phone, "40 56 35 47");
+    assert.equal(rows[1]?.holidayLine, "non indiqué");
+    assert.equal(rows[1]?.phone, "40 55 20 75");
+    assert.equal(rows[2]?.holidayLine, "8h00–10h00");
+    assert.equal(rows[2]?.phone, "40 56 41 16");
+    assert.equal(rows.some((row) => row.onDuty), false);
   });
 });

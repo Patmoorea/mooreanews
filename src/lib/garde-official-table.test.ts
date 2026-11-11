@@ -3,11 +3,14 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import {
+  expectedGardePeriod,
   expectedWeekend,
   parseOfficialMooreaGarde,
   phoneDigits,
   validateOfficialMooreaGarde,
 } from "./garde-official-table";
+import { gardeRunShouldFail } from "./garde-sync-verdict";
+import { isListedWeekdayHolidayRoster } from "./garde-ordre-pharmaciens";
 import {
   mergeGardeOcrIntoSnapshot,
   parseCoppfMooreaGarde,
@@ -80,7 +83,7 @@ describe("validation — refuse les données incohérentes", () => {
   });
   it("refuse l'affiche d'une autre semaine", () => {
     const v = validateOfficialMooreaGarde(base, new Date("2026-10-22T09:00:00-10:00"));
-    assert.match(v.issues.join(), /week-end attendu/);
+    assert.match(v.issues.join(), /période attendue/);
   });
   it("week-end attendu : dimanche = week-end en cours", () => {
     assert.deepEqual(expectedWeekend(new Date("2026-10-18T20:00:00-10:00")), {
@@ -171,6 +174,114 @@ describe("COPPF — sélection de l'image du week-end", () => {
   it("PNG / WEBP « SEMnn » restent reconnus", () => {
     const list = parseCoppfGardeImagesFromHtml(html, new Date("2026-11-06T14:00:00-10:00"));
     assert.match(list[0]!.url, /SEM45\.webp$/);
+  });
+});
+
+describe("Armistice 2026 — férié du mercredi, raté le 10 novembre", () => {
+  const tuesdayEvening = new Date("2026-11-10T19:30:00-10:00");
+  const ocr = fx("ferie-2026-11-11-ocr.txt");
+
+  it("le week-end suivant n'est pas la période à publier", () => {
+    assert.deepEqual(expectedWeekend(tuesdayEvening), {
+      validFrom: "2026-11-14",
+      validTo: "2026-11-15",
+    });
+    assert.deepEqual(expectedGardePeriod(tuesdayEvening), {
+      validFrom: "2026-11-11",
+      validTo: "2026-11-11",
+    });
+  });
+
+  it("OCR Tesseract : Dr GAUDARD Franck, 40 56 44 63, férié 8h00–16h00", () => {
+    const g = parseOfficialMooreaGarde(ocr);
+    assert.ok(g, "ligne Moorea trouvée");
+    assert.equal(g.doctorName, "Dr GAUDARD Franck");
+    assert.equal(g.phone, "40 56 44 63");
+    assert.equal(g.week, 46);
+    assert.equal(g.validFrom, "2026-11-11");
+    assert.equal(g.validTo, "2026-11-11");
+    assert.equal(g.sunday, "8h00 – 16h00");
+    const v = validateOfficialMooreaGarde(g, tuesdayEvening);
+    assert.deepEqual(v.issues, []);
+    // L'ancienne fenêtre « week-end seulement » refusait ce tableau.
+    const asWeekend = validateOfficialMooreaGarde(g, tuesdayEvening, expectedWeekend(tuesdayEvening));
+    assert.equal(asWeekend.ok, false);
+  });
+
+  it("le merge ne rebaptise pas le férié en samedi / dimanche", () => {
+    const snap = mergeGardeOcrIntoSnapshot(
+      {
+        validFrom: "2026-11-14",
+        validTo: "2026-11-15",
+        label: "Week-end",
+        doctor: null,
+        pharmacy: null,
+      },
+      ocr,
+    );
+    assert.equal(snap.validFrom, "2026-11-11");
+    assert.equal(snap.validTo, "2026-11-11");
+    assert.equal(snap.doctor?.name, "Dr GAUDARD Franck");
+    assert.equal(snap.doctor?.phone, "40 56 44 63");
+    assert.match(snap.label, /11 novembre/);
+    assert.match(snap.label, /Armistice/);
+    assert.doesNotMatch(snap.label, /Samedi/);
+  });
+
+  it("2026_GARDES_1111.jpg est le tableau du 11, dès le mardi soir", () => {
+    const base = "https://www.ordre-pharmaciens-polynesie.com/wp-content/uploads";
+    const html = [
+      `<img src="${base}/2026/11/2026_GARDES_SEM45.jpg">`,
+      `<img src="${base}/2026/11/2026_GARDES_1111.jpg">`,
+      `<img src="${base}/2026/11/2026_GARDES_1111-480x556.jpg">`,
+    ].join("\n");
+    const list = parseCoppfGardeImagesFromHtml(html, tuesdayEvening);
+    assert.match(list[0]!.url, /2026_GARDES_1111\.jpg$/);
+    assert.equal(list[0]!.dates?.validFrom, "2026-11-11");
+    assert.equal(list[0]!.dates?.validTo, "2026-11-11");
+    assert.equal(isListedWeekdayHolidayRoster(list[0]!.dates, tuesdayEvening), true);
+    assert.equal(isListedWeekdayHolidayRoster(list[0]!.dates, new Date("2026-11-06T12:00:00-10:00")), false);
+  });
+
+  it("un mardi sans tableau férié ne fait pas échouer le job", () => {
+    assert.equal(
+      gardeRunShouldFail({ ok: true, found: false, doctor: null, holidayRoster: false }, 2),
+      false,
+    );
+    assert.equal(
+      gardeRunShouldFail({ ok: true, found: false, doctor: null }, 1),
+      false,
+    );
+    assert.equal(
+      gardeRunShouldFail({ ok: true, found: false, doctor: null, holidayRoster: false }, 3),
+      false,
+    );
+  });
+
+  it("un férié trouvé mais non publié fait échouer le job, même le mardi", () => {
+    assert.equal(
+      gardeRunShouldFail(
+        { ok: false, found: true, doctor: null, holidayRoster: true },
+        2,
+      ),
+      true,
+    );
+    assert.equal(
+      gardeRunShouldFail(
+        { ok: true, found: true, doctor: "Dr GAUDARD Franck", holidayRoster: true },
+        2,
+      ),
+      false,
+    );
+    assert.equal(
+      gardeRunShouldFail({ ok: true, found: false, doctor: null, holidayRoster: false }, 4),
+      true,
+    );
+  });
+
+  it("un mardi ordinaire vise encore le week-end, pas un férié imaginaire", () => {
+    const ordinaryTuesday = new Date("2026-10-27T12:00:00-10:00");
+    assert.deepEqual(expectedGardePeriod(ordinaryTuesday), expectedWeekend(ordinaryTuesday));
   });
 });
 

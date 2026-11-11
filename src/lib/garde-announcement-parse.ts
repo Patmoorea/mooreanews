@@ -3,7 +3,11 @@
  */
 
 import { MOOREA_PHARMACIES, type MooreaPharmacy } from "@/lib/moorea-pharmacies";
-import { parseOfficialMooreaGarde, type OfficialMooreaGarde } from "@/lib/garde-official-table";
+import {
+  officialPeriodLabel,
+  parseOfficialMooreaGarde,
+  type OfficialMooreaGarde,
+} from "@/lib/garde-official-table";
 
 export type ParsedOnCall = {
   name: string;
@@ -232,7 +236,7 @@ export function mergeGardeOcrIntoSnapshot<
         ? {
             validFrom: official.validFrom,
             validTo: official.validTo,
-            label: `Samedi ${Number(official.validFrom.slice(8))} / Dimanche ${Number(official.validTo.slice(8))} ${new Date(`${official.validTo}T12:00:00Z`).toLocaleDateString("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" })}`,
+            label: officialPeriodLabel(official.validFrom, official.validTo),
           }
         : {}),
       doctor: { name: official.doctorName, phone, phoneHref: phoneHref(phone) },

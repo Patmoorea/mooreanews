@@ -11,6 +11,13 @@
  * Puis validation stricte : en cas de doute on NE publie PAS.
  */
 
+import {
+  formatTahitiDay,
+  tahitiDateKey,
+  tahitiHolidayLabel,
+  upcomingWeekdayHoliday,
+} from "@/lib/tahiti-holidays";
+
 export type OfficialMooreaGarde = {
   week: number | null;
   validFrom: string | null;
@@ -77,15 +84,21 @@ function cleanDoctor(line: string): string {
 
 function normHours(h?: string): string | undefined {
   if (!h) return undefined;
-  return h.replace(/\s+/g, " ").replace(/\s*[-–—]\s*/g, " – ").trim();
+  return h.replace(/\s+/g, " ").replace(/\s*[-–—−]\s*/g, " – ").trim();
 }
 
+/**
+ * « Férié » est souvent lu « Fév », « Féri », « Féré », « féné » par Tesseract.
+ * Le tiret long (—) du tableau doit compter comme un séparateur d'heures.
+ */
+const FERIE_WORD =
+  /(?:dimanche|f[eéèê]r(?:i[eéèêë]?|é|e)?s?|f[eéèê]n[eéèê]|f[eéèê]v|jours?\s+f[eéèê]r\w*)/i;
+const HOUR_RANGE = /(\d{1,2}h\d{0,2}\s*[-–—−àa]+\s*\d{1,2}h\d{0,2})/i;
+
 export function parseOfficialHours(line: string): { saturday?: string; sunday?: string } {
-  const sat = line.match(/samedi\s*:?\s*(\d{1,2}h\d{0,2}\s*[-–—]\s*\d{1,2}h\d{0,2})/i);
-  const sun = line.match(
-    /(?:dimanche|f[ée]ri[ée]|f[ée]n[ée]|f[ée]r[ée])[^\d]{0,20}(\d{1,2}h\d{0,2}\s*[-–à]+\s*\d{1,2}h\d{0,2})/i,
-  );
-  return { saturday: normHours(sat?.[1]), sunday: normHours(sun?.[1]?.replace(/\s*à\s*/, " – ")) };
+  const sat = line.match(new RegExp(`samedi\\s*:?\\s*${HOUR_RANGE.source}`, "i"));
+  const sun = line.match(new RegExp(`${FERIE_WORD.source}[^\\d]{0,24}${HOUR_RANGE.source}`, "i"));
+  return { saturday: normHours(sat?.[1]), sunday: normHours(sun?.[1]?.replace(/\s*à\s*/i, " – ")) };
 }
 
 export function parseOfficialWeek(text: string): {
@@ -95,6 +108,7 @@ export function parseOfficialWeek(text: string): {
 } {
   const n = strip(text);
   const week = n.match(/semaine\s*n\s*[°o]?\s*(\d{1,2})/);
+  const weekNum = week ? Number(week[1]) : null;
   const d = n.match(
     /samedi\s+(\d{1,2})\s+([a-z]+)\s+(\d{4})\s*\/\s*dimanche\s+(\d{1,2})\s+([a-z]+)\s+(\d{4})/,
   );
@@ -102,11 +116,41 @@ export function parseOfficialWeek(text: string): {
     const mm = MONTHS[m];
     return mm ? `${y}-${String(mm).padStart(2, "0")}-${day.padStart(2, "0")}` : null;
   };
-  return {
-    week: week ? Number(week[1]) : null,
-    validFrom: d ? key(d[3]!, d[2]!, d[1]!) : null,
-    validTo: d ? key(d[6]!, d[5]!, d[4]!) : null,
-  };
+  if (d) {
+    return {
+      week: weekNum,
+      validFrom: key(d[3]!, d[2]!, d[1]!),
+      validTo: key(d[6]!, d[5]!, d[4]!),
+    };
+  }
+
+  // « Mercredi 11 novembre 2026 - Férié » : un jour en semaine, pas le week-end suivant.
+  if (/ferie|fete/.test(n)) {
+    const one = n.match(
+      /(?:lundi|mardi|mercredi|jeudi|vendredi)\s+(\d{1,2})\s+([a-z]+)\s+(\d{4})/,
+    );
+    const iso = one ? key(one[3]!, one[2]!, one[1]!) : null;
+    if (iso) return { week: weekNum, validFrom: iso, validTo: iso };
+  }
+
+  return { week: weekNum, validFrom: null, validTo: null };
+}
+
+/** Libellé publiable : week-end samedi/dimanche, ou le jour férié lui-même. */
+export function officialPeriodLabel(validFrom: string, validTo: string): string {
+  if (validFrom === validTo) {
+    const d = new Date(`${validFrom}T12:00:00-10:00`);
+    const holiday = tahitiHolidayLabel(d);
+    const day = formatTahitiDay(d);
+    const titled = day ? day.charAt(0).toUpperCase() + day.slice(1) : validFrom;
+    return holiday ? `${titled} — ${holiday}` : titled;
+  }
+  const month = new Date(`${validTo}T12:00:00Z`).toLocaleDateString("fr-FR", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  return `Samedi ${Number(validFrom.slice(8))} / Dimanche ${Number(validTo.slice(8))} ${month}`;
 }
 
 function isSector(line: string): boolean {
@@ -188,8 +232,21 @@ export function expectedWeekend(now: Date): { validFrom: string; validTo: string
 }
 
 /**
- * Refuse toute donnée incohérente. Les jours fériés en semaine passent par
- * `allowDates` (dates attendues explicites).
+ * Période à publier : un jour férié en semaine (aujourd'hui ou sous 2 jours)
+ * passe avant le week-end qui suit. Un dimanche férié reste dans le week-end.
+ */
+export function expectedGardePeriod(now: Date): { validFrom: string; validTo: string } {
+  const weekend = expectedWeekend(now);
+  const holiday = upcomingWeekdayHoliday(now);
+  if (!holiday) return weekend;
+  if (holiday.validFrom < weekend.validFrom) return holiday;
+  if (tahitiDateKey(now) > weekend.validTo) return holiday;
+  return weekend;
+}
+
+/**
+ * Refuse toute donnée incohérente. Sans `allowDates`, la période attendue est
+ * `expectedGardePeriod` (férié en semaine, sinon le week-end).
  */
 export function validateOfficialMooreaGarde(
   g: OfficialMooreaGarde | null,
@@ -212,11 +269,11 @@ export function validateOfficialMooreaGarde(
   if (g.otherPhones.some((p) => phoneDigits(p) === digits)) issues.push("numéro présent sur une autre ligne");
   if (!g.saturday && !g.sunday) issues.push("horaires absents");
 
-  const want = allowDates ?? expectedWeekend(now);
+  const want = allowDates ?? expectedGardePeriod(now);
   if (!g.validFrom || !g.validTo) {
     issues.push("dates du tableau illisibles");
   } else if (g.validFrom !== want.validFrom || g.validTo !== want.validTo) {
-    issues.push(`dates ${g.validFrom}/${g.validTo} ≠ week-end attendu ${want.validFrom}/${want.validTo}`);
+    issues.push(`dates ${g.validFrom}/${g.validTo} ≠ période attendue ${want.validFrom}/${want.validTo}`);
   }
   return { ok: issues.length === 0, issues };
 }

@@ -9,7 +9,10 @@ import {
   readGardeFileSnapshot,
 } from "@/lib/garde-moorea-data";
 import { GARDE_ARTICLE_AUTHOR, GARDE_POSTER_CREDIT, isPlausibleGardeDates } from "@/lib/garde-cleanup";
-import { weekendPharmacyHoursParagraph } from "@/data/pharmacies-moorea";
+import {
+  holidayPharmacyHoursParagraph,
+  weekendPharmacyHoursParagraph,
+} from "@/data/pharmacies-moorea";
 import { GARDE_POSTER_REVISION } from "@/lib/garde-weekend-poster-model";
 import { renderAndUploadMooreaNewsGardePoster } from "@/lib/garde-weekend-poster-sync";
 import { SITE } from "@/lib/constants";
@@ -27,6 +30,7 @@ export function buildGardeArticleTitle(snap: GardeMooreaSnapshot): string {
   const label = snap.label?.includes("->")
     ? `Samedi ${snap.validFrom.slice(8, 10)} / Dimanche ${snap.validTo.slice(8, 10)}`
     : snap.label;
+  if (snap.validFrom === snap.validTo) return `Garde férié Moorea — ${label}`;
   return `Garde week-end Moorea — ${label}`;
 }
 
@@ -55,12 +59,16 @@ export function buildGardeArticleExcerpt(snap: GardeMooreaSnapshot): string {
   if (parts.length === 0) {
     return `Pharmacie et médecin de garde à Moorea — ${snap.label}. Source : tour de garde officiel de l'Ordre des médecins de Polynésie française.`;
   }
+  if (snap.validFrom === snap.validTo) {
+    return `${parts.join(" · ")} — garde du jour férié à Moorea (${snap.label}).`;
+  }
   return `${parts.join(" · ")} — garde week-end Moorea (${snap.label}).`;
 }
 
 export function buildGardeArticleBody(snap: GardeMooreaSnapshot): string {
+  const when = snap.validFrom === snap.validTo ? "le jour férié" : "le week-end";
   const blocks: string[] = [
-    `Informations de garde pour le week-end ${snap.label}, d'après le tour de garde officiel des médecins généralistes (Conseil de l'Ordre des médecins de Polynésie française).`,
+    `Informations de garde pour ${when} ${snap.label}, d'après le tour de garde officiel des médecins généralistes (Conseil de l'Ordre des médecins de Polynésie française).`,
   ];
 
   if (snap.doctor?.name) {
@@ -68,7 +76,10 @@ export function buildGardeArticleBody(snap: GardeMooreaSnapshot): string {
     if (snap.doctorAddress) {
       doctorBlock += ` Lieu : ${snap.doctorAddress}.`;
     }
-    if (snap.doctorHours?.saturday || snap.doctorHours?.sunday) {
+    if (snap.validFrom === snap.validTo) {
+      const hours = snap.doctorHours?.sunday || snap.doctorHours?.saturday;
+      if (hours) doctorBlock += ` Horaires : ${hours}.`;
+    } else if (snap.doctorHours?.saturday || snap.doctorHours?.sunday) {
       const hours: string[] = [];
       if (snap.doctorHours.saturday) hours.push(`samedi ${snap.doctorHours.saturday}`);
       if (snap.doctorHours.sunday) hours.push(`dimanche ${snap.doctorHours.sunday}`);
@@ -95,8 +106,11 @@ export function buildGardeArticleBody(snap: GardeMooreaSnapshot): string {
     blocks.push(phBlock);
   }
 
-  const weekendHours = weekendPharmacyHoursParagraph();
-  if (weekendHours) blocks.push(weekendHours);
+  const pharmacyHours =
+    snap.validFrom === snap.validTo
+      ? holidayPharmacyHoursParagraph()
+      : weekendPharmacyHoursParagraph();
+  if (pharmacyHours) blocks.push(pharmacyHours);
 
   blocks.push(
     "En cas d'urgence : SAMU 15 · Pompiers 18 · Hôpital Afareaitu 40 55 22 22 · DSP garde 40 47 01 44.",

@@ -9,7 +9,12 @@ import {
   isGardeWeekRelevant,
   pickBestGardeSnapshot,
 } from "@/lib/garde-moorea-data";
-import { formatTahitiDay, tahitiDateKey, tahitiHolidayLabel } from "@/lib/tahiti-holidays";
+import {
+  formatTahitiDay,
+  isWeekdayPublicHolidayIso,
+  tahitiDateKey,
+  tahitiHolidayLabel,
+} from "@/lib/tahiti-holidays";
 
 export const COPPF_MEDECINS_GARDE_URL =
   "https://www.ordre-pharmaciens-polynesie.com/medecins-de-garde/";
@@ -112,6 +117,18 @@ function datesFromImageUrl(url: string): GardeDateRange | null {
   return null;
 }
 
+function isoAddDays(iso: string, days: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(Date.UTC(y!, (m ?? 1) - 1, (d ?? 1) + days));
+  return dt.toISOString().slice(0, 10);
+}
+
+/** Affiche JJMM d'un férié en semaine, aujourd'hui ou dans les 2 jours précédents. */
+function weekdayHolidayInPreview(validFrom: string, todayKey: string): boolean {
+  if (!isWeekdayPublicHolidayIso(validFrom)) return false;
+  return todayKey >= isoAddDays(validFrom, -2) && todayKey <= validFrom;
+}
+
 function scoreCoppfImageFileName(
   year: string,
   month: string,
@@ -125,8 +142,9 @@ function scoreCoppfImageFileName(
   let score = Number(year) * 10_000 + Number(month) * 100;
   const holiday = holidayDatesFromFilename(fname, Number(year), Number(month));
   if (holiday) {
-    // Ne booster l’affiche férié QUE le jour même (sinon elle écrase la SEM du WE).
-    if (holiday.validFrom === todayKey) {
+    // Un férié en semaine (ex. 2026_GARDES_1111) doit gagner dès la veille.
+    // Un fichier « férié » hors de cette fenêtre ne doit pas écraser la SEM du week-end.
+    if (weekdayHolidayInPreview(holiday.validFrom, todayKey) || holiday.validFrom === todayKey) {
       score += 50_000;
     } else {
       score -= 20_000;
@@ -227,13 +245,20 @@ export async function fetchCoppfGardeImageUrl(now = new Date()): Promise<{
   return images[0] ?? null;
 }
 
-/** Snapshot COPPF (affiche hebdo ou jour férié) — source prioritaire. */
-export async function fetchCoppfGardeSnapshot(
-  now = new Date(),
-): Promise<GardeMooreaSnapshot | null> {
-  const images = await fetchCoppfGardeImageUrls(now);
-  if (!images.length) return null;
+/** Vrai si l'image COPPF est le tableau d'un jour férié en semaine, dans la fenêtre de veille. */
+export function isListedWeekdayHolidayRoster(
+  dates: { validFrom: string; validTo: string } | null | undefined,
+  now: Date,
+): boolean {
+  if (!dates?.validFrom || dates.validFrom !== dates.validTo) return false;
+  if (!isWeekdayPublicHolidayIso(dates.validFrom)) return false;
+  return isGardeWeekRelevant(now, dates.validFrom, dates.validTo);
+}
 
+export function coppfSnapshotFromImages(
+  images: { imageUrl: string; postedAt?: string; dates: GardeDateRange | null }[],
+  now = new Date(),
+): GardeMooreaSnapshot | null {
   for (const image of images) {
     const dates =
       image.dates ??
@@ -255,6 +280,15 @@ export async function fetchCoppfGardeSnapshot(
   }
 
   return null;
+}
+
+/** Snapshot COPPF (affiche hebdo ou jour férié) — source prioritaire. */
+export async function fetchCoppfGardeSnapshot(
+  now = new Date(),
+): Promise<GardeMooreaSnapshot | null> {
+  const images = await fetchCoppfGardeImageUrls(now);
+  if (!images.length) return null;
+  return coppfSnapshotFromImages(images, now);
 }
 
 /** @deprecated Utiliser fetchCoppfGardeSnapshot */

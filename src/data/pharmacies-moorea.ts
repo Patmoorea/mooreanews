@@ -112,6 +112,27 @@ export function weekendHoursClause(pharmacy: MooreaPharmacyRecord): string {
   return `${pharmacy.district} (${pharmacy.phone}) : sam. ${saturday} · dim. ${pharmacy.sunday}`;
 }
 
+/**
+ * Horaire d'ouverture un jour férié, seulement s'il est écrit « férié »
+ * sur la fiche. Sinon null (ne pas reprendre l'horaire du seul dimanche).
+ */
+export function holidayOpeningHours(pharmacy: MooreaPharmacyRecord): string | null {
+  const blob = `${pharmacy.sunday} ${pharmacy.hoursLabel}`;
+  if (!/f[eé]ri/i.test(blob)) return null;
+  const time = pharmacy.sunday.match(/\d{1,2}h\d{0,2}\s*[–\-]\s*\d{1,2}h\d{0,2}/);
+  return time?.[0] ?? null;
+}
+
+/** Ligne d'article pour un jour férié en semaine. */
+export function holidayPharmacyHoursParagraph(): string {
+  const lines = MOOREA_PHARMACIES.map((pharmacy) => {
+    const holiday = holidayOpeningHours(pharmacy);
+    if (holiday) return `${pharmacy.district} (${pharmacy.phone}) : ${holiday}`;
+    return `${pharmacy.district} (${pharmacy.phone}) : férié non indiqué (dimanche ${pharmacy.sunday})`;
+  });
+  return `Horaires pharmacies du jour férié : ${lines.join(" — ")}.`;
+}
+
 /** Ligne d'article. Vide si aucun horaire chiffré : on n'affiche pas « : — ». */
 export function weekendPharmacyHoursParagraph(): string {
   const lines = MOOREA_PHARMACIES.map(weekendHoursClause).filter((line) =>

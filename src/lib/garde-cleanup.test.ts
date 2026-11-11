@@ -66,6 +66,27 @@ describe("pharmacies non vérifiées", () => {
     assert.match(out, /tableau de l'Ordre des médecins/);
     assert.match(out, /Médecin de garde : Dr A\./);
   });
+  it("le 11 novembre décrit le férié, pas un dimanche, et n'invente pas de pharmacie de garde", () => {
+    const body = buildGardeArticleBody({
+      validFrom: "2026-11-11",
+      validTo: "2026-11-11",
+      label: "Mercredi 11 novembre — Armistice",
+      doctor: { name: "Dr GAUDARD Franck", phone: "40 56 44 63", phoneHref: "tel:+68940564463" },
+      doctorHours: { sunday: "8h00 – 16h00" },
+      pharmacy: null,
+      syncedAt: now.toISOString(),
+    });
+    assert.match(body, /Dr GAUDARD Franck/);
+    assert.match(body, /40 56 44 63/);
+    assert.match(body, /Horaires : 8h00 – 16h00/);
+    assert.doesNotMatch(body, /dimanche 8h00 – 16h00/);
+    assert.match(body, /jour férié/);
+    assert.match(body, /Afareaitu \(40 56 35 47\) : 7h30–11h30/);
+    assert.match(body, /Tiahura \(40 56 41 16\) : 8h00–10h00/);
+    assert.match(body, /Paopao \(40 55 20 75\) : férié non indiqué/);
+    assert.doesNotMatch(body, /Pharmacie de garde : Pharmacie/);
+    assert.doesNotMatch(body, /Octobre Rose/);
+  });
   it("extrait sans mention de la commune", () => {
     const ex = buildGardeArticleExcerpt({
       validFrom: "2026-10-17", validTo: "2026-10-18", label: "L", doctor: null, pharmacy: null, syncedAt: "",
