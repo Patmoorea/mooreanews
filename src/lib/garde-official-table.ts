@@ -101,39 +101,123 @@ export function parseOfficialHours(line: string): { saturday?: string; sunday?: 
   return { saturday: normHours(sat?.[1]), sunday: normHours(sun?.[1]?.replace(/\s*à\s*/i, " – ")) };
 }
 
+function monthOf(token?: string): number | undefined {
+  if (!token) return undefined;
+  const t = token.replace(/\./g, "");
+  if (MONTHS[t]) return MONTHS[t];
+  if (t.length < 3) return undefined;
+  const found = Object.keys(MONTHS).find((name) => name.startsWith(t));
+  return found ? MONTHS[found] : undefined;
+}
+
+function yearIn(text: string, explicit: Array<string | undefined>): number | null {
+  for (const value of explicit) {
+    if (value && /^20\d{2}$/.test(value)) return Number(value);
+  }
+  const years = [...text.matchAll(/\b(202\d)\b/g)].map((match) => Number(match[1]));
+  if (!years.length) return null;
+  const counts = new Map<number, number>();
+  for (const year of years) counts.set(year, (counts.get(year) ?? 0) + 1);
+  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+}
+
+function isoDate(year: number, month: number, day: number): string | null {
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+/** Samedi et dimanche de la semaine ISO (lundi = jour 1). */
+export function weekendOfIsoWeek(year: number, isoWeek: number): { validFrom: string; validTo: string } | null {
+  if (isoWeek < 1 || isoWeek > 53) return null;
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const dayOfWeek = jan4.getUTCDay() || 7;
+  const monday = new Date(jan4);
+  monday.setUTCDate(jan4.getUTCDate() - dayOfWeek + 1 + (isoWeek - 1) * 7);
+  const saturday = new Date(monday);
+  saturday.setUTCDate(monday.getUTCDate() + 5);
+  const sunday = new Date(monday);
+  sunday.setUTCDate(monday.getUTCDate() + 6);
+  return {
+    validFrom: saturday.toISOString().slice(0, 10),
+    validTo: sunday.toISOString().slice(0, 10),
+  };
+}
+
+/**
+ * En-tête de tableau. L'ancienne forme exigeait un « / » et les deux années
+ * (« samedi 14 novembre 2026 / dimanche 15 novembre 2026 »). Un erratum surligné,
+ * un tiret, « nov. » ou une année manquante laissait les dates vides.
+ */
+function readWeekendHeader(text: string): { validFrom: string; validTo: string } | null {
+  const re =
+    /samedi\s+(\d{1,2})(?:\s+([a-z.]+))?(?:\s+(20\d{2}))?\s*(?:\/|\||\bet\b|[-–—])\s*dimanche\s+(\d{1,2})(?:\s+([a-z.]+))?(?:\s+(20\d{2}))?/g;
+  let weak: { validFrom: string; validTo: string } | null = null;
+  for (const match of text.matchAll(re)) {
+    const day1 = Number(match[1]);
+    const day2 = Number(match[4]);
+    const month1 = monthOf(match[2]);
+    const month2 = monthOf(match[5]);
+    const year = yearIn(text, [match[3], match[6]]);
+    if (!year || !day1 || !day2) continue;
+    let fromMonth = month1 ?? month2;
+    let toMonth = month2 ?? month1;
+    let fromYear = year;
+    let toYear = year;
+    if (!fromMonth || !toMonth) continue;
+    if (!month1 && month2 && day2 < day1) {
+      fromMonth = month2 === 1 ? 12 : month2 - 1;
+      if (month2 === 1) fromYear = year - 1;
+    } else if (month1 && !month2 && day2 < day1) {
+      toMonth = month1 === 12 ? 1 : month1 + 1;
+      if (month1 === 12) toYear = year + 1;
+    } else if (month1 && month2 && month2 < month1) {
+      toYear = year + 1;
+    }
+    const validFrom = isoDate(fromYear, fromMonth, day1);
+    const validTo = isoDate(toYear, toMonth, day2);
+    if (!validFrom || !validTo || validTo < validFrom) continue;
+    const parsed = { validFrom, validTo };
+    if (month1 && month2) return parsed;
+    weak ??= parsed;
+  }
+  return weak;
+}
+
 export function parseOfficialWeek(text: string): {
   week: number | null;
   validFrom: string | null;
   validTo: string | null;
 } {
   const n = strip(text);
-  const week = n.match(/semaine\s*n\s*[°o]?\s*(\d{1,2})/);
+  const week = n.match(/semaine\s*n\s*[°o.]?\s*(\d{1,2})/);
   const weekNum = week ? Number(week[1]) : null;
-  const d = n.match(
-    /samedi\s+(\d{1,2})\s+([a-z]+)\s+(\d{4})\s*\/\s*dimanche\s+(\d{1,2})\s+([a-z]+)\s+(\d{4})/,
-  );
-  const key = (y: string, m: string, day: string) => {
-    const mm = MONTHS[m];
-    return mm ? `${y}-${String(mm).padStart(2, "0")}-${day.padStart(2, "0")}` : null;
-  };
-  if (d) {
-    return {
-      week: weekNum,
-      validFrom: key(d[3]!, d[2]!, d[1]!),
-      validTo: key(d[6]!, d[5]!, d[4]!),
-    };
-  }
+  const header = readWeekendHeader(n);
+  if (header) return { week: weekNum, ...header };
 
-  // « Mercredi 11 novembre 2026 - Férié » : un jour en semaine, pas le week-end suivant.
+  // « Mercredi 11 novembre 2026 - Férié » ou « mercredi 11 nov. 2026 ».
   if (/ferie|fete/.test(n)) {
     const one = n.match(
-      /(?:lundi|mardi|mercredi|jeudi|vendredi)\s+(\d{1,2})\s+([a-z]+)\s+(\d{4})/,
+      /(?:lundi|mardi|mercredi|jeudi|vendredi)\s+(\d{1,2})\s+([a-z.]+)(?:\s+(20\d{2}))?/,
     );
-    const iso = one ? key(one[3]!, one[2]!, one[1]!) : null;
+    const month = monthOf(one?.[2]);
+    const year = one ? yearIn(n, [one[3]]) : null;
+    const iso = one && month && year ? isoDate(year, month, Number(one[1])) : null;
     if (iso) return { week: weekNum, validFrom: iso, validTo: iso };
   }
 
+  // « Semaine n°46 » encore lisible, sans la ligne de dates.
+  if (weekNum) {
+    const year = yearIn(n, []);
+    const range = year ? weekendOfIsoWeek(year, weekNum) : null;
+    if (range) return { week: weekNum, ...range };
+  }
+
   return { week: weekNum, validFrom: null, validTo: null };
+}
+
+/** Vrai pour l'échec « dates du tableau illisibles », pas pour une mauvaise semaine. */
+export function isUnreadableDateIssue(issue: string): boolean {
+  return issue.includes("illisibles");
 }
 
 /** Libellé publiable : week-end samedi/dimanche, ou le jour férié lui-même. */
