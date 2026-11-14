@@ -17,6 +17,7 @@ import {
   parseWeekendDatesFromText,
 } from "./garde-announcement-parse";
 import { parseCoppfGardeImagesFromHtml } from "./garde-ordre-pharmaciens";
+import { validateGardeBeforePublish } from "./garde-moorea-auto";
 
 const fx = (f: string) =>
   readFileSync(path.join(__dirname, "__fixtures__/garde", f), "utf8");
@@ -282,6 +283,81 @@ describe("Armistice 2026 — férié du mercredi, raté le 10 novembre", () => {
   it("un mardi ordinaire vise encore le week-end, pas un férié imaginaire", () => {
     const ordinaryTuesday = new Date("2026-10-27T12:00:00-10:00");
     assert.deepEqual(expectedGardePeriod(ordinaryTuesday), expectedWeekend(ordinaryTuesday));
+  });
+});
+
+describe("erratum SEM46 — capture d'écran du 14 novembre 2026", () => {
+  const saturday = new Date("2026-11-14T09:30:00-10:00");
+  const noHeader = [
+    "TOUR DE GARDE OFFICIEL",
+    "ERRATUM",
+    "Dr GUAIS Elouan",
+    "Moorea\t40 56 44 63",
+    "Samedi : 12h00 - 18h00 - Dimanche / férié : 8h00 - 16h00",
+    "Dr KELLY Frédérique",
+    "Bora-Bora\t87 25 81 18",
+    "Samedi : 12h00 - 18h00 - Dimanche / férié : 06h00 - 19h00",
+  ].join("\n");
+
+  it("l'en-tête erratum prime sur « Papeete, le 12 novembre 2026 »", () => {
+    const g = parseOfficialMooreaGarde(
+      [
+        "ERRATUM - Semaine n°46 - Samedi 14 novembre 2026 / Dimanche 15 novembre 2026",
+        "Dr GUAIS Elouan",
+        "Moorea\t40 56 44 63",
+        "Samedi : 12h00 - 18h00 - Dimanche / férié : 8h00 - 16h00",
+        "Papeete, le 12 novembre 2026",
+      ].join("\n"),
+    );
+    assert.equal(g?.doctorName, "Dr GUAIS Elouan");
+    assert.equal(g?.phone, "40 56 44 63");
+    assert.equal(g?.validFrom, "2026-11-14");
+    assert.equal(g?.validTo, "2026-11-15");
+    assert.equal(g?.saturday, "12h00 – 18h00");
+    assert.equal(g?.sunday, "8h00 – 16h00");
+    assert.deepEqual(validateOfficialMooreaGarde(g, saturday).issues, []);
+  });
+
+  it("dates d'en-tête illisibles : on garde celles du fichier image si c'est le week-end attendu", () => {
+    const g = parseOfficialMooreaGarde(noHeader);
+    assert.equal(g?.validFrom, null);
+    assert.equal(g?.saturday, "12h00 – 18h00");
+    const snap = mergeGardeOcrIntoSnapshot(
+      {
+        validFrom: "2026-11-14",
+        validTo: "2026-11-15",
+        label: "Week-end 2026-11-14 → 2026-11-15",
+        doctor: null,
+        pharmacy: null,
+      },
+      noHeader,
+    );
+    assert.deepEqual(validateGardeBeforePublish(snap, saturday).issues, []);
+  });
+
+  it("ne recolle pas un tableau sans date sur un autre week-end", () => {
+    const snap = mergeGardeOcrIntoSnapshot(
+      {
+        validFrom: "2026-10-17",
+        validTo: "2026-10-18",
+        label: "ancien",
+        doctor: null,
+        pharmacy: null,
+      },
+      noHeader,
+    );
+    assert.equal(validateGardeBeforePublish(snap, saturday).ok, false);
+  });
+
+  it("Screenshot_20261114 est le week-end 14–15, pas un férié", () => {
+    const base = "https://www.ordre-pharmaciens-polynesie.com/wp-content/uploads";
+    const html = `<img src="${base}/2026/11/Screenshot_20261114_035834_Samsung-Browser.jpg">`;
+    const list = parseCoppfGardeImagesFromHtml(html, saturday);
+    assert.match(list[0]!.url, /Screenshot_20261114_035834/);
+    assert.deepEqual(
+      { from: list[0]!.dates?.validFrom, to: list[0]!.dates?.validTo },
+      { from: "2026-11-14", to: "2026-11-15" },
+    );
   });
 });
 
