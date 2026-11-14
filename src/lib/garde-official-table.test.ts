@@ -6,8 +6,10 @@ import {
   expectedGardePeriod,
   expectedWeekend,
   parseOfficialMooreaGarde,
+  parseOfficialWeek,
   phoneDigits,
   validateOfficialMooreaGarde,
+  weekendOfIsoWeek,
 } from "./garde-official-table";
 import { gardeRunShouldFail } from "./garde-sync-verdict";
 import { isListedWeekdayHolidayRoster } from "./garde-ordre-pharmaciens";
@@ -17,7 +19,7 @@ import {
   parseWeekendDatesFromText,
 } from "./garde-announcement-parse";
 import { parseCoppfGardeImagesFromHtml } from "./garde-ordre-pharmaciens";
-import { validateGardeBeforePublish } from "./garde-moorea-auto";
+import { ensureGardeDates, validateGardeBeforePublish } from "./garde-moorea-auto";
 
 const fx = (f: string) =>
   readFileSync(path.join(__dirname, "__fixtures__/garde", f), "utf8");
@@ -335,7 +337,7 @@ describe("erratum SEM46 — capture d'écran du 14 novembre 2026", () => {
     assert.deepEqual(validateGardeBeforePublish(snap, saturday).issues, []);
   });
 
-  it("ne recolle pas un tableau sans date sur un autre week-end", () => {
+  it("un tableau sans date n'est pas laissé sur l'ancien week-end", () => {
     const snap = mergeGardeOcrIntoSnapshot(
       {
         validFrom: "2026-10-17",
@@ -346,7 +348,9 @@ describe("erratum SEM46 — capture d'écran du 14 novembre 2026", () => {
       },
       noHeader,
     );
-    assert.equal(validateGardeBeforePublish(snap, saturday).ok, false);
+    assert.deepEqual(validateGardeBeforePublish(snap, saturday).issues, []);
+    assert.equal(snap.validFrom, "2026-11-14");
+    assert.equal(snap.validTo, "2026-11-15");
   });
 
   it("Screenshot_20261114 est le week-end 14–15, pas un férié", () => {
@@ -358,6 +362,94 @@ describe("erratum SEM46 — capture d'écran du 14 novembre 2026", () => {
       { from: list[0]!.dates?.validFrom, to: list[0]!.dates?.validTo },
       { from: "2026-11-14", to: "2026-11-15" },
     );
+  });
+});
+
+describe("capture Samsung du 14/11/2026 — OCR réel et en-tête abîmé", () => {
+  const saturday = new Date("2026-11-14T09:30:00-10:00");
+  const ocr = fx("erratum-sem46-screenshot-ocr.txt");
+  const header = "ERRATUM - Semaine n°46 - Samedi 14 novembre 2026 / Dimanche 15 novembre 2026";
+
+  it("le texte brut contient l'en-tête lisible, et la ligne Moorea suivante est « EN »", () => {
+    const lines = ocr.split(/\r?\n/);
+    assert.equal(lines[6], header);
+    assert.match(lines.join("\n"), /Dr GUAIS Elouan\nMoorea 40 56 44 63\nEN/);
+  });
+
+  it("l'ancien motif (slash + deux années) rate un tiret à la place du slash", () => {
+    const faulty =
+      /samedi\s+(\d{1,2})\s+([a-z]+)\s+(\d{4})\s*\/\s*dimanche\s+(\d{1,2})\s+([a-z]+)\s+(\d{4})/;
+    const dashed = "erratum - semaine n°46 - samedi 14 novembre 2026 - dimanche 15 novembre 2026";
+    assert.equal(faulty.test(dashed), false);
+    assert.deepEqual(
+      [parseOfficialWeek(dashed).validFrom, parseOfficialWeek(dashed).validTo],
+      ["2026-11-14", "2026-11-15"],
+    );
+  });
+
+  it("OCR Tesseract de la capture : Dr GUAIS, 40 56 44 63, dates 14–15, semaine 46", () => {
+    const g = parseOfficialMooreaGarde(ocr);
+    assert.equal(g?.doctorName, "Dr GUAIS Elouan");
+    assert.equal(g?.phone, "40 56 44 63");
+    assert.equal(g?.week, 46);
+    assert.equal(g?.validFrom, "2026-11-14");
+    assert.equal(g?.validTo, "2026-11-15");
+    assert.equal(g?.saturday, undefined);
+    assert.equal(weekendOfIsoWeek(2026, 46)?.validFrom, "2026-11-14");
+  });
+
+  it("en-tête retiré : la semaine ISO 46 et le fichier image suffisent, l'article n'est pas bloqué", () => {
+    const withoutHeader = ocr.replace(header, "Semaine n°46").replace(
+      "Moorea 40 56 44 63\nEN",
+      "Moorea\t40 56 44 63\nSamedi : 12h00 - 18h00 - Dimanche / férié : 8h00 - 16h00",
+    );
+    const g = parseOfficialMooreaGarde(withoutHeader);
+    assert.equal(g?.validFrom, "2026-11-14");
+    assert.equal(g?.saturday, "12h00 – 18h00");
+    assert.equal(g?.sunday, "8h00 – 16h00");
+    const snap = mergeGardeOcrIntoSnapshot(
+      {
+        validFrom: "2026-11-14",
+        validTo: "2026-11-15",
+        label: "Week-end 2026-11-14 → 2026-11-15",
+        doctor: null,
+        pharmacy: null,
+      },
+      withoutHeader,
+    );
+    assert.deepEqual(validateGardeBeforePublish(snap, saturday).issues, []);
+  });
+
+  it("ni en-tête ni numéro de semaine : repli sur la période attendue, sans bloquer", () => {
+    const bare = [
+      "Dr GUAIS Elouan",
+      "Moorea\t40 56 44 63",
+      "Samedi : 12h00 - 18h00 - Dimanche / férié : 8h00 - 16h00",
+    ].join("\n");
+    const g = parseOfficialMooreaGarde(bare);
+    assert.equal(g?.validFrom, null);
+    const snap = mergeGardeOcrIntoSnapshot(
+      {
+        validFrom: "2026-10-17",
+        validTo: "2026-10-18",
+        label: "ancien",
+        doctor: null,
+        pharmacy: null,
+      },
+      bare,
+    );
+    const settled = ensureGardeDates(snap, saturday);
+    assert.match(settled.warning ?? "", /période attendue/);
+    assert.equal(settled.snap.validFrom, "2026-11-14");
+    assert.equal(settled.snap.officialCheck?.validFrom, "2026-11-14");
+    assert.deepEqual(validateGardeBeforePublish(settled.snap, saturday).issues, []);
+  });
+
+  it("« nov. » et une seule année restent le 14–15", () => {
+    const g = parseOfficialWeek(
+      "ERRATUM semaine n°46 samedi 14 nov. / dimanche 15 nov. 2026",
+    );
+    assert.deepEqual([g.validFrom, g.validTo, g.week], ["2026-11-14", "2026-11-15", 46]);
   });
 });
 

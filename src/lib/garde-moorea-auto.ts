@@ -34,8 +34,11 @@ import { classifyGardeFailure, type GardeFailureCause } from "@/lib/garde-alerts
 import {
   expectedGardePeriod,
   expectedWeekend,
+  isUnreadableDateIssue,
+  officialPeriodLabel,
   phoneDigits,
   validateOfficialMooreaGarde,
+  weekendOfIsoWeek,
   type GardeValidation,
 } from "@/lib/garde-official-table";
 import {
@@ -44,20 +47,43 @@ import {
 } from "@/lib/garde-pharmacy-duty";
 
 /**
- * Capture d'écran / erratum : l'OCR lit souvent le médecin et les horaires
- * mais pas l'en-tête « Samedi … / Dimanche … ». Si le fichier image date déjà
- * le week-end attendu, on reprend ces dates plutôt que de tout refuser.
+ * En-tête illisible : semaine ISO, dates déjà portées par le fichier image,
+ * puis le week-end ou le férié attendu. Le médecin Moorea suffit pour ne pas
+ * tout refuser.
  */
-function officialCheckWithImageDates(
+export function ensureGardeDates(
   snap: GardeMooreaSnapshot,
   now: Date,
-): GardeMooreaSnapshot["officialCheck"] {
+): { snap: GardeMooreaSnapshot; warning?: string } {
   const check = snap.officialCheck;
-  if (!check || check.validFrom || check.validTo) return check;
-  if (!check.saturday && !check.sunday) return check;
+  if (!check || (check.validFrom && check.validTo)) return { snap };
+  if (!snap.doctor?.name && !check.doctorName) return { snap };
   const want = expectedGardePeriod(now);
-  if (snap.validFrom !== want.validFrom || snap.validTo !== want.validTo) return check;
-  return { ...check, validFrom: want.validFrom, validTo: want.validTo };
+  const year = Number((snap.validFrom || want.validFrom).slice(0, 4));
+  const fromWeek = check.week ? weekendOfIsoWeek(year, check.week) : null;
+  let source = "période attendue";
+  let from = want.validFrom;
+  let to = want.validTo;
+  if (fromWeek && fromWeek.validFrom === want.validFrom && fromWeek.validTo === want.validTo) {
+    source = `semaine ISO ${check.week}`;
+    from = fromWeek.validFrom;
+    to = fromWeek.validTo;
+  } else if (snap.validFrom === want.validFrom && snap.validTo === want.validTo) {
+    source = "fichier image ou période en cours";
+    from = snap.validFrom;
+    to = snap.validTo;
+  }
+  const warning = `dates du tableau illisibles — repli ${source} ${from}/${to}`;
+  return {
+    warning,
+    snap: {
+      ...snap,
+      validFrom: from,
+      validTo: to,
+      label: officialPeriodLabel(from, to),
+      officialCheck: { ...check, validFrom: from, validTo: to },
+    },
+  };
 }
 
 /** Validation finale avant publication (article, cache, image). */
@@ -68,9 +94,17 @@ export function validateGardeBeforePublish(
   if (!isPlausibleGardeDates(snap.validFrom, snap.validTo, now)) {
     return { ok: false, issues: [`dates invraisemblables ${snap.validFrom}/${snap.validTo}`] };
   }
+  const dated = ensureGardeDates(snap, now);
+  if (dated.warning) console.warn("[garde]", dated.warning);
+  if (dated.snap !== snap) {
+    snap.validFrom = dated.snap.validFrom;
+    snap.validTo = dated.snap.validTo;
+    snap.label = dated.snap.label;
+    snap.officialCheck = dated.snap.officialCheck;
+  }
   const holiday = snap.validFrom === snap.validTo;
   const allow = holiday ? { validFrom: snap.validFrom, validTo: snap.validTo } : undefined;
-  const officialCheck = officialCheckWithImageDates(snap, now);
+  const officialCheck = snap.officialCheck;
   if (officialCheck) {
     const v = validateOfficialMooreaGarde(officialCheck, now, allow);
     // Le snapshot final doit être identique à la ligne officielle (pas de cache périmé fusionné).
@@ -844,7 +878,20 @@ export async function syncGardeMooreaFromCommune(
   ) {
     holidayRoster = true;
   }
-  if (!validation.ok) {
+  if (!validation.ok && validation.issues.every(isUnreadableDateIssue) && snap.doctor?.name) {
+    console.warn(
+      "[garde] dates illisibles, publication quand même :",
+      validation.issues.join(" ; "),
+    );
+    const ensured = ensureGardeDates(snap, now);
+    if (ensured.warning) console.warn("[garde]", ensured.warning);
+    if (ensured.snap !== snap) {
+      snap.validFrom = ensured.snap.validFrom;
+      snap.validTo = ensured.snap.validTo;
+      snap.label = ensured.snap.label;
+      snap.officialCheck = ensured.snap.officialCheck;
+    }
+  } else if (!validation.ok) {
     console.error("[garde] publication refusée :", validation.issues.join(" ; "));
     const want = expectedGardePeriod(now);
     const official = snap.officialCheck;
