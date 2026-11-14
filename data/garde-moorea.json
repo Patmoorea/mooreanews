@@ -1,12 +1,13 @@
 {
-  "validFrom": "2026-11-11",
-  "validTo": "2026-11-11",
-  "label": "Mercredi 11 novembre — Armistice",
-  "posterImageUrl": "/images/garde/garde-2026-11-11.png",
+  "validFrom": "2026-11-14",
+  "validTo": "2026-11-15",
+  "label": "Samedi 14 / Dimanche 15 novembre 2026",
+  "posterImageUrl": "/images/garde/garde-2026-11-14.png",
   "doctor": {
-    "name": "GAUDARD Franck",
+    "name": "GUAIS Elouan",
     "phone": "40 56 44 63",
     "hours": {
+      "saturday": "12h00 – 18h00",
       "sunday": "8h00 – 16h00"
     }
   }

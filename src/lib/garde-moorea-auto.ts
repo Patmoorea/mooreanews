@@ -43,6 +43,23 @@ import {
   type PharmacyDuty,
 } from "@/lib/garde-pharmacy-duty";
 
+/**
+ * Capture d'écran / erratum : l'OCR lit souvent le médecin et les horaires
+ * mais pas l'en-tête « Samedi … / Dimanche … ». Si le fichier image date déjà
+ * le week-end attendu, on reprend ces dates plutôt que de tout refuser.
+ */
+function officialCheckWithImageDates(
+  snap: GardeMooreaSnapshot,
+  now: Date,
+): GardeMooreaSnapshot["officialCheck"] {
+  const check = snap.officialCheck;
+  if (!check || check.validFrom || check.validTo) return check;
+  if (!check.saturday && !check.sunday) return check;
+  const want = expectedGardePeriod(now);
+  if (snap.validFrom !== want.validFrom || snap.validTo !== want.validTo) return check;
+  return { ...check, validFrom: want.validFrom, validTo: want.validTo };
+}
+
 /** Validation finale avant publication (article, cache, image). */
 export function validateGardeBeforePublish(
   snap: GardeMooreaSnapshot,
@@ -53,12 +70,13 @@ export function validateGardeBeforePublish(
   }
   const holiday = snap.validFrom === snap.validTo;
   const allow = holiday ? { validFrom: snap.validFrom, validTo: snap.validTo } : undefined;
-  if (snap.officialCheck) {
-    const v = validateOfficialMooreaGarde(snap.officialCheck, now, allow);
+  const officialCheck = officialCheckWithImageDates(snap, now);
+  if (officialCheck) {
+    const v = validateOfficialMooreaGarde(officialCheck, now, allow);
     // Le snapshot final doit être identique à la ligne officielle (pas de cache périmé fusionné).
     if (
-      phoneDigits(snap.doctor?.phone ?? "") !== phoneDigits(snap.officialCheck.phone) ||
-      snap.doctor?.name !== snap.officialCheck.doctorName
+      phoneDigits(snap.doctor?.phone ?? "") !== phoneDigits(officialCheck.phone) ||
+      snap.doctor?.name !== officialCheck.doctorName
     ) {
       v.issues.push("données finales ≠ ligne Moorea du tableau officiel");
       v.ok = false;
