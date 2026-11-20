@@ -1,19 +1,24 @@
 /**
- * Jours fériés Polynésie française (Pacific/Tahiti).
- * Fixes + Pâques, Ascension, Lundi de Pentecôte.
+ * Jours fériés de Polynésie française (Pacific/Tahiti).
+ * Article Lp. 3223-1 du code du travail, liste de l'arrêté
+ * HC 613 DIRAJ/BAJC/bt du 7 novembre 2025 et du calendrier 2026
+ * service-public.pf : le 29 juin n'est plus férié ; le 5 mars,
+ * le Vendredi saint, le lundi de Pâques, le 15 août et le 20 novembre
+ * (Matari'i) le sont. Le dimanche de Pâques n'est pas férié.
  */
 
 const TZ = "Pacific/Tahiti";
 
 const FIXED: { month: number; day: number; label: string }[] = [
   { month: 1, day: 1, label: "Jour de l'an" },
-  { month: 4, day: 29, label: "Fête de l'Évangélisation" },
+  { month: 3, day: 5, label: "Arrivée de l'Évangile" },
   { month: 5, day: 1, label: "Fête du travail" },
   { month: 5, day: 8, label: "Victoire 1945" },
-  { month: 6, day: 29, label: "Fête de l'autonomie interne" },
   { month: 7, day: 14, label: "Fête nationale" },
+  { month: 8, day: 15, label: "Assomption" },
   { month: 11, day: 1, label: "Toussaint" },
   { month: 11, day: 11, label: "Armistice" },
+  { month: 11, day: 20, label: "Matari'i" },
   { month: 12, day: 25, label: "Noël" },
 ];
 
@@ -71,12 +76,15 @@ function addDays(y: number, m: number, d: number, delta: number): { month: numbe
 
 export function tahitiPublicHolidays(year: number): { month: number; day: number; label: string }[] {
   const easter = easterSunday(year);
+  const goodFriday = addDays(year, easter.month, easter.day, -2);
+  const easterMonday = addDays(year, easter.month, easter.day, 1);
   const ascension = addDays(year, easter.month, easter.day, 39);
   const pentecote = addDays(year, easter.month, easter.day, 50);
 
   return [
     ...FIXED,
-    { month: easter.month, day: easter.day, label: "Pâques" },
+    { month: goodFriday.month, day: goodFriday.day, label: "Vendredi saint" },
+    { month: easterMonday.month, day: easterMonday.day, label: "Lundi de Pâques" },
     { month: ascension.month, day: ascension.day, label: "Ascension" },
     { month: pentecote.month, day: pentecote.day, label: "Lundi de Pentecôte" },
   ];
