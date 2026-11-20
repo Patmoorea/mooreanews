@@ -7,6 +7,12 @@
 name: Garde week-end MooreaNews
 
 on:
+  push:
+    branches: [main]
+    paths:
+      # Fichier ponctuel : un push qui le modifie lance la synchro
+      # (le jeton de l'agent ne peut pas faire de workflow_dispatch).
+      - ".github/trigger-garde-ferie"
   schedule:
     # Mercredi 12h Tahiti — première tentative SEM de la semaine
     - cron: "0 22 * * 3"
@@ -123,6 +129,13 @@ jobs:
           else
             echo "OCR_SPACE_API_KEY: ABSENTE — ajoutez le secret GitHub Actions OCR_SPACE_API_KEY"
           fi
+          if [ -f .github/trigger-garde-ferie ]; then
+            set -a
+            # shellcheck disable=SC1091
+            . .github/trigger-garde-ferie
+            set +a
+            echo "Publication contrôlée : ${GARDE_EXPECT_DOCTOR:-} ${GARDE_EXPECT_FROM:-} OCR.space=${GARDE_OCR_SPACE:-on}"
+          fi
           npx tsx scripts/run-garde-sync-now.ts
 
       - name: Revalider le cache Vercel
@@ -130,6 +143,12 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          # Tant que ce fichier est là, ne pas rappeler la prod : l'ancien
+          # déploiement relancerait l'OCR et pourrait republier le week-end.
+          if [ -f .github/trigger-garde-ferie ]; then
+            echo "Revalidation prod ignorée (publication contrôlée)."
+            exit 0
+          fi
           # revalidateOnly : purge les pages, sans relancer l'OCR prod
           # (un second OCR pourrait remplacer le médecin déjà vérifié).
           curl -sS --http1.1 --max-time 90 \
@@ -145,6 +164,12 @@ jobs:
           set -uo pipefail
           DOW=$(TZ=Pacific/Tahiti date +%u)
           echo "Jour Tahiti DOW=${DOW} ($(TZ=Pacific/Tahiti date))"
+          if [ -f .github/trigger-garde-ferie ]; then
+            set -a
+            # shellcheck disable=SC1091
+            . .github/trigger-garde-ferie
+            set +a
+          fi
           # Un contrôle explicite raté ne doit pas être « sauvé » par l'OCR prod :
           # il publierait peut-être l'autre affiche.
           if [ -n "${GARDE_EXPECT_FROM}" ] && [ "${{ steps.sync.outcome }}" != "success" ]; then
