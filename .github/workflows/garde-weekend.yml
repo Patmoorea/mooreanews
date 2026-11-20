@@ -64,6 +64,11 @@ on:
         type: boolean
         required: false
         default: false
+      allow_vercel_ocr:
+        description: "Repli OCR sur Vercel (300 s). Inactif par défaut."
+        type: boolean
+        required: false
+        default: false
 
 concurrency:
   group: garde-weekend
@@ -141,6 +146,7 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           GARDE_EXPECT_FROM: ${{ github.event_name == 'workflow_dispatch' && inputs.expect_from || '' }}
+          ALLOW_VERCEL_OCR: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_vercel_ocr == true && 'true' || 'false' }}
         run: |
           set -uo pipefail
           DOW=$(TZ=Pacific/Tahiti date +%u)
@@ -163,26 +169,31 @@ jobs:
             jq -r '.ocrError // empty' /tmp/garde-sync-result.json || true
           fi
 
-          # Secours : appel direct Vercel (OCR.space si clé sur Vercel)
-          if [ -z "${CRON_SECRET:-}" ]; then
-            echo "CRON_SECRET manquant"
-            if [ -f /tmp/garde-sync-result.json ] && jq -e '.holidayRoster == true' /tmp/garde-sync-result.json >/dev/null 2>&1; then
-              echo "::error title=Garde férié Moorea non publiée::CRON_SECRET manquant alors qu'un tableau férié est en ligne"
+          # Repli OCR Vercel (fonction 300 s + Tesseract) : inactif par défaut.
+          # La lecture de l'affiche reste sur GitHub. Activer avec allow_vercel_ocr.
+          if [ "${ALLOW_VERCEL_OCR:-false}" = "true" ]; then
+            if [ -z "${CRON_SECRET:-}" ]; then
+              echo "CRON_SECRET manquant"
+              if [ -f /tmp/garde-sync-result.json ] && jq -e '.holidayRoster == true' /tmp/garde-sync-result.json >/dev/null 2>&1; then
+                echo "::error title=Garde férié Moorea non publiée::CRON_SECRET manquant alors qu'un tableau férié est en ligne"
+                exit 1
+              fi
+              [ "$DOW" -ge 1 ] && [ "$DOW" -le 3 ] && exit 0
               exit 1
             fi
-            [ "$DOW" -ge 1 ] && [ "$DOW" -le 3 ] && exit 0
-            exit 1
-          fi
 
-          url="https://www.mooreanews.com/api/cron/garde-weekend?secret=${CRON_SECRET}&force=1&wait=1"
-          code=$(curl -sS -o /tmp/garde.json -w "%{http_code}" --http1.1 --max-time 300 "$url" || echo "000")
-          echo "Secours Vercel HTTP ${code}"
-          jq -c '{ok, found, doctor, weekend, cause, ocrError, validationIssues, holidayRoster}' /tmp/garde.json 2>/dev/null \
-            || head -c 600 /tmp/garde.json || true
+            url="https://www.mooreanews.com/api/cron/garde-weekend?secret=${CRON_SECRET}&force=1&wait=1"
+            code=$(curl -sS -o /tmp/garde.json -w "%{http_code}" --http1.1 --max-time 300 "$url" || echo "000")
+            echo "Secours Vercel HTTP ${code}"
+            jq -c '{ok, found, doctor, weekend, cause, ocrError, validationIssues, holidayRoster}' /tmp/garde.json 2>/dev/null \
+              || head -c 600 /tmp/garde.json || true
 
-          if jq -e '.ok == true and .found == true and (.doctor // "") != ""' /tmp/garde.json >/dev/null 2>&1; then
-            echo "✔ Garde publiée (secours Vercel)"
-            exit 0
+            if jq -e '.ok == true and .found == true and (.doctor // "") != ""' /tmp/garde.json >/dev/null 2>&1; then
+              echo "✔ Garde publiée (secours Vercel)"
+              exit 0
+            fi
+          else
+            echo "Repli OCR Vercel inactif — pas d'appel force=1."
           fi
 
           # Même règle que gardeRunShouldFail (src/lib/garde-sync-verdict.ts).

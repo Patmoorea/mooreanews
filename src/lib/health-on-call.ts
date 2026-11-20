@@ -40,9 +40,6 @@ export const HEALTH_ON_CALL_SOURCES: { label: string; href: string }[] = [
   },
 ];
 
-const CACHE_MS = 5 * 60 * 1000;
-let dataCache: { at: number; data: HealthOnCallData } | null = null;
-
 function buildPeriodLabel(d: Date, weekendLabel: string | null): string {
   const holiday = tahitiHolidayLabel(d);
   if (weekendLabel) return weekendLabel;
@@ -67,13 +64,11 @@ function buildEmptyHealthData(now: Date): HealthOnCallData {
 }
 
 export async function getHealthOnCallUncached(now = new Date()): Promise<HealthOnCallData> {
-  if (dataCache && Date.now() - dataCache.at < CACHE_MS) return dataCache.data;
-
   try {
     const garde = await getGardeMooreaForNow(now);
     const highlight = await getGardeWeekendHighlight(now);
 
-    const data: HealthOnCallData = {
+    return {
       generatedAt: now.toISOString(),
       periodLabel: buildPeriodLabel(now, garde.weekendLabel),
       showProminent: isHealthOnCallPeriod(now),
@@ -86,20 +81,14 @@ export async function getHealthOnCallUncached(now = new Date()): Promise<HealthO
       posterImageUrl: garde.posterImageUrl ?? null,
       articleHref: highlight?.href ?? null,
     };
-
-    dataCache = { at: Date.now(), data };
-    return data;
   } catch {
-    const data = buildEmptyHealthData(now);
-    dataCache = { at: Date.now(), data };
-    return data;
+    return buildEmptyHealthData(now);
   }
 }
 
 export const getHealthOnCall = cache(getHealthOnCallUncached);
 
 export function clearHealthOnCallCache(): void {
-  dataCache = null;
   clearGardeMooreaMemoryCache();
   revalidateTag("garde-moorea", "max");
 }

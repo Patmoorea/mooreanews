@@ -31,7 +31,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/bus-moorea" },
 };
 
-export const dynamic = "force-dynamic";
+/** Horaires bus : fetch mis en cache 3 min. Le widget /api/buses reste en direct. */
+export const revalidate = 180;
 
 const LINE_IDS: BusLineId[] = ["L1", "L2", "L3", "L4"];
 
@@ -145,8 +146,8 @@ function ScheduleBlock({
 
 export default async function BusMooreaPage() {
   const [{ data, source }, live] = await Promise.all([
-    loadBusScheduleData(),
-    getNextBusDepartures(),
+    loadBusScheduleData("cached"),
+    getNextBusDepartures("cached"),
   ]);
 
   const meta = data.meta;

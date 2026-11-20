@@ -11,7 +11,7 @@ import { notifyGardeFailureOnce } from "@/lib/garde-alerts";
 import { expectedWeekend } from "@/lib/garde-official-table";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 /**
  * Alerte Telegram si la synchro n'a rien publié — 1 seule par week-end et par cause,

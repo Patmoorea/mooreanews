@@ -24,19 +24,11 @@ async function main() {
 
   // Après dotenv : ces modules lisent les clés Supabase au chargement.
   const { getAdminSupabase } = await import("../src/lib/supabase/admin");
-  const {
-    GARDE_CACHE_SOURCE_ID,
-    GARDE_CACHE_PAYLOAD_SOURCE_ID,
-    readGardeMooreaFromCache,
-    writeGardeMooreaCache,
-  } = await import("../src/lib/garde-moorea-auto");
+  const { readGardeMooreaFromCache, writeGardeMooreaCache } = await import(
+    "../src/lib/garde-moorea-auto"
+  );
   const { gardePublishMismatch } = await import("../src/lib/garde-sync-verdict");
   const supabase = getAdminSupabase();
-  const expectMode = Boolean(
-    process.env.GARDE_EXPECT_FROM?.trim() ||
-      process.env.GARDE_EXPECT_DOCTOR?.trim() ||
-      process.env.GARDE_EXPECT_PHONE?.trim(),
-  );
   const protectSlug = process.env.GARDE_PROTECT_SLUG?.trim() || "";
   const previousCache = await readGardeMooreaFromCache();
   let protectedBefore: ProtectedArticle | null = null;
@@ -48,22 +40,7 @@ async function main() {
       .maybeSingle();
     protectedBefore = data;
   }
-  // Avec un contrôle explicite, on ne vide pas le cache avant : un refus
-  // laisse le médecin déjà en ligne. Le succès réécrit le cache ensuite.
-  if (supabase && !expectMode) {
-    await supabase
-      .from("external_articles")
-      .delete()
-      .eq("source_id", GARDE_CACHE_SOURCE_ID)
-      .eq("external_id", "current");
-    await supabase
-      .from("external_articles")
-      .delete()
-      .eq("source_id", GARDE_CACHE_PAYLOAD_SOURCE_ID)
-      .eq("external_id", "current");
-    console.log("Cache garde Supabase purgé.");
-  }
-
+  // Pas de purge du cache avant l'OCR : un échec laisse le médecin déjà en ligne.
   console.log("=== Sync garde (tableau officiel) ===");
   const { syncGardeMooreaFromCommune } = await import("../src/lib/garde-moorea-auto");
   const result = await syncGardeMooreaFromCommune({ fullWeekendPipeline: true });

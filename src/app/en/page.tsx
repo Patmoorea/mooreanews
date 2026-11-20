@@ -5,8 +5,8 @@ import { Container } from "@/components/ui/Container";
 import { getMooreaDuJour } from "@/lib/moorea-du-jour";
 import { SITE, USEFUL_LINKS } from "@/lib/constants";
 
-/** Dépend du digest live (ferry `no-store`) : ne pas en faire une page ISR. */
-export const dynamic = "force-dynamic";
+/** Même digest que l'accueil, ferries mis en cache 3 min. Le widget live est /api/ferries. */
+export const revalidate = 180;
 
 export const metadata: Metadata = {
   title: "Moorea Guide — English",

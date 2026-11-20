@@ -9,7 +9,11 @@ import { getHealthOnCall } from "@/lib/health-on-call";
 import { COPPF_MEDECINS_GARDE_URL } from "@/lib/garde-ordre-pharmaciens";
 import { MOOREA_PHARMACIES } from "@/data/pharmacies-moorea";
 
-export const dynamic = "force-dynamic";
+/**
+ * ISR 3 min. Le cron garde invalide cette page (revalidatePath) à chaque publication,
+ * y compris le passage férié → week-end.
+ */
+export const revalidate = 180;
 
 export const metadata: Metadata = {
   title: "Pharmacie & médecin de garde — Moorea",

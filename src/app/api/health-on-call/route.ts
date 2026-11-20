@@ -1,16 +1,14 @@
 import { NextResponse } from "next/server";
 import { getHealthOnCall } from "@/lib/health-on-call";
 
-export const dynamic = "force-dynamic";
+/** Même fenêtre que /sante-garde. revalidatePath purge à la publication garde. */
+export const revalidate = 180;
 
 export async function GET() {
   const data = await getHealthOnCall();
-  const empty = !data.onDutyDoctor && !data.onDutyPharmacy;
   return NextResponse.json(data, {
     headers: {
-      "Cache-Control": empty
-        ? "public, max-age=300, s-maxage=600, stale-while-revalidate=1800"
-        : "public, max-age=600, s-maxage=1800, stale-while-revalidate=3600",
+      "Cache-Control": "public, max-age=60, s-maxage=180, stale-while-revalidate=300",
     },
   });
 }

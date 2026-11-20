@@ -19,11 +19,13 @@ import { CommunityCTA } from "@/components/home/CommunityCTA";
 import { CovoituragePromo } from "@/components/home/CovoituragePromo";
 
 /**
- * Accueil ~300 Ko et déjà non mis en cache (fetch ferry `no-store`).
- * `force-dynamic` empêche qu'il entre dans l'ISR si ce fetch disparaît :
- * une réécriture toutes les 30 min vaudrait ~40 unités de 8 Ko.
+ * ISR 3 min. Les ferries en direct restent sur /api/ferries (no-store, widget client).
+ * `force-static` : le module de veille Facebook, importé mais pas appelé au rendu,
+ * contient des fetch no-store qui sinon rendraient l'accueil dynamique.
+ * La publication garde appelle revalidatePath("/") pour le nouveau médecin.
  */
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 180;
 
 export const metadata: Metadata = {
   alternates: {
