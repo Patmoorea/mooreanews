@@ -35,7 +35,13 @@ function formatDoctorShort(name: string): string {
 function buildStickerLabel(snap: GardeMooreaSnapshot): string {
   const { dow } = tahitiParts(new Date());
   const prefix =
-    dow === 5 ? "Garde du week-end" : dow === 6 || dow === 0 ? "Garde WE" : "Garde Moorea";
+    snap.validFrom === snap.validTo
+      ? "Garde férié"
+      : dow === 5
+        ? "Garde du week-end"
+        : dow === 6 || dow === 0
+          ? "Garde WE"
+          : "Garde Moorea";
 
   if (snap.doctor?.name) {
     return `${prefix} · ${formatDoctorShort(snap.doctor.name)} · affiche`;

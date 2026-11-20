@@ -52,14 +52,26 @@ export function weekendFromIsoWeek(
   };
 }
 
-/** Affiche férié COPPF type 2026_GARDES_1402maj.jpg → jour 14 + mois du dossier upload (07). */
+/**
+ * Affiche férié COPPF type 2026_GARDES_1402maj.jpg → jour 14 + mois du dossier upload (07).
+ * WordPress ajoute -1 (doublon) et -480x555 (miniature) : 2026_GARDES_2011-1.jpg
+ * reste le 20 du mois du dossier.
+ */
+export function holidayRosterStem(fname: string): string {
+  return fname
+    .replace(/\.[a-z0-9]+$/i, "")
+    .replace(/-\d+x\d+$/i, "")
+    .replace(/-scaled$/i, "")
+    .replace(/-\d{1,2}$/, "");
+}
+
 export function holidayDatesFromFilename(
   fname: string,
   yearHint?: number,
   monthHint?: number,
 ): GardeDateRange | null {
-  const base = fname.replace(/\.[a-z]+$/i, "");
-  // GARDES_1402maj, GARDES_1407, GARDE_14_07…
+  const base = holidayRosterStem(fname);
+  // GARDES_1402maj, GARDES_1407, GARDES_2011, GARDE_14_07…
   const ddmmyy =
     base.match(/gardes?[_\-]?(\d{2})(\d{2})(?:maj|bis|v\d+)?$/i) ??
     base.match(/(\d{2})(\d{2})(?:maj|bis)$/i);
@@ -117,6 +129,10 @@ function datesFromImageUrl(url: string): GardeDateRange | null {
   return null;
 }
 
+export function coppfDatesFromImageUrl(url: string): GardeDateRange | null {
+  return datesFromImageUrl(url);
+}
+
 function isoAddDays(iso: string, days: number): string {
   const [y, m, d] = iso.split("-").map(Number);
   const dt = new Date(Date.UTC(y!, (m ?? 1) - 1, (d ?? 1) + days));
@@ -154,6 +170,8 @@ function scoreCoppfImageFileName(
   if (sem) score += 5_000 + Number(sem[1]) * 10;
   if (/garde|medecin|screenshot|drive/.test(lower)) score += 200;
   if (/gardes_\d{4}/.test(lower)) score += 150;
+  // La miniature WordPress ne doit pas passer devant le fichier d'origine.
+  if (/-\d+x\d+\./.test(lower)) score -= 40;
   if (/ferie|férié|maj/.test(lower) && holiday?.validFrom === todayKey) score += 400;
   return score;
 }

@@ -11,8 +11,14 @@ import {
   validateOfficialMooreaGarde,
   weekendOfIsoWeek,
 } from "./garde-official-table";
-import { gardeRunShouldFail } from "./garde-sync-verdict";
-import { isListedWeekdayHolidayRoster } from "./garde-ordre-pharmaciens";
+import { gardePublishMismatch, gardeRunShouldFail } from "./garde-sync-verdict";
+import {
+  holidayDatesFromFilename,
+  isListedWeekdayHolidayRoster,
+} from "./garde-ordre-pharmaciens";
+import { pickBestGardeSnapshot } from "./garde-moorea-data";
+import { pickOfficialOcrCandidate, type GardeMooreaSnapshot } from "./garde-moorea-auto";
+import { gardeArticleSlug } from "./garde-weekend-article";
 import {
   mergeGardeOcrIntoSnapshot,
   parseCoppfMooreaGarde,
@@ -457,5 +463,188 @@ describe("dates — week-end à cheval sur deux mois", () => {
   it("« Samedi 31 octobre / Dimanche 01 novembre » ⇒ 2026-10-31 → 2026-11-01", () => {
     const d = parseWeekendDatesFromText("Semaine n°44 - Samedi 31 octobre 2026 / Dimanche 01 novembre 2026 férié");
     assert.deepEqual([d?.validFrom, d?.validTo], ["2026-10-31", "2026-11-01"]);
+  });
+});
+
+const COPPF = "https://www.ordre-pharmaciens-polynesie.com/wp-content/uploads";
+const MATARII_MORNING = new Date("2026-11-20T07:14:00-10:00");
+const WEEKEND_OPEN = new Date("2026-11-21T08:00:00-10:00");
+
+function gardeSnap(
+  validFrom: string,
+  validTo: string,
+  doctorName: string | null,
+): GardeMooreaSnapshot {
+  return {
+    validFrom,
+    validTo,
+    label: validFrom,
+    doctor: doctorName
+      ? { name: doctorName, phone: "40 56 00 00", phoneHref: "tel:+68940560000" }
+      : null,
+    pharmacy: null,
+    sourceUrl: "https://www.ordre-pharmaciens-polynesie.com/medecins-de-garde/",
+    syncedAt: "2026-11-20T17:00:00.000Z",
+  };
+}
+
+describe("Matari'i 20 novembre 2026 — férié et week-end en ligne ensemble", () => {
+  const holidayHtml = [
+    `<img src="${COPPF}/2026/11/2026_GARDES_SEM47.jpg">`,
+    `<img src="${COPPF}/2026/11/2026_GARDES_2011-1.jpg">`,
+    `<img src="${COPPF}/2026/11/2026_GARDES_2011-1-480x555.jpg">`,
+    `<img src="${COPPF}/2026/11/2026_GARDES_SEM47-480x568.jpg">`,
+  ].join("\n");
+
+  it("2026_GARDES_2011-1.jpg est le 20 novembre, suffixe -1 compris", () => {
+    const holiday = holidayDatesFromFilename("2026_GARDES_2011-1.jpg", 2026, 11);
+    assert.equal(holiday?.validFrom, "2026-11-20");
+    assert.equal(holiday?.validTo, "2026-11-20");
+    assert.match(holiday?.label ?? "", /Matari/);
+    const thumb = holidayDatesFromFilename("2026_GARDES_2011-1-480x555.jpg", 2026, 11);
+    assert.equal(thumb?.validFrom, "2026-11-20");
+    const july = holidayDatesFromFilename("2026_GARDES_1402maj.jpg", 2026, 7);
+    assert.equal(july?.validFrom, "2026-07-14");
+  });
+
+  it("le vendredi matin, l'affiche férié passe devant SEM47", () => {
+    const list = parseCoppfGardeImagesFromHtml(holidayHtml, MATARII_MORNING);
+    assert.match(list[0]!.url, /2026_GARDES_2011-1\.jpg$/);
+    assert.equal(list[0]!.dates?.validFrom, "2026-11-20");
+    assert.equal(isListedWeekdayHolidayRoster(list[0]!.dates, MATARII_MORNING), true);
+    assert.deepEqual(expectedGardePeriod(MATARII_MORNING), {
+      validFrom: "2026-11-20",
+      validTo: "2026-11-20",
+    });
+  });
+
+  it("le samedi, SEM47 redevient l'affiche à publier", () => {
+    const list = parseCoppfGardeImagesFromHtml(holidayHtml, WEEKEND_OPEN);
+    assert.match(list[0]!.url, /2026_GARDES_SEM47\.jpg$/);
+    assert.equal(list[0]!.dates?.validFrom, "2026-11-21");
+    assert.equal(list[0]!.dates?.validTo, "2026-11-22");
+    assert.deepEqual(expectedGardePeriod(WEEKEND_OPEN), {
+      validFrom: "2026-11-21",
+      validTo: "2026-11-22",
+    });
+    const best = pickBestGardeSnapshot(
+      [
+        gardeSnap("2026-11-20", "2026-11-20", "Dr GOEURIOT Julien"),
+        gardeSnap("2026-11-21", "2026-11-22", "Dr APPIETTO Audrey"),
+      ],
+      WEEKEND_OPEN,
+    );
+    assert.equal(best?.validFrom, "2026-11-21");
+    assert.equal(best?.doctor?.name, "Dr APPIETTO Audrey");
+  });
+
+  it("le vendredi, le férié gagne aussi au choix du snapshot", () => {
+    const best = pickBestGardeSnapshot(
+      [
+        gardeSnap("2026-11-21", "2026-11-22", "Dr APPIETTO Audrey"),
+        gardeSnap("2026-11-20", "2026-11-20", "Dr GOEURIOT Julien"),
+      ],
+      MATARII_MORNING,
+    );
+    assert.equal(best?.validFrom, "2026-11-20");
+    assert.equal(gardeArticleSlug(best!.validFrom), "garde-moorea-2026-11-20");
+    assert.equal(gardeArticleSlug("2026-11-21"), "garde-moorea-2026-11-21");
+  });
+
+  it("OCR Tesseract du 20 : GOEURIOT, 40 56 26 19, 8h00–16h00, date prise sur le fichier", () => {
+    const ocr = fx("ferie-2026-11-20-ocr.txt");
+    const read = parseOfficialMooreaGarde(ocr);
+    assert.equal(read?.doctorName, "Dr GOEURIOT Julien");
+    assert.equal(read?.phone, "40 56 26 19");
+    assert.equal(read?.sunday, "8h00 – 16h00");
+    assert.equal(read?.validFrom, null);
+
+    const holiday = mergeGardeOcrIntoSnapshot(
+      {
+        validFrom: "2026-11-20",
+        validTo: "2026-11-20",
+        label: "férié",
+        doctor: null,
+        pharmacy: null,
+      },
+      ocr,
+    ) as GardeMooreaSnapshot;
+    const weekend = mergeGardeOcrIntoSnapshot(
+      {
+        validFrom: "2026-11-21",
+        validTo: "2026-11-22",
+        label: "week-end",
+        doctor: null,
+        pharmacy: null,
+      },
+      [
+        "Semaine n°47 - Samedi 21 novembre 2026 / Dimanche 22 novembre 2026",
+        "Dr APPIETTO Audrey",
+        "Moorea\t40 56 27 07",
+        "Samedi : 12h00 - 18h00 - Dimanche / férié : 8h00 - 16h00",
+      ].join("\n"),
+    ) as GardeMooreaSnapshot;
+    assert.equal(weekend.doctor?.name, "Dr APPIETTO Audrey");
+    assert.equal(weekend.validFrom, "2026-11-21");
+
+    const picked = pickOfficialOcrCandidate(
+      [
+        { fileDates: { validFrom: "2026-11-21", validTo: "2026-11-22" }, snap: weekend },
+        { fileDates: { validFrom: "2026-11-20", validTo: "2026-11-20" }, snap: holiday },
+      ],
+      { validFrom: "2026-11-20", validTo: "2026-11-20" },
+    );
+    assert.equal(picked?.doctor?.name, "Dr GOEURIOT Julien");
+    assert.equal(picked?.doctor?.phone, "40 56 26 19");
+    const issues = validateGardeBeforePublish(picked!, MATARII_MORNING).issues;
+    assert.deepEqual(issues, []);
+    assert.equal(picked!.validFrom, "2026-11-20");
+    assert.equal(picked!.validTo, "2026-11-20");
+    assert.match(picked!.label, /20 novembre/);
+    assert.match(picked!.label, /Matari/);
+  });
+
+  it("l'affiche week-end illisible n'est pas collée sur le férié", () => {
+    const weekendUndated = mergeGardeOcrIntoSnapshot(
+      {
+        validFrom: "2026-11-21",
+        validTo: "2026-11-22",
+        label: "week-end",
+        doctor: null,
+        pharmacy: null,
+      },
+      ["Dr APPIETTO Audrey", "Moorea\t40 56 27 07", "Samedi : 12h00 - 18h00"].join("\n"),
+    ) as GardeMooreaSnapshot;
+    assert.equal(weekendUndated.officialCheck?.validFrom ?? null, null);
+    const picked = pickOfficialOcrCandidate(
+      [{ fileDates: { validFrom: "2026-11-21", validTo: "2026-11-22" }, snap: weekendUndated }],
+      { validFrom: "2026-11-20", validTo: "2026-11-20" },
+    );
+    assert.equal(picked, null);
+  });
+
+  it("un contrôle de publication refuse un autre médecin ou un autre jour", () => {
+    assert.equal(
+      gardePublishMismatch(
+        {
+          validFrom: "2026-11-20",
+          validTo: "2026-11-20",
+          doctor: { name: "Dr GOEURIOT Julien", phone: "40 56 26 19" },
+        },
+        { doctor: "Dr GOEURIOT Julien", phone: "40562619", validFrom: "2026-11-20" },
+      ),
+      null,
+    );
+    assert.match(
+      gardePublishMismatch(
+        {
+          validFrom: "2026-11-21",
+          validTo: "2026-11-22",
+          doctor: { name: "Dr APPIETTO Audrey", phone: "40 56 27 07" },
+        },
+        { doctor: "Dr GOEURIOT Julien", phone: "40562619", validFrom: "2026-11-20" },
+      ) ?? "",
+      /validFrom|médecin|téléphone/,
+    );
   });
 });

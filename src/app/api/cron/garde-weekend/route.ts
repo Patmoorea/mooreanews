@@ -4,7 +4,9 @@ import { verifyCronAuth } from "@/lib/cron-auth";
 import { cleanupGardeData, PURGED_GARDE_SLUGS } from "@/lib/garde-cleanup";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getTahitiClock, shouldSyncGardeOnVeille } from "@/lib/cron-tahiti";
-import { syncHealthOnCall } from "@/lib/health-on-call";
+import { clearHealthOnCallCache, syncHealthOnCall } from "@/lib/health-on-call";
+import { readGardeMooreaFromCache } from "@/lib/garde-moorea-auto";
+import { gardeArticleSlug } from "@/lib/garde-weekend-article";
 import { notifyGardeFailureOnce } from "@/lib/garde-alerts";
 import { expectedWeekend } from "@/lib/garde-official-table";
 
@@ -75,7 +77,27 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const force = url.searchParams.get("force") === "1";
   const wait = url.searchParams.get("wait") === "1";
+  const revalidateOnly = url.searchParams.get("revalidateOnly") === "1";
   const clock = getTahitiClock();
+
+  if (revalidateOnly) {
+    clearHealthOnCallCache();
+    const snap = await readGardeMooreaFromCache().catch(() => null);
+    revalidatePath("/sante-garde");
+    revalidatePath("/");
+    revalidatePath("/actualites");
+    revalidatePath("/api/health-on-call");
+    revalidatePath("/api/garde-weekend");
+    const slug = snap?.articleSlug || (snap?.validFrom ? gardeArticleSlug(snap.validFrom) : null);
+    if (slug) revalidatePath(`/actualites/${slug}`);
+    return NextResponse.json({
+      ok: true,
+      revalidated: true,
+      tahiti: clock.label,
+      validFrom: snap?.validFrom ?? null,
+      doctor: snap?.doctor?.name ?? null,
+    });
+  }
 
   if (!force && !shouldSyncGardeOnVeille(clock)) {
     return NextResponse.json({

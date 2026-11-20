@@ -27,6 +27,7 @@ import {
   fetchCoppfGardeImageUrl,
   fetchCoppfGardeImageUrls,
   fetchCoppfGardeSnapshot,
+  coppfDatesFromImageUrl,
   isListedWeekdayHolidayRoster,
 } from "@/lib/garde-ordre-pharmaciens";
 import { isGardeOcrEnabled, withGardeOcrSession } from "@/lib/garde-poster-ocr";
@@ -102,11 +103,11 @@ export function validateGardeBeforePublish(
     snap.label = dated.snap.label;
     snap.officialCheck = dated.snap.officialCheck;
   }
-  const holiday = snap.validFrom === snap.validTo;
-  const allow = holiday ? { validFrom: snap.validFrom, validTo: snap.validTo } : undefined;
   const officialCheck = snap.officialCheck;
   if (officialCheck) {
-    const v = validateOfficialMooreaGarde(officialCheck, now, allow);
+    // Toujours la période attendue (férié en semaine, sinon le week-end).
+    // Un jour seul ne peut plus s'auto-valider s'il n'est pas cette période.
+    const v = validateOfficialMooreaGarde(officialCheck, now);
     // Le snapshot final doit être identique à la ligne officielle (pas de cache périmé fusionné).
     if (
       phoneDigits(snap.doctor?.phone ?? "") !== phoneDigits(officialCheck.phone) ||
@@ -582,6 +583,46 @@ async function resolveSnapshotForSync(): Promise<{
   };
 }
 
+type OfficialDated = { validFrom: string | null; validTo: string | null };
+
+/**
+ * Choisit la ligne Moorea du tableau attendu quand plusieurs affiches sont en ligne
+ * (férié + week-end). Une en-tête illisible n'est acceptée que si le nom de fichier
+ * est déjà la période attendue — jamais l'autre affiche, dont on écraserait le médecin.
+ */
+export function pickOfficialOcrCandidate<
+  T extends {
+    validFrom: string;
+    validTo: string;
+    officialCheck?: OfficialDated | null;
+  },
+>(
+  attempts: { fileDates: { validFrom: string; validTo: string } | null; snap: T }[],
+  want: { validFrom: string; validTo: string },
+): T | null {
+  const same = (from?: string | null, to?: string | null) =>
+    Boolean(from) && from === want.validFrom && (to ?? from) === want.validTo;
+
+  let undatedExpectedFile: T | null = null;
+  let undatedUnknownFile: T | null = null;
+  let datedOther: T | null = null;
+
+  for (const attempt of attempts) {
+    const check = attempt.snap.officialCheck;
+    if (!check) continue;
+    if (same(check.validFrom, check.validTo)) return attempt.snap;
+    const undated = !check.validFrom;
+    if (undated && attempt.fileDates && same(attempt.fileDates.validFrom, attempt.fileDates.validTo)) {
+      undatedExpectedFile ??= attempt.snap;
+    } else if (undated && !attempt.fileDates) {
+      undatedUnknownFile ??= attempt.snap;
+    } else if (!undated) {
+      datedOther ??= attempt.snap;
+    }
+  }
+  return undatedExpectedFile ?? undatedUnknownFile ?? datedOther;
+}
+
 async function enrichFromPosterOcr(
   snap: GardeMooreaSnapshot,
   runOcr: boolean,
@@ -652,14 +693,24 @@ async function enrichFromPosterOcr(
 
   try {
     await withGardeOcrSession(async (session) => {
-      // Tableau officiel : on garde en priorité la ligne Moorea DU WEEK-END ATTENDU
-      // (avant, la 1re affiche lue — parfois celle de la semaine passée — arrêtait la boucle).
-      // Chaque image : OCR « tableau » puis, si la ligne Moorea manque, OCR texte libre.
-      const matchesWeekend = (s: GardeMooreaSnapshot) =>
-        Boolean(s.officialCheck) &&
-        (!s.officialCheck!.validFrom || s.officialCheck!.validFrom === want.validFrom);
-      let firstOfficial: GardeMooreaSnapshot | null = null;
+      // Tableau officiel : la ligne Moorea de la période attendue (férié en semaine
+      // ou week-end). Une en-tête illisible ne compte que si le fichier est déjà
+      // cette période. L'autre affiche (week-end pendant un férié, ou l'inverse)
+      // ne doit pas fournir le médecin.
+      const attempts: {
+        fileDates: { validFrom: string; validTo: string } | null;
+        snap: GardeMooreaSnapshot;
+      }[] = [];
+      const wantPeriod = { validFrom: want.validFrom, validTo: want.validTo };
+      const datesMatchWant = (candidate: GardeMooreaSnapshot) =>
+        candidate.officialCheck?.validFrom === want.validFrom &&
+        (candidate.officialCheck.validTo ?? candidate.officialCheck.validFrom) === want.validTo;
       outer: for (const url of urls) {
+        const fileDates =
+          coppfImages.find((img) => img.imageUrl === url)?.dates ?? coppfDatesFromImageUrl(url);
+        const base = fileDates
+          ? { ...working, validFrom: fileDates.validFrom, validTo: fileDates.validTo, label: fileDates.label }
+          : working;
         for (const isTable of [true, false]) {
           const ocr = await session.recognizeImageUrl(url, { isTable });
           if (!ocr.ok || !ocr.text) {
@@ -667,21 +718,28 @@ async function enrichFromPosterOcr(
             continue;
           }
           ocrUsed = true;
-          const cand = mergeGardeOcrIntoSnapshot(working, ocr.text);
+          const cand = mergeGardeOcrIntoSnapshot(base, ocr.text);
           if (!cand.officialCheck) continue;
-          if (matchesWeekend(cand)) {
-            working = cand;
+          attempts.push({ fileDates, snap: cand });
+          const chosen = pickOfficialOcrCandidate(attempts, wantPeriod);
+          if (chosen && datesMatchWant(chosen)) {
+            working = chosen;
             ocrError = undefined;
             break outer;
           }
-          firstOfficial ??= cand;
-          break; // ligne Moorea lue mais autre semaine : image suivante
+          break;
         }
       }
-      if (!matchesWeekend(working) && firstOfficial) working = firstOfficial;
+      const chosen = pickOfficialOcrCandidate(attempts, wantPeriod);
+      if (chosen) {
+        working = chosen;
+        if (datesMatchWant(chosen)) ocrError = undefined;
+      }
 
-      // Secours : Ordre des médecins 987 / TNTV (images du week-end attendu).
-      if (!isGoodForWeekend(working)) {
+      // Secours hors férié : Ordre des médecins 987 / TNTV, puis la commune.
+      // Un férié en semaine ne se complète pas avec l'annonce du week-end.
+      const singleDayDuty = want.validFrom === want.validTo;
+      if (!singleDayDuty && !isGoodForWeekend(working)) {
         for (const img of extraImages) {
           const ocr = await session.recognizeImageUrl(img.url);
           if (!ocr.ok || !ocr.text) continue;
@@ -696,8 +754,7 @@ async function enrichFromPosterOcr(
         }
       }
 
-      // Secours : affiche de la Commune de Moorea (COPPF sans tableau du week-end).
-      if (!isGoodForWeekend(working)) {
+      if (!singleDayDuty && !isGoodForWeekend(working)) {
         for (const post of communePosts) {
           let text = post.message;
           if (post.picture) {
@@ -914,6 +971,35 @@ export async function syncGardeMooreaFromCommune(
       ocrError: `validation: ${validation.issues.join(" ; ")}`.slice(0, 400),
       validationIssues: validation.issues,
       holidayRoster,
+    };
+  }
+
+  const due = expectedGardePeriod(now);
+  if (snap.validFrom !== due.validFrom || snap.validTo !== due.validTo) {
+    console.error(
+      "[garde] publication refusée :",
+      snap.validFrom,
+      snap.validTo,
+      "≠",
+      due.validFrom,
+      due.validTo,
+    );
+    return {
+      cause: "validation",
+      expected: due,
+      ok: false,
+      found: true,
+      pharmacy: null,
+      doctor: snap.doctor?.name ?? null,
+      weekend: snap.label,
+      articleSlug: null,
+      ocrUsed,
+      posterGenerated: false,
+      ocrError: `validation: période ${snap.validFrom}/${snap.validTo} ≠ ${due.validFrom}/${due.validTo}`.slice(0, 400),
+      validationIssues: [
+        `dates ${snap.validFrom}/${snap.validTo} ≠ période attendue ${due.validFrom}/${due.validTo}`,
+      ],
+      holidayRoster: holidayRoster || due.validFrom === due.validTo,
     };
   }
 

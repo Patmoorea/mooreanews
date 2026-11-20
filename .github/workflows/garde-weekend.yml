@@ -37,6 +37,33 @@ on:
     # Mercredi 6h Tahiti — avant l'ouverture habituelle de la garde (8h)
     - cron: "0 16 * * 3"
   workflow_dispatch:
+    inputs:
+      expect_doctor:
+        description: "Médecin exigé (vide = pas de contrôle)"
+        required: false
+        default: ""
+      expect_phone:
+        description: "Téléphone exigé, chiffres seuls"
+        required: false
+        default: ""
+      expect_from:
+        description: "validFrom exigé AAAA-MM-JJ"
+        required: false
+        default: ""
+      protect_slug:
+        description: "Slug d'article à ne pas modifier"
+        required: false
+        default: ""
+      skip_revalidate:
+        description: "Ne pas appeler la prod après la synchro"
+        type: boolean
+        required: false
+        default: false
+      skip_ocr_space:
+        description: "N'utiliser que Tesseract, pas OCR.space"
+        type: boolean
+        required: false
+        default: false
 
 concurrency:
   group: garde-weekend
@@ -82,6 +109,12 @@ jobs:
           # Alias si le secret a été créé sous un autre nom
           OCRSPACE_API_KEY: ${{ secrets.OCRSPACE_API_KEY }}
           GARDE_OCR_ENABLED: "true"
+          GARDE_OCR_SPACE: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_ocr_space == true && 'false' || 'true' }}
+          GARDE_EXPECT_DOCTOR: ${{ github.event_name == 'workflow_dispatch' && inputs.expect_doctor || '' }}
+          GARDE_EXPECT_PHONE: ${{ github.event_name == 'workflow_dispatch' && inputs.expect_phone || '' }}
+          GARDE_EXPECT_FROM: ${{ github.event_name == 'workflow_dispatch' && inputs.expect_from || '' }}
+          GARDE_EXPECT_TO: ${{ github.event_name == 'workflow_dispatch' && inputs.expect_from || '' }}
+          GARDE_PROTECT_SLUG: ${{ github.event_name == 'workflow_dispatch' && inputs.protect_slug || '' }}
           FACEBOOK_PAGE_ACCESS_TOKEN: ${{ secrets.FACEBOOK_PAGE_ACCESS_TOKEN }}
           FACEBOOK_USER_ACCESS_TOKEN: ${{ secrets.FACEBOOK_USER_ACCESS_TOKEN }}
         run: |
@@ -93,22 +126,31 @@ jobs:
           npx tsx scripts/run-garde-sync-now.ts
 
       - name: Revalider le cache Vercel
-        if: always() && steps.sync.outcome == 'success'
+        if: always() && steps.sync.outcome == 'success' && (github.event_name != 'workflow_dispatch' || inputs.skip_revalidate != true)
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          # revalidateOnly : purge les pages, sans relancer l'OCR prod
+          # (un second OCR pourrait remplacer le médecin déjà vérifié).
           curl -sS --http1.1 --max-time 90 \
-            "https://www.mooreanews.com/api/cron/garde-weekend?secret=${CRON_SECRET}&force=1&wait=1" \
+            "https://www.mooreanews.com/api/cron/garde-weekend?secret=${CRON_SECRET}&revalidateOnly=1" \
             | head -c 1200 || true
 
       - name: Vérifier le résultat (jeu–dim)
         if: always()
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          GARDE_EXPECT_FROM: ${{ github.event_name == 'workflow_dispatch' && inputs.expect_from || '' }}
         run: |
           set -uo pipefail
           DOW=$(TZ=Pacific/Tahiti date +%u)
           echo "Jour Tahiti DOW=${DOW} ($(TZ=Pacific/Tahiti date))"
+          # Un contrôle explicite raté ne doit pas être « sauvé » par l'OCR prod :
+          # il publierait peut-être l'autre affiche.
+          if [ -n "${GARDE_EXPECT_FROM}" ] && [ "${{ steps.sync.outcome }}" != "success" ]; then
+            echo "::error title=Garde Moorea non publiée::le médecin ou la date exigés n'ont pas été confirmés"
+            exit 1
+          fi
 
           # Le script sort en 0 UNIQUEMENT si ok:true + médecin validé et publié.
           if [ "${{ steps.sync.outcome }}" = "success" ] && \

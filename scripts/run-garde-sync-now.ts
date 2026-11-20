@@ -9,20 +9,48 @@ import path from "path";
 
 config({ path: ".env.local" });
 
+type ProtectedArticle = {
+  title: string;
+  excerpt: string | null;
+  body: string | null;
+  cover_url: string | null;
+};
+
 async function main() {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
     console.error("SUPABASE_SERVICE_ROLE_KEY manquant dans .env.local");
     process.exit(1);
   }
 
+  // Après dotenv : ces modules lisent les clés Supabase au chargement.
   const { getAdminSupabase } = await import("../src/lib/supabase/admin");
   const {
     GARDE_CACHE_SOURCE_ID,
     GARDE_CACHE_PAYLOAD_SOURCE_ID,
     readGardeMooreaFromCache,
+    writeGardeMooreaCache,
   } = await import("../src/lib/garde-moorea-auto");
+  const { gardePublishMismatch } = await import("../src/lib/garde-sync-verdict");
   const supabase = getAdminSupabase();
-  if (supabase) {
+  const expectMode = Boolean(
+    process.env.GARDE_EXPECT_FROM?.trim() ||
+      process.env.GARDE_EXPECT_DOCTOR?.trim() ||
+      process.env.GARDE_EXPECT_PHONE?.trim(),
+  );
+  const protectSlug = process.env.GARDE_PROTECT_SLUG?.trim() || "";
+  const previousCache = await readGardeMooreaFromCache();
+  let protectedBefore: ProtectedArticle | null = null;
+  if (supabase && protectSlug) {
+    const { data } = await supabase
+      .from("articles")
+      .select("title, excerpt, body, cover_url")
+      .eq("slug", protectSlug)
+      .maybeSingle();
+    protectedBefore = data;
+  }
+  // Avec un contrôle explicite, on ne vide pas le cache avant : un refus
+  // laisse le médecin déjà en ligne. Le succès réécrit le cache ensuite.
+  if (supabase && !expectMode) {
     await supabase
       .from("external_articles")
       .delete()
@@ -47,27 +75,68 @@ async function main() {
     "utf8",
   ).catch(() => {});
 
-  if (result.ok && result.found && result.doctor) {
-    const snap = await readGardeMooreaFromCache();
-    if (snap) {
-      const filePayload = {
-        validFrom: snap.validFrom,
-        validTo: snap.validTo,
-        label: snap.label,
-        posterImageUrl: snap.posterImageUrl ?? undefined,
-        doctor: snap.doctor
-          ? {
-              name: snap.doctor.name.replace(/^Dr\.?\s+/i, ""),
-              phone: snap.doctor.phone,
-              hours: snap.doctorHours,
-            }
-          : undefined,
-        pharmacyHours: snap.pharmacyHours,
-      };
-      const dest = path.join(process.cwd(), "data/garde-moorea.json");
-      await writeFile(dest, `${JSON.stringify(filePayload, null, 2)}\n`, "utf8");
-      console.log(`\nFichier secours mis à jour : ${dest}`);
+  const snap = result.ok ? await readGardeMooreaFromCache() : null;
+  const mismatch = gardePublishMismatch(snap, {
+    doctor: process.env.GARDE_EXPECT_DOCTOR,
+    phone: process.env.GARDE_EXPECT_PHONE,
+    validFrom: process.env.GARDE_EXPECT_FROM,
+    validTo: process.env.GARDE_EXPECT_TO || process.env.GARDE_EXPECT_FROM,
+  });
+  let protectedChanged = false;
+  if (supabase && protectSlug) {
+    const { data: after } = await supabase
+      .from("articles")
+      .select("title, excerpt, body, cover_url")
+      .eq("slug", protectSlug)
+      .maybeSingle();
+    protectedChanged = JSON.stringify(after) !== JSON.stringify(protectedBefore);
+    if (protectedChanged) {
+      if (protectedBefore) {
+        const restored = {
+          title: protectedBefore.title,
+          ...(protectedBefore.excerpt != null ? { excerpt: protectedBefore.excerpt } : {}),
+          ...(protectedBefore.body != null ? { body: protectedBefore.body } : {}),
+          ...(protectedBefore.cover_url != null ? { cover_url: protectedBefore.cover_url } : {}),
+        };
+        await supabase.from("articles").update(restored).eq("slug", protectSlug);
+      } else {
+        await supabase.from("articles").delete().eq("slug", protectSlug);
+      }
+      console.error(`Article protégé restauré : ${protectSlug}`);
     }
+  }
+  if (mismatch) {
+    console.error(`\n✖ Publication refusée — ${mismatch}`);
+    if (previousCache) {
+      await writeGardeMooreaCache(previousCache);
+      console.error("Cache précédent restauré.");
+    }
+    const badFrom = process.env.GARDE_EXPECT_FROM?.trim();
+    if (supabase && badFrom && `garde-moorea-${badFrom}` !== protectSlug) {
+      await supabase.from("articles").delete().eq("slug", `garde-moorea-${badFrom}`);
+      console.error(`Article garde-moorea-${badFrom} retiré.`);
+    }
+    process.exit(1);
+  }
+
+  if (result.ok && result.found && result.doctor && snap) {
+    const filePayload = {
+      validFrom: snap.validFrom,
+      validTo: snap.validTo,
+      label: snap.label,
+      posterImageUrl: snap.posterImageUrl ?? undefined,
+      doctor: snap.doctor
+        ? {
+            name: snap.doctor.name.replace(/^Dr\.?\s+/i, ""),
+            phone: snap.doctor.phone,
+            hours: snap.doctorHours,
+          }
+        : undefined,
+      pharmacyHours: snap.pharmacyHours,
+    };
+    const dest = path.join(process.cwd(), "data/garde-moorea.json");
+    await writeFile(dest, `${JSON.stringify(filePayload, null, 2)}\n`, "utf8");
+    console.log(`\nFichier secours mis à jour : ${dest}`);
   }
 
   // Code de sortie = vérité : ok:false (rien de publié / refusé) ⇒ échec.

@@ -60,6 +60,7 @@ async function withRetry(run: () => Promise<OcrSpaceResult>): Promise<OcrSpaceRe
 }
 
 export function isOcrSpaceEnabled(): boolean {
+  if (process.env.GARDE_OCR_SPACE === "false") return false;
   return Boolean(ocrSpaceApiKey());
 }
 
