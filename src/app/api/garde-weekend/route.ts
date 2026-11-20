@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getGardeWeekendHighlight } from "@/lib/garde-weekend-public";
 
-export const dynamic = "force-dynamic";
+/** ISR 3 min. La publication garde appelle revalidatePath("/api/garde-weekend"). */
+export const revalidate = 180;
 
 export async function GET() {
   try {
@@ -22,7 +23,7 @@ export async function GET() {
       {
         headers: {
           "Cache-Control":
-            "public, max-age=120, s-maxage=600, stale-while-revalidate=1800",
+            "public, max-age=60, s-maxage=180, stale-while-revalidate=300",
         },
       },
     );

@@ -138,10 +138,22 @@ function collectTrips(node: unknown): FirebaseTrip[] {
   return out;
 }
 
-async function fetchJson<T>(url: string): Promise<T | null> {
+/** `live` : pas de cache (widget /api/ferries). `cached` : pages ISR, 3 min. */
+export type FerryFetchMode = "live" | "cached";
+
+const PAGE_FERRY_REVALIDATE_S = 180;
+
+function ferryFetchInit(mode: FerryFetchMode): RequestInit {
+  if (mode === "cached") {
+    return { next: { revalidate: PAGE_FERRY_REVALIDATE_S } };
+  }
+  return { cache: "no-store" };
+}
+
+async function fetchJson<T>(url: string, mode: FerryFetchMode): Promise<T | null> {
   try {
     const res = await fetch(url, {
-      cache: "no-store",
+      ...ferryFetchInit(mode),
       headers: { Accept: "application/json" },
     });
     if (!res.ok) return null;
@@ -151,7 +163,7 @@ async function fetchJson<T>(url: string): Promise<T | null> {
   }
 }
 
-async function fetchAremitiToday(): Promise<{
+async function fetchAremitiToday(mode: FerryFetchMode): Promise<{
   fromMoorea: Departure[];
   fromTahiti: Departure[];
 }> {
@@ -159,9 +171,11 @@ async function fetchAremitiToday(): Promise<{
   const [toMoorea, toTahiti] = await Promise.all([
     fetchJson<Record<string, FirebaseTrip>>(
       `${AREMITI_DB}/Calendar/${year}/${isoWeek}/MOZ/${jsDay}.json`,
+      mode,
     ),
     fetchJson<Record<string, FirebaseTrip>>(
       `${AREMITI_DB}/Calendar/${year}/${isoWeek}/PPT/${jsDay}.json`,
+      mode,
     ),
   ]);
 
@@ -186,14 +200,14 @@ async function fetchAremitiToday(): Promise<{
   return { fromMoorea, fromTahiti };
 }
 
-async function fetchVaearaiToday(): Promise<{
+async function fetchVaearaiToday(mode: FerryFetchMode): Promise<{
   fromMoorea: Departure[];
   fromTahiti: Departure[];
 }> {
   const { year, isoWeek, mondayIndex, nowMin } = tahitiParts();
   const [mozWeek, pptWeek] = await Promise.all([
-    fetchJson<unknown>(`${VAEARAI_DB}/Calendar/${year}/${isoWeek}/MOZ.json`),
-    fetchJson<unknown>(`${VAEARAI_DB}/Calendar/${year}/${isoWeek}/PPT.json`),
+    fetchJson<unknown>(`${VAEARAI_DB}/Calendar/${year}/${isoWeek}/MOZ.json`, mode),
+    fetchJson<unknown>(`${VAEARAI_DB}/Calendar/${year}/${isoWeek}/PPT.json`, mode),
   ]);
 
   const mozDay = Array.isArray(mozWeek) ? mozWeek[mondayIndex] : null;
@@ -231,14 +245,16 @@ function mergeDepartures(
 }
 
 /** Horaires du jour : Aremiti + Vaeara'i (Firebase officiel). */
-export async function fetchFirebaseDepartures(): Promise<{
+export async function fetchFirebaseDepartures(
+  mode: FerryFetchMode = "live",
+): Promise<{
   fromMoorea: Departure[];
   fromTahiti: Departure[];
   ok: boolean;
 }> {
   const results = await Promise.all([
-    fetchAremitiToday(),
-    fetchVaearaiToday(),
+    fetchAremitiToday(mode),
+    fetchVaearaiToday(mode),
   ]);
   const merged = mergeDepartures(results);
   const ok =

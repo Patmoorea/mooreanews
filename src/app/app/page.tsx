@@ -13,7 +13,7 @@ import { getMooreaDuJour } from "@/lib/moorea-du-jour";
 import { SITE } from "@/lib/constants";
 import { articlePath } from "@/lib/article-url";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 180;
 
 export const metadata: Metadata = {
   title: "App MooreaNews",

@@ -68,7 +68,7 @@ export async function getMooreaDuJour(): Promise<MooreaDuJour> {
   const [weather, ferries, alertsRows, events, restaurants, featured] =
     await Promise.all([
       getCurrentWeather(),
-      getNextDepartures(),
+      getNextDepartures("cached"),
       dbListActiveAlerts(),
       getUpcomingEvents(20),
       getRestaurants(),

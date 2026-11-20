@@ -3,18 +3,16 @@
   "crons": [],
   "functions": {
     "src/app/api/cron/garde-weekend/route.ts": {
-      "memory": 1024,
-      "maxDuration": 300,
-      "includeFiles": "node_modules/tesseract.js-core/**"
+      "memory": 512,
+      "maxDuration": 60
     },
     "src/app/api/cron/ai/route.ts": {
       "memory": 512,
       "maxDuration": 120
     },
     "src/app/api/cron/daily/route.ts": {
-      "memory": 1024,
-      "maxDuration": 300,
-      "includeFiles": "node_modules/tesseract.js-core/**"
+      "memory": 512,
+      "maxDuration": 60
     },
     "src/app/api/cron/aggregate/route.ts": {
       "memory": 512,

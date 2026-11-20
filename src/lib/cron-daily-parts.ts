@@ -12,8 +12,6 @@ import {
   digestEmailsEnabled,
   shouldSendEveningDigest,
   shouldSendMorningDigest,
-  shouldPublishGardeWeekend,
-  shouldSyncGardeOnVeille,
   shouldPublishWeeklyRecap,
   shouldSendWeekendDigest,
 } from "@/lib/cron-tahiti";
@@ -39,7 +37,6 @@ import {
 } from "@/lib/push-notify";
 import { syncMeteoVigilanceAlert } from "@/lib/meteo-vigilance-sync";
 import { syncUtilityOutages } from "@/lib/utility-outages-sync";
-import { syncHealthOnCall } from "@/lib/health-on-call";
 import { syncWeeklyRecapFromMooreaNews } from "@/lib/weekly-recap-sync";
 import { checkDpamStatsFreshness } from "@/lib/maritime-traffic";
 import { auditPublicContent, hideStaleExternalArticles } from "@/lib/site-content-audit";
@@ -290,11 +287,14 @@ export async function runDailyCronPart(
 
     case "services": {
       jobs.utilityOutages = await syncUtilityOutages();
-      jobs.healthOnCall = await syncHealthOnCall({
-        fullWeekendPipeline:
-          shouldPublishGardeWeekend(clock) || shouldSyncGardeOnVeille(clock),
-      });
+      // OCR garde = GitHub Actions (garde-weekend.yml). Vercel ne relance pas
+      // Tesseract ici : ça coûtait une fonction de 300 s le matin, y compris samedi.
+      jobs.healthOnCall = {
+        skipped: true,
+        reason: "publication garde sur GitHub, Vercel ne fait que revalidateOnly",
+      };
       revalidatePath("/sante-garde");
+      revalidatePath("/");
 
       const utilitySync = jobs.utilityOutages as {
         created?: number;

@@ -5,7 +5,7 @@
  */
 
 import bundledSchedules from "../../data/ferries-schedules.json";
-import { fetchFirebaseDepartures } from "@/lib/ferry-firebase";
+import { fetchFirebaseDepartures, type FerryFetchMode } from "@/lib/ferry-firebase";
 import type { FerryLiveStatus } from "@/lib/ferry-live-status";
 
 export type Direction = "Tahiti to Moorea" | "Moorea to Tahiti";
@@ -176,10 +176,12 @@ export function normalizeFerrySchedules(raw: RawData | null): RawSchedule[] {
 }
 
 /** Récupération live depuis horaires-tahiti.com (JSON officiel agrégé). */
-export async function fetchRawFerries(): Promise<RawData | null> {
+export async function fetchRawFerries(
+  mode: FerryFetchMode = "live",
+): Promise<RawData | null> {
   try {
     const res = await fetch(SOURCE_URL, {
-      cache: "no-store",
+      ...(mode === "cached" ? { next: { revalidate: 180 } } : { cache: "no-store" as const }),
       redirect: "follow",
       headers: {
         Accept: "application/json",
@@ -201,11 +203,13 @@ function loadBundledFerries(): RawData {
 }
 
 /** Live d’abord, sinon copie locale (même JSON que horaires-tahiti.com). */
-export async function loadFerrySchedules(): Promise<{
+export async function loadFerrySchedules(
+  mode: FerryFetchMode = "live",
+): Promise<{
   raw: RawData;
   source: NextDepartures["source"];
 }> {
-  const live = await fetchRawFerries();
+  const live = await fetchRawFerries(mode);
   if (live) {
     return { raw: live, source: "horaires-tahiti.com" };
   }
@@ -301,10 +305,12 @@ function mergeSortedDepartures(
  * Horaires du jour : Aremiti + Vaeara'i (Firebase officiel) + Tauati (horaires-tahiti).
  * Secours : JSON horaires-tahiti.com complet (cache local inclus).
  */
-export async function getNextDepartures(): Promise<NextDepartures> {
+export async function getNextDepartures(
+  mode: FerryFetchMode = "live",
+): Promise<NextDepartures> {
   const [firebase, { raw, source: jsonSource }] = await Promise.all([
-    fetchFirebaseDepartures(),
-    loadFerrySchedules(),
+    fetchFirebaseDepartures(mode),
+    loadFerrySchedules(mode),
   ]);
 
   if (firebase.ok) {

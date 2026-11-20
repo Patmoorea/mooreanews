@@ -132,12 +132,12 @@ function loadBundled(): BusScheduleData {
 }
 
 /** Horaires live depuis mooreatransportpublic.com (Netlify CMS). */
-export async function fetchLiveBusSchedules(): Promise<
-  Record<string, string[][]> | null
-> {
+export async function fetchLiveBusSchedules(
+  mode: "live" | "cached" = "live",
+): Promise<Record<string, string[][]> | null> {
   try {
     const res = await fetch(SOURCE_API, {
-      cache: "no-store",
+      ...(mode === "cached" ? { next: { revalidate: 180 } } : { cache: "no-store" as const }),
       headers: {
         Accept: "application/json",
         "User-Agent":
@@ -154,12 +154,14 @@ export async function fetchLiveBusSchedules(): Promise<
   }
 }
 
-export async function loadBusScheduleData(): Promise<{
+export async function loadBusScheduleData(
+  mode: "live" | "cached" = "live",
+): Promise<{
   data: BusScheduleData;
   source: NextBusDepartures["source"];
 }> {
   const bundledData = loadBundled();
-  const live = await fetchLiveBusSchedules();
+  const live = await fetchLiveBusSchedules(mode);
   if (live) {
     return {
       data: {
@@ -316,8 +318,10 @@ export function isBusSchoolTermDeparture(raw: string): boolean {
 }
 
 /** Prochains bus du jour (live + cache local). */
-export async function getNextBusDepartures(): Promise<NextBusDepartures> {
-  const { data, source } = await loadBusScheduleData();
+export async function getNextBusDepartures(
+  mode: "live" | "cached" = "live",
+): Promise<NextBusDepartures> {
+  const { data, source } = await loadBusScheduleData(mode);
   return computeNextBusDepartures(data, source);
 }
 

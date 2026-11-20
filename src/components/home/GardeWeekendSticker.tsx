@@ -23,7 +23,7 @@ export function GardeWeekendSticker() {
 
     async function load() {
       try {
-        const res = await fetch("/api/garde-weekend", { cache: "no-store" });
+        const res = await fetch("/api/garde-weekend");
         if (!res.ok) return;
         const data = (await res.json()) as GardeWeekendPayload;
         if (!cancelled) {
