@@ -131,6 +131,29 @@ describe("données affichées sur l'affiche", () => {
     ]);
   });
 
+  it("week-end 21/22 : le dimanche des pharmacies reste le texte complet", () => {
+    const poster = readFileSync(new URL("./garde-weekend-poster.tsx", import.meta.url), "utf8");
+    assert.doesNotMatch(poster, /width:\s*116/);
+    assert.doesNotMatch(poster, /width:\s*130/);
+    assert.match(poster, /PHARMACY_HOUR_TEXT_WIDTH/);
+    assert.doesNotMatch(poster, /<>\s*\n\s*<HourLine label="Samedi :"/);
+
+    const rows = gardePharmacyRows({
+      validFrom: "2026-11-21",
+      validTo: "2026-11-22",
+      doctorHours: { saturday: "12h00 – 18h00", sunday: "8h00 – 16h00" },
+    });
+    const afareaitu = rows.find((row) => row.id === "pharmacie-moorea-afareaitu");
+    const tran = rows.find((row) => row.id === "pharmacie-tran-moorea");
+    const haapiti = rows.find((row) => row.id === "pharmacie-moorea-haapiti");
+    assert.equal(afareaitu?.sunday, "7h30–11h30 (dim et fériés)");
+    assert.equal(afareaitu?.saturday, "7h30–13h30");
+    assert.equal(afareaitu?.holidayLine, undefined);
+    assert.equal(tran?.sunday, "8h00–11h00");
+    assert.match(tran?.saturday ?? "", /\(à confirmer\)$/);
+    assert.equal(haapiti?.sunday, "8h00–10h00 (dim et fériés)");
+  });
+
   it("badge DE GARDE seulement pour la pharmacie citée ce week-end", () => {
     assert.equal(gardeOnDutyPharmacyId(sem42), null);
     assert.equal(gardePharmacyRows(sem42).some((row) => row.onDuty), false);

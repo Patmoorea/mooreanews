@@ -707,46 +707,37 @@ function TaglineSeason({ snap }: { snap: GardeMooreaSnapshot }) {
   );
 }
 
+/**
+ * Largeur utile du texte d'horaires dans une carte pharmacie.
+ * Affiche 1080, padding 28, bordure 3, gouttière 8, 3 cartes (marge 7,
+ * bordure 2, padding 12), icône 22 + écart 6.
+ * Satori ne renvoie à la ligne que si cette largeur est un nombre de pixels.
+ */
+const PHARMACY_HOUR_TEXT_WIDTH =
+  (1080 - 28 * 2 - 3 * 2 - 8 * 2 - 7 * 2 * 3) / 3 - 2 * 2 - 12 * 2 - 22 - 6;
+
 function HourLine({ label, value }: { label: string; value: string }) {
   const { hours, note } = splitConfirm(value);
+  const line = {
+    width: PHARMACY_HOUR_TEXT_WIDTH,
+    fontFamily: "Inter",
+    fontSize: 16,
+    lineHeight: 1.25,
+    color: NAVY,
+  } as const;
   return (
-    <div style={{ display: "flex", flexDirection: "column", marginTop: 3 }}>
-      <div style={{ display: "flex", flexDirection: "row" }}>
-        <div
-          style={{
-            display: "flex",
-            width: 116,
-            fontFamily: "Inter",
-            fontWeight: 800,
-            fontSize: 18,
-            color: NAVY,
-          }}
-        >
-          {label}
-        </div>
-        <div
-          style={{
-            display: "flex",
-            width: 130,
-            fontFamily: "Inter",
-            fontWeight: 700,
-            fontSize: 18,
-            lineHeight: 1.2,
-            color: NAVY,
-          }}
-        >
-          {hours}
-        </div>
-      </div>
+    <div style={{ display: "flex", flexDirection: "column", marginTop: 4 }}>
+      <div style={{ ...line, fontWeight: 800 }}>{label}</div>
+      <div style={{ ...line, fontWeight: 700 }}>{hours}</div>
       {note ? (
         <div
           style={{
-            display: "flex",
-            marginLeft: 116,
+            width: PHARMACY_HOUR_TEXT_WIDTH,
             marginTop: 1,
             fontFamily: "Inter",
             fontWeight: 700,
             fontSize: 13,
+            lineHeight: 1.2,
             color: MUTED,
           }}
         >
@@ -821,16 +812,23 @@ function PharmacyCard({ pharmacy }: { pharmacy: GardePosterPharmacyRow }) {
           {pharmacy.phone}
         </div>
       </div>
-      <div style={{ display: "flex", flexDirection: "row", marginTop: 8 }}>
-        <CalendarIcon size={24} />
-        <div style={{ display: "flex", flexDirection: "column", marginLeft: 6 }}>
+      <div style={{ display: "flex", flexDirection: "row", marginTop: 8, width: "100%" }}>
+        <CalendarIcon size={22} />
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            marginLeft: 6,
+            width: PHARMACY_HOUR_TEXT_WIDTH,
+          }}
+        >
           {pharmacy.holidayLine ? (
             <HourLine label="Férié :" value={pharmacy.holidayLine} />
           ) : (
-            <>
+            <div style={{ display: "flex", flexDirection: "column", width: PHARMACY_HOUR_TEXT_WIDTH }}>
               <HourLine label="Samedi :" value={pharmacy.saturday} />
               <HourLine label="Dimanche :" value={pharmacy.sunday} />
-            </>
+            </div>
           )}
         </div>
       </div>
