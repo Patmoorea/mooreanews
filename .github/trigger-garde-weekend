@@ -1,0 +1,9 @@
+# Régénération contrôlée de l'affiche du week-end 21/22 novembre 2026.
+# Sourcé par garde-weekend.yml. À retirer dès que le run a réussi.
+GARDE_EXPECT_DOCTOR='Dr APPIETTO Audrey'
+GARDE_EXPECT_PHONE='40562707'
+GARDE_EXPECT_FROM='2026-11-21'
+GARDE_EXPECT_TO='2026-11-22'
+GARDE_EXPECT_SATURDAY='12h00 – 18h00'
+GARDE_EXPECT_SUNDAY='8h00 – 16h00'
+GARDE_PROTECT_SLUG='garde-moorea-2026-11-21'

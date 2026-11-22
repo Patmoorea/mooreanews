@@ -14,6 +14,15 @@ function compactDoctorName(value: string): string {
     .toUpperCase();
 }
 
+function compactHours(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[–—−]/g, "-")
+    .replace(/\s+/g, "")
+    .toLowerCase();
+}
+
 /**
  * Contrôle optionnel avant de laisser une publication en place.
  * Aucune attente → pas d'écart. Un médecin, un téléphone ou une date faux → motif.
@@ -23,19 +32,24 @@ export function gardePublishMismatch(
     validFrom?: string | null;
     validTo?: string | null;
     doctor?: { name?: string | null; phone?: string | null } | null;
+    doctorHours?: { saturday?: string | null; sunday?: string | null } | null;
   } | null,
   expect: {
     doctor?: string | null;
     phone?: string | null;
     validFrom?: string | null;
     validTo?: string | null;
+    saturday?: string | null;
+    sunday?: string | null;
   },
 ): string | null {
   const doctor = expect.doctor?.trim() ?? "";
   const phone = (expect.phone ?? "").replace(/\D/g, "");
   const from = expect.validFrom?.trim() ?? "";
   const to = expect.validTo?.trim() ?? "";
-  if (!doctor && !phone && !from && !to) return null;
+  const saturday = expect.saturday?.trim() ?? "";
+  const sunday = expect.sunday?.trim() ?? "";
+  if (!doctor && !phone && !from && !to && !saturday && !sunday) return null;
   if (!snap) return "aucun snapshot publié";
   if (from && snap.validFrom !== from) return `validFrom ${snap.validFrom ?? "?"} ≠ ${from}`;
   if (to && snap.validTo !== to) return `validTo ${snap.validTo ?? "?"} ≠ ${to}`;
@@ -44,6 +58,12 @@ export function gardePublishMismatch(
   }
   const gotPhone = (snap.doctor?.phone ?? "").replace(/\D/g, "");
   if (phone && gotPhone !== phone) return `téléphone ${snap.doctor?.phone ?? "?"} ≠ ${phone}`;
+  if (saturday && compactHours(snap.doctorHours?.saturday ?? "") !== compactHours(saturday)) {
+    return `samedi « ${snap.doctorHours?.saturday ?? ""} » ≠ « ${saturday} »`;
+  }
+  if (sunday && compactHours(snap.doctorHours?.sunday ?? "") !== compactHours(sunday)) {
+    return `dimanche « ${snap.doctorHours?.sunday ?? ""} » ≠ « ${sunday} »`;
+  }
   return null;
 }
 
