@@ -7,11 +7,6 @@
 name: Garde week-end MooreaNews
 
 on:
-  push:
-    branches: [main]
-    paths:
-      # Fichier ponctuel : un push qui le modifie lance une seule synchro contrôlée.
-      - ".github/trigger-garde-weekend"
   schedule:
     # Mercredi 12h Tahiti — première tentative SEM de la semaine
     - cron: "0 22 * * 3"
@@ -133,13 +128,6 @@ jobs:
           else
             echo "OCR_SPACE_API_KEY: ABSENTE — ajoutez le secret GitHub Actions OCR_SPACE_API_KEY"
           fi
-          if [ -f .github/trigger-garde-weekend ]; then
-            set -a
-            # shellcheck disable=SC1091
-            . .github/trigger-garde-weekend
-            set +a
-            echo "Publication contrôlée : ${GARDE_EXPECT_DOCTOR:-} ${GARDE_EXPECT_FROM:-}/${GARDE_EXPECT_TO:-}"
-          fi
           npx tsx scripts/run-garde-sync-now.ts
 
       - name: Revalider le cache Vercel
@@ -163,12 +151,6 @@ jobs:
           set -uo pipefail
           DOW=$(TZ=Pacific/Tahiti date +%u)
           echo "Jour Tahiti DOW=${DOW} ($(TZ=Pacific/Tahiti date))"
-          if [ -f .github/trigger-garde-weekend ]; then
-            set -a
-            # shellcheck disable=SC1091
-            . .github/trigger-garde-weekend
-            set +a
-          fi
           # Un contrôle explicite raté ne doit pas être « sauvé » par l'OCR prod :
           # il publierait peut-être l'autre affiche.
           if [ -n "${GARDE_EXPECT_FROM}" ] && [ "${{ steps.sync.outcome }}" != "success" ]; then
