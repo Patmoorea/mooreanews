@@ -646,5 +646,36 @@ describe("Matari'i 20 novembre 2026 — férié et week-end en ligne ensemble", 
       ) ?? "",
       /validFrom|médecin|téléphone/,
     );
+    assert.equal(
+      gardePublishMismatch(
+        {
+          validFrom: "2026-11-21",
+          validTo: "2026-11-22",
+          doctor: { name: "Dr APPIETTO Audrey", phone: "40 56 27 07" },
+          doctorHours: { saturday: "12h00 - 18h00", sunday: "8h00 – 16h00" },
+        },
+        {
+          doctor: "Dr APPIETTO Audrey",
+          phone: "40 56 27 07",
+          validFrom: "2026-11-21",
+          validTo: "2026-11-22",
+          saturday: "12h00 – 18h00",
+          sunday: "8h00-16h00",
+        },
+      ),
+      null,
+    );
+    assert.match(
+      gardePublishMismatch(
+        {
+          validFrom: "2026-11-21",
+          validTo: "2026-11-22",
+          doctor: { name: "Dr APPIETTO Audrey", phone: "40 56 27 07" },
+          doctorHours: { saturday: "12h00 – 18h00", sunday: "9h00 – 16h00" },
+        },
+        { sunday: "8h00 – 16h00" },
+      ) ?? "",
+      /dimanche/,
+    );
   });
 });

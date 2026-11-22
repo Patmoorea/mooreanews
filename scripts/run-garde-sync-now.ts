@@ -58,6 +58,8 @@ async function main() {
     phone: process.env.GARDE_EXPECT_PHONE,
     validFrom: process.env.GARDE_EXPECT_FROM,
     validTo: process.env.GARDE_EXPECT_TO || process.env.GARDE_EXPECT_FROM,
+    saturday: process.env.GARDE_EXPECT_SATURDAY,
+    sunday: process.env.GARDE_EXPECT_SUNDAY,
   });
   let protectedChanged = false;
   if (supabase && protectSlug) {
