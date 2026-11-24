@@ -1,9 +1,8 @@
-name: Veille horaire MooreaNews
+name: Veille MooreaNews (manuelle)
 on:
-  schedule:
-# 3 passages / jour, heure de Tahiti (UTC−10) : 7h, 13h, 18h.
-# Avant : 8 passages (toutes les 2 h de 6h à 20h).
-    - cron: "0 4,17,23 * * *"
+  # Plus de planification. Le job du matin (cron-daily, ~6h Tahiti) fait déjà
+  # RSS, Facebook et le web. Les 3 passages automatiques en plus brûlaient
+  # le CPU Vercel du plan gratuit (4 h / 30 jours).
   workflow_dispatch:
 concurrency:
   group: veille-hourly
