@@ -3,22 +3,22 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Ship, Car } from "lucide-react";
-import { formatMinutesUntil, type Departure } from "@/lib/ferries";
-
-type FerryData = {
-  fromMoorea: Departure[];
-  fromTahiti: Departure[];
-};
+import {
+  formatMinutesUntil,
+  freshenFerryMinutes,
+  type Departure,
+  type NextDepartures,
+} from "@/lib/ferries";
 
 export function CovoiturageFerryPanel() {
-  const [ferry, setFerry] = useState<FerryData | null>(null);
+  const [ferry, setFerry] = useState<NextDepartures | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     fetch("/api/ferries")
-      .then((r) => r.json() as Promise<FerryData>)
+      .then((r) => r.json() as Promise<NextDepartures>)
       .then((d) => {
-        if (!cancelled) setFerry(d);
+        if (!cancelled) setFerry(freshenFerryMinutes(d));
       })
       .catch(() => {});
     return () => {

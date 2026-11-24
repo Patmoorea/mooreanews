@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { getHomeHighlights } from "@/lib/home-highlights";
+import { PUBLIC_CACHE_CONTROL } from "@/lib/public-cache";
 
-export const revalidate = 1800;
+/**
+ * Bandeau d'accueil. Repli 1 h ; les crons (coupures, garde, récap)
+ * appellent revalidatePath("/api/home-highlights").
+ */
+export const dynamic = "force-static";
+export const revalidate = 3600;
 
 export async function GET() {
   try {
@@ -10,7 +16,7 @@ export async function GET() {
       { highlights },
       {
         headers: {
-          "Cache-Control": "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600",
+          "Cache-Control": PUBLIC_CACHE_CONTROL,
         },
       },
     );

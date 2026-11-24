@@ -181,7 +181,9 @@ export async function fetchRawFerries(
 ): Promise<RawData | null> {
   try {
     const res = await fetch(SOURCE_URL, {
-      ...(mode === "cached" ? { next: { revalidate: 180 } } : { cache: "no-store" as const }),
+      ...(mode === "cached"
+        ? { next: { revalidate: 3600 } }
+        : { cache: "no-store" as const }),
       redirect: "follow",
       headers: {
         Accept: "application/json",
@@ -200,6 +202,34 @@ export async function fetchRawFerries(
 
 function loadBundledFerries(): RawData {
   return bundledSchedules as RawData;
+}
+
+/**
+ * Prochains départs calculés sur le JSON embarqué au build
+ * (copie horaires-tahiti.com). Pas d'appel réseau.
+ */
+export function getBundledNextDepartures(): NextDepartures {
+  return computeNextDepartures(
+    loadBundledFerries(),
+    "horaires-tahiti.com (cache)",
+  );
+}
+
+/** Recale « dans X min » sur l'horloge locale quand le JSON CDN a vieilli. */
+export function freshenFerryMinutes(data: NextDepartures): NextDepartures {
+  const fetched = Date.parse(data.fetchedAt);
+  if (!Number.isFinite(fetched)) return data;
+  const drift = Math.floor((Date.now() - fetched) / 60_000);
+  if (drift === 0) return data;
+  const shift = (rows: Departure[]) =>
+    rows
+      .map((row) => ({ ...row, minutesUntil: row.minutesUntil - drift }))
+      .filter((row) => row.minutesUntil > -15);
+  return {
+    ...data,
+    fromMoorea: shift(data.fromMoorea),
+    fromTahiti: shift(data.fromTahiti),
+  };
 }
 
 /** Live d’abord, sinon copie locale (même JSON que horaires-tahiti.com). */

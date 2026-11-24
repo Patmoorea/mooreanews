@@ -2,7 +2,9 @@
  * Événements passés — dépublication automatique (aligné sur site-content-audit).
  */
 
+import { revalidatePath } from "next/cache";
 import { getAdminSupabase } from "@/lib/supabase/admin";
+import { revalidateIslandHome } from "@/lib/revalidate-island";
 
 /** Même délai que l'audit : 14 jours après la date de fin. */
 export const PAST_EVENT_GRACE_DAYS = 14;
@@ -44,9 +46,8 @@ export async function expirePastEvents(now = new Date()): Promise<{
 
   if (error) return { unpublished: 0, titles: [] };
 
-  const { revalidatePath } = await import("next/cache");
   revalidatePath("/evenements");
-  revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+  revalidateIslandHome();
 
   return {
     unpublished: ids.length,

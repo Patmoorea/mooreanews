@@ -8,11 +8,21 @@ import {
 import { listingPageMetadata } from "@/lib/seo";
 
 /**
- * Archives paginées (~170 Ko). Sans `generateStaticParams` elles sont déjà
- * dynamiques ; on le fige pour qu'un bot sur `/actualites/page/99999` ne crée
- * jamais une entrée ISR.
+ * Pages d'archives connues au build, repli 1 h.
+ * `dynamicParams = false` : un bot sur `/actualites/page/99999` prend un 404
+ * sans exécuter le listing.
  */
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
+export const dynamicParams = false;
+
+export async function generateStaticParams() {
+  const total = Math.max(1, Math.ceil((await getListedArticles()).length / ARTICLES_PER_PAGE));
+  const pages: { n: string }[] = [];
+  for (let page = 2; page <= total; page += 1) {
+    pages.push({ n: String(page) });
+  }
+  return pages;
+}
 
 type Props = { params: Promise<{ n: string }> };
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { revalidateIslandHome } from "@/lib/revalidate-island";
 import { handleAiDraftModerationUpdate } from "@/lib/telegram-ai-drafts";
 import { notifyPublicNewArticles } from "@/lib/telegram-notify";
 import { scheduleSignalementAiEnrichment } from "@/lib/ai-signalement-enrich";
@@ -33,7 +34,7 @@ export async function POST(req: Request) {
       onPublished: async ({ slug, title }) => {
         revalidatePath("/actualites");
         revalidatePath(`/actualites/${slug}`);
-        revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+        revalidateIslandHome();
         await notifyPublicNewArticles([{ slug, title }]);
       },
     });

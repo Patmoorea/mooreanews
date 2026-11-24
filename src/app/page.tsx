@@ -19,13 +19,14 @@ import { CommunityCTA } from "@/components/home/CommunityCTA";
 import { CovoituragePromo } from "@/components/home/CovoituragePromo";
 
 /**
- * ISR 3 min. Les ferries en direct restent sur /api/ferries (no-store, widget client).
+ * Repli ISR 1 h. Les crons et l'admin appellent revalidatePath("/") à chaque
+ * publication (garde, articles, alertes, coupures).
  * `force-static` : le module de veille Facebook, importé mais pas appelé au rendu,
  * contient des fetch no-store qui sinon rendraient l'accueil dynamique.
- * La publication garde appelle revalidatePath("/") pour le nouveau médecin.
+ * Les prochains ferries sont sur /api/ferries (JSON embarqué, cache 1 h).
  */
 export const dynamic = "force-static";
-export const revalidate = 180;
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   alternates: {

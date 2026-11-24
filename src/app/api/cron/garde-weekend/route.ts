@@ -1,5 +1,6 @@
 import { after, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidateIslandHome } from "@/lib/revalidate-island";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import { cleanupGardeData, PURGED_GARDE_SLUGS } from "@/lib/garde-cleanup";
 import { getAdminSupabase } from "@/lib/supabase/admin";
@@ -53,7 +54,9 @@ async function runGardeSync() {
   revalidateTag("garde-moorea", "max");
   revalidatePath("/sante-garde");
   revalidatePath("/actualites");
-  revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+  revalidatePath("/api/health-on-call");
+  revalidatePath("/api/garde-weekend");
+  revalidateIslandHome();
   if (result.articleSlug) {
     revalidatePath(`/actualites/${result.articleSlug}`);
   }
@@ -84,10 +87,10 @@ export async function GET(req: Request) {
     clearHealthOnCallCache();
     const snap = await readGardeMooreaFromCache().catch(() => null);
     revalidatePath("/sante-garde");
-    revalidatePath("/");
     revalidatePath("/actualites");
     revalidatePath("/api/health-on-call");
     revalidatePath("/api/garde-weekend");
+    revalidateIslandHome();
     const slug = snap?.articleSlug || (snap?.validFrom ? gardeArticleSlug(snap.validFrom) : null);
     if (slug) revalidatePath(`/actualites/${slug}`);
     return NextResponse.json({

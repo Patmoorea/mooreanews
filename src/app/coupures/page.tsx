@@ -7,7 +7,6 @@ import {
   PDE_SOURCE_LABEL,
   type UtilityOutage,
 } from "@/lib/utility-outages";
-import { syncUtilityOutagesIfStale } from "@/lib/utility-outages-sync";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 
@@ -18,7 +17,13 @@ export const metadata = {
   alternates: { canonical: "/coupures" },
 };
 
-export const dynamic = "force-dynamic";
+/**
+ * Repli 1 h. Les crons coupures appellent revalidatePath("/coupures")
+ * dès qu'une coupure est créée, mise à jour ou retirée.
+ * Pas de synchro EDT/Facebook dans la requête : ça réveillait une fonction à chaque visite.
+ */
+export const dynamic = "force-static";
+export const revalidate = 3600;
 
 function OutageTable({
   outages,
@@ -86,8 +91,6 @@ function OutageTable({
 }
 
 export default async function CoupuresPage() {
-  void syncUtilityOutagesIfStale().catch(() => {});
-
   let schedule;
   let error: string | null = null;
   try {

@@ -3,6 +3,7 @@
  */
 
 import { revalidatePath } from "next/cache";
+import { revalidateIslandHome } from "@/lib/revalidate-island";
 import { expirePastAlerts } from "@/lib/alert-schedule";
 import { expireStaleAnnouncements } from "@/lib/announcement-expiry";
 import { expirePastEvents } from "@/lib/event-expiry";
@@ -104,7 +105,7 @@ function revalidateFromAggregation(results: AggregationResult[]): void {
   if (alertsCreated > 0) {
     revalidatePath("/alertes");
     revalidatePath("/api/alerts");
-    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+    revalidateIslandHome();
   }
   const articlesCreated = results.reduce(
     (s, r) => s + (r.articlesCreated ?? 0),
@@ -112,7 +113,7 @@ function revalidateFromAggregation(results: AggregationResult[]): void {
   );
   if (articlesCreated > 0) {
     revalidatePath("/actualites");
-    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+    revalidateIslandHome();
   }
 }
 
@@ -163,12 +164,12 @@ export async function runDailyCronPart(
       jobs.expiredEvents = expiredEvents;
       if (expiredEvents.unpublished > 0) {
         revalidatePath("/evenements");
-        revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+        revalidateIslandHome();
       }
       if (expiredAlerts > 0) {
         revalidatePath("/alertes");
         revalidatePath("/api/alerts");
-        revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+        revalidateIslandHome();
       }
 
       jobs.meteoVigilance = await syncMeteoVigilanceAlert();
@@ -181,7 +182,7 @@ export async function runDailyCronPart(
         if (action === "created" || action === "updated" || action === "cleared") {
           revalidatePath("/alertes");
           revalidatePath("/api/alerts");
-          revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+          revalidateIslandHome();
         }
       }
 
@@ -194,7 +195,7 @@ export async function runDailyCronPart(
       if (shouldPublishWeeklyRecap(clock)) {
         jobs.weeklyRecap = await syncWeeklyRecapFromMooreaNews();
         revalidatePath("/actualites");
-        revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+        revalidateIslandHome();
       } else if (clock.weekday === 1) {
         jobs.weeklyRecap = {
           skipped: true,
@@ -294,7 +295,9 @@ export async function runDailyCronPart(
         reason: "publication garde sur GitHub, Vercel ne fait que revalidateOnly",
       };
       revalidatePath("/sante-garde");
-      revalidatePath("/");
+      revalidatePath("/api/health-on-call");
+      revalidatePath("/api/garde-weekend");
+      revalidateIslandHome();
 
       const utilitySync = jobs.utilityOutages as {
         created?: number;
@@ -309,7 +312,7 @@ export async function runDailyCronPart(
         revalidatePath("/alertes");
         revalidatePath("/api/alerts");
         revalidatePath("/coupures");
-        revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+        revalidateIslandHome();
       }
       break;
     }
@@ -322,7 +325,7 @@ export async function runDailyCronPart(
       const falseMeteoAlerts = await deactivateFalseMeteoAlerts();
       jobs.falseMeteoAlertsDeactivated = falseMeteoAlerts;
       if (falseHouleAlerts > 0 || falseFerryAlerts > 0 || falseMeteoAlerts > 0) {
-        revalidatePath("/");
+        revalidateIslandHome();
         revalidatePath("/alertes");
         revalidatePath("/api/alerts");
       }
@@ -342,10 +345,10 @@ export async function runDailyCronPart(
       ) {
         revalidatePath("/actualites");
         revalidatePath("/evenements");
-        revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+        revalidateIslandHome();
       }
 
-      revalidatePath("/");
+      revalidateIslandHome();
       revalidatePath("/api/ferries");
 
       jobs.ferrySync = await checkFerryScheduleSync();

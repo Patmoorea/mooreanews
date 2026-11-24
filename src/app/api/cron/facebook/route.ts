@@ -1,5 +1,6 @@
 import { after, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { revalidateIslandHome } from "@/lib/revalidate-island";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import { aggregateFacebookPagesGraph } from "@/lib/facebook-watch";
 import { facebookCronRecentPostLimit } from "@/lib/facebook-import-filters";
@@ -92,7 +93,7 @@ async function runFacebookImport(
     revalidatePath("/alertes");
     revalidatePath("/api/alerts");
     revalidatePath("/coupures");
-    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+    revalidateIslandHome();
   }
 
   if (!options?.skipTelegram) {

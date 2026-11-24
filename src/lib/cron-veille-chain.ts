@@ -3,6 +3,7 @@
  */
 
 import { revalidatePath } from "next/cache";
+import { revalidateIslandHome } from "@/lib/revalidate-island";
 import {
   aggregateRssOnly,
   aggregateWebPagesOnly,
@@ -62,12 +63,12 @@ export async function runVeillePartRss() {
   if (s.articlesCreated > 0) {
     revalidatePath("/actualites");
     revalidatePath("/coupures");
-    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+    revalidateIslandHome();
   }
   if (s.alertsCreated > 0) {
     revalidatePath("/alertes");
     revalidatePath("/api/alerts");
-    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+    revalidateIslandHome();
   }
 
   let telegramChannel = { sent: 0, failed: 0, errors: [] as string[] };
@@ -91,7 +92,7 @@ export async function runVeillePartWeb() {
   const s = summarize(bySource);
   if (s.articlesCreated > 0) {
     revalidatePath("/actualites");
-    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+    revalidateIslandHome();
   }
   return { ok: true, part: "web" as const, durationMs: Date.now() - start, bySource, ...s };
 }
@@ -115,7 +116,7 @@ export async function runVeillePartFinish() {
     revalidatePath("/alertes");
     revalidatePath("/api/alerts");
     revalidatePath("/coupures");
-    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+    revalidateIslandHome();
   }
 
   let healthOnCall: Awaited<ReturnType<typeof syncHealthOnCall>> | {
@@ -131,7 +132,12 @@ export async function runVeillePartFinish() {
       if (healthOnCall.found) {
         revalidatePath("/sante-garde");
         revalidatePath("/actualites");
-        revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+        revalidatePath("/api/health-on-call");
+        revalidatePath("/api/garde-weekend");
+        revalidateIslandHome();
+        if (healthOnCall.articleSlug) {
+          revalidatePath(`/actualites/${healthOnCall.articleSlug}`);
+        }
       }
     } catch (e) {
       healthOnCall = {
@@ -183,7 +189,7 @@ export async function runVeillePartFinish() {
   const falseFerryAlerts = await deactivateFalseFerryAlerts();
   const falseMeteoAlerts = await deactivateFalseMeteoAlerts();
   if (falseHouleAlerts > 0 || falseFerryAlerts > 0 || falseMeteoAlerts > 0) {
-    revalidatePath("/");
+    revalidateIslandHome();
     revalidatePath("/alertes");
     revalidatePath("/api/alerts");
   }
@@ -192,13 +198,13 @@ export async function runVeillePartFinish() {
   if (externalCleanup.hidden > 0) {
     revalidatePath("/admin/external");
     revalidatePath("/actualites");
-    revalidatePath("/");
+    revalidateIslandHome();
   }
 
   const expiredEvents = await expirePastEvents();
   if (expiredEvents.unpublished > 0) {
     revalidatePath("/evenements");
-    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+    revalidateIslandHome();
   }
 
   const expiredAnnouncements = await expireStaleAnnouncements();

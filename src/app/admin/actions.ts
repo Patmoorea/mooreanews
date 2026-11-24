@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidateIslandHome } from "@/lib/revalidate-island";
 import { redirect } from "next/navigation";
 import { isGardeCacheSource, parseGardeSnapshotJson } from "@/lib/card-excerpt";
 import { contentReferencesStaleYear } from "@/lib/facebook-import-filters";
@@ -235,14 +236,14 @@ function adminPathFor(table: TableName): string {
 
 function revalidateArticlePublicPaths(slug?: string) {
   revalidatePath("/actualites");
-  revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+  revalidateIslandHome();
   if (slug) revalidatePath(`/actualites/${slug}`);
 }
 
 function revalidateAlertPublicPaths() {
   revalidatePath("/alertes");
   revalidatePath("/api/alerts");
-  revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+  revalidateIslandHome();
 }
 
 async function dispatchAlertNotifications(alert: AlertRow) {
@@ -281,7 +282,7 @@ export async function createContent(table: TableName, formData: FormData) {
     if (error) throw new Error(error);
     revalidatePath(adminPathFor(table));
     revalidatePath(publicPathFor(table));
-    revalidatePath("/");
+    revalidateIslandHome();
     if (
       legacySchema &&
       (payload.lat != null || payload.lon != null)
@@ -313,7 +314,7 @@ export async function createContent(table: TableName, formData: FormData) {
   revalidatePath(adminPathFor(table));
   revalidatePath(publicPathFor(table));
   if (table === "events" || table === "announcements") {
-    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+    revalidateIslandHome();
   }
   if (table === "accommodations") {
     revalidatePath("/visiteurs");
@@ -339,7 +340,7 @@ export async function updateContent(
       payload as Partial<InfoPratiqueRowInput>,
     );
     if (error) throw new Error(error);
-    revalidatePath("/");
+    revalidateIslandHome();
     if (
       legacySchema &&
       (payload.lat != null || payload.lon != null)
@@ -375,7 +376,7 @@ export async function updateContent(
       .eq("id", id);
     if (error) throw error;
     if (table === "restaurants" || table === "activities" || table === "accommodations") {
-      revalidatePath("/");
+      revalidateIslandHome();
     }
   }
 
@@ -690,7 +691,7 @@ export async function approveSubmission(id: string, formData: FormData) {
   revalidatePath("/admin/submissions");
   revalidatePath("/evenements");
   revalidatePath("/annonces");
-  revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+  revalidateIslandHome();
 }
 
 export async function rejectSubmission(id: string, formData: FormData) {

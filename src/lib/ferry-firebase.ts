@@ -138,10 +138,10 @@ function collectTrips(node: unknown): FirebaseTrip[] {
   return out;
 }
 
-/** `live` : pas de cache (widget /api/ferries). `cached` : pages ISR, 3 min. */
+/** `live` : pas de cache (synchro). `cached` : pages ISR, 1 h. */
 export type FerryFetchMode = "live" | "cached";
 
-const PAGE_FERRY_REVALIDATE_S = 180;
+const PAGE_FERRY_REVALIDATE_S = 3600;
 
 function ferryFetchInit(mode: FerryFetchMode): RequestInit {
   if (mode === "cached") {

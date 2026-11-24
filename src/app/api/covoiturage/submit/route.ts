@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { revalidateIslandHome } from "@/lib/revalidate-island";
 import { z } from "zod";
 import {
   buildCarpoolBody,
@@ -153,7 +154,7 @@ export async function POST(req: Request) {
 
   revalidatePath("/covoiturage");
   revalidatePath("/annonces");
-  revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+  revalidateIslandHome();
 
   return NextResponse.json(
     {

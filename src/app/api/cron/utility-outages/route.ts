@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { revalidateIslandHome } from "@/lib/revalidate-island";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import { syncUtilityOutages } from "@/lib/utility-outages-sync";
 
@@ -16,7 +17,7 @@ export async function GET(req: Request) {
     revalidatePath("/alertes");
     revalidatePath("/api/alerts");
     revalidatePath("/coupures");
-    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+    revalidateIslandHome();
   }
 
   return NextResponse.json(result);

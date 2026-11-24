@@ -3,9 +3,16 @@ import { getMooreaDuJour } from "@/lib/moorea-du-jour";
 import { getBeachSwimScores } from "@/lib/swim-beaches";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
 
-export const revalidate = 1800;
+import { PUBLIC_CACHE_CONTROL } from "@/lib/public-cache";
 
-/** API ouverte « Moorea Data » — ferries, météo, alertes, plages. */
+export const dynamic = "force-static";
+export const revalidate = 3600;
+
+/**
+ * API ouverte « Moorea Data ».
+ * OPTIONS (prévol CORS) empêche le pré-rendu du segment ; le GET reste
+ * mis en cache au CDN via Cache-Control (s-maxage=3600).
+ */
 export async function GET() {
   const [digest, beaches, alerts] = await Promise.all([
     getMooreaDuJour(),
@@ -39,7 +46,7 @@ export async function GET() {
     {
       headers: {
         "Access-Control-Allow-Origin": "*",
-        "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=3600",
+        "Cache-Control": PUBLIC_CACHE_CONTROL,
       },
     },
   );

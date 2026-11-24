@@ -4,6 +4,7 @@
  */
 
 import { revalidatePath } from "next/cache";
+import { revalidateIslandHome } from "@/lib/revalidate-island";
 import { aggregateAll } from "@/lib/aggregator";
 import {
   getTahitiClock,
@@ -51,12 +52,12 @@ export async function runVeilleCron(): Promise<VeilleCronResult> {
   if (alertsCreated > 0) {
     revalidatePath("/alertes");
     revalidatePath("/api/alerts");
-    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+    revalidateIslandHome();
   }
   if (articlesCreated > 0) {
     revalidatePath("/actualites");
     revalidatePath("/coupures");
-    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+    revalidateIslandHome();
   }
 
   const utilityOutages = await syncUtilityOutages();
@@ -68,7 +69,7 @@ export async function runVeilleCron(): Promise<VeilleCronResult> {
     revalidatePath("/alertes");
     revalidatePath("/api/alerts");
     revalidatePath("/coupures");
-    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+    revalidateIslandHome();
   }
 
   let healthOnCall: VeilleCronResult["healthOnCall"];
@@ -80,7 +81,12 @@ export async function runVeilleCron(): Promise<VeilleCronResult> {
       if (healthOnCall.found) {
         revalidatePath("/sante-garde");
         revalidatePath("/actualites");
-        revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+        revalidatePath("/api/health-on-call");
+        revalidatePath("/api/garde-weekend");
+        revalidateIslandHome();
+        if (healthOnCall.articleSlug) {
+          revalidatePath(`/actualites/${healthOnCall.articleSlug}`);
+        }
       }
     } catch (e) {
       errors.push(`garde: ${String(e)}`);

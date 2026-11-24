@@ -5,26 +5,22 @@ import Link from "next/link";
 import { Ship, X, Ticket } from "lucide-react";
 import { ferryBookingUrl } from "@/lib/constants";
 import {
+  freshenFerryMinutes,
   nextDeparturesPerCompany,
-  type Departure,
+  type NextDepartures,
 } from "@/lib/ferries";
 
-type FerryData = {
-  fromMoorea: Departure[];
-  fromTahiti: Departure[];
-};
-
 export function FerryStickyBar() {
-  const [data, setData] = useState<FerryData | null>(null);
+  const [data, setData] = useState<NextDepartures | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const load = () =>
       fetch("/api/ferries")
-        .then((r) => r.json() as Promise<FerryData>)
+        .then((r) => r.json() as Promise<NextDepartures>)
         .then((d) => {
-          if (!cancelled) setData(d);
+          if (!cancelled) setData(freshenFerryMinutes(d));
         })
         .catch(() => {});
     load();

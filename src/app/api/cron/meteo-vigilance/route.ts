@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { revalidateIslandHome } from "@/lib/revalidate-island";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import { syncMeteoVigilanceAlert } from "@/lib/meteo-vigilance-sync";
 
@@ -20,7 +21,8 @@ export async function GET(req: Request) {
   ) {
     revalidatePath("/alertes");
     revalidatePath("/api/alerts");
-    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+    revalidatePath("/vigilance-cyclone");
+    revalidateIslandHome();
   }
 
   return NextResponse.json({ ok: result.action !== "error", ...result });

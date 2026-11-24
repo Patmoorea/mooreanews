@@ -1,6 +1,5 @@
 "use client";
 
-import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import type { AdSponsorStripItem } from "@/lib/ads-sponsors";
 import { InfoBannerSlot } from "@/components/layout/InfoBannerSlot";
@@ -14,8 +13,6 @@ import { FerryStickyBar } from "@/components/widgets/FerryStickyBar";
 import { BusBanner } from "@/components/widgets/BusBanner";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
-import { PageViewTracker } from "@/components/analytics/PageViewTracker";
-
 function isMinimalChrome(pathname: string): boolean {
   return pathname.startsWith("/app") || pathname.startsWith("/admin") || pathname.startsWith("/sail");
 }
@@ -34,9 +31,6 @@ export function SiteChrome({
     return (
       <>
         <ServiceWorkerRegister />
-        <Suspense fallback={null}>
-          <PageViewTracker />
-        </Suspense>
         <main className="flex-1">{children}</main>
       </>
     );
@@ -45,9 +39,6 @@ export function SiteChrome({
   return (
     <>
       <ServiceWorkerRegister />
-      <Suspense fallback={null}>
-        <PageViewTracker />
-      </Suspense>
       <InfoBannerSlot />
       <BreakingNewsSlot />
       <SeasonalBanner />

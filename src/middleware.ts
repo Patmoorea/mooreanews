@@ -6,7 +6,8 @@ import { createServerClient } from "@supabase/ssr";
  * Si Supabase n'est pas configuré, le middleware est neutre.
  *
  * Ne tourne plus que sur les pages qui lisent la session côté serveur
- * (admin, compte, auth) + « / » pour le retour ?code=… de Supabase.
+ * (admin, compte, auth). « / » n'est matché que si l'URL contient ?code=
+ * (retour Supabase), pour ne pas réveiller le proxy à chaque visite.
  * Avant, il tournait sur CHAQUE requête (pages publiques, /api/alerts interrogé
  * toutes les 30 s par chaque onglet, pageviews…) et appelait Supabase à chaque
  * fois → « Fluid Active CPU » du plan gratuit épuisé. Les pages publiques
@@ -124,7 +125,11 @@ function needsSession(pathname: string): boolean {
 
 export const config = {
   matcher: [
-    "/",
+    // « / » uniquement quand Supabase renvoie ?code= — pas à chaque visite.
+    {
+      source: "/",
+      has: [{ type: "query", key: "code" }],
+    },
     "/admin/:path*",
     "/mon-compte/:path*",
     "/auth/:path*",

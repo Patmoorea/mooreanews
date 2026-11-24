@@ -1,0 +1,226 @@
+"use client";
+
+import Link from "next/link";
+import { Fragment, Suspense, type ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
+import { MapPin, Phone, Clock, Star, ArrowRight } from "lucide-react";
+import { Badge } from "@/components/ui/Badge";
+import { RestaurantPriceLevel } from "@/components/RestaurantPriceLevel";
+import { PublicationCover } from "@/components/PublicationCover";
+
+const OPEN_STATUS_HELP =
+  "Ouvert / fermé confirmé via Google Maps ou déclaration commerçant du jour — jamais estimé à partir du texte horaires.";
+
+export type RestaurantCardModel = {
+  slug: string;
+  name: string;
+  description: string;
+  cuisine: string[];
+  priceLevel: 1 | 2 | 3 | 4;
+  district: string;
+  address: string;
+  phone?: string;
+  openingHours?: string;
+  image?: string;
+  features?: string[];
+  premium?: boolean;
+  openState: "open" | "closed" | "unknown";
+  statusLabel: string | null;
+};
+
+function DirectoryBody({
+  items,
+  openOnly,
+  googleOn,
+  topAd,
+  inlineAd,
+}: {
+  items: RestaurantCardModel[];
+  openOnly: boolean;
+  googleOn: boolean;
+  topAd: ReactNode;
+  inlineAd: ReactNode;
+}) {
+  const openCount = items.filter((r) => r.openState === "open").length;
+  const shown = openOnly ? items.filter((r) => r.openState === "open") : items;
+
+  return (
+    <>
+      <div className="flex flex-wrap gap-2 mb-8">
+        <Link
+          href="/restaurants"
+          className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+            !openOnly
+              ? "bg-lagon-600 text-white"
+              : "bg-ocean-100 text-ocean-700 hover:bg-ocean-200"
+          }`}
+        >
+          Tous
+        </Link>
+        <Link
+          href="/restaurants?open=1"
+          className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+            openOnly
+              ? "bg-tipanier-600 text-white"
+              : "bg-ocean-100 text-ocean-700 hover:bg-ocean-200"
+          }`}
+        >
+          Ouverts maintenant
+          {openCount > 0 ? ` (${openCount})` : ""}
+        </Link>
+      </div>
+
+      {openOnly && (
+        <p className="mb-6 rounded-xl border border-lagon-200 bg-lagon-50 px-4 py-3 text-sm text-lagon-900">
+          {OPEN_STATUS_HELP}
+          {!googleOn && (
+            <>
+              {" "}
+              Configurez <code className="text-xs">GOOGLE_PLACES_API_KEY</code> sur
+              Vercel et renseignez les Place ID dans l&apos;admin, ou demandez aux
+              commerçants de déclarer leur statut.
+            </>
+          )}
+        </p>
+      )}
+
+      {topAd}
+
+      {openOnly && shown.length === 0 && (
+        <p className="text-center text-ocean-600 py-12">
+          Aucun restaurant confirmé ouvert pour l&apos;instant. Les statuts viennent de
+          Google Maps (Place ID) ou d&apos;une déclaration commerçant du jour — pas
+          d&apos;estimation à partir du texte horaires.
+        </p>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {shown.map((r, index) => {
+          const isOpen = r.openState === "open";
+          const isClosed = r.openState === "closed";
+          return (
+            <Fragment key={r.slug}>
+              {index === 2 ? <div className="lg:col-span-2">{inlineAd}</div> : null}
+              <article className="group relative bg-white rounded-2xl border border-ocean-100 overflow-hidden shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-tropical)] hover:border-tiare-200 hover:-translate-y-0.5 transition-all flex flex-col sm:flex-row">
+                <Link
+                  href={`/restaurants/${r.slug}`}
+                  className="absolute inset-0 z-10"
+                  aria-label={`Voir ${r.name}`}
+                />
+                <div className="relative sm:w-48 flex-shrink-0">
+                  <PublicationCover
+                    src={r.image}
+                    alt={r.name}
+                    category="restaurants"
+                    slug={r.slug}
+                    className="w-full aspect-[16/10] sm:aspect-auto sm:min-h-[140px]"
+                    sizes="(max-width: 640px) 100vw, 192px"
+                  />
+                  {isOpen && r.statusLabel && (
+                    <div className="absolute top-3 right-3 z-10">
+                      <Badge variant="tipanier">Ouvert · {r.statusLabel}</Badge>
+                    </div>
+                  )}
+                  {isClosed && r.statusLabel && (
+                    <div className="absolute top-3 right-3 z-10">
+                      <Badge variant="neutral">Fermé · {r.statusLabel}</Badge>
+                    </div>
+                  )}
+                  {r.premium && (
+                    <div className="absolute top-3 left-3 z-10">
+                      <Badge variant="soleil" icon={<Star size={10} />}>
+                        Premium
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+                <div className="p-5 flex-1 relative">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <h2 className="font-display text-xl text-ocean-900 group-hover:text-tiare-600 transition-colors">
+                      {r.name}
+                    </h2>
+                    <RestaurantPriceLevel level={r.priceLevel} />
+                  </div>
+                  <p className="text-sm text-ocean-700">{r.description}</p>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {r.cuisine.map((c) => (
+                      <Badge key={c} variant="neutral">
+                        {c}
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="mt-4 space-y-1.5 text-xs text-ocean-600">
+                    <p className="flex items-center gap-1.5">
+                      <MapPin size={12} />
+                      {r.address}, {r.district}
+                    </p>
+                    {r.phone && (
+                      <p className="flex items-center gap-1.5">
+                        <Phone size={12} />
+                        <a href={`tel:${r.phone.replace(/\s+/g, "")}`} className="hover:text-tiare-600">
+                          {r.phone}
+                        </a>
+                      </p>
+                    )}
+                    {r.openingHours ? (
+                      <p className="flex items-center gap-1.5">
+                        <Clock size={12} />
+                        {r.openingHours}
+                      </p>
+                    ) : (
+                      <p className="flex items-center gap-1.5 text-ocean-400 italic">
+                        <Clock size={12} />
+                        Horaires : appeler ou voir la fiche
+                      </p>
+                    )}
+                  </div>
+                  {r.features && r.features.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-ocean-100 flex flex-wrap gap-1.5">
+                      {r.features.map((f) => (
+                        <span
+                          key={f}
+                          className="text-[10px] px-2 py-0.5 rounded-full bg-lagon-50 text-lagon-700"
+                        >
+                          {f}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-tiare-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                    Voir la fiche
+                    <ArrowRight size={12} />
+                  </div>
+                </div>
+              </article>
+            </Fragment>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+function Filtered(props: {
+  items: RestaurantCardModel[];
+  googleOn: boolean;
+  topAd: ReactNode;
+  inlineAd: ReactNode;
+}) {
+  const params = useSearchParams();
+  const open = params.get("open");
+  const openOnly = open === "1" || open === "true";
+  return <DirectoryBody {...props} openOnly={openOnly} />;
+}
+
+export function RestaurantsDirectory(props: {
+  items: RestaurantCardModel[];
+  googleOn: boolean;
+  topAd: ReactNode;
+  inlineAd: ReactNode;
+}) {
+  return (
+    <Suspense fallback={<DirectoryBody {...props} openOnly={false} />}>
+      <Filtered {...props} />
+    </Suspense>
+  );
+}

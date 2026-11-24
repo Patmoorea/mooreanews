@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
-import { getNextDepartures } from "@/lib/ferries";
+import { getBundledNextDepartures } from "@/lib/ferries";
+import { PUBLIC_CACHE_CONTROL } from "@/lib/public-cache";
 
-export const revalidate = 1800;
+/** Horaires embarqués au build ; « prochains départs » recalculés au plus toutes les heures. */
+export const dynamic = "force-static";
+export const revalidate = 3600;
 
-export async function GET() {
-  const data = await getNextDepartures();
+export function GET() {
+  const data = getBundledNextDepartures();
   return NextResponse.json(data, {
     headers: {
-      "Cache-Control": "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600",
+      "Cache-Control": PUBLIC_CACHE_CONTROL,
     },
   });
 }

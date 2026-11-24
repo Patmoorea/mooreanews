@@ -137,7 +137,9 @@ export async function fetchLiveBusSchedules(
 ): Promise<Record<string, string[][]> | null> {
   try {
     const res = await fetch(SOURCE_API, {
-      ...(mode === "cached" ? { next: { revalidate: 180 } } : { cache: "no-store" as const }),
+      ...(mode === "cached"
+        ? { next: { revalidate: 3600 } }
+        : { cache: "no-store" as const }),
       headers: {
         Accept: "application/json",
         "User-Agent":
@@ -315,6 +317,35 @@ export function formatBusScheduleTime(raw: string): string {
 
 export function isBusSchoolTermDeparture(raw: string): boolean {
   return raw.includes("*");
+}
+
+/** Prochains bus calculés sur le JSON embarqué au build. Pas d'appel réseau. */
+export function getBundledBusSchedule(): BusScheduleData {
+  return loadBundled();
+}
+
+export function getBundledNextBusDepartures(): NextBusDepartures {
+  return computeNextBusDepartures(
+    loadBundled(),
+    "mooreatransportpublic.com (cache)",
+  );
+}
+
+/** Recale « dans X min » quand la réponse CDN a été générée plus tôt. */
+export function freshenBusMinutes(data: NextBusDepartures): NextBusDepartures {
+  const fetched = Date.parse(data.fetchedAt);
+  if (!Number.isFinite(fetched)) return data;
+  const drift = Math.floor((Date.now() - fetched) / 60_000);
+  if (drift === 0) return data;
+  const shift = (rows: BusDeparture[]) =>
+    rows
+      .map((row) => ({ ...row, minutesUntil: row.minutesUntil - drift }))
+      .filter((row) => row.minutesUntil > -15);
+  return {
+    ...data,
+    toVaiare: shift(data.toVaiare),
+    toTiahura: shift(data.toTiahura),
+  };
 }
 
 /** Prochains bus du jour (live + cache local). */

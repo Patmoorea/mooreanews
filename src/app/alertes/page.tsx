@@ -4,12 +4,13 @@ import { PageHeader } from "@/components/PageHeader";
 import { AlertesListClient } from "@/components/alerts/AlertesListClient";
 import { TelegramCommunityPromo } from "@/components/telegram/TelegramCommunityPromo";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
-import { expirePastAlerts } from "@/lib/alert-schedule";
-import { expireStaleAnnouncements } from "@/lib/announcement-expiry";
-import { syncMeteoVigilanceAlertIfStale } from "@/lib/meteo-vigilance-sync";
-import { syncUtilityOutagesIfStale } from "@/lib/utility-outages-sync";
 
-export const dynamic = "force-dynamic";
+/**
+ * Repli 1 h. Les crons alertes / météo / coupures appellent revalidatePath("/alertes").
+ * L'expiration et la synchro ne tournent plus à chaque visite.
+ */
+export const dynamic = "force-static";
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Alertes — Moorea",
@@ -19,14 +20,6 @@ export const metadata: Metadata = {
 };
 
 export default async function AlertesPage() {
-  await expirePastAlerts().catch(() => 0);
-
-  void Promise.all([
-    syncMeteoVigilanceAlertIfStale(),
-    syncUtilityOutagesIfStale(),
-    expireStaleAnnouncements().catch(() => 0),
-  ]);
-
   const rows = (await dbListActiveAlerts()) ?? [];
 
   return (

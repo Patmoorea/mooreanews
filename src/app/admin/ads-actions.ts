@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidateIslandHome } from "@/lib/revalidate-island";
 import { ADS_CONFIG_CACHE_TAG } from "@/lib/ads-data";
 import { redirect } from "next/navigation";
 import { getAdminSupabase } from "@/lib/supabase/admin";
@@ -24,7 +25,7 @@ function slugifyId(raw: string): string {
 
 function revalidateAds() {
   revalidateTag(ADS_CONFIG_CACHE_TAG, "max");
-  revalidatePath("/");
+  revalidateIslandHome();
   revalidatePath("/admin/ads");
   revalidatePath("/partenaires");
 }

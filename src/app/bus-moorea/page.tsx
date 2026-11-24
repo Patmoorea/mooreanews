@@ -15,8 +15,8 @@ import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 import { BusCard } from "@/components/widgets/BusCard";
 import {
-  getNextBusDepartures,
-  loadBusScheduleData,
+  getBundledBusSchedule,
+  getBundledNextBusDepartures,
   getLineSchedule,
   formatBusScheduleTime,
   isBusSchoolTermDeparture,
@@ -31,8 +31,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/bus-moorea" },
 };
 
-/** Horaires bus : fetch mis en cache 3 min. Le widget /api/buses reste en direct. */
-export const revalidate = 180;
+/** Grille horaire embarquée au build. Le widget /api/buses est le même JSON, cache 1 h. */
+export const revalidate = 3600;
 
 const LINE_IDS: BusLineId[] = ["L1", "L2", "L3", "L4"];
 
@@ -145,10 +145,9 @@ function ScheduleBlock({
 }
 
 export default async function BusMooreaPage() {
-  const [{ data, source }, live] = await Promise.all([
-    loadBusScheduleData("cached"),
-    getNextBusDepartures("cached"),
-  ]);
+  const data = getBundledBusSchedule();
+  const source = "mooreatransportpublic.com (cache)" as const;
+  const live = getBundledNextBusDepartures();
 
   const meta = data.meta;
   const officialUrl =
