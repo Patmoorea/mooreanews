@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { revalidateIslandHome } from "@/lib/revalidate-island";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import { forceRepairMooreaNewsByFbid } from "@/lib/facebook-content-import";
 
@@ -31,7 +32,7 @@ export async function GET(req: Request) {
 
   if (payload.results.some((r) => r.ok)) {
     revalidatePath("/actualites");
-    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+    revalidateIslandHome();
   }
 
   return NextResponse.json(payload);

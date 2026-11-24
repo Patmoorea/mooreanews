@@ -1,6 +1,7 @@
 import { createHash } from "crypto";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { revalidateIslandHome } from "@/lib/revalidate-island";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import { SITE } from "@/lib/constants";
 import { getAdminBotToken } from "@/lib/telegram-config";
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
       onPublished: async ({ slug, title }) => {
         revalidatePath("/actualites");
         revalidatePath(`/actualites/${slug}`);
-        revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+        revalidateIslandHome();
         await notifyPublicNewArticles([{ slug, title }]);
       },
     });

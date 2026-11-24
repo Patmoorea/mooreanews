@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Ship, ArrowRight, Clock, Ticket } from "lucide-react";
 import type { NextDepartures } from "@/lib/ferries";
-import { formatMinutesUntil } from "@/lib/ferries";
+import { formatMinutesUntil, freshenFerryMinutes } from "@/lib/ferries";
 import {
   ferryStatusClass,
   ferryStatusLabel,
@@ -20,7 +20,7 @@ export function FerryCard() {
       fetch("/api/ferries")
         .then((r) => r.json() as Promise<NextDepartures>)
         .then((d) => {
-          if (!cancelled) setData(d);
+          if (!cancelled) setData(freshenFerryMinutes(d));
         })
         .catch(() => {});
     load();

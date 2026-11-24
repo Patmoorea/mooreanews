@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { revalidateIslandHome } from "@/lib/revalidate-island";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import { getTahitiClock, shouldPublishWeeklyRecap } from "@/lib/cron-tahiti";
 import { syncWeeklyRecapFromMooreaNews } from "@/lib/weekly-recap-sync";
@@ -29,7 +30,7 @@ export async function GET(req: Request) {
     const result = await syncWeeklyRecapFromMooreaNews();
 
     revalidatePath("/actualites");
-    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+    revalidateIslandHome();
 
     return NextResponse.json({
       tahiti: clock.label,

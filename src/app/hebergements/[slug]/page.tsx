@@ -8,6 +8,7 @@ import {
   accommodationTypeLabel,
   availabilityLabel,
   getAccommodationBySlug,
+  getVisitorAccommodations,
 } from "@/lib/accommodations";
 import { SITE } from "@/lib/constants";
 import {
@@ -17,6 +18,11 @@ import {
 
 /** Mise à jour via revalidatePath (disponibilité commerçant), pas en continu. */
 export const revalidate = false;
+
+export async function generateStaticParams() {
+  const items = await getVisitorAccommodations();
+  return items.map((item) => ({ slug: item.slug }));
+}
 
 type Props = { params: Promise<{ slug: string }> };
 

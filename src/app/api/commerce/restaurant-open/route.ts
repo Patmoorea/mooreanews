@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { revalidateIslandHome } from "@/lib/revalidate-island";
 import { z } from "zod";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 
@@ -61,7 +62,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  revalidatePath("/");
+  revalidateIslandHome();
   revalidatePath("/restaurants");
   revalidatePath("/ce-soir");
   revalidatePath(`/restaurants/${body.restaurantId}`);

@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
-import { TripPlanClient } from "@/components/trip/TripPlanClient";
+import { MonSejourSwitch } from "@/components/trip/MonSejourSwitch";
 import { buildTripPlan } from "@/lib/mon-sejour";
 
-/** `?duree=` ne doit pas créer une entrée ISR par variante. */
-export const dynamic = "force-dynamic";
+/** Les deux durées sont précalculées. `?duree=` ne crée pas de variante de cache. */
+export const dynamic = "force-static";
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Mon séjour à Moorea",
@@ -15,14 +16,11 @@ export const metadata: Metadata = {
   alternates: { canonical: "/mon-sejour" },
 };
 
-type Props = {
-  searchParams: Promise<{ duree?: string }>;
-};
-
-export default async function MonSejourPage({ searchParams }: Props) {
-  const params = await searchParams;
-  const duration = params.duree === "7j" ? "7j" : "48h";
-  const plan = await buildTripPlan(duration);
+export default async function MonSejourPage() {
+  const [shortStay, week] = await Promise.all([
+    buildTripPlan("48h"),
+    buildTripPlan("7j"),
+  ]);
 
   return (
     <>
@@ -33,29 +31,7 @@ export default async function MonSejourPage({ searchParams }: Props) {
         variant="soleil"
       />
       <Container className="py-12 sm:py-16 max-w-3xl">
-        <div className="flex gap-2 mb-8">
-          <Link
-            href="/mon-sejour"
-            className={`px-4 py-2 rounded-full text-sm font-semibold ${
-              duration === "48h"
-                ? "bg-ocean-900 text-white"
-                : "bg-ocean-50 text-ocean-800 border border-ocean-100"
-            }`}
-          >
-            48 heures
-          </Link>
-          <Link
-            href="/mon-sejour?duree=7j"
-            className={`px-4 py-2 rounded-full text-sm font-semibold ${
-              duration === "7j"
-                ? "bg-ocean-900 text-white"
-                : "bg-ocean-50 text-ocean-800 border border-ocean-100"
-            }`}
-          >
-            7 jours
-          </Link>
-        </div>
-        <TripPlanClient plan={plan} />
+        <MonSejourSwitch plans={{ "48h": shortStay, "7j": week }} />
         <p className="mt-8 text-center text-sm text-ocean-600">
           Besoin d&apos;infos pratiques ?{" "}
           <Link href="/qui-sait-quoi" className="font-semibold text-lagon-700 hover:underline">

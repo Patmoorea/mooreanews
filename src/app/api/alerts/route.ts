@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { expirePastAlerts } from "@/lib/alert-schedule";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
+import { PUBLIC_CACHE_CONTROL } from "@/lib/public-cache";
 
-export const revalidate = 600;
+/** Lecture seule. L'expiration en base est faite par le cron daily. */
+export const dynamic = "force-static";
+export const revalidate = 3600;
 
 export async function GET() {
-  await expirePastAlerts();
   const rows = (await dbListActiveAlerts()) ?? [];
   return NextResponse.json(
     {
@@ -14,7 +15,7 @@ export async function GET() {
     },
     {
       headers: {
-        "Cache-Control": "public, s-maxage=600, stale-while-revalidate=1800",
+        "Cache-Control": PUBLIC_CACHE_CONTROL,
       },
     },
   );

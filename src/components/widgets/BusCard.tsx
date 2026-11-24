@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bus, ArrowRight, Clock, Ticket, ExternalLink } from "lucide-react";
 import type { NextBusDepartures, BusDeparture } from "@/lib/buses";
-import { formatBusLines, formatBusMinutesUntil } from "@/lib/buses";
+import { formatBusLines, formatBusMinutesUntil, freshenBusMinutes } from "@/lib/buses";
 
 export function BusCard() {
   const [data, setData] = useState<NextBusDepartures | null>(null);
@@ -15,7 +15,7 @@ export function BusCard() {
       fetch("/api/buses")
         .then((r) => r.json() as Promise<NextBusDepartures>)
         .then((d) => {
-          if (!cancelled) setData(d);
+          if (!cancelled) setData(freshenBusMinutes(d));
         })
         .catch(() => {});
     load();

@@ -10,9 +10,11 @@ import { getRestaurants } from "@/lib/content";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { stripePublicEnabled, formatXpf, STRIPE_PRICES } from "@/lib/stripe";
 import { staticPageMetadata } from "@/lib/seo";
+import { StripeReturnNotice } from "@/components/commerce/StripeReturnNotice";
 
-/** Retour Stripe `?premium=` : pas une variante de cache. */
-export const dynamic = "force-dynamic";
+/** Retour Stripe lu côté client. La liste commerçants est en ISR 1 h. */
+export const dynamic = "force-static";
+export const revalidate = 3600;
 
 export const metadata: Metadata = staticPageMetadata({
   title: "Espace commerçant",
@@ -21,12 +23,7 @@ export const metadata: Metadata = staticPageMetadata({
   path: "/commercant",
 });
 
-type Props = {
-  searchParams: Promise<{ premium?: string; accommodation_premium?: string }>;
-};
-
-export default async function CommercantPage({ searchParams }: Props) {
-  const params = await searchParams;
+export default async function CommercantPage() {
   const restaurants = await getRestaurants();
   const stripeOn = stripePublicEnabled();
 
@@ -58,16 +55,7 @@ export default async function CommercantPage({ searchParams }: Props) {
           MooreaNews (restaurants & hébergements).
         </p>
 
-        {params.premium === "success" && (
-          <p className="mt-4 rounded-2xl bg-tipanier-50 border border-tipanier-200 p-4 text-sm text-tipanier-800">
-            Paiement reçu — votre fiche restaurant premium sera activée sous quelques minutes.
-          </p>
-        )}
-        {params.accommodation_premium === "success" && (
-          <p className="mt-4 rounded-2xl bg-soleil-50 border border-soleil-200 p-4 text-sm text-soleil-800">
-            Paiement reçu — votre hébergement sera mis à la une visiteurs sous quelques minutes.
-          </p>
-        )}
+        <StripeReturnNotice />
 
         <section className="mt-10">
           <MerchantDeclareOpen restaurants={declareRestaurants ?? []} />

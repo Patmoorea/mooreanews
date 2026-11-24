@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ExternalLink, Siren } from "lucide-react";
 import { dbListActiveAlerts } from "@/lib/supabase/queries";
-import { expirePastAlerts } from "@/lib/alert-schedule";
 import { Container } from "@/components/ui/Container";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -22,7 +21,6 @@ function alertSortPriority(type: string, urgent: boolean): number {
 }
 
 export async function AlertsStrip() {
-  await expirePastAlerts().catch(() => 0);
   const rows = (await dbListActiveAlerts()) ?? [];
   /** Coupures = pastille hero uniquement (pas de cartes en double). */
   const withoutOutages = rows.filter(

@@ -1,6 +1,23 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": {
+            "re": "(?i)(GPTBot|ChatGPT-User|OAI-SearchBot|CCBot|ClaudeBot|Claude-SearchBot|Claude-Web|anthropic-ai|Bytespider|AhrefsBot|SemrushBot|MJ12bot|DotBot|PetalBot|Amazonbot|DataForSeoBot|BLEXBot|SeekportBot|serpstatbot|SEOkicks|Barkrowler|ZoominfoBot|ImagesiftBot|TikTokSpider|Diffbot|meta-externalagent|PerplexityBot|YouBot|Cohere-ai|AI2Bot|Applebot-Extended|magpie-crawler)"
+          }
+        }
+      ],
+      "mitigate": {
+        "action": "deny"
+      }
+    }
+  ],
   "functions": {
     "src/app/api/cron/garde-weekend/route.ts": {
       "memory": 512,

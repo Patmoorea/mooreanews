@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { getGardeWeekendHighlight } from "@/lib/garde-weekend-public";
+import { PUBLIC_CACHE_CONTROL } from "@/lib/public-cache";
 
-/** ISR 3 min. La publication garde appelle revalidatePath("/api/garde-weekend"). */
-export const revalidate = 180;
+/** Repli 1 h. La publication garde appelle revalidatePath("/api/garde-weekend"). */
+export const revalidate = 3600;
 
 export async function GET() {
   try {
@@ -22,8 +23,7 @@ export async function GET() {
       },
       {
         headers: {
-          "Cache-Control":
-            "public, max-age=60, s-maxage=180, stale-while-revalidate=300",
+          "Cache-Control": PUBLIC_CACHE_CONTROL,
         },
       },
     );

@@ -2,14 +2,13 @@
  * Agrégation « Moorea du jour » — résumé quotidien pour accueil, app et digest.
  */
 
-import { expirePastAlerts } from "@/lib/alert-schedule";
 import {
   getFeaturedArticles,
   getUpcomingEvents,
   getRestaurants,
   restaurantToOpenMeta,
 } from "@/lib/content";
-import { getNextDepartures, nextDeparturesPerCompany } from "@/lib/ferries";
+import { getBundledNextDepartures, nextDeparturesPerCompany } from "@/lib/ferries";
 import {
   listOpenRestaurantsNow,
   type OpenRestaurantNow,
@@ -64,11 +63,10 @@ function weekendRange(): { start: string; end: string } {
 }
 
 export async function getMooreaDuJour(): Promise<MooreaDuJour> {
-  await expirePastAlerts().catch(() => 0);
   const [weather, ferries, alertsRows, events, restaurants, featured] =
     await Promise.all([
       getCurrentWeather(),
-      getNextDepartures("cached"),
+      Promise.resolve(getBundledNextDepartures()),
       dbListActiveAlerts(),
       getUpcomingEvents(20),
       getRestaurants(),

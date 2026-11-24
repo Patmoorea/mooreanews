@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidateIslandHome } from "@/lib/revalidate-island";
 import { redirect } from "next/navigation";
 import { aggregateAll } from "@/lib/aggregator";
 import { externalIdFromFacebookUrl } from "@/lib/facebook-url";
@@ -30,7 +31,7 @@ export async function purgeStaleExternalVeille(): Promise<void> {
   const result = await hideStaleExternalArticles();
   revalidatePath("/admin/external");
   revalidatePath("/actualites");
-  revalidatePath("/");
+  revalidateIslandHome();
   revalidatePath("/admin");
   redirect(`/admin/external?purged=${result.hidden}`);
 }
@@ -40,7 +41,7 @@ export async function runAggregation() {
   await aggregateAll();
   revalidatePath("/admin/external");
   revalidatePath("/actualites");
-  revalidatePath("/");
+  revalidateIslandHome();
 }
 
 export async function toggleExternalArticle(id: string, hidden: boolean) {
@@ -85,5 +86,5 @@ export async function addFacebookCommunityLink(formData: FormData) {
 
   revalidatePath("/admin/external");
   revalidatePath("/actualites");
-  revalidatePath("/");
+  revalidateIslandHome();
 }

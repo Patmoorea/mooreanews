@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bus, ArrowRight } from "lucide-react";
 import type { NextBusDepartures } from "@/lib/buses";
-import { formatBusLines, formatBusMinutesUntil } from "@/lib/buses";
+import { formatBusLines, formatBusMinutesUntil, freshenBusMinutes } from "@/lib/buses";
 
 /**
  * Bandeau bus visible sur toutes les pages (sous le ticker).
@@ -18,7 +18,7 @@ export function BusBanner() {
       fetch("/api/buses")
         .then((r) => r.json() as Promise<NextBusDepartures>)
         .then((d) => {
-          if (!cancelled) setData(d);
+          if (!cancelled) setData(freshenBusMinutes(d));
         })
         .catch(() => {});
     load();

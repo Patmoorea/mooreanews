@@ -13,9 +13,9 @@ import { MarqueeTrack } from "@/components/widgets/MarqueeTrack";
 import type { WeatherSummary } from "@/lib/weather";
 import type { SunMoonData } from "@/lib/sun";
 import type { Departure, NextDepartures } from "@/lib/ferries";
-import { formatMinutesUntil, nextDeparturesPerCompany } from "@/lib/ferries";
+import { formatMinutesUntil, freshenFerryMinutes, nextDeparturesPerCompany } from "@/lib/ferries";
 import type { NextBusDepartures } from "@/lib/buses";
-import { formatBusLines, formatBusMinutesUntil } from "@/lib/buses";
+import { formatBusLines, formatBusMinutesUntil, freshenBusMinutes } from "@/lib/buses";
 
 type TickerItem = {
   icon: React.ReactNode;
@@ -82,7 +82,7 @@ export function Ticker() {
         });
 
         if (ferryRes?.ok) {
-          const f = (await ferryRes.json()) as NextDepartures;
+          const f = freshenFerryMinutes((await ferryRes.json()) as NextDepartures);
           next.push(
             ...ferryTickerItems("Moorea → Tahiti", f.fromMoorea ?? []),
             ...ferryTickerItems("Tahiti → Moorea", f.fromTahiti ?? []),
@@ -90,7 +90,7 @@ export function Ticker() {
         }
 
         if (busRes?.ok) {
-          const b = (await busRes.json()) as NextBusDepartures;
+          const b = freshenBusMinutes((await busRes.json()) as NextBusDepartures);
           if (b.dayKind === "sun") {
             next.push({
               icon: <Bus size={14} className="text-emerald-300" />,

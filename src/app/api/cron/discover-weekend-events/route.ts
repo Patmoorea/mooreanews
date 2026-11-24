@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { revalidateIslandHome } from "@/lib/revalidate-island";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import {
   getTahitiClock,
@@ -64,7 +65,7 @@ export async function GET(req: Request) {
     const result = await discoverWeekendMooreaEvents();
 
     revalidatePath("/evenements");
-    revalidatePath("/"); // accueil seulement (plus de purge de tout le site)
+    revalidateIslandHome();
 
     try {
       await notifyDiscovery(result, clock.label);

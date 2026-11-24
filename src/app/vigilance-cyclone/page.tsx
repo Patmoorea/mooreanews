@@ -8,11 +8,15 @@ import {
   fetchMeteoVigilance,
   CYCLONE_ALERT_LABEL,
 } from "@/lib/meteo-vigilance";
-import { syncMeteoVigilanceAlertIfStale } from "@/lib/meteo-vigilance-sync";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/components/PageHeader";
 
-export const dynamic = "force-dynamic";
+/**
+ * Repli 1 h. Le cron météo appelle revalidatePath("/vigilance-cyclone")
+ * quand le niveau change. Pas de synchro meteo.pf à chaque visite.
+ */
+export const dynamic = "force-static";
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Vigilance cyclone & météo — Moorea",
@@ -31,7 +35,6 @@ const CHECKLIST = [
 ];
 
 export default async function VigilanceCyclonePage() {
-  void syncMeteoVigilanceAlertIfStale().catch(() => {});
   let snapshot;
   try {
     snapshot = await fetchMeteoVigilance();

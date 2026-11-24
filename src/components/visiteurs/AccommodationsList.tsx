@@ -4,7 +4,7 @@ import {
   accommodationTypeLabel,
   availabilityLabel,
   type Accommodation,
-} from "@/lib/accommodations";
+} from "@/lib/accommodation-labels";
 
 const AVAIL_STYLE: Record<
   Accommodation["availabilityStatus"],
